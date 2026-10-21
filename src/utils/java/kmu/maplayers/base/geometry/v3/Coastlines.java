@@ -284,7 +284,7 @@ public final class Coastlines {
         var runs = DiscUnionBoundary.traceCoastRuns(union, walls, parameters.boundSegments());
         var silhouettes = CoastPlacement.keepJoinedRuns(runs.silhouettes());
         var islands = CoastPlacement.collectLoneIslands(runs.silhouettes());
-        var bridged = CoastPlacement.findBridgedCircles(union, walls);
+        var bridged = CoastPlacement.collectBridgedCircles(runs.laid());
         // The two shores are placed under different rules about walls, and the difference is
         // which side of a wall the water is on. An OUTER coast has every wall inside it: a run
         // cut seaward across a wall's side leaves the wall on the land side of the line, which

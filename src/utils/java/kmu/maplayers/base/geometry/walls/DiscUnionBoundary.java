@@ -105,7 +105,7 @@ public final class DiscUnionBoundary {
 
         var holes = new ArrayList<VoidHole>();
 
-        for (var cycle : traceCycles(union, walls, boundSegments)) {
+        for (var cycle : traceCycles(linkArcs(union, walls), union, boundSegments)) {
 
             // A cycle is a hole when it winds the opposite way to a silhouette. Each arc is
             // walked anticlockwise on its own circle, which keeps the discs' interior to the
@@ -161,18 +161,19 @@ public final class DiscUnionBoundary {
      *                      arc is flattened onto, to tell a silhouette from a hole by the
      *                      area it comes out with
      * @return the silhouettes, the lakes and the walled holes, one run of marks each, in walk
-     *         order
+     *         order, and the walls the walk laid
      */
     public static CoastRuns traceCoastRuns(
             DiscUnion union,
             Walls walls,
             int boundSegments) {
 
+        var linked = linkArcs(union, walls);
         var silhouettes = new ArrayList<List<CoastMark>>();
         var lakes = new ArrayList<List<CoastMark>>();
         var walled = new ArrayList<List<CoastMark>>();
 
-        for (var cycle : traceCycles(union, walls, boundSegments)) {
+        for (var cycle : traceCycles(linked, union, boundSegments)) {
 
             if (!isHole(cycle)) {
                 silhouettes.add(cycle.marks());
@@ -183,7 +184,11 @@ public final class DiscUnionBoundary {
             }
         }
 
-        return new CoastRuns(silhouettes, lakes, walled);
+        return new CoastRuns(
+            silhouettes,
+            lakes,
+            walled,
+            linked.laid().chords());
     }
 
     /**
@@ -293,13 +298,12 @@ public final class DiscUnionBoundary {
         return new LinkedArcs(laid, arcs, linkArcsIntoCycles(arcs));
     }
 
-    // The whole walk: the joins, then each followed round until it closes.
+    // The rest of the walk, over the joins already made: each followed round until it closes.
     private static List<VoidHole> traceCycles(
+            LinkedArcs linked,
             DiscUnion union,
-            Walls walls,
             int boundSegments) {
 
-        var linked = linkArcs(union, walls);
         var arcs = linked.arcs();
         var cycles = new ArrayList<VoidHole>();
         var walked = new boolean[arcs.size()];
@@ -546,14 +550,20 @@ public final class DiscUnionBoundary {
      * water twice. Sorted here rather than left to a caller to sort, since the walk is the only
      * thing that knows what walled each cycle.
      *
+     * <p>The walls the walk laid come back with the runs, because a caller placing a coast
+     * along them needs to know which cells a wall attaches to. Laid again to find out, they are
+     * a second laying of the same walls - the dearest part of the walk paid for twice.
+     *
      * @param silhouettes one run of marks per outer silhouette, in walk order
      * @param lakes       one run of marks per hole the cells closed unaided, in walk order
      * @param walled      one run of marks per hole a laid wall closed, in walk order
+     * @param laid        the walls that attached at this reach, in the order they were offered
      */
     public record CoastRuns(
         List<List<CoastMark>> silhouettes,
         List<List<CoastMark>> lakes,
-        List<List<CoastMark>> walled) {
+        List<List<CoastMark>> walled,
+        List<Chord> laid) {
     }
 
     /**

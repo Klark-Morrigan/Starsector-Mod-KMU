@@ -2,10 +2,10 @@ package kmu.maplayers.base.geometry.v3;
 
 import kmlib.math.geometry.Limits;
 
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
-import kmu.maplayers.base.geometry.walls.WallLaying;
 import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
@@ -169,17 +169,16 @@ final class CoastPlacement {
     // The cells a laid wall attaches to. Asked of the laid chords rather than of every bridge
     // offered, because a bridge that was never drawn has no wall for the coast to cut across
     // and protecting its cells would only cost selection detail for nothing.
-    static Set<Integer> findBridgedCircles(
-            DiscUnion union,
-            Walls walls) {
+    static Set<Integer> collectBridgedCircles(List<Chord> laid) {
 
         var bridged = new LinkedHashSet<Integer>();
 
-        for (var chord : WallLaying.findAttachableChords(union, walls)) {
+        for (var chord : laid) {
 
             bridged.add(chord.fromCircle());
             bridged.add(chord.toCircle());
         }
+
         return bridged;
     }
 
