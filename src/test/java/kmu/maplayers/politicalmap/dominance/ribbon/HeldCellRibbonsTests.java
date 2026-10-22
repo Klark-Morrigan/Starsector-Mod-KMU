@@ -15,15 +15,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_DARK;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.PERSEAN;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.PERSEAN_DARK;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildAlliedInputsOver;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildSectorHolding;
@@ -31,6 +25,12 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_DARK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

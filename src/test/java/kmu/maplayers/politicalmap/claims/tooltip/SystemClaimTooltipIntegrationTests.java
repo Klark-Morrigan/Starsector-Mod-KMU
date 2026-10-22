@@ -23,9 +23,9 @@ import java.util.List;
 
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY;
 import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.ribbon;
 
+import kmlib.opengl.GlPasses;
+
 import kmu.maplayers.base.render.MapFrame;
 
 import org.junit.jupiter.api.Nested;
@@ -11,6 +13,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what the overlay pass decides, which is only whether to emit at all: past the guard it is a
@@ -27,6 +31,9 @@ final class CellRibbonPathRendererTests {
     // both and is never read: what these cases are about is the guard in front of the emission.
     private static final MapFrame PAINTING_FRAME = new MapFrame(1f, 1f);
     private static final MapFrame FADED_OUT_FRAME = new MapFrame(1f, 0f);
+
+    // A painting frame zoomed far enough out that a traced ring lands well under a pixel across.
+    private static final MapFrame ZOOMED_FAR_OUT_FRAME = new MapFrame(0.001f, 1f);
 
     @Nested
     class RenderOnMap {
@@ -48,12 +55,7 @@ final class CellRibbonPathRendererTests {
         void readsNoPathsWhenTheOverlayIsFullyFadedOut() {
 
             // A cell that does carry a path, so only the fade can be what stops it.
-            var ribbonPathsFake = new RibbonPathsFake(List.of(
-                new CellRibbonPath(
-                    List.of(new float[] {0f, 0f, 1f, 1f}),
-                    List.of(),
-                    new float[] {0f, 0f},
-                    RibbonPathVerdict.LAID_AT_PAD)));
+            var ribbonPathsFake = buildPathsCarryingOnePath();
 
             CellRibbonPathRenderer.renderOnMap(
                 ribbonPathsFake,
@@ -62,6 +64,32 @@ final class CellRibbonPathRendererTests {
             assertThat(ribbonPathsFake.hasReadPaths())
                 .isFalse();
         }
+
+        @Test
+        void emitsThePathsHoweverFarTheMapIsZoomedOut() {
+            // Watched at the GL entry point rather than at the path list, since the walk behind it
+            // needs a context. The overlay reports world geometry, so a scale that shrinks it is
+            // the map's own and never a reason for the diagnostic to go quiet.
+            try (var glPassesMock = mockStatic(GlPasses.class)) {
+
+                CellRibbonPathRenderer.renderOnMap(
+                    buildPathsCarryingOnePath(),
+                    ZOOMED_FAR_OUT_FRAME);
+
+                glPassesMock.verify(() -> GlPasses.runBlendedPass(any(), any(), any()));
+            }
+        }
+    }
+
+    // A cell that does carry a path, so whatever stops the pass is the frame and not the list.
+    private static RibbonPathsFake buildPathsCarryingOnePath() {
+
+        return new RibbonPathsFake(List.of(
+            new CellRibbonPath(
+                List.of(new float[] {0f, 0f, 1f, 1f}),
+                List.of(),
+                new float[] {0f, 0f},
+                RibbonPathVerdict.LAID_AT_PAD)));
     }
 
     // A hand-built path list that reports whether the pass got past the guard. Only the walk the
@@ -79,6 +107,7 @@ final class CellRibbonPathRendererTests {
 
         @Override
         public Iterator<CellRibbonPath> iterator() {
+
             hasReadPaths = true;
             return ribbonPaths.iterator();
         }

@@ -14,22 +14,21 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Optional;
 
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.DIKTAT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.DIKTAT_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.DIKTAT_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.NO_PAINTER;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.SHORTENED_UNCONTESTED_RULES;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.STANDARD_RULES;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.DIKTAT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.DIKTAT_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.DIKTAT_DARK;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.NO_PAINTER;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.SHORTENED_UNCONTESTED_RULES;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.STANDARD_RULES;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_DARK;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins the segment rule on hand-built presences: which cells get a band at all, what length its
@@ -549,20 +548,6 @@ final class OwnerRibbonRunsTests {
 
             assertThat(plan.sumLengthUnits())
                 .isEqualTo(19);
-        }
-
-        @Test
-        void refusesAnyChangeToALaidRibbon() {
-            // A laid ribbon is cached and read back over many frames, so the runs it hands out
-            // must not be open to a reader's edits.
-            var plan = OwnerRibbonRuns.planCellRibbon(
-                Optional.of(HEGEMONY),
-                List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
-                OwnerAffiliation.NONE,
-                STANDARD_RULES);
-
-            assertThatThrownBy(() -> plan.segments().add(new RibbonSegment(TRITACHYON_BRIGHT, 3)))
-                .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 

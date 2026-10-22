@@ -23,18 +23,18 @@ import java.util.List;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildInputsFor;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_DARK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -30,7 +30,7 @@ public final class RibbonCellFixtures {
         new double[] {4000.0, 4000.0},
         new double[] {0.0, 4000.0});
 
-    public static final double[] SQUARE_CELL_SITE =new double[] {2000.0, 2000.0};
+    public static final double[] SQUARE_CELL_SITE = new double[] {2000.0, 2000.0};
 
     // The same cell with a tab hanging off its right side, too narrow to hold the band. The tab is
     // 400 across against a centreline inset of 400, so its two offset walls cross and what is left
@@ -39,7 +39,7 @@ public final class RibbonCellFixtures {
     //
     // Laid out from SQUARE_CELL_SITE, which is its own centre too: the tab adds room to one side
     // without moving where the cell is.
-    public static final List<double[]> NECKED_CELL =List.of(
+    public static final List<double[]> NECKED_CELL = List.of(
         new double[] {0.0, 0.0},
         new double[] {4000.0, 0.0},
         new double[] {4000.0, 1800.0},
@@ -52,24 +52,24 @@ public final class RibbonCellFixtures {
     // A cell with no room for the pad and the half width together anywhere along it, but room to
     // spare for the half width on its own - the cell the fallback to the shallower inset exists
     // for. A cell merely narrowed in one place is not this cell and never takes that fall.
-    public static final List<double[]> CELL_TOO_NARROW_FOR_THE_PAD =List.of(
+    public static final List<double[]> CELL_TOO_NARROW_FOR_THE_PAD = List.of(
         new double[] {0.0, 0.0},
         new double[] {500.0, 0.0},
         new double[] {500.0, 500.0},
         new double[] {0.0, 500.0});
 
-    public static final double[] CELL_TOO_NARROW_FOR_THE_PAD_SITE =new double[] {250.0, 250.0};
+    public static final double[] CELL_TOO_NARROW_FOR_THE_PAD_SITE = new double[] {250.0, 250.0};
 
     // A cell narrower than the band is wide. The pad given up entirely still leaves the half width
     // nowhere to go, so there is no shallower trace to fall back to - which is where forcing a band
     // onto a cell stops.
-    public static final List<double[]> CELL_NARROWER_THAN_THE_BAND =List.of(
+    public static final List<double[]> CELL_NARROWER_THAN_THE_BAND = List.of(
         new double[] {0.0, 0.0},
         new double[] {300.0, 0.0},
         new double[] {300.0, 300.0},
         new double[] {0.0, 300.0});
 
-    public static final double[] CELL_NARROWER_THAN_THE_BAND_SITE =new double[] {150.0, 150.0};
+    public static final double[] CELL_NARROWER_THAN_THE_BAND_SITE = new double[] {150.0, 150.0};
 
     // Fixtures only; never instantiated.
     private RibbonCellFixtures() {

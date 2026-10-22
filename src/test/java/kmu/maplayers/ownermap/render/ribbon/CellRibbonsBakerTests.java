@@ -104,7 +104,7 @@ final class CellRibbonsBakerTests {
     private MockedStatic<KmuOwnerMapRibbonSettings> settingsMock;
 
     // The diagnostics stand in for the same reason: a bake asks whether to lay the band-path
-    // overlay over its answer. No case here turns on it, so the stub's own false is the answer.
+    // overlay over its answer. The stub's own false is the answer unless a case turns it on.
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> diagnosticsSettingsMock;
 
     @BeforeEach
@@ -118,6 +118,7 @@ final class CellRibbonsBakerTests {
 
     @AfterEach
     void releaseBandSettings() {
+
         diagnosticsSettingsMock.close();
         settingsMock.close();
     }
@@ -160,7 +161,6 @@ final class CellRibbonsBakerTests {
             // those reads count what they walked onto the reserved row; in play the same reads
             // happen inside the refresh that mints the pass, on that beat's own row.
             var baker = bakeThrough(buildTwoDrawnCells());
-
             var bakeRow = RecordedCapture
                 .recordWhile(baker::bakeAllCellRibbons)
                 .findNode(BAKE_SECTION);
@@ -252,6 +252,55 @@ final class CellRibbonsBakerTests {
             assertThat(clusters.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL))
                 .isNotSameAs(ringBeforeReshape);
         }
+
+        @Test
+        void tracesAPathForEveryCellWhileTheOverlayIsOn() {
+            // The overlay rides the same loop as the bands, so every cell the pass bands is a cell
+            // it traces: a path missing beside a band would leave the one cell a reader looked at
+            // with nothing to compare its band against.
+            diagnosticsSettingsMock
+                .when(KmuOwnerMapDiagnosticsSettings::shouldShowOwnerMapRibbonPaths)
+                .thenReturn(true);
+
+            var clusters = buildTwoDrawnCells();
+            var expectedCellKeys = Set.of(BANDED_CELL, OTHER_BANDED_CELL);
+
+            bakeEveryCellThrough(clusters);
+
+            var actualCellKeys = clusters
+                .getPaintedCells()
+                .getRibbonPathByCellKey()
+                .keySet();
+
+            assertThat(actualCellKeys)
+                .isEqualTo(expectedCellKeys);
+        }
+
+        @Test
+        void clearsThePathsAPassTakenWithTheOverlayOnLeftBehind() {
+            // Nothing else empties them: a settings change rebuilds every cell, and the pass that
+            // runs with the overlay off has to be what takes the old paths down.
+            diagnosticsSettingsMock
+                .when(KmuOwnerMapDiagnosticsSettings::shouldShowOwnerMapRibbonPaths)
+                .thenReturn(true);
+
+            var clusters = buildTwoDrawnCells();
+
+            bakeEveryCellThrough(clusters);
+
+            diagnosticsSettingsMock
+                .when(KmuOwnerMapDiagnosticsSettings::shouldShowOwnerMapRibbonPaths)
+                .thenReturn(false);
+
+            bakeEveryCellThrough(clusters);
+
+            var actualRibbonPaths = clusters
+                .getPaintedCells()
+                .getRibbonPathByCellKey();
+
+            assertThat(actualRibbonPaths)
+                .isEmpty();
+        }
     }
 
     @Nested
@@ -320,6 +369,7 @@ final class CellRibbonsBakerTests {
     private static OwnerSourceFake buildSourcePlanningEveryCell() {
 
         var sourceFake = new OwnerSourceFake();
+
         sourceFake.answerRibbonPlanner(system -> ANY_PLAN);
 
         return sourceFake;
@@ -331,10 +381,12 @@ final class CellRibbonsBakerTests {
             SystemKey... cellKeys) {
 
         for (var cellKey : cellKeys) {
+
             clusters.getPaintedCells().putPaintedCell(
                 cellKey,
                 OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
         }
+
         return clusters;
     }
 
@@ -371,9 +423,11 @@ final class CellRibbonsBakerTests {
         var siteBySystemKey = new LinkedHashMap<SystemKey, double[]>();
 
         for (var cellKey : cellKeys) {
+
             systemKeyByCellKey.put(cellKey, cellKey);
             siteBySystemKey.put(cellKey, SQUARE_CELL_SITE);
         }
+
         var geometryCacheMock = mock(CellGeometryCache.class);
 
         when(geometryCacheMock.getSystemKeyByCellKey())
@@ -395,6 +449,7 @@ final class CellRibbonsBakerTests {
         for (var systemKey : systemKeys) {
             systems.add(buildSystem(systemKey.systemId()));
         }
+
         var sectorMock = mock(SectorAPI.class);
 
         when(sectorMock.getStarSystems())
@@ -410,6 +465,9 @@ final class CellRibbonsBakerTests {
     // Any owner, which the fixture also counts as making its system inhabited - the set the band
     // pass gates on. Which owner holds it decides nothing here.
     private static SystemOwner buildOwner() {
-        return new SystemOwner("hegemony", new ColourPair(Color.WHITE, Color.GRAY));
+
+        return new SystemOwner(
+            "hegemony",
+            new ColourPair(Color.WHITE, Color.GRAY));
     }
 }

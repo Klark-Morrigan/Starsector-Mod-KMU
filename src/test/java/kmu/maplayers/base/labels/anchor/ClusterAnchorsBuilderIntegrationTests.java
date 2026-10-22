@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
  * wrong. The placements feed the drawn names and the debug anchor overlay, so fitting whenever
  * either is switched on is what keeps them one shared computation - and skipping the fit when
  * neither is on is what keeps a rebuild off the sector's whole cluster geometry while nobody is
- * looking. The standing list is cleared ahead of that gate, so switching the names off drops the
+ * looking. The gate empties the standing list itself, so switching the names off drops the
  * placements already fitted rather than leaving the last pass's overlay frozen on the map.
  *
  * <p>What each path leaves labelling its list is pinned alongside, on every path rather than only
@@ -57,13 +57,14 @@ import static org.mockito.Mockito.when;
  *
  * <p>Every case is driven by plain keys and a fixture resolver pair, with no owner in sight: the
  * drive is the same for any layer that cuts the sector into clusters, and what a key means is the
- * layer's. What the search does with the pair is pinned by {@link ClusterAnchorPlacementTests}, so
- * it runs for real here and is only counted or read back off the placement. Cells are hand-built
+ * layer's. What the search does with the pair is pinned by {@link ClusterAnchorPlacementTests}; here
+ * the real search and the real cluster walk run under the drive, which is what makes this an
+ * integration suite, and their work is only counted or read back off the placement. Cells are hand-built
  * 2000-unit squares, comfortably clear of the fixed border channel, so which cells fuse into one
  * cluster is plain to read. The tuning read is stubbed at its seam, since it answers nothing
  * outside the game.
  */
-final class ClusterAnchorsBuilderTests {
+final class ClusterAnchorsBuilderIntegrationTests {
 
     // Three keys a layer might cut the sector by, meaning nothing here beyond which cells share one.
     private static final String NORTH = "north";
@@ -210,6 +211,7 @@ final class ClusterAnchorsBuilderTests {
         void countsThePlacementsItFitted() {
             // The number the fit's duration is read against - it is the rebuild's largest cost, and
             // what it cost per placement is the reading a sweep is tuned by.
+            var expectedLabelCount = 2L;
             var fitRow = RecordedCapture
                 .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     standingAnchors,
@@ -217,11 +219,46 @@ final class ClusterAnchorsBuilderTests {
                     buildInputsDrawingNames(PAIR_AND_LONE_KEYS)))
                 .findNode(FIT_ANCHORS_SECTION);
 
-            assertThat(fitRow.findCount(MapBuildCounters.LABELS).getTotals().getTotal())
-                .isEqualTo(2);
-            assertThat(fitRow.getWorstCall().getTag())
-                .contains("clusters=2")
-                .contains("keepOuts=");
+            var actualLabelCount = fitRow.findCount(MapBuildCounters.LABELS).getTotals().getTotal();
+
+            assertThat(actualLabelCount)
+                .isEqualTo(expectedLabelCount);
+        }
+
+        @Test
+        void tagsTheCallWithEveryMultiplicandOfItsCost() {
+            // A slow fit is read off which of its inputs grew, so every one of them rides on the
+            // call: two clusters, the three swept directions plus the two the fan always adds, one
+            // offset, the ten candidates that fan crosses over both clusters, the band fits those
+            // candidates actually spent (twenty-one apiece at this tolerance), and the three sites
+            // every box keeps clear of.
+            var expectedTag = "clusters=2 directions=5/3 offsets=1 candidates=10 bandFits=210 keepOuts=3";
+            var actualTag = RecordedCapture
+                .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    standingAnchors,
+                    cellGeometry,
+                    buildInputsDrawingNames(PAIR_AND_LONE_KEYS)))
+                .findNode(FIT_ANCHORS_SECTION)
+                .getWorstCall()
+                .getTag();
+
+            assertThat(actualTag)
+                .isEqualTo(expectedTag);
+        }
+
+        @Test
+        void opensNoFitRowWhenNamesAndTheOverlayAreBothOff() {
+            // The row times the sweep, and a gated-off pass runs none: a row opened anyway would
+            // read as a fit that cost nothing, hiding that no fit happened.
+            var actualHasFitRow = RecordedCapture
+                .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    standingAnchors,
+                    cellGeometry,
+                    buildInputsFittingNothing(Map.of(PAIRED_SYSTEM, NORTH))))
+                .hasNode(FIT_ANCHORS_SECTION);
+
+            assertThat(actualHasFitRow)
+                .isFalse();
         }
 
         @Test

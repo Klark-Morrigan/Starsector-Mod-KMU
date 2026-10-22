@@ -19,7 +19,7 @@ import java.util.Set;
  * <p>The colours are exported for a case to assert with, since what a case reads back is a run's
  * colour. The widths are not.
  */
-public final class RibbonPlanRulesFixtures {
+public final class OwnerRibbonRunsFixtures {
 
     public static final String HEGEMONY = "hegemony";
     public static final String TRITACHYON = "tritachyon";
@@ -80,6 +80,6 @@ public final class RibbonPlanRulesFixtures {
      */
     public static final Optional<String> NO_PAINTER = Optional.empty();
 
-    private RibbonPlanRulesFixtures() {
+    private OwnerRibbonRunsFixtures() {
     }
 }

@@ -116,6 +116,22 @@ final class RibbonPathTracerTests {
             assertThat(path.getPoints().get(0))
                 .containsExactly(250.0, 300.0);
         }
+
+        @Test
+        void holdsNoStretchOnACellNarrowerThanTheBandEvenWhileForcingIsOn() {
+            // Forcing gives up the pad and nothing else: the half width is what keeps the band's
+            // near edge off the border, so a cell narrower than the band has no shallower trace
+            // left to fall to and draws nothing whatever the setting says.
+            var path = RibbonPathTracer.traceLaidRibbonPath(
+                CELL_NARROWER_THAN_THE_BAND,
+                CELL_NARROWER_THAN_THE_BAND_SITE,
+                STYLE_FORCING_A_BAND);
+
+            var actualHoldsAStretch = path.hasStretchHoldingItsInset();
+
+            assertThat(actualHoldsAStretch)
+                .isFalse();
+        }
     }
 
     @Nested

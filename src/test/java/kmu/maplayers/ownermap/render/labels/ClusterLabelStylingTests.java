@@ -3,6 +3,8 @@ package kmu.maplayers.ownermap.render.labels;
 import kmlib.colour.ColourPair;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
+import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
+import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -10,6 +12,7 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.MapPaints;
@@ -24,10 +27,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.lazywizard.lazylib.ui.LazyFont;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -383,6 +388,127 @@ final class ClusterLabelStylingTests {
 
             assertThat(askedOwnerIds)
                 .containsExactly("F");
+        }
+    }
+
+    @Nested
+    class NewNameEstimatorResolver {
+
+        // The stand-in a name with no measurement is sized against, spelled out here so a case
+        // reads the shape the fit falls back to rather than the class that holds it.
+        private static final AspectLabelLengthEstimator STAND_IN_ESTIMATOR =
+            new AspectLabelLengthEstimator(6.0);
+
+        // One line, so a measured estimator's wrap hands back the whole name it was built over.
+        private static final int ONE_LINE = 1;
+
+        private final LazyFont fontMock = mock(LazyFont.class);
+
+        private MockedStatic<LazyFontCache> fontsMock;
+
+        @BeforeEach
+        void openTheFontSeam() {
+
+            fontsMock = mockStatic(LazyFontCache.class);
+            fontsMock
+                .when(() -> LazyFontCache.loadByFace(any()))
+                .thenReturn(fontMock);
+        }
+
+        @AfterEach
+        void closeTheFontSeam() {
+
+            fontsMock.close();
+        }
+
+        @Test
+        void measuresTheOwnersNameInTheLabelFont() {
+            // A resolved name and a loaded font are the one case the fit sizes a box around the
+            // glyphs that will draw, so the estimator must be built over that name.
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedLines = List.of("Tri-Tachyon");
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isInstanceOf(FontLabelLengthEstimator.class);
+            assertThat(actualEstimator.wrapIntoLines(ONE_LINE))
+                .isEqualTo(expectedLines);
+        }
+
+        @Test
+        void standsInWhenTheLabelFontDoesNotLoad() {
+            // A face that will not load still leaves a cluster to size: the stand-in keeps the debug
+            // band honest, and no name is drawn from it.
+            fontsMock
+                .when(() -> LazyFontCache.loadByFace(any()))
+                .thenReturn(null);
+
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isEqualTo(STAND_IN_ESTIMATOR);
+        }
+
+        @Test
+        void standsInWhenTheOwnerResolvesABlankName() {
+            // A blank name has no glyphs to measure, and a box sized to nothing would let the fit
+            // accept a placement no real name could take.
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "  ")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isEqualTo(STAND_IN_ESTIMATOR);
+        }
+
+        @Test
+        void spellsTheSelectedOwnersNameUnderTheSpotlightKey() {
+            // Under a filter the spotlit clusters share a synthetic key the reading cannot name, so
+            // the name they carry is the selected owner's.
+            var spotlightKey = SpotlitOwners.createSpotlitOwner(OWNER_F.palette()).ownerId();
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                new ContentInputs(
+                    "F",
+                    ElementStyleAdjustment.NONE,
+                    ElementStyleAdjustment.NONE,
+                    OwnerNameFormatChoice.FULL,
+                    false),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedLines = List.of("Tri-Tachyon");
+            var actualEstimator = resolver.apply(spotlightKey);
+
+            assertThat(actualEstimator.wrapIntoLines(ONE_LINE))
+                .isEqualTo(expectedLines);
+        }
+
+        @Test
+        void measuresEachOwnerOnceAcrossItsClusters() {
+            // An owner holding several clusters asks once per cluster, and its wrap is the same
+            // every time, so the second ask is handed the estimator the first one measured.
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedEstimator = resolver.apply("F");
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isSameAs(expectedEstimator);
         }
     }
 

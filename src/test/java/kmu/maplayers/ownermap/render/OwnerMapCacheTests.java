@@ -29,7 +29,6 @@ import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;
@@ -598,17 +597,8 @@ final class OwnerMapCacheTests {
         seams.openSeam(ClusterAnchorsBuilder.class);
         seams.openSeam(LabelsBuilder.class);
 
-        // The fit is stood in for, so the snapshot only has to hand it something: a stand-in
-        // whose inputs nothing reads.
-        var snapshotMock = mock(ClusterLabelStylingSnapshot.class);
-        var labelSnapshotMock = seams.openSeam(ClusterLabelStylingSnapshot.class);
-
-        labelSnapshotMock
-            .when(() -> ClusterLabelStylingSnapshot.resolveFrom(any(), any()))
-            .thenReturn(snapshotMock);
-        labelSnapshotMock
-            .when(() -> ClusterLabelStylingSnapshot.resolveForTracing(any(), any(), any(), any(), any()))
-            .thenReturn(snapshotMock);
+        // The label styling snapshot is left real: it is a value read off the stood-in build, and
+        // the fit it is handed to is stood in for, so nothing past it resolves a font or a name.
 
         // Either view's styling reads its theme and its border trace off settings no test JVM
         // holds; the styling itself runs for real over what these answer.

@@ -61,6 +61,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
 import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.CELL_LESS_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.DISTANT_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
@@ -297,7 +298,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             // The band starts above the cell's own site, so the marked system needs one; the
             // shared geometry fixture records none, every other case being about shapes.
@@ -335,7 +336,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -367,7 +368,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -412,7 +413,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -444,7 +445,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -881,7 +882,7 @@ public final class IncrementalOwnerRefreshTests {
                 () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     any(),
                     any(),
-                    argThat(styling -> styling.labelFace() == STANDING_LABEL_FACE)));
+                    argThat(fitInputs -> fitInputs.labelFace() == STANDING_LABEL_FACE)));
         }
 
         @Test
@@ -1023,7 +1024,7 @@ public final class IncrementalOwnerRefreshTests {
             1);
     }
 
-    // The distant cell's own ring: the band-sized square above, moved clear of every other
+    // The distant cell's own ring: the band-sized SQUARE_CELL, moved clear of every other
     // fixture so nothing can reach it by accident.
     private static List<double[]> buildDistantBandSizedCell() {
 
@@ -1032,17 +1033,6 @@ public final class IncrementalOwnerRefreshTests {
             new double[] {14000.0, 10000.0},
             new double[] {14000.0, 14000.0},
             new double[] {10000.0, 14000.0});
-    }
-
-    // A cell large enough to hold the authored band clear of its own border, so a re-bake that
-    // ran comes back with runs rather than with the empty band a collapsed inset would give.
-    private static List<double[]> buildBandSizedCell() {
-
-        return List.of(
-            new double[] {0.0, 0.0},
-            new double[] {4000.0, 0.0},
-            new double[] {4000.0, 4000.0},
-            new double[] {0.0, 4000.0});
     }
 
     // A clusters holding the given systems, every one of which it also counts settled - the only

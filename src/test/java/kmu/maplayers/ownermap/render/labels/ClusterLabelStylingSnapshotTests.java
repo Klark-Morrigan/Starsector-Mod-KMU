@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.labels;
 import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 
 import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -11,6 +12,7 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
@@ -221,11 +223,77 @@ final class ClusterLabelStylingSnapshotTests {
         @Test
         void cutsTheClustersByOwnerId() {
             // The fit clusters cells by the key it is handed, so the owner tier hands it the owner
-            // ID its fills fuse by - a spotlight key included, so the names trace as the fills do.
+            // ID its fills fuse by, and the names trace as the fills do.
             var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
 
             assertThat(fitInputs.ownerKeyBySystemKey())
                 .isEqualTo(Map.of(buildCellKey("corvus"), SPOTLIT_OWNER_ID));
+        }
+
+        @Test
+        void cutsAProductionBuildBySpotlightKeyWhereItsFillsFuseByOne() {
+            // A filtered build fuses the spotlit cells under one synthetic key, so the fit has to be
+            // handed that key rather than the selected owner's ID, or the solid and contested
+            // clusters would merge under one name the fills keep apart.
+            var spotlitOwner = SpotlitOwners.createSpotlitOwner(new ColourPair(Color.BLUE, Color.DARK_GRAY));
+            var snapshot = ClusterLabelStylingSnapshot.resolveFrom(
+                buildClusters(
+                    Map.of(buildCellKey("corvus"), spotlitOwner),
+                    buildViewReading(),
+                    buildSpotlightPicks()),
+                LABEL_FACE);
+
+            var expectedOwnerKeys = Map.of(buildCellKey("corvus"), spotlitOwner.ownerId());
+            var actualOwnerKeys = snapshot.createFitInputs().ownerKeyBySystemKey();
+
+            assertThat(actualOwnerKeys)
+                .isEqualTo(expectedOwnerKeys);
+        }
+
+        @Test
+        void loadsNoFontUntilTheResolversAreAsked() {
+            // A pass whose two consumers are both off fits nothing, so handing over the inputs must
+            // not reach the label font: the supplier is what defers it.
+            try (var fontsMock = mockStatic(LazyFontCache.class)) {
+
+                buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+
+                fontsMock.verifyNoInteractions();
+            }
+        }
+
+        @Test
+        void loadsTheSnapshotsFaceOnceTheResolversAreAsked() {
+
+            try (var fontsMock = mockStatic(LazyFontCache.class)) {
+
+                buildTracedSnapshot(ContentInputs.createEmpty())
+                    .createFitInputs()
+                    .labelResolversSource()
+                    .get();
+
+                fontsMock.verify(() -> LazyFontCache.loadByFace(LABEL_FACE));
+            }
+        }
+
+        @Test
+        void shadesEachOwnerByTheSnapshotsOwnPaints() {
+            // The resolvers are this snapshot's, so a name shades in the palette its owner was
+            // painted in rather than one the fit drive could look up for itself.
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+            var expectedColour = Color.BLUE;
+
+            try (var fontsMock = mockStatic(LazyFontCache.class)) {
+
+                var actualColour = fitInputs
+                    .labelResolversSource()
+                    .get()
+                    .labelColourByOwner()
+                    .apply(SPOTLIT_OWNER_ID);
+
+                assertThat(actualColour)
+                    .isEqualTo(expectedColour);
+            }
         }
 
         @Test
