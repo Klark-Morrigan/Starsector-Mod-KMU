@@ -1,7 +1,5 @@
 package kmu.maplayers.base.labels.anchor;
 
-import kmlib.math.geometry.Limits;
-import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
 import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
@@ -53,7 +51,7 @@ public final class ClusterAnchorRenderer {
     // (thickness zero) and the sub-unit residue of the thickness bisection both have no
     // meaningful area to fill, so only the line shows. A rendering floor, distinct from
     // the geometric degenerate-length guard (kmlib's Limits.MIN_EDGE_LENGTH) a segment's
-    // own direction is checked against below - the two happen to differ by orders of
+    // own direction is checked against - the two happen to differ by orders of
     // magnitude, so conflating them would silently change one when tuning the other.
     private static final float MIN_BAND_THICKNESS = 1f;
 
@@ -217,55 +215,33 @@ public final class ClusterAnchorRenderer {
         return scaled;
     }
 
-    // The centreline's unit perpendicular, shared by the band's edges and its lane rules,
-    // or null when the segment is too short to take a direction from. Reuses kmlib's
-    // degenerate-vector guard (Points.computeUnitVector against Limits.MIN_EDGE_LENGTH)
-    // rather than re-deriving the same hypot-and-divide check locally, then rotates the
-    // unit direction a quarter turn to its perpendicular.
-    private static float[] unitNormalOf(Segment segment) {
-
-        var unit = Points.computeUnitVector(
-            segment.endX() - segment.startX(),
-            segment.endY() - segment.startY(),
-            Limits.MIN_EDGE_LENGTH);
-
-        return unit == null
-            ? null
-            : new float[] {
-                (float) -unit[1],
-                (float) unit[0]};
-    }
-
-    // Draws the divider rules between a multi-line band's lanes: lineCount minus one lines
-    // parallel to the centreline, evenly spaced across the girth, so a two- or three-line
-    // fit reads as stacked lines rather than one thick bar. Nothing for a single line.
+    // Draws the divider rules between a multi-line band's lanes: one line per lane boundary,
+    // parallel to the centreline, so a two- or three-line fit reads as stacked lines rather than
+    // one thick bar. Nothing for a single line. The lanes come from the segment, as the band's
+    // corners do, so the rules cannot step across it any differently from the box they divide.
     private static void drawLineRules(
             Segment segment,
             float thickness,
             int lineCount,
             float factor) {
 
-        if (lineCount < 2) {
-            return;
-        }
-        var normal = unitNormalOf(segment);
-        if (normal == null) {
+        var dividers = segment.computeLaneDividers(thickness, lineCount);
+
+        if (dividers.isEmpty()) {
             return;
         }
         // One segment per rule, packed as the run the rules are drawn from.
-        var rules = new float[(lineCount - 1) * GlVertexRuns.FLOATS_PER_SEGMENT];
+        var rules = new float[dividers.size() * GlVertexRuns.FLOATS_PER_SEGMENT];
         var next = 0;
 
-        for (var rule = 1; rule < lineCount; rule++) {
+        for (var divider : dividers) {
 
-            // Step from one edge (-half) across the girth in even lane widths.
-            var offset = -thickness / 2f + thickness * rule / lineCount;
-
-            rules[next++] = (float) (segment.startX() + normal[0] * offset);
-            rules[next++] = (float) (segment.startY() + normal[1] * offset);
-            rules[next++] = (float) (segment.endX() + normal[0] * offset);
-            rules[next++] = (float) (segment.endY() + normal[1] * offset);
+            rules[next++] = (float) divider.startX();
+            rules[next++] = (float) divider.startY();
+            rules[next++] = (float) divider.endX();
+            rules[next++] = (float) divider.endY();
         }
+
         GlRuns.drawScaled(GL11.GL_LINES, rules, factor);
     }
 

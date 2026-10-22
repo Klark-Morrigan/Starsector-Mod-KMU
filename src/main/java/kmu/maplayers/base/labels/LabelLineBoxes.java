@@ -84,16 +84,14 @@ public final class LabelLineBoxes {
             LabelsBuilder.LabelPlan line,
             LineWidthMeasurer measurer) {
 
-        var halfLength = measurer.measureLineWidth(line.text(), line.fontHeight()) / 2;
-        var slantRadians = Math.toRadians(line.slantDegrees());
-        var halfX = Math.cos(slantRadians) * halfLength;
-        var halfY = Math.sin(slantRadians) * halfLength;
+        var lineLength = measurer.measureLineWidth(line.text(), line.fontHeight());
 
-        return new Segment(
-            line.hangX() - halfX,
-            line.hangY() - halfY,
-            line.hangX() + halfX,
-            line.hangY() + halfY)
+        return Segment
+            .createCentredOn(
+                line.hangX(),
+                line.hangY(),
+                Math.toRadians(line.slantDegrees()),
+                lineLength)
             .computeBandCorners(line.fontHeight());
     }
 }

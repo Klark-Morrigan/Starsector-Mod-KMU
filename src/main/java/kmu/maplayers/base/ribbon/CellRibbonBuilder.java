@@ -207,7 +207,19 @@ public final class CellRibbonBuilder {
         // Forced, it is the names that give way and only the names: the path's own overrun
         // stretches stay carved, since a band laid across one hangs over the border of the very
         // cell it reports on - which is what the half width exists to prevent.
-        return selectLongestClearStretch(path.fuseStretchAcrossStart(
+        //
+        // The whole band goes on the one longest stretch, with the rest of the ring staying bare.
+        // A band scattered round the ring in pieces is not the readout it looks like: a reader
+        // cannot tell one run interrupted by a name from two runs of one colour, so a band split
+        // across stretches loses the very proportions the carve was protecting and litters the cell
+        // for it. One stretch means one shape, at the price of spending only part of a ring the
+        // names cut into halves, which is the cheaper of the two losses.
+        //
+        // Taken over the fused stretches, never the carved ones: a cell whose name sits anywhere but
+        // its top centre has its longest run arrive as the two stretches either side of the path's
+        // start, and picking between those two judges the cell on whichever half happened to be
+        // bigger.
+        return RingStretch.selectLongest(path.fuseStretchAcrossStart(
             clearArcs.isEmpty()
                 ? path.findStretchesHoldingItsInset()
                 : clearArcs));
@@ -237,34 +249,6 @@ public final class CellRibbonBuilder {
         return new RibbonBandLayout(
             path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld),
             lengthUnitWorld);
-    }
-
-    // The one stretch of ring the whole band is laid on: the longest left clear, with the rest of
-    // the ring staying bare.
-    //
-    // A band scattered round the ring in pieces is not the readout it looks like: a reader
-    // cannot tell one run interrupted by a name from two runs of one colour, so a band split
-    // across stretches loses the very proportions the carve was protecting and litters the cell
-    // for it. One stretch means one shape, and a cell can be read at a glance again - at the
-    // price of spending only part of a ring the names cut into halves, which is the cheaper of
-    // the two losses.
-    //
-    // Taken over the stretches the path has already fused, never the carved ones: a cell whose
-    // name sits anywhere but its top centre has its longest run arrive as the two stretches
-    // either side of the path's start, and picking between those two judges the cell on
-    // whichever half happened to be bigger.
-    private static RingStretch selectLongestClearStretch(List<RingStretch> clearStretches) {
-
-        RingStretch longest = null;
-
-        for (var stretch : clearStretches) {
-
-            if (longest == null || stretch.computeLength() > longest.computeLength()) {
-                longest = stretch;
-            }
-        }
-
-        return longest;
     }
 
     // How much of the ring one width is worth on this cell: the authored width, unless the whole
@@ -302,18 +286,15 @@ public final class CellRibbonBuilder {
             RibbonBandLayout layout,
             RibbonStyle style) {
 
-        var spans = new ArrayList<List<double[]>>(plan.segments().size());
-        var cursor = layout.startArcLength();
+        var runLengths = new double[plan.segments().size()];
+
+        for (var segment = 0; segment < runLengths.length; segment++) {
+            runLengths[segment] = plan.segments().get(segment).lengthUnits() * layout.lengthUnitWorld();
+        }
 
         // A run's stretch carries the corners the path turns at within it, not just its two ends,
         // so a run spanning a corner of the cell turns with it rather than cutting across.
-        for (var segment : plan.segments()) {
-
-            var runEnd = cursor + segment.lengthUnits() * layout.lengthUnitWorld();
-
-            spans.add(path.collectPointsBetween(cursor, runEnd));
-            cursor = runEnd;
-        }
+        var spans = path.collectSpansEndToEnd(layout.startArcLength(), runLengths);
 
         return collectStrokedBands(plan, PolylineBands.strokeSpansToTriangles(
             spans,

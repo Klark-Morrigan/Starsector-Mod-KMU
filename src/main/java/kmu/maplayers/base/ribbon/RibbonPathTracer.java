@@ -1,14 +1,12 @@
 package kmu.maplayers.base.ribbon;
 
 import kmlib.math.geometry.RingPath;
-import kmlib.math.geometry.RingStretch;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.ribbon.overlay.CellRibbonPath;
 import kmu.maplayers.base.ribbon.overlay.RibbonPathVerdict;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -153,30 +151,16 @@ public final class RibbonPathTracer {
     // outline". A ring folded outside the cell is the sharpest case: drawn whole it shows a line
     // leaving the shape it reports on, where cut it shows that ring as outline no band was ever
     // going to use.
+    //
+    // Each stretch carries the corners the ring turns at within it, so a stretch spanning a corner
+    // bends with the cell rather than cutting across it.
     private static CellRibbonPath flattenTracedPath(RingPath path, RibbonPathVerdict verdict) {
 
         return new CellRibbonPath(
-            collectStretchPolylines(path, path.findStretchesHoldingItsInset()),
-            collectStretchPolylines(path, path.findStretchesFailingItsInset()),
+            GlVertexRuns.flattenLoops(path.collectStretchPoints(path.findStretchesHoldingItsInset())),
+            GlVertexRuns.flattenLoops(path.collectStretchPoints(path.findStretchesFailingItsInset())),
             GlVertexRuns.flattenVertices(List.of(path.computePointAt(PATH_START))),
             verdict);
-    }
-
-    // One polyline per stretch, each carrying the corners the ring turns at within it so a stretch
-    // spanning a corner bends with the cell rather than cutting across it.
-    private static List<float[]> collectStretchPolylines(
-            RingPath path,
-            List<RingStretch> stretches) {
-
-        var polylines = new ArrayList<float[]>(stretches.size());
-
-        for (var stretch : stretches) {
-
-            polylines.add(GlVertexRuns.flattenVertices(
-                path.collectPointsBetween(stretch.startArcLength(), stretch.endArcLength())));
-        }
-
-        return polylines;
     }
 
     // One cell's ring as the ladder walks it: everything a rung is traced from, where the rungs
