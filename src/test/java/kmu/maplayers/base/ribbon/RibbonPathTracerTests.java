@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>The band pass is pinned at its two ends, since between them sits the whole of what a cell
  * short of room draws: a ring that holds the pad is traced at it, and a ring that holds it nowhere
- * is traced at the shallower inset or holds nothing, depending on the player's answer alone. The
+ * is traced at the shallower inset or holds nothing, depending on the style's answer alone. The
  * third case is what separates those two - a ring holding the pad everywhere but one neck takes
  * no step down, since the fall is for a cell with no room anywhere.
  *

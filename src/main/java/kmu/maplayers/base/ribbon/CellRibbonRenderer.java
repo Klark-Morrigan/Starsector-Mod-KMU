@@ -19,14 +19,12 @@ import java.util.Collection;
  * patch of coloured triangles, laid inside the cell's own ring.
  *
  * <p>Pure GL emission over already-baked {@link CellRibbon}s - it binds a colour and scales world
- * coordinates into map space, and knows nothing of who is present in a system, how a run's length
+ * coordinates into map space, and knows nothing of why a run is the colour it is, how its length
  * was settled, or which cells were asked for a band at all. That is what makes a band cost a draw
  * call rather than a walk: everything a band says was decided at rebuild.
  *
- * <p>Drawn from the band that clears the map's own nebula sprites, and before the cluster names in
- * it. A band is a readout of a system rather than decoration over it, so it must not be fogged by
- * the sprites the map lays over the sector - while a name, which is the coarser statement of the
- * two, still wins where the two would overlap.
+ * <p>Which render band it is called from, and what the layer draws after it, are the layer's: this
+ * draws whenever it is called and orders itself against nothing.
  *
  * <p>Triangles rather than wide lines, and scaled by the map factor like the fills: the band is
  * world-sized throughout, so it holds the same share of its cell's outline at every zoom and the
@@ -46,8 +44,8 @@ public final class CellRibbonRenderer {
     /**
      * Draws every cell's band for one map frame.
      *
-     * <p>Most of the sector carries no band - one is drawn only where something is present in the
-     * system - so the walk covers the settled cells and nothing else. A fully faded-out map emits
+     * <p>Most of the sector carries no band - one is drawn only where the layer planned runs for the
+     * cell - so the walk covers the banded cells and nothing else. A fully faded-out map emits
      * nothing rather than every run at zero effective alpha, which would cost the whole pass for
      * pixels that cannot appear.
      *

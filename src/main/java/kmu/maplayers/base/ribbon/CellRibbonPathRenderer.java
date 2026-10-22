@@ -24,7 +24,7 @@ import java.util.List;
  * from.
  *
  * <p>The overlay answers the one question the bands themselves cannot. A cell drawing nothing is
- * the sector's normal state and also every one of its failures - nothing present to report, a ring
+ * the sector's normal state and also every one of its failures - no runs planned, a ring
  * with no room, a name lying across it - and all of them look identical on the map. The path is
  * what was there underneath: where a band would have run, and by
  * {@link DiagnosticPalette}'s ramp whether the ring ever offered it room.
@@ -67,7 +67,7 @@ public final class CellRibbonPathRenderer {
     /**
      * Draws every cell's band path for one map frame.
      *
-     * <p>Empty unless the player has the overlay on - the bake hands over no path for any cell
+     * <p>Empty unless the overlay is on - the bake hands over no path for any cell
      * while it is off - so the normal map pays an empty-map check and nothing else, and no setting
      * is read per frame. A fully faded-out map emits nothing rather than every path at zero
      * effective alpha.

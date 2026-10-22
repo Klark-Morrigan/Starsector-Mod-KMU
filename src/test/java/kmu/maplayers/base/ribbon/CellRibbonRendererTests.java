@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mockStatic;
  * frame that goes on to draw cannot be watched from the band list without a context. Standing the
  * pass down over a scale is what it must never do: every size a band carries is settled in the
  * world, so how small it lands on screen is the map's own scaling of it and no judgement of this
- * pass - and a band withheld looks exactly like a system with nothing present in it, which is the
+ * pass - and a band withheld looks exactly like a cell the layer planned no runs for, which is the
  * one thing the readout exists to tell apart.
  */
 final class CellRibbonRendererTests {

@@ -501,11 +501,11 @@ Each view injects into the framework's hover box the explanation of the mechanic
 
 ### The presence ribbon
 
-The band's plan,
-its gate and its draw are the tier's:
-the [runs and their gate](../ownermap/ribbon/README.md)
-and the [bake](../ownermap/render/ribbon/README.md),
-over the substrate's [ring geometry and draw](../base/ribbon/README.md).
+The band's runs and its gate are the tier's:
+the [runs](../ownermap/ribbon/README.md)
+and the [bake](../ownermap/render/ribbon/README.md).
+Its geometry and draw are the substrate's,
+in [`base.ribbon`](../base/ribbon/README.md).
 What this layer supplies is where a band's order comes from,
 which is each painting mechanic's own business
 and keeping it there is what makes one band mean one thing on every view:
@@ -518,6 +518,15 @@ since the claim walk never sees a hidden or player-owned market
 and a band is the only thing that reports those systems.
 Which of the two answers for a cell is the view's own call,
 made through the same seam it picks its holder source and its hover box by.
+
+Where the bands are drawn is this layer's too:
+`PoliticalMapBandLayoutReader` reads the player's **Nebula draw order** setting for the presence bands into the `OwnerMapBandLayout` it hands the tier.
+It ships as **Below**,
+with the fills and borders the bands are laid on,
+and only the names rise clear of the nebulae:
+the nebulae decide whether a reader gets a word at all,
+where a shape they dim is merely quieter.
+The setting exists because how much a dimmed band loses depends on the palette it is read against.
 
 ### Sidebar controls
 

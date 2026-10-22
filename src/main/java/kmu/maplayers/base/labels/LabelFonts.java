@@ -18,7 +18,7 @@ import java.util.Set;
  * cluster, far past the face's glyph-atlas resolution, so only the highest-resolution
  * antialiased face the game ships ({@code insignia42LTaa}, a 42px atlas) stays clean
  * when magnified that far; a smaller atlas turns blocky. Where the installed atlas cannot draw
- * a faction's name - a localisation leaves that cut as vanilla ships it - the sector settles
+ * the text a label is held to - a localisation leaves that cut as vanilla ships it - the sector settles
  * the labels on the next cut down that can, blockier when stretched but readable. Whichever face that
  * is, KMLib's {@code LazyFontCache} loads it once and logs a failed load once, shared with any other
  * mod that draws cached text.
@@ -30,7 +30,8 @@ public final class LabelFonts {
     // largest atlas survives that magnification cleanly.
     private static final StarsectorFont MAP_LABEL_FONT = StarsectorFont.VANILLA_INSIGNIA_42;
 
-    // A label draws a faction's name and nothing else, so the face is held to faction names alone.
+    // A label draws a name and nothing else, so the face is held to the one probed kind of text a
+    // label draws rather than to every string the mod ships.
     private static final Set<ProbedText> MAP_LABEL_TEXTS = Set.of(ProbedText.FACTION_NAMES);
 
     // Settles only; never instantiated.

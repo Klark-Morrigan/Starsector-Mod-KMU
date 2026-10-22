@@ -309,7 +309,7 @@ final class LabelsBuilderTests {
 
         @Test
         void skipsAClusterWithNoWrappedName() {
-            // An accepted box whose fit ran on the aspect stand-in (font or faction name
+            // An accepted box whose fit ran on the aspect stand-in (font or owner name
             // unresolved) carries no lines, so no label is planned for it - the debug band
             // is that cluster's only footprint.
             var anchors = List.of(buildAcceptedAnchor(

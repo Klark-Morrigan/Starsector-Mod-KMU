@@ -37,7 +37,7 @@ see the [mod README](../../../../../../../README.md) for project context.
   `LabelsBuilder`,
   `LabelRenderer`,
   the shared `LabelFonts`,
-  which settles the face the names ask for against the sector's faction names,
+  which settles the face the names ask for against the text they draw,
   and `LabelLineBoxes`,
   which reads the room the drawn lines take.
 - `base.labels.anchor` -
@@ -79,7 +79,7 @@ the tuning it ran with,
 the geometry revision it ran against,
 and the face every name was measured in -
 the three things that invalidate every placement at once rather than any cluster's in particular.
-The layer's rebuild is what reads the live tuning,
+The fit drive below is what reads the live tuning,
 so it is what labels the list,
 on every path -
 including the ones that fit nothing,
@@ -106,7 +106,7 @@ and the wrap is compared against the name the box was measured for,
 so a renamed owner re-fits rather than drawing a box cut for the old name.
 A collapsed placement fitted no box and so recorded no name to compare,
 and is always searched again.
-What may be offered at all is the caller's decision,
+What may be offered at all is the fit drive's decision,
 taken on the fingerprint:
 a mismatch offers nothing and the rebuild is total.
 
@@ -195,9 +195,10 @@ never one cluster's:
 a name sits wherever its own cluster is roomiest,
 and that can be over a neighbour's cells entirely,
 so whoever a box belongs to says nothing about whose way it is in.
-What reads them is the tier above,
-laying its own shapes clear of the names under a player setting picking which reading it takes -
-which is also why those shapes are baked after the placements are fitted
+What reads them is [`base.ribbon`](../ribbon/README.md)'s bands,
+carved clear of the names,
+with the layer picking which reading it hands over -
+which is also why the bands are baked after the placements are fitted
 rather than as their cells are shaped.
 
 ## Which names a re-fit moved
@@ -251,7 +252,7 @@ The *names and colours* a label reads and draws in,
 and the keys its clusters are cut by.
 Those belong to the tiers above,
 which resolve them against their own vocabulary and hand them to the fit drive as one `ClusterAnchorFitInputs`;
-the owner-painted tier's half sits in `ownermap.render.labels`.
+for a layer painted by owner that is [the owner-map tier](../../ownermap/README.md).
 The *fills and borders* this overlay sits over are built and drawn by whichever layer painted them;
 the anchor search clips against the same border trace those fills use,
 so a name stays inside the outline the player sees.

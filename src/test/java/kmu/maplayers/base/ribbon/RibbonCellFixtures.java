@@ -17,7 +17,7 @@ import java.util.List;
  * an anchor outside itself and falls back to a corner, which reads as a band starting in the wrong
  * place rather than as the fixture mistake it is.
  *
- * <p>Public because the owner tier's bake suites lay their bands over the same shapes.
+ * <p>Public because suites outside this package lay their bands over the same shapes.
  */
 public final class RibbonCellFixtures {
 

@@ -15,8 +15,8 @@ import java.util.List;
  * diagnostic that traced a cell any differently from the pass it is meant to check would agree
  * with it only by coincidence. What they ask for differs and that is all: the band pass wants the
  * path it may lay on, while the overlay wants the path and what the cell's room lets a band do
- * with it - including the fall the player has switched off, which is the whole of why that cell
- * draws nothing.
+ * with it - including the fall the style switches off, which is the whole of why that cell draws
+ * nothing.
  *
  * <p>Pure over a ring, an anchor and the sizes - no sector, no settings read, no GL - so a cell
  * roomy enough for the pad, one narrowed to a neck in one place, one too narrow for the pad
@@ -69,7 +69,7 @@ public final class RibbonPathTracer {
      * The same path with the reading the overlay colours by, and traced whether or not a band
      * would be laid on it.
      *
-     * <p>The shallower inset is walked here even where the player has the fall switched off, which
+     * <p>The shallower inset is walked here even where the style switches the fall off, which
      * is the one way this differs from the pass above and the reason the overlay is worth having:
      * a cell refused for want of the pad and a cell with nothing to report both draw nothing, and
      * only this can tell them apart.
@@ -99,7 +99,7 @@ public final class RibbonPathTracer {
         if (!unpaddedPath.hasStretchHoldingItsInset()) {
             return CellRibbonPath.NONE;
         }
-        // The path stands either way; what the player's answer decides is whether a band goes on
+        // The path stands either way; what the style's answer decides is whether a band goes on
         // it. Reported rather than withheld, so a cell left bare by that answer is visibly a cell
         // the setting emptied rather than a system with nothing to say.
         return flattenTracedPath(

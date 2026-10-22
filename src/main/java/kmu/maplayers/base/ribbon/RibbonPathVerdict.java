@@ -5,8 +5,8 @@ package kmu.maplayers.base.ribbon;
  *
  * <p>Three outcomes on one axis - what happens to a band on this ring - rather than two facts
  * crossed. Which inset the path came back at and whether a band may use it are the same question
- * asked once: a cell too narrow for the authored inset gets a band only where the player has said
- * a planned band is always drawn, so the inset the trace fell to and the answer the map gives
+ * asked once: a cell too narrow for the authored inset gets a band only where the style says a
+ * planned band is always drawn, so the inset the trace fell to and the answer the map gives
  * cannot be read apart.
  *
  * <p>Only ever read by the diagnostic overlay. The band pass asks for a path and lays on whatever
@@ -25,7 +25,7 @@ public enum RibbonPathVerdict {
     LAID_UNPADDED,
 
     /**
-     * No band lies on this ring: either the pad would have had to be given up and the player has
+     * No band lies on this ring: either the pad would have had to be given up and the style has
      * that off, or the cell is narrower than the band is wide, where there is no shallower trace
      * left to fall back to.
      */

@@ -7,8 +7,8 @@ import java.util.List;
  * into the stretches it may use and the stretches its own shape denied it, plus what the cell's
  * room lets a band do with the ring as a whole.
  *
- * <p>Held for the overlay alone, and only while the player has it on. A cell that draws no band -
- * because nothing the layer counts is present in it, or because its ring had no room - shows
+ * <p>Held for the overlay alone, and only while the overlay is on. A cell that draws no band -
+ * because the layer planned no runs for it, or because its ring had no room - shows
  * nothing at all on the map, and the two look identical to a reader and to whoever is tuning the
  * sizes. This is the path underneath that silence: it says where a band would have gone and, in
  * its verdict's colour, which of the two kinds of nothing the cell is.

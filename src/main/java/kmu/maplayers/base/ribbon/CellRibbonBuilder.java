@@ -18,7 +18,7 @@ import java.util.List;
  * <p>Everything the plan states is proportional - a run is so many widths long - and everything
  * this settles is the cell's own: where the path lets a band run, and how much of it one width may
  * take before the band would outrun it. Splitting the two keeps the counting rule free of rings
- * and the geometry free of standings, with neither needing the other's inputs.
+ * and the geometry free of counts, with neither needing the other's inputs.
  *
  * <p>Handed the path rather than tracing one, because a path outlives the bake that traced it -
  * a ring moves when its cell is re-shaped, while a bake runs whenever a cluster name may have
@@ -49,8 +49,8 @@ public final class CellRibbonBuilder {
      * answer rather than a failure. A cell narrowed to a neck in one place is not that cell: the
      * neck costs its own stretch of ring and the band goes on the longest of what is left.
      *
-     * <p>The other way a cell comes back bare - it planned no band at all, nothing the layer counts
-     * being present in it - is answered before this, by whatever traced the path:
+     * <p>The other way a cell comes back bare - it planned no band at all, the layer counting
+     * nothing in it - is answered before this, by whatever traced the path:
      * such a cell must not pay for a ring walk nothing would be laid on. So the plan handed over
      * here is one with runs in it.
      *
@@ -117,7 +117,7 @@ public final class CellRibbonBuilder {
     }
 
     // The one stretch of the ring the band goes on, or nothing where the names cover the whole of
-    // it and the player would rather keep them clear than draw the band.
+    // it and the style keeps them clear rather than drawing the band.
     private static RingStretch findBandStretch(
             RingPath path,
             List<List<double[]>> nameBoxes,
@@ -131,8 +131,8 @@ public final class CellRibbonBuilder {
         var clearArcs = path.findClearArcs(nameBoxes);
 
         // A ring wholly under the names is the one case where keeping the band clear of them and
-        // drawing it at all cannot both be honoured, so one of the two gives way and which is the
-        // player's answer. By default the clearance does: a cell reporting nothing and a cell
+        // drawing it at all cannot both be honoured, so one of the two gives way and the style
+        // says which. By default the clearance does: a cell reporting nothing and a cell
         // refused the room to report look identical to a reader, and only one of them is true.
         if (clearArcs.isEmpty() && !style.isBandAlwaysDrawn()) {
             return null;

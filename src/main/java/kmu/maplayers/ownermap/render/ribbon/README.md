@@ -28,8 +28,8 @@ see the [mod README](../../../../../../../../README.md) for project context.
 | Class | Scope | Job |
 | --- | --- | --- |
 | `CellRibbonsBaker` | the pass | drives the loop over cells and writes each band back |
-| `CellRibbonSource` | the pass | holds what a pass is settled from; answers one cell at a time |
-| `RibbonBakeSurface` | the pass | the drawn map bands go on: which cells take one, where each starts, the room it keeps clear of, the rings already traced |
+| `CellRibbonSource` | the pass | holds what a pass is settled from; refuses the cells that take no band and answers the rest one at a time |
+| `RibbonBakeSurface` | the pass | the drawn map bands go on: the inhabitation gate, where each band starts, the room it keeps clear of, the rings already traced |
 | `RibbonStyleReader` | the pass | reads the player's band knobs into one `RibbonStyle` |
 
 `CellRibbonsBaker` runs as its own **stage**,
@@ -71,7 +71,8 @@ the sites,
 the names' boxes and the rings,
 read together off cells that have already been shaped and named,
 so a bake cannot be handed a gate from one reading and sites from another.
-It also settles which cells get a band at all,
+`CellRibbonSource` settles which cells get a band at all,
+off the gate and sites the surface supplies,
 in three refusals read in one place:
 a cell nobody lives in or with nowhere to start from,
 a system the sector no longer lists,
@@ -174,11 +175,11 @@ it is the angle past which a corner's mitre becomes a spike,
 a property of stroking a polyline rather than of how the readout looks.
 A pass with the bands switched off reads none of them.
 
-`base.ribbon`'s `CellRibbonRenderer` draws the bands in whichever render band the player's **Nebula draw order** setting for the presence bands placed them,
-which ships as `ABOVE_STARSCAPE_NEBULAE`:
-a band reads over the map's nebula sprites rather than being fogged by them,
-and being fogged would cost it the very thing it is for.
-The setting exists because how much that costs depends on the palette it is read against.
+`base.ribbon`'s `CellRibbonRenderer` draws the bands in the render band the layer hands the tier,
+as the `ribbonBand` of its `OwnerMapBandLayout`;
+which band that is,
+and why,
+is the layer's to say.
 
 ## Seeing the path a cell did not use
 

@@ -72,6 +72,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Changed
 
 - **Building KMU needs no Nexerelin jar.** KMU names no Nexerelin type, KMLib's adapters doing all of the reading, so a KMU class that named one fails to compile. The CI runner still provides the jar for the KMLib build alongside.
+- **The band bake and the name fit are profiled under the map layers' prefix**, as `mapLayer.bakeRibbons` and `mapLayer.fitClusterAnchors` in place of `ownerMap.bakeRibbons` and `ownerMap.fitClusterAnchors`, since both now run in the map layers framework.
 
 #### Public contracts changed (**breaking**)
 
@@ -93,7 +94,7 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `BlocAffiliation`, `ContestSide`, `ContestSides` and `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness`, with `areBlocsFriendly(Set, Set)` | KMLib's `kmlib.starsector.factions.relation.FactionSetFriendliness`, with `areSetsFriendly(Set, Set)` and `createForSector(SectorAPI)` |
 | `base.labels.anchor.DiagnosticPalette` | `base.render.DiagnosticPalette`, which the label and cluster overlays share |
-| `RibbonSegment` and `RibbonSegmentLengths` in `ownermap.ribbon`, and `CellRibbon`, `CellRibbonPath`, `CellRibbonBuilder`, `RibbonPathTracer`, `RibbonPathVerdict`, `CellRingPathCache`, `RibbonBand`, `RibbonStyle`, `CellRibbonPathRenderer` and `RibbonBakePhases` in `ownermap.render.ribbon` | `base.ribbon`, beside the plan value `RibbonPlan`: a band is coloured runs laid round a cell's ring, whoever the runs belong to. `CellPresenceRibbonRenderer` is `base.ribbon.CellRibbonRenderer` |
+| `RibbonPlan`, `RibbonSegment` and `RibbonSegmentLengths` in `ownermap.ribbon`, and `CellRibbon`, `CellRibbonPath`, `CellRibbonBuilder`, `RibbonPathTracer`, `RibbonPathVerdict`, `CellRingPathCache`, `RibbonBand`, `RibbonStyle`, `CellRibbonPathRenderer` and `RibbonBakePhases` in `ownermap.render.ribbon` | `base.ribbon`: a band is coloured runs laid round a cell's ring, whoever the runs belong to. `CellPresenceRibbonRenderer` is `base.ribbon.CellRibbonRenderer` |
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`: any layer with clusters fits its names the same way |
 | `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`, final, beside the register it writes into. Its sweep is `recordSightingsByInhabitants()`, and it no longer implements `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`, beside the box that reads it |

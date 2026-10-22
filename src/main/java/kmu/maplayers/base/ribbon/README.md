@@ -343,8 +343,9 @@ since that cell is exactly the one it is looked at to explain.
 That is also why it walks the ring afresh rather than reading the kept path above -
 the cells it exists for are the ones the band pass has no path for.
 
-`CellRibbonPathRenderer` draws the paths over the bands,
-so a band and the path it was laid on can be read against each other.
+`CellRibbonPathRenderer` draws the paths and nothing else.
+The layer orders the two renderers,
+drawing the paths over the bands so a band and the path it was laid on can be read against each other.
 
 ## What a bake spends its time on
 
@@ -378,9 +379,8 @@ Measuring a cell as a section of its own would cost about what a cell's work cos
 whose,
 how many,
 in what order and at what length -
-is the layer's rule.
-The owner-painted tier lays its runs by owner,
-in [`ownermap.ribbon`](../../ownermap/ribbon/README.md),
-and drives its bakes in [`ownermap.render.ribbon`](../../ownermap/render/ribbon/README.md).
+is the layer's rule,
+and so is driving the bakes;
+for a layer painted by owner that is [the owner-map tier](../../ownermap/README.md).
 **The settings** the sizes come from are the layer's to read,
 since this package reads none.

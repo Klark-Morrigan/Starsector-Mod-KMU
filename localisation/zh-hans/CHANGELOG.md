@@ -71,6 +71,7 @@
 #### 变更
 
 - **构建 KMU 不再需要 Nexerelin 的 jar。** KMU 不引用任何 Nexerelin 类型，读取全部由 KMLib 的适配器完成，因此引用了这类类型的 KMU 类会无法编译。CI 运行器仍为一同构建的 KMLib 提供该 jar。
+- **色带烘焙与名称拟合改用地图图层的前缀进行性能分析**，记为 `mapLayer.bakeRibbons` 和 `mapLayer.fitClusterAnchors`，取代 `ownerMap.bakeRibbons` 和 `ownerMap.fitClusterAnchors`，因为两者现在都在地图图层框架中运行。
 
 #### 公共契约变更（**破坏性**）
 
@@ -92,7 +93,7 @@
 | `BlocAffiliation`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness` 及其 `areBlocsFriendly(Set, Set)` | KMLib 的 `kmlib.starsector.factions.relation.FactionSetFriendliness`，及其 `areSetsFriendly(Set, Set)` 和 `createForSector(SectorAPI)` |
 | `base.labels.anchor.DiagnosticPalette` | `base.render.DiagnosticPalette`，供标签与区域的调试显示共用 |
-| `ownermap.ribbon` 中的 `RibbonSegment` 和 `RibbonSegmentLengths`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonPath`、`CellRibbonBuilder`、`RibbonPathTracer`、`RibbonPathVerdict`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle`、`CellRibbonPathRenderer` 和 `RibbonBakePhases` | `base.ribbon`，与色带计划值 `RibbonPlan` 放在一起：色带是沿单元边界内侧排布的色段，与色段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
+| `ownermap.ribbon` 中的 `RibbonPlan`、`RibbonSegment` 和 `RibbonSegmentLengths`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonPath`、`CellRibbonBuilder`、`RibbonPathTracer`、`RibbonPathVerdict`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle`、`CellRibbonPathRenderer` 和 `RibbonBakePhases` | `base.ribbon`：色带是沿单元的环线排布的色段，与色段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`：任何有区域的图层都以同样方式拟合名称 |
 | `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，不再实现 `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`，与读取它的悬停框放在一起 |

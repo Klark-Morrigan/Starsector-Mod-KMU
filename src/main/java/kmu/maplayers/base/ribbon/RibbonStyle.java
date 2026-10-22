@@ -27,9 +27,9 @@ package kmu.maplayers.base.ribbon;
  * @param lengths           how far a stake's segment and an interjection run, in widths
  * @param isBandAlwaysDrawn whether a cell that planned a band gets one even where its ring has no
  *                          room to hold it - the names covering the whole of it, or the cell being
- *                          too narrow for the band and its pad together. The player's, and here
- *                          rather than beside the plan because both cases are the ring refusing a
- *                          band rather than the system having nothing to report
+ *                          too narrow for the band and its pad together. The layer's to answer,
+ *                          and here rather than beside the plan because both cases are the ring
+ *                          refusing a band rather than the cell having nothing to report
  */
 public record RibbonStyle(
     double widthWorld,

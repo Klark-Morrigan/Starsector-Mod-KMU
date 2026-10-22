@@ -15,7 +15,7 @@ import java.util.List;
  */
 public final class RibbonPlan {
 
-    // The cell draws no band: nothing is present in it, so there is no footprint to report.
+    // The cell draws no band: the layer planned no runs for it, so there is nothing to report.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
     private final List<RibbonSegment> segments;

@@ -3,9 +3,10 @@
 Where a band's painter and its order come from on the **claims** layer -
 on a cell the mechanic painted,
 and on one it left bare.
-How many colonies each bloc draws is one shared rule's answer for every layer,
-in [`ownermap.ribbon`](../../../ownermap/ribbon/README.md);
-the geometry is [`base.ribbon`](../../../base/ribbon/README.md)'s.
+How many colonies each bloc draws is one shared count for every layer painting holders,
+[the holders' band count](../../../ownermap/owners/holders/README.md#the-band-count);
+how its runs are laid is [`ownermap.ribbon`](../../../ownermap/ribbon/README.md)'s,
+and the geometry is [`base.ribbon`](../../../base/ribbon/README.md)'s.
 
 Part of [the political map](../../README.md),
 in Klark Morrigan's Utilities (KMU);

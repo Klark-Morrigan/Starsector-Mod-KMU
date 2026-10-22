@@ -10,12 +10,12 @@ import java.util.Map;
  * The band paths traced inside one build's cell shapes, kept for as long as those shapes stand.
  *
  * <p>A path is settled by the ring it was traced inside and the sizes it was traced at, and a
- * cluster name moves neither. A bake runs whenever a name may have moved - which is every flip the
- * layer marks, since a re-fit can place a name on a cell the flip never touched - so without this
- * every cell in the sector pays a full trace, a miter inset and fold splice and clearance walk and
+ * cluster name moves neither. A bake runs whenever a name may have moved - which is every change the
+ * layer marks, since a re-fit can place a name on a cell the change never touched - so without this
+ * every cell in the sector pays a full trace, a mitre inset and fold splice and clearance walk and
  * arc-length walk apiece, to arrive at the path it discarded a moment earlier. A cell's ring is
- * decided by which of its edges are seams inside one cluster, so after a flip the cells that need tracing
- * again are the handful that were re-shaped.
+ * decided by which of its edges are seams inside one cluster, so after a change the cells that need
+ * tracing again are the handful that were re-shaped.
  *
  * <p>Held with no key and no revision of its own, which is the whole of why it is safe. A key is a
  * rule someone has to keep true; a cache living inside the object whose lifetime it must match is

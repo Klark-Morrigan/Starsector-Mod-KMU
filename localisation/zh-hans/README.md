@@ -417,6 +417,7 @@ So a word of one axis never stands in for another:
 | outline (an uninhabited or decivilised system's border) | 轮廓 | the plain word, as the settings write it |
 | paint (a system, the map) | 上色 | to colour in, as the map does a territory |
 | presence ribbon, presence band | 存在色带 | from 存在, with 色带 for a coloured band |
+| ring (the loop inside a cell's border a band runs along) | 环线 | a closed loop line, as a ring road is; not 圆环, which says round, while a cell's ring follows its polygon; kept apart from 边界, the border itself |
 | solid fill | 实色填充 | 实色, solid colour, before 填充, as the settings write it |
 
 #### The sidebar
@@ -466,20 +467,24 @@ So a word of one axis never stands in for another:
 | --- | --- | --- |
 | alliance record (one alliance as plain data) | 联盟记录 | 联盟 with 记录, a record |
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
+| bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
-| entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
-| instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
+| consumer (what a fit is run for: the drawn names, the anchor overlay) | 使用方 | 使用, to use, with 方, a party, as in 读取方 for a reader |
+| entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
+| instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
+| plan (a band's runs, before they are laid round its ring) | 计划 | the plain word for a plan |
 | port (the interface a feature's own code reaches the game through) | 端口 | the usual word for a port in a ports-and-adapters design |
+| prefix (the part of a profiling row's name before its first dot) | 前缀 | the plain computing word |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |

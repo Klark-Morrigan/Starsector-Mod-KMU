@@ -7,8 +7,8 @@ import java.util.List;
  * triangles sitting inside the cell's own ring.
  *
  * <p>Held as its own value beside the cell's draw record rather than inside it, because a band is
- * this map layer's own reading of a system while the draw record is the framework's shape of a
- * cell - and because a band exists for only a small share of the cells the map paints.
+ * what a layer lays inside a cell while the draw record is the cell itself - and because a band
+ * exists for only a small share of the cells the map paints.
  *
  * @param bands the cell's runs in draw order, starting from the cell's top centre; empty on a
  *              cell that draws no band at all

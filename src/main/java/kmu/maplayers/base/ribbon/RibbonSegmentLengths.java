@@ -11,8 +11,8 @@ package kmu.maplayers.base.ribbon;
  * band, so it is a single authored decision rather than two loose numbers.
  *
  * <p>Whole widths rather than fractions: a plan is a count of stakes expressed as a length,
- * and how large a width is in the world is settled at draw time against the cell's own
- * perimeter, which is where a finer size belongs.
+ * and how large a width is in the world is settled when the band is laid, against the cell's own
+ * ring, which is where a finer size belongs.
  *
  * @param stakeLengthUnits        how far one stake's segment runs
  * @param interjectionLengthUnits how far a parting runs, whether it stands between two stakes of

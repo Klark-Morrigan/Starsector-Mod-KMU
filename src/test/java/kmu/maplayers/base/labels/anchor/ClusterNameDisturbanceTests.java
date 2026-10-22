@@ -77,8 +77,8 @@ final class ClusterNameDisturbanceTests {
 
         @Test
         void reportsTheRoomANewNameTook() {
-            // A cluster the previous fit did not name at all: a faction's first colony, or a
-            // partition the flip bridged into one.
+            // A cluster the previous fit did not name at all: an owner's first cluster, or two
+            // clusters a change bridged into one.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
                 List.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_ACROSS_THE_SECTOR)));
@@ -89,7 +89,7 @@ final class ClusterNameDisturbanceTests {
 
         @Test
         void reportsTheRoomAVanishedNameGaveUp() {
-            // The last colony of a cluster goes: nothing is drawn there any more, so whatever was
+            // The last member of a cluster goes: nothing is drawn there any more, so whatever was
             // keeping clear of the word may have the ring back.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
