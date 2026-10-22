@@ -10,13 +10,19 @@ import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
+import kmu.maplayers.base.ribbon.CellRibbon;
+import kmu.maplayers.base.ribbon.CellRibbonPath;
+import kmu.maplayers.base.ribbon.CellRingPathCache;
+import kmu.maplayers.base.ribbon.RibbonBakePhases;
+import kmu.maplayers.base.ribbon.RibbonBand;
+import kmu.maplayers.base.ribbon.RibbonPathVerdict;
+import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
 import kmu.settings.KmuOwnerMapRibbonSettings;
@@ -35,7 +41,7 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

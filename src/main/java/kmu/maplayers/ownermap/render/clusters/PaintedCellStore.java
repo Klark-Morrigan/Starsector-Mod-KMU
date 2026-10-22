@@ -6,9 +6,9 @@ import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonPath;
-import kmu.maplayers.ownermap.render.ribbon.CellRingPathCache;
+import kmu.maplayers.base.ribbon.CellRibbon;
+import kmu.maplayers.base.ribbon.CellRibbonPath;
+import kmu.maplayers.base.ribbon.CellRingPathCache;
 
 import java.util.ArrayList;
 import java.util.Collections;

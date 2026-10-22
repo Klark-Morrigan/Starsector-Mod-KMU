@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
+import kmu.maplayers.base.ribbon.CellRingPathCache;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.settings.KmuOwnerMapRibbonSettings;

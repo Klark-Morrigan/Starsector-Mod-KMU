@@ -13,11 +13,11 @@ import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
+import kmu.maplayers.base.ribbon.CellRibbonRenderer;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellStore;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlightFake;
-import kmu.maplayers.ownermap.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -96,7 +96,7 @@ final class OwnerMapOverlayRendererTests {
 
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
@@ -158,7 +158,7 @@ final class OwnerMapOverlayRendererTests {
             // cluster group, and a band that says how a system is split fails the same way.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
@@ -170,7 +170,7 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock.verify(() ->
-                    CellPresenceRibbonRenderer.renderOnMap(
+                    CellRibbonRenderer.renderOnMap(
                         any(),
                         any()));
 
@@ -380,7 +380,7 @@ final class OwnerMapOverlayRendererTests {
             // sub-layer rather than the whole band.
             try (var borderStageRendererMock = mockStatic(ClusterBorderStageRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
@@ -484,7 +484,7 @@ final class OwnerMapOverlayRendererTests {
             // routing fault here is one the shipped split would never show.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildLayout(
@@ -499,7 +499,7 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock.verify(() ->
-                    CellPresenceRibbonRenderer.renderOnMap(any(), any()));
+                    CellRibbonRenderer.renderOnMap(any(), any()));
 
                 labelRendererMock.verify(() ->
                     LabelRenderer.renderOnMap(any(), any()));
@@ -605,7 +605,7 @@ final class OwnerMapOverlayRendererTests {
             // the same cell, and the presence bands are translucent.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildLayout(

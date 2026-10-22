@@ -18,10 +18,12 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -40,9 +42,7 @@ import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTests;
 import kmu.maplayers.ownermap.render.StandingOwnerMap;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
 import kmu.maplayers.ownermap.render.style.MapStyling;
@@ -505,7 +505,9 @@ final class IncrementalOwnerRefreshIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ClusterLabelStylingSnapshot.resolveFrom(territories, StarsectorFont.VANILLA_INSIGNIA_42));
+                ClusterLabelStylingSnapshot
+                    .resolveFrom(territories, StarsectorFont.VANILLA_INSIGNIA_42)
+                    .createFitInputs());
 
             CellRibbonsBaker
                 .createForPass(

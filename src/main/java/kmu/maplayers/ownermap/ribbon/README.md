@@ -1,12 +1,13 @@
-# Presence band vocabulary (`ownermap.ribbon`)
+# Presence band runs (`ownermap.ribbon`)
 
-What a cell's presence band is made of,
-stated as pure data ahead of any geometry:
+How an owner-painted cell's presence band is laid:
 a run of colour per stake,
 whose runs,
 and in what order.
-Nothing here traces a ring or emits a triangle;
-that is [`ownermap.render.ribbon`](../render/ribbon/README.md).
+The plan it produces,
+and everything that turns a plan into triangles,
+is [`base.ribbon`](../../base/ribbon/README.md);
+the bake over a whole map is [`ownermap.render.ribbon`](../render/ribbon/README.md).
 
 Part of [the owner-map tier](../README.md),
 in Klark Morrigan's Utilities (KMU);
@@ -14,17 +15,17 @@ see the [mod README](../../../../../../../README.md) for project context.
 
 ## Index
 
-- [The plan](#the-plan)
+- [Laying the runs](#laying-the-runs)
 - [The port it reads through](#the-port-it-reads-through)
 - [Which cells band, and how loudly](#which-cells-band-and-how-loudly)
 - [What is not here](#what-is-not-here)
 
-## The plan
+## Laying the runs
 
-`RibbonPlan` is the whole output:
+The output is `base.ribbon`'s `RibbonPlan`:
 an ordered list of `RibbonSegment`,
 each a colour and a length in band widths.
-`RibbonPlan.planCellRibbon` is the rule that produces one,
+`OwnerRibbonRuns.planCellRibbon` is the rule that produces one,
 over a ranked list of `OwnerPresence` -
 an owner,
 its palette,
@@ -40,12 +41,11 @@ The grammar it lays down:
 - The band's last run is left open,
   so a divider never ends a band.
 
-`RibbonSegmentLengths` pairs the two proportions the grammar is stated in,
+`base.ribbon`'s `RibbonSegmentLengths` pairs the two proportions the grammar is stated in,
 and `RibbonPlanRules` pairs those with the shortening below.
 
 Lengths are counts of widths,
-never world sizes:
-how large a width is in the world is the render side's question,
+never world sizes,
 which is what keeps this whole package pure data.
 
 ## The port it reads through
@@ -116,6 +116,9 @@ KMU's own layers count every cell by one rule,
 described beside their answers,
 which [the owner seams](../owners/README.md) link to.
 
-**Every size in the world**,
+**What a plan is**,
+every size in the world,
 and every triangle -
+[`base.ribbon`](../../base/ribbon/README.md).
+**The bake over a whole map** -
 [`ownermap.render.ribbon`](../render/ribbon/README.md).

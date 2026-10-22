@@ -1,9 +1,9 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import java.util.List;
 
 /**
- * One cell's whole presence band, baked: its runs in draw order, each already a coloured patch of
+ * One cell's whole band, baked: its runs in draw order, each already a coloured patch of
  * triangles sitting inside the cell's own ring.
  *
  * <p>Held as its own value beside the cell's draw record rather than inside it, because a band is
@@ -16,7 +16,7 @@ import java.util.List;
 public record CellRibbon(
     List<RibbonBand> bands) {
 
-    /** The cell that draws no band: no presence to report, or no room to report it in. */
+    /** The cell that draws no band: no runs to report, or no room to report it in. */
     public static final CellRibbon NONE = new CellRibbon(List.of());
 
     public CellRibbon {

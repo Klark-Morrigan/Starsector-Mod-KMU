@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.ribbon;
 
+import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
+
 /**
  * The player's answers about how a band is laid: how far its runs reach, and how far they reach on
  * a cell nobody contests.

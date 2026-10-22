@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonPlan;
 
 import java.util.Optional;
 

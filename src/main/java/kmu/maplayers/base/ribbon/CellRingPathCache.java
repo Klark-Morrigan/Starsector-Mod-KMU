@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SystemKey;
@@ -14,7 +14,7 @@ import java.util.Map;
  * layer marks, since a re-fit can place a name on a cell the flip never touched - so without this
  * every cell in the sector pays a full trace, a miter inset and fold splice and clearance walk and
  * arc-length walk apiece, to arrive at the path it discarded a moment earlier. A cell's ring is
- * decided by which of its edges are same-owner seams, so after a flip the cells that need tracing
+ * decided by which of its edges are seams inside one cluster, so after a flip the cells that need tracing
  * again are the handful that were re-shaped.
  *
  * <p>Held with no key and no revision of its own, which is the whole of why it is safe. A key is a

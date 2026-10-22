@@ -7,6 +7,7 @@ import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -21,11 +22,12 @@ import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
+import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuMapLabelSettings;
+import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -39,9 +41,10 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what the drawables keeping the built draw lists answer about them: whether anything stands, whether
@@ -156,10 +159,6 @@ final class OwnerMapDrawablesTests {
         // traces and the anchor fit that rides along are each pinned where they live.
         private final StaticSeams seams = new StaticSeams();
 
-        // The stood-in anchor fit, opened by traceBordersThrough, for a case reading what it was
-        // handed.
-        private MockedStatic<ClusterAnchorsBuilder> anchorsBuilderMock;
-
         @AfterEach
         void closeSeams() {
             seams.closeEverySeam();
@@ -197,8 +196,10 @@ final class OwnerMapDrawablesTests {
             assertThat(sourceFake.readOwnerWalks())
                 .singleElement()
                 .isSameAs(WALK);
+
             assertThat(sourceFake.readSpotlitOwnerIdsAsked())
                 .containsExactly((String) null);
+
             builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
                 any(),
                 same(owners),
@@ -210,17 +211,24 @@ final class OwnerMapDrawablesTests {
             // One reading of the theme for both halves, so the names over the overlay cannot be
             // styled under knobs its outlines were not traced under.
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
-            var builderMock = traceBordersThrough(drawables, new OwnerSourceFake());
             var stylingCaptor = ArgumentCaptor.forClass(MapStyling.class);
 
-            builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
-                any(),
-                any(),
-                stylingCaptor.capture()));
-            anchorsBuilderMock.verify(() -> ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
-                any(),
-                any(),
-                argThat(snapshot -> snapshot.paints().getStyling() == stylingCaptor.getValue())));
+            try (var snapshotMock = mockStatic(ClusterLabelStylingSnapshot.class, CALLS_REAL_METHODS)) {
+
+                var builderMock = traceBordersThrough(drawables, new OwnerSourceFake());
+
+                builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
+                    any(),
+                    any(),
+                    stylingCaptor.capture()));
+
+                snapshotMock.verify(() -> ClusterLabelStylingSnapshot.resolveForTracing(
+                    any(),
+                    same(stylingCaptor.getValue()),
+                    any(),
+                    any(),
+                    any()));
+            }
         }
 
         @Test
@@ -248,14 +256,12 @@ final class OwnerMapDrawablesTests {
                 OwnerSource ownerSource) {
 
             var builderMock = seams.openSeam(DebugBorderTracingBuilder.class);
-
             builderMock
                 .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()))
                 .thenReturn(TRACED_OVERLAY);
 
             openStylingSeams(seams);
-
-            anchorsBuilderMock = seams.openSeam(ClusterAnchorsBuilder.class);
+            seams.openSeam(ClusterAnchorsBuilder.class);
 
             drawables.rebuildBorderTracingOverlay(
                 CELL_GEOMETRY,
@@ -315,11 +321,16 @@ final class OwnerMapDrawablesTests {
         private void buildProductionThrough(OwnerMapDrawables drawables, OwnerMapClusters clusters) {
 
             openStylingSeams(seams);
-            seams.openSeam(OwnerMapBuilder.class)
+
+            seams
+                .openSeam(OwnerMapBuilder.class)
                 .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
                 .thenReturn(clusters);
+
             seams.openSeam(ClusterAnchorsBuilder.class);
-            seams.openSeam(CellRibbonsBaker.class)
+
+            seams
+                .openSeam(CellRibbonsBaker.class)
                 .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
                 .thenReturn(mock(CellRibbonsBaker.class));
 
@@ -391,10 +402,13 @@ final class OwnerMapDrawablesTests {
     // case reading what a builder was handed reads the value the drawables built.
     private static void openStylingSeams(StaticSeams seams) {
 
-        seams.openSeam(RenderStyleReader.class)
+        seams
+            .openSeam(RenderStyleReader.class)
             .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
             .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
                 OwnerMapClusterFixtures.createInertCategoryStyle()));
+
         seams.openSeam(KmuMapLabelSettings.class);
+        seams.openSeam(KmuOwnerMapDiagnosticsSettings.class);
     }
 }

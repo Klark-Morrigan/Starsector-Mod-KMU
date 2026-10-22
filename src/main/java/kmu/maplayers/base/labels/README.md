@@ -23,6 +23,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 
 - [Layout](#layout)
 - [Placement: where a name sits](#placement-where-a-name-sits)
+- [The fit drive](#the-fit-drive)
 - [The room a name takes](#the-room-a-name-takes)
 - [Which names a re-fit moved](#which-names-a-re-fit-moved)
 - [Rendering: the name and its overlay](#rendering-the-name-and-its-overlay)
@@ -40,8 +41,10 @@ see the [mod README](../../../../../../../README.md) for project context.
   and `LabelLineBoxes`,
   which reads the room the drawn lines take.
 - `base.labels.anchor` -
-  the placement subsystem that decides where each name sits and paints its debug overlay,
-  in the grades of the render surface's `DiagnosticPalette`.
+  the placement subsystem that decides where each name sits,
+  the drive that runs a whole fit,
+  and the debug overlay,
+  painted in the grades of the render surface's `DiagnosticPalette`.
 - `base.labels.anchor.specifications` -
   the search's tuning surface,
   read once per rebuild:
@@ -125,6 +128,35 @@ Both resolvers are resolved in one step into a [`ClusterLabelSubject`](anchor/Cl
 so neither can be taken for a different owner than the other -
 and restyling a carried placement is a substitution
 rather than three parallel values to keep in step.
+
+## The fit drive
+
+[`ClusterAnchorsBuilder`](anchor/ClusterAnchorsBuilder.java) runs a whole fit the way any layer with clusters would:
+it labels the pass with its fingerprint,
+offers the standing placements for carry-over,
+cuts the cells into a `ClusterPartition` by the layer's keys,
+fits what was not carried through `ClusterAnchorPlacement`,
+reports what the fit cost under `mapLayer.fitClusterAnchors`,
+and leaves its pass in the caller's `StandingClusterAnchors`.
+It answers which names moved as a `ClusterNameDisturbance`.
+
+A layer's whole half is one value,
+[`ClusterAnchorFitInputs`](anchor/ClusterAnchorFitInputs.java):
+the key each system clusters by,
+the face every name is measured in,
+whether the names are drawn,
+whether the anchor overlay is shown,
+and a supplier of its `ClusterLabelResolvers`.
+The fit runs whenever either consumer is on,
+and skips the search entirely when neither is,
+emptying and labelling the list all the same.
+The resolvers arrive as a supplier because resolving them loads the label font,
+which a pass fitting nothing must not pay for.
+
+A debug view that builds no fills enters through `rebuildDiagnosticClusterAnchors`,
+which gates on the overlay alone.
+The search's tuning is the one setting the drive reads for itself,
+so every path fits under one reading of it.
 
 ## The room a name takes
 
@@ -215,9 +247,10 @@ When a rebuild happens at all is [the caching notes](../../../../../../../docs/d
 
 ## What is not here
 
-The *names and colours* a label reads and draws in.
+The *names and colours* a label reads and draws in,
+and the keys its clusters are cut by.
 Those belong to the tiers above,
-which resolve them against their own vocabulary before the search runs;
+which resolve them against their own vocabulary and hand them to the fit drive as one `ClusterAnchorFitInputs`;
 the owner-painted tier's half sits in `ownermap.render.labels`.
 The *fills and borders* this overlay sits over are built and drawn by whichever layer painted them;
 the anchor search clips against the same border trace those fills use,

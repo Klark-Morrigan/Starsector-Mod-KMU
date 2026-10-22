@@ -1,9 +1,7 @@
-package kmu.maplayers.ownermap.render.ribbon;
-
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
+package kmu.maplayers.base.ribbon;
 
 /**
- * How one pass lays its presence bands out: every size they are settled at, all of them world
+ * How one pass lays its cell bands out: every size they are settled at, all of them world
  * sizes, plus the two answers about laying one out that are not sizes at all.
  *
  * <p>World units throughout, and that is the design decision the rest of the band follows from. A
@@ -14,7 +12,7 @@ import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
  * outline at every zoom, and a frame measures nothing about it at all.
  *
  * <p>The two lengths ride here with the two sizes because they are the same authored decision:
- * how long a stake's run is relative to the parting between two of them is what makes an owner's
+ * how long a stake's run is relative to the parting between two of them is what makes a long
  * run read as several stakes, and reading it apart from the width those lengths are multiples
  * of would let one be tuned against a stale reading of the other.
  *

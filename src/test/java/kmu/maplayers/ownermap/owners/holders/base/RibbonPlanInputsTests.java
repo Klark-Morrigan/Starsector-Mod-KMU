@@ -3,9 +3,9 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
 
 import org.junit.jupiter.api.Nested;

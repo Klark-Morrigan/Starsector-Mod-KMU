@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.ribbon;
 
+import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 
 import java.awt.Color;

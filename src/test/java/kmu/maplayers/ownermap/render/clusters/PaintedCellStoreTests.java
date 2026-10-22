@@ -5,10 +5,10 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonPath;
-import kmu.maplayers.ownermap.render.ribbon.RibbonBand;
-import kmu.maplayers.ownermap.render.ribbon.RibbonPathVerdict;
+import kmu.maplayers.base.ribbon.CellRibbon;
+import kmu.maplayers.base.ribbon.CellRibbonPath;
+import kmu.maplayers.base.ribbon.RibbonBand;
+import kmu.maplayers.base.ribbon.RibbonPathVerdict;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.maplayers.base.ribbon.RibbonPlan;
+
 /**
  * Where one system's ribbon plan comes from, so the rebuild asks for a band without naming the
  * mechanic that knows what is in the system.

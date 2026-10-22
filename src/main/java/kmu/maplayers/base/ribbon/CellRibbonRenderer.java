@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
@@ -15,7 +15,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.Collection;
 
 /**
- * Paints the cells' baked presence bands on the sector (M) map: each run of each band as its own
+ * Paints the cells' baked bands on the sector (M) map: each run of each band as its own
  * patch of coloured triangles, laid inside the cell's own ring.
  *
  * <p>Pure GL emission over already-baked {@link CellRibbon}s - it binds a colour and scales world
@@ -32,7 +32,7 @@ import java.util.Collection;
  * world-sized throughout, so it holds the same share of its cell's outline at every zoom and the
  * matrix work here is the single uniform scale the map widget leaves to the caller.
  */
-public final class CellPresenceRibbonRenderer {
+public final class CellRibbonRenderer {
 
     // Held rather than named per frame: a section found by reference costs the pass nothing where
     // one found by name is a lookup a frame.
@@ -40,7 +40,7 @@ public final class CellPresenceRibbonRenderer {
         ProfileSection.registerSection("mapLayer.render.ribbons");
 
     // Emits only; never instantiated.
-    private CellPresenceRibbonRenderer() {
+    private CellRibbonRenderer() {
     }
 
     /**

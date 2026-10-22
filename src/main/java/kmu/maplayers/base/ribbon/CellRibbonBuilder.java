@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolylineBands;
@@ -6,8 +6,6 @@ import kmlib.math.geometry.RingPath;
 import kmlib.math.geometry.RingStretch;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.IterationScope;
-
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +77,7 @@ public final class CellRibbonBuilder {
         if (!path.hasStretchHoldingItsInset()) {
             return CellRibbon.NONE;
         }
+
         var totalLengthUnits = plan.sumLengthUnits();
         var layout = layOutBand(path, nameBoxes, totalLengthUnits, style);
 
@@ -89,6 +88,7 @@ public final class CellRibbonBuilder {
         if (layout == null) {
             return CellRibbon.NONE;
         }
+
         var bands = strokeSegments(path, plan, layout, style);
 
         bakeScope.markPhase(RibbonBakePhases.STROKE_PHASE);
@@ -110,6 +110,19 @@ public final class CellRibbonBuilder {
             int totalLengthUnits,
             RibbonStyle style) {
 
+        var stretch = findBandStretch(path, nameBoxes, style);
+        return stretch == null
+            ? null
+            : placeBandOn(path, stretch, totalLengthUnits, style);
+    }
+
+    // The one stretch of the ring the band goes on, or nothing where the names cover the whole of
+    // it and the player would rather keep them clear than draw the band.
+    private static RingStretch findBandStretch(
+            RingPath path,
+            List<List<double[]>> nameBoxes,
+            RibbonStyle style) {
+
         // The names are carved off the path rather than off the plan, and that is the whole of
         // how a band keeps out of a name's room. Cutting the plan instead would leave a run
         // partly eaten, and a run's length is the readout - a stake drawn two thirds as long as
@@ -128,8 +141,19 @@ public final class CellRibbonBuilder {
         // Forced, it is the names that give way and only the names: the path's own overrun
         // stretches stay carved, since a band laid across one hangs over the border of the very
         // cell it reports on - which is what the half width exists to prevent.
-        var stretch = selectLongestClearStretch(path.fuseStretchAcrossStart(
-            clearArcs.isEmpty() ? path.findStretchesHoldingItsInset() : clearArcs));
+        return selectLongestClearStretch(path.fuseStretchAcrossStart(
+            clearArcs.isEmpty()
+                ? path.findStretchesHoldingItsInset()
+                : clearArcs));
+    }
+
+    // How much of the stretch one width is worth and where along it the band sits, or nothing
+    // where the stretch is too short to state the plan at any size.
+    private static RibbonBandLayout placeBandOn(
+            RingPath path,
+            RingStretch stretch,
+            int totalLengthUnits,
+            RibbonStyle style) {
 
         var lengthUnitWorld = computeLengthUnit(stretch.computeLength(), totalLengthUnits, style);
 
@@ -139,9 +163,10 @@ public final class CellRibbonBuilder {
         if (lengthUnitWorld < Limits.MIN_EDGE_LENGTH) {
             return null;
         }
+
         // As near the cell's top centre as the stretch allows, rather than wherever the ring
         // the names left happens to open. Every cell's band is read from that landmark - the
-        // holding owner first, running clockwise - so a band that could begin there and does
+        // first run first, running clockwise - so a band that could begin there and does
         // not costs the reader the one thing every cell's band has in common.
         return new RibbonBandLayout(
             path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld),
@@ -167,10 +192,12 @@ public final class CellRibbonBuilder {
         RingStretch longest = null;
 
         for (var stretch : clearStretches) {
+
             if (longest == null || stretch.computeLength() > longest.computeLength()) {
                 longest = stretch;
             }
         }
+
         return longest;
     }
 
@@ -184,7 +211,7 @@ public final class CellRibbonBuilder {
     //
     // Compressing the length while leaving the width alone is deliberate. The band says its piece
     // through the proportions between its runs, and shortening every run by one factor keeps all
-    // of them - a crowded system reads as crowded, with each owner's share intact. Thinning the
+    // of them - a crowded cell reads as crowded, with each run's share intact. Thinning the
     // band instead would fade the whole readout on precisely the cells carrying the most to say,
     // and would leave the path traced at an inset the band no longer matches.
     private static double computeLengthUnit(
@@ -221,6 +248,7 @@ public final class CellRibbonBuilder {
             spans.add(path.collectPointsBetween(cursor, runEnd));
             cursor = runEnd;
         }
+
         return collectStrokedBands(plan, PolylineBands.strokeSpansToTriangles(
             spans,
             style.widthWorld(),
@@ -241,16 +269,20 @@ public final class CellRibbonBuilder {
             if (strokedSpans.get(segment).isEmpty()) {
                 continue;
             }
+
             bands.add(new RibbonBand(
                 plan.segments().get(segment).colour(),
                 GlVertexRuns.flattenVertices(strokedSpans.get(segment))));
         }
+
         return bands;
     }
 
     // Where one cell's band sits on its own ring and what a width is worth there - the two the
     // carve settles and the stroke then spends. Private because it is how the two halves of this
     // class talk to each other; a band's own shape is what leaves it.
-    private record RibbonBandLayout(double startArcLength, double lengthUnitWorld) {
+    private record RibbonBandLayout(
+        double startArcLength,
+        double lengthUnitWorld) {
     }
 }

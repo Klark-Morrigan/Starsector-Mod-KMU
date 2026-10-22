@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.opengl.GlPasses;
 
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mockStatic;
  * pass - and a band withheld looks exactly like a system with nothing present in it, which is the
  * one thing the readout exists to tell apart.
  */
-final class CellPresenceRibbonRendererTests {
+final class CellRibbonRendererTests {
 
     // A frame that paints, and one at the far end of the map's fade. The scale is the same in
     // both and is never read: what these cases are about is the guard in front of the emission.
@@ -54,7 +54,7 @@ final class CellPresenceRibbonRendererTests {
 
             var ribbonsFake = new RibbonsFake(List.of());
 
-            CellPresenceRibbonRenderer.renderOnMap(
+            CellRibbonRenderer.renderOnMap(
                 ribbonsFake,
                 PAINTING_FRAME);
 
@@ -69,7 +69,7 @@ final class CellPresenceRibbonRendererTests {
             // the map's zoom fade every run would emit at zero effective alpha.
             var ribbonsFake = buildRibbonsCarryingOneBand();
 
-            CellPresenceRibbonRenderer.renderOnMap(
+            CellRibbonRenderer.renderOnMap(
                 ribbonsFake,
                 FADED_OUT_FRAME);
 
@@ -85,7 +85,7 @@ final class CellPresenceRibbonRendererTests {
             // of what "the scale did not stand this frame down" means.
             try (var glPassesMock = mockStatic(GlPasses.class)) {
 
-                CellPresenceRibbonRenderer.renderOnMap(
+                CellRibbonRenderer.renderOnMap(
                     buildRibbonsCarryingOneBand(),
                     ZOOMED_FAR_OUT_FRAME);
 

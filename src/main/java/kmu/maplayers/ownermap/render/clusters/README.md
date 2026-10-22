@@ -291,7 +291,7 @@ all keyed by cell:
 the `StyledCell`,
 the ring it was painted on,
 the presence band laid inside that ring
-(`CellRibbon`, from `render.ribbon`),
+(`CellRibbon`, from `base.ribbon`),
 that band's path for the diagnostic overlay (`CellRibbonPath`),
 and the traced ring the band was laid along (`CellRingPathCache`).
 
@@ -445,7 +445,7 @@ over the framework's [`base.theme`](../../../base/theme/README.md) records they 
 this package consumes both,
 it does not decide either.
 The *name overlay* that sits on top is the framework's [`base.labels`](../../../base/labels/README.md),
-fed the names and shades this layer resolves in `render.labels`.
+fitted by its drive over the names and shades this layer resolves in `render.labels`.
 The *shape work* the two builders drive -
 the border-ring trace,
 the smoothing passes,

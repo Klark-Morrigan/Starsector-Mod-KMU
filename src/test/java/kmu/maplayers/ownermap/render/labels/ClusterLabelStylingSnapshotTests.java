@@ -12,15 +12,20 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.Map;
@@ -30,13 +35,14 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the reads that turn a finished build, or a diagnostic's traced owners, into the values a
  * label rebuild styles from. The point of the type is that they describe one pass, so the build's
  * read is pinned by identity checks against the clusters' own retained state rather than by value
  * comparisons: a snapshot that copied or re-derived any of them could drift from the fills it must
- * match.
+ * match. What the snapshot then hands the fit drive is pinned last.
  */
 final class ClusterLabelStylingSnapshotTests {
 
@@ -190,6 +196,93 @@ final class ClusterLabelStylingSnapshotTests {
                 .isFalse();
             assertThat(styling.paints().getContentInputs().nameFormat())
                 .isEqualTo(spotlightPicks.nameFormat());
+        }
+    }
+
+    @Nested
+    class CreateFitInputs {
+
+        private MockedStatic<KmuOwnerMapDiagnosticsSettings> settingsMock;
+
+        @BeforeEach
+        void openTheSettingsSeam() {
+
+            settingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
+            settingsMock
+                .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
+                .thenReturn(false);
+        }
+
+        @AfterEach
+        void closeTheSettingsSeam() {
+            settingsMock.close();
+        }
+
+        @Test
+        void cutsTheClustersByOwnerId() {
+            // The fit clusters cells by the key it is handed, so the owner tier hands it the owner
+            // ID its fills fuse by - a spotlight key included, so the names trace as the fills do.
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+
+            assertThat(fitInputs.ownerKeyBySystemKey())
+                .isEqualTo(Map.of(buildCellKey("corvus"), SPOTLIT_OWNER_ID));
+        }
+
+        @Test
+        void carriesTheFaceTheSnapshotSettled() {
+
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+
+            assertThat(fitInputs.labelFace())
+                .isEqualTo(LABEL_FACE);
+        }
+
+        @Test
+        void drawsNamesWhereThePicksSpellThem() {
+
+            var fitInputs = buildTracedSnapshot(
+                    ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL))
+                .createFitInputs();
+
+            assertThat(fitInputs.areNamesDrawn())
+                .isTrue();
+        }
+
+        @Test
+        void drawsNoNamesWhereThePicksSpellNone() {
+
+            var fitInputs = buildTracedSnapshot(
+                    ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.NONE))
+                .createFitInputs();
+
+            assertThat(fitInputs.areNamesDrawn())
+                .isFalse();
+        }
+
+        @Test
+        void showsTheAnchorOverlayWhereThePlayerHasItOn() {
+            // Read here, the one point every path asks for its inputs, so every path gates alike.
+            settingsMock
+                .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
+                .thenReturn(true);
+
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+
+            assertThat(fitInputs.isAnchorOverlayShown())
+                .isTrue();
+        }
+
+        // A snapshot over one owned system under the given picks, with a scheme no case reads into.
+        private ClusterLabelStylingSnapshot buildTracedSnapshot(ContentInputs contentInputs) {
+
+            return ClusterLabelStylingSnapshot.resolveForTracing(
+                Map.of(
+                    buildCellKey("corvus"),
+                    new SystemOwner(SPOTLIT_OWNER_ID, new ColourPair(Color.BLUE, Color.DARK_GRAY))),
+                buildStyling(),
+                OwnerReadingFake.createAnsweringNothing(),
+                contentInputs,
+                LABEL_FACE);
         }
     }
 

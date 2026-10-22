@@ -477,7 +477,7 @@ which is what keeps a band from outliving the ring it was laid in;
 the band stage then fills it back in.
 
 The ring a band is laid along is kept beside the shape it was walked inside,
-in a [`CellRingPathCache`](../../src/main/java/kmu/maplayers/ownermap/render/ribbon/CellRingPathCache.java)
+in a [`CellRingPathCache`](../../src/main/java/kmu/maplayers/base/ribbon/CellRingPathCache.java)
 the clusters hold and the bake asks before it walks anything.
 A bake runs whenever a cluster name may have moved,
 while a cell's ring changes only when the cell is cut again,

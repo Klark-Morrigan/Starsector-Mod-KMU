@@ -14,6 +14,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
@@ -24,6 +25,7 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.SystemFillStates;
+import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -41,13 +43,11 @@ import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.OwnerMapCache;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.settings.KmuMapLabelSettings;
@@ -456,7 +456,9 @@ final class RelayOwnerLayerIntegrationTests {
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             new RevisedCellGeometry(geometryCacheMock, 1),
-            ClusterLabelStylingSnapshot.resolveFrom(buildRelayMap(), StarsectorFont.VANILLA_INSIGNIA_42));
+            ClusterLabelStylingSnapshot
+                .resolveFrom(buildRelayMap(), StarsectorFont.VANILLA_INSIGNIA_42)
+                .createFitInputs());
 
         return standingAnchors.getAnchors();
     }

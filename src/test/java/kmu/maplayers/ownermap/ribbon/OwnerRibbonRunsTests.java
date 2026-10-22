@@ -2,13 +2,15 @@ package kmu.maplayers.ownermap.ribbon;
 
 import kmlib.colour.ColourPair;
 
+import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonSegment;
+import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,7 +59,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <p>Every case names its owners in a deliberate order and expects that same order out, since
  * the rule ranks nothing itself and a case that happened to be sorted would hide it.
  */
-final class RibbonPlanTests {
+final class OwnerRibbonRunsTests {
 
     @Nested
     class PlanCellRibbon {
@@ -66,7 +68,7 @@ final class RibbonPlanTests {
         void drawsNoRibbonInACellNoOwnerIsPresentIn() {
             // A painted system nobody holds anything in: the mechanic painted the fill regardless,
             // and there is no presence anywhere for a band to report.
-            assertThat(RibbonPlan.planCellRibbon(
+            assertThat(OwnerRibbonRuns.planCellRibbon(
                     Optional.of(HEGEMONY),
                     List.of(),
                     OwnerAffiliation.NONE,
@@ -78,7 +80,7 @@ final class RibbonPlanTests {
         void drawsThePainterAloneWhereItIsTheOnlyOwnerPresent() {
             // The single-owner cell: nobody contests the system, and the band is there to say
             // how much is in it rather than whose it is - which its fill has already said.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2)),
                 OwnerAffiliation.NONE,
@@ -96,7 +98,7 @@ final class RibbonPlanTests {
             // An owner counted at nothing holds no stake the score was decided on, so it is not
             // presence: it takes no run of its own, and the cell stays the painter's uncontested
             // one rather than becoming a contest.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
                 OwnerAffiliation.NONE,
@@ -115,7 +117,7 @@ final class RibbonPlanTests {
             // the contested cells the readout exists for. Only the stake runs shorten: the
             // parting keeps its own length, or the ticks and the gaps between them would be
             // indistinguishable.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3)),
                 OwnerAffiliation.NONE,
@@ -135,7 +137,7 @@ final class RibbonPlanTests {
             // The shortening reaches only the cells nobody contests. A contest is the readout the
             // bands exist for, so no knob under the uncontested reading may change how one is
             // drawn.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 OwnerAffiliation.NONE,
@@ -154,7 +156,7 @@ final class RibbonPlanTests {
             // owners together: they hold the system between them rather than fighting over it, so
             // the band is a tally of that joint footprint. Both keep their own run in their own
             // colours - what standing together changes is the length, never the fold.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
@@ -172,7 +174,7 @@ final class RibbonPlanTests {
             // An ally does not make a cell uncontested - it only stops being a rival itself. The
             // Diktat stands with nobody here, so the cell is the contest it looks like and
             // keeps the authored lengths even under the shortening.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(
                     buildHegemonyPresence(1),
@@ -195,7 +197,7 @@ final class RibbonPlanTests {
             // A system its painting owner holds nothing in: the uncontested reading reports the size
             // of a footprint, and there is none here - so banding the cell would lay a band of no
             // runs on a system holding nothing.
-            assertThat(RibbonPlan.planCellRibbon(
+            assertThat(OwnerRibbonRuns.planCellRibbon(
                     Optional.of(HEGEMONY),
                     List.of(buildHegemonyPresence(0)),
                     OwnerAffiliation.NONE,
@@ -208,7 +210,7 @@ final class RibbonPlanTests {
             // Three stakes of one owner come out as three bright segments with two dark
             // partings strictly between them - the run itself neither opens nor closes on one,
             // and the only other parting here is the divider the owner ahead of it is closed by.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(3)),
                 OwnerAffiliation.NONE,
@@ -231,7 +233,7 @@ final class RibbonPlanTests {
             // is Hegemony's dark shade, not Tri-Tachyon's: it closes the run it follows, which
             // is what makes it read as the Hegemony's holdings ending rather than as a gap
             // belonging to nobody.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
                 OwnerAffiliation.NONE,
@@ -255,7 +257,7 @@ final class RibbonPlanTests {
             // Three owners of one stake each: a divider at each of the two handovers and none
             // after the last run, since a band ending on a divider would part its final owner
             // from nothing at all.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(
                     buildHegemonyPresence(1),
@@ -278,7 +280,7 @@ final class RibbonPlanTests {
             // A one-stake owner has no inside, so nothing parts it from itself - the smallest
             // rival mark the ribbon can make is one bright segment, and the only dark run in
             // this band is the divider between the two owners.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 OwnerAffiliation.NONE,
@@ -295,7 +297,7 @@ final class RibbonPlanTests {
         void drawsTheOnePresentOwnerAloneWhereTheCellIsPaintedForAnAbsentOne() {
             // The absent-painter case the contest rule is phrased for: the cell is painted for the
             // Diktat, which holds nothing in it, so the band is Tri-Tachyon's run by itself.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(DIKTAT),
                 List.of(buildTriTachyonPresence(2)),
                 OwnerAffiliation.NONE,
@@ -314,7 +316,7 @@ final class RibbonPlanTests {
             // rival of anything, so the cell falls to the uncontested reading and draws at its
             // shortened runs. Read off the lengths rather than off the fact of a band, since only
             // they tell the two readings apart.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2)),
                 OwnerAffiliation.NONE,
@@ -332,7 +334,7 @@ final class RibbonPlanTests {
             // Two owners settled in a system no layer paints: with no fill naming either of them,
             // the second owner is what makes the cell a contest. Posed with the shortening on, so
             // the authored lengths are what say the contested reading took it.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(1), buildDiktatPresence(1)),
                 OwnerAffiliation.NONE,
@@ -350,7 +352,7 @@ final class RibbonPlanTests {
             // The same painterless cell with its second owner counted at nothing. What makes such a
             // cell a contest is a second owner holding something, not a second entry in the list -
             // so this is the lone owner's cell it looks like, and takes the shortened runs.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2), buildDiktatPresence(0)),
                 OwnerAffiliation.NONE,
@@ -368,7 +370,7 @@ final class RibbonPlanTests {
             // An unpainted system settled by two owners standing together. With no fill naming
             // either of them the reading falls to how many sides are in it, and allies are one -
             // so the band tallies their joint footprint rather than announcing a war.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
@@ -387,7 +389,7 @@ final class RibbonPlanTests {
             // together: one side, so the cell takes the shortened runs. Judged against the listed
             // but absent owner instead, both allies would read as rivals of somebody who is not in
             // the system at all and the cell would band as a war.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 NO_PAINTER,
                 List.of(
                     buildDiktatPresence(0),
@@ -408,7 +410,7 @@ final class RibbonPlanTests {
             // The same unpainted system with an outsider settled in it: two sides are present, so
             // it is a contest and keeps the authored lengths. Read against the case above, this is
             // what says the painterless reading counts sides rather than allowing at most one owner.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 NO_PAINTER,
                 List.of(
                     buildHegemonyPresence(1),
@@ -430,7 +432,7 @@ final class RibbonPlanTests {
         void keepsTheOwnerOrderItWasHandedRatherThanRankingThemItself() {
             // The painter is listed second and stays second: the caller ranked these, and a
             // ribbon that re-sorted could disagree with the fill about who leads the system.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildTriTachyonPresence(1), buildHegemonyPresence(1)),
                 OwnerAffiliation.NONE,
@@ -449,7 +451,7 @@ final class RibbonPlanTests {
             // the painter's two stakes and the one real rival, with no gap where it was. It
             // takes no divider either: the single dark run at the handover is the Hegemony's,
             // closing the run it actually follows.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(
                     buildHegemonyPresence(2),
@@ -472,7 +474,7 @@ final class RibbonPlanTests {
             // The absent-painter shape: the painting owner is listed and holds nothing, so the first run
             // in the band is the second owner's. A divider laid for the empty owner would open the
             // band on a parting, which parts the first run from nothing at all.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(DIKTAT),
                 List.of(
                     buildDiktatPresence(0),
@@ -496,7 +498,7 @@ final class RibbonPlanTests {
             // It draws no run, so the band has to end on Tri-Tachyon's segment: a divider for
             // the empty owner would close the band on a parting belonging to an owner that is not
             // in it.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(
                     buildHegemonyPresence(1),
@@ -517,7 +519,7 @@ final class RibbonPlanTests {
             // Neither length is the rule's own: a four-wide stake parted by two reads as the
             // same holdings at the proportions the player set. The divider takes that same
             // parting length, so no knob can make one boundary say more than the other.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
                 OwnerAffiliation.NONE,
@@ -533,29 +535,13 @@ final class RibbonPlanTests {
                     new RibbonSegment(HEGEMONY_DARK, 2),
                     new RibbonSegment(TRITACHYON_BRIGHT, 4));
         }
-    }
-
-    @Nested
-    class SumLengthUnits {
 
         @Test
-        void addsUpEveryRunItWasBuiltFrom() {
-
-            var plan = new RibbonPlan(List.of(
-                new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                new RibbonSegment(HEGEMONY_DARK, 1),
-                new RibbonSegment(TRITACHYON_BRIGHT, 3)));
-
-            assertThat(plan.sumLengthUnits())
-                .isEqualTo(7);
-        }
-
-        @Test
-        void addsUpEveryRunOfAPlannedRibbon() {
+        void laysEveryStakeAndPartingIntoTheBandsLength() {
             // The two halves over one cell: five stakes, three partings inside the two runs
             // and the divider between them, summed into the budget the drawn width is settled
             // against on a crowded cell.
-            var plan = RibbonPlan.planCellRibbon(
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
                 OwnerAffiliation.NONE,
@@ -566,64 +552,10 @@ final class RibbonPlanTests {
         }
 
         @Test
-        void addsUpToNothingForACellWithNoRibbon() {
-            assertThat(RibbonPlan.NONE.sumLengthUnits())
-                .isEqualTo(0);
-        }
-    }
-
-    @Nested
-    class EqualsAndHashCode {
-
-        @Test
-        void equatesTwoPlansOfTheSameRuns() {
-            // A plan is a value: a laid plan and one built from the same runs are one band, which is
-            // what lets a cell's standing band be compared with a re-baked one.
-            var laid = RibbonPlan.planCellRibbon(
-                Optional.of(HEGEMONY),
-                List.of(buildHegemonyPresence(1)),
-                OwnerAffiliation.NONE,
-                STANDARD_RULES);
-            var built = new RibbonPlan(List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3)));
-
-            assertThat(laid)
-                .isEqualTo(built)
-                .hasSameHashCodeAs(built);
-        }
-
-        @Test
-        void tellsApartTwoPlansOfDifferentRuns() {
-
-            assertThat(new RibbonPlan(List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3))))
-                .isNotEqualTo(new RibbonPlan(List.of(new RibbonSegment(TRITACHYON_BRIGHT, 3))));
-        }
-    }
-
-    @Nested
-    class Segments {
-
-        @Test
-        void staysAsPlannedWhenTheListItWasBuiltFromIsAddedToAfterwards() {
-            // A plan is cached and read back over many frames, so it has to be a value rather
-            // than a window onto whatever list built it - a caller reusing its builder must not
-            // be able to lengthen a ribbon already planned.
-            var source = new ArrayList<RibbonSegment>();
-
-            source.add(new RibbonSegment(HEGEMONY_BRIGHT, 3));
-
-            var plan = new RibbonPlan(source);
-
-            source.add(new RibbonSegment(TRITACHYON_BRIGHT, 3));
-
-            assertThat(plan.segments())
-                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
-        }
-
-        @Test
-        void refusesAnyChangeToAPlannedRibbon() {
-            // A planned ribbon keeps the list it was laid into rather than a copy, so the list it
-            // hands out is the plan itself and must not be open to a reader's edits.
-            var plan = RibbonPlan.planCellRibbon(
+        void refusesAnyChangeToALaidRibbon() {
+            // A laid ribbon is cached and read back over many frames, so the runs it hands out
+            // must not be open to a reader's edits.
+            var plan = OwnerRibbonRuns.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 OwnerAffiliation.NONE,

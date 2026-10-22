@@ -6,10 +6,10 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
+import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

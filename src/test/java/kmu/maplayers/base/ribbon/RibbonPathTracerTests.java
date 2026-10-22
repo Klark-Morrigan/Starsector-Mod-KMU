@@ -1,17 +1,15 @@
-package kmu.maplayers.ownermap.render.ribbon;
-
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
+package kmu.maplayers.base.ribbon;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND_SITE;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD_SITE;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.NECKED_CELL;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND_SITE;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD_SITE;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.NECKED_CELL;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

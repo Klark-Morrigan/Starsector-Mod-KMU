@@ -9,6 +9,7 @@ import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -28,7 +29,6 @@ import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
@@ -596,8 +596,19 @@ final class OwnerMapCacheTests {
 
         seams.openSeam(FilterSelection.class);
         seams.openSeam(ClusterAnchorsBuilder.class);
-        seams.openSeam(ClusterLabelStylingSnapshot.class);
         seams.openSeam(LabelsBuilder.class);
+
+        // The fit is stood in for, so the snapshot only has to hand it something: a stand-in
+        // whose inputs nothing reads.
+        var snapshotMock = mock(ClusterLabelStylingSnapshot.class);
+        var labelSnapshotMock = seams.openSeam(ClusterLabelStylingSnapshot.class);
+
+        labelSnapshotMock
+            .when(() -> ClusterLabelStylingSnapshot.resolveFrom(any(), any()))
+            .thenReturn(snapshotMock);
+        labelSnapshotMock
+            .when(() -> ClusterLabelStylingSnapshot.resolveForTracing(any(), any(), any(), any(), any()))
+            .thenReturn(snapshotMock);
 
         // Either view's styling reads its theme and its border trace off settings no test JVM
         // holds; the styling itself runs for real over what these answer.

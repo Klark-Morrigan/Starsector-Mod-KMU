@@ -12,11 +12,11 @@ import kmu.maplayers.base.render.MapFrameCompositor;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
+import kmu.maplayers.base.ribbon.CellRibbonPathRenderer;
+import kmu.maplayers.base.ribbon.CellRibbonRenderer;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
-import kmu.maplayers.ownermap.render.ribbon.CellPresenceRibbonRenderer;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonPathRenderer;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.apache.log4j.Logger;
@@ -245,7 +245,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // bands are gated the same way - a cell where nothing is present bakes none.
     private void renderPresenceBands(MapFrame mapFrame) {
 
-        CellPresenceRibbonRenderer.renderOnMap(
+        CellRibbonRenderer.renderOnMap(
             cache.getClusters().getPaintedCells().getRibbonByCellKey().values(),
             mapFrame);
 

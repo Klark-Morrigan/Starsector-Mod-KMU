@@ -503,8 +503,9 @@ Each view injects into the framework's hover box the explanation of the mechanic
 
 The band's plan,
 its gate and its draw are the tier's:
-the [plan and its gate](../ownermap/ribbon/README.md)
-and the [ring geometry and the draw](../ownermap/render/ribbon/README.md).
+the [runs and their gate](../ownermap/ribbon/README.md)
+and the [bake](../ownermap/render/ribbon/README.md),
+over the substrate's [ring geometry and draw](../base/ribbon/README.md).
 What this layer supplies is where a band's order comes from,
 which is each painting mechanic's own business
 and keeping it there is what makes one band mean one thing on every view:

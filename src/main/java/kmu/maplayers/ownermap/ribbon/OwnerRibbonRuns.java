@@ -2,17 +2,18 @@ package kmu.maplayers.ownermap.ribbon;
 
 import kmlib.colour.ColourPair;
 
+import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonSegment;
+import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * The banded stroke one cell draws inside its own ring, as the ordered runs it is made of:
- * every owner present in the cell in the order it was ranked, each contributing a segment per
- * stake it has and an interjection between two of its own.
+ * Lays an owner-painted cell's band: every owner present in the cell in the order it was ranked,
+ * each contributing a segment per stake it has and an interjection between two of its own.
  *
  * <p>What the band says is how a system splits - how many stakes, whose, and in what
  * proportion - with no glyph and no label. One shade carries every parting in it. Stakes of
@@ -52,37 +53,19 @@ import java.util.Optional;
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
  * painter means something quite different from the same segment against a short one.
  *
- * <p>Pure data over a ranking and a count each, with no geometry and no colour lookup of its
- * own, so the rule depends on nothing live. Ranking order is the caller's: the runs come out
- * in the order the owners were handed over, so the ribbon cannot disagree with the fill about
- * who leads a system it re-ranked for itself.
+ * <p>Pure over a ranking and a count each, with no geometry and no colour lookup of its own, so
+ * the rule depends on nothing live. Ranking order is the caller's: the runs come out in the order
+ * the owners were handed over, so the ribbon cannot disagree with the fill about who leads a
+ * system it re-ranked for itself.
  *
- * <p>A value: two plans of the same runs are equal. A class rather than a record so a plan laid
- * here can keep the list it was laid into, where a plan built from a caller's list copies it.
+ * <p>The owner tier's own rule rather than the band's: the plan it produces is
+ * {@code base.ribbon}'s, and a layer banding a cell by anything but its owners lays its runs by a
+ * rule of its own.
  */
-public final class RibbonPlan {
+public final class OwnerRibbonRuns {
 
-    // The cell draws no band: nothing is present in it, so there is no footprint to report.
-    public static final RibbonPlan NONE = new RibbonPlan(List.of());
-
-    private final List<RibbonSegment> segments;
-
-    /**
-     * A plan of the given runs, copied, so a caller reusing the list it built from cannot lengthen
-     * a ribbon already planned.
-     *
-     * @param segments the ribbon's runs in draw order, starting from the cell's top centre; empty
-     *                 when the cell draws no ribbon at all
-     */
-    public RibbonPlan(List<RibbonSegment> segments) {
-        this.segments = List.copyOf(segments);
-    }
-
-    // A plan over runs laid here, kept rather than copied: the list was built for this plan alone
-    // and goes nowhere else, so a copy would guard against nobody. Reached through
-    // adoptLaidSegments, which names what sets it apart from the public constructor.
-    private RibbonPlan(ArrayList<RibbonSegment> laidSegments) {
-        this.segments = Collections.unmodifiableList(laidSegments);
+    // Lays only; never instantiated.
+    private OwnerRibbonRuns() {
     }
 
     /**
@@ -99,7 +82,7 @@ public final class RibbonPlan {
      *                        {@link OwnerAffiliation#NONE} where nothing groups owners
      * @param rules           how a band is laid: the run lengths, and how far they reach on a cell
      *                        nobody contests
-     * @return the cell's runs in draw order, or {@link #NONE} where the cell draws no band
+     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
             Optional<String> paintingOwnerId,
@@ -122,55 +105,9 @@ public final class RibbonPlan {
         // the footprint - and there has to be one, which a cell painted for an owner holding nothing
         // in the system, with nobody else there either, has not.
         if (firstPresentOwnerId.isEmpty()) {
-            return NONE;
+            return RibbonPlan.NONE;
         }
         return layOwnerRuns(rankedPresences, rules.resolveUncontestedLengths());
-    }
-
-    /**
-     * @return the ribbon's runs in draw order, starting from the cell's top centre; empty when the
-     *         cell draws no ribbon at all
-     */
-    public List<RibbonSegment> segments() {
-        return segments;
-    }
-
-    /**
-     * How far the whole ribbon runs, in ribbon widths.
-     *
-     * <p>The budget the drawn size is settled against: a cell whose perimeter cannot hold
-     * this many widths shrinks what a width is worth until it can, rather than wrapping the
-     * band or cutting it short.
-     *
-     * @return the total length of every run, or zero where the cell draws no ribbon
-     */
-    public int sumLengthUnits() {
-
-        var lengthUnits = 0;
-        for (var segment : segments) {
-            lengthUnits += segment.lengthUnits();
-        }
-        return lengthUnits;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof RibbonPlan plan && segments.equals(plan.segments);
-    }
-
-    @Override
-    public int hashCode() {
-        return segments.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return "RibbonPlan[segments=" + segments + "]";
-    }
-
-    // The plan over a list laid by this class, kept as it is.
-    private static RibbonPlan adoptLaidSegments(ArrayList<RibbonSegment> laidSegments) {
-        return new RibbonPlan(laidSegments);
     }
 
     // Lays the whole band: every owner's run in the order handed over, each closed off by its own
@@ -203,7 +140,7 @@ public final class RibbonPlan {
             appendOwnerRun(segments, presence, lengths);
             outgoingOwner = presence;
         }
-        return adoptLaidSegments(segments);
+        return new RibbonPlan(segments);
     }
 
     // Whether the band would say anything the cell's own fill does not, which is what decides the

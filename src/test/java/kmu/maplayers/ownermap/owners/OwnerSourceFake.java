@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 

@@ -1,11 +1,7 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
-
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonSegment;
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,13 +10,13 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND_SITE;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD_SITE;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.NECKED_CELL;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND_SITE;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD_SITE;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.NECKED_CELL;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -329,7 +325,7 @@ final class CellRibbonBuilderTests {
         void compressesACrowdedBandRatherThanCuttingItShort() {
             // A stake-dense system plans more band than its cell has outline. Every run still
             // draws - the whole point of compressing what a width is worth rather than truncating
-            // is that no owner drops off the readout - so a crowded cell reads as crowded.
+            // is that no run drops off the readout - so a crowded cell reads as crowded.
             var crowdedRuns = new ArrayList<RibbonSegment>();
 
             for (var run = 0; run < CROWDED_RUN_COUNT; run++) {

@@ -1,9 +1,9 @@
-package kmu.maplayers.ownermap.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import java.awt.Color;
 
 /**
- * One run of a cell's presence ribbon: a colour, and how far it runs measured in ribbon
+ * One run of a cell's ribbon: a colour, and how far it runs measured in ribbon
  * widths.
  *
  * <p>Length is stated in widths rather than in world units because a plan is settled before
@@ -12,9 +12,8 @@ import java.awt.Color;
  * leaves the proportions between them exactly as planned - the proportions being the whole
  * of what the band says.
  *
- * @param colour      the shade this run draws in: an owner's bright colour for a stake, its
- *                    dark colour for a parting - between two of its own stakes, or closing
- *                    its whole run where another owner's follows
+ * @param colour      the shade this run draws in, whichever rule laid it - a stake's colour, or
+ *                    a parting's
  * @param lengthUnits how far the run goes, in ribbon widths
  */
 public record RibbonSegment(

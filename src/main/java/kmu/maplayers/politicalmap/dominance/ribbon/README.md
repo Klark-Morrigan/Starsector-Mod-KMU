@@ -4,7 +4,7 @@ Where a band's painter and its order come from on a cell the **dominance** mecha
 plus the rule deciding which mechanic speaks for a cell at all.
 How many colonies each bloc draws is one shared rule's answer for every layer,
 in [`ownermap.ribbon`](../../../ownermap/ribbon/README.md);
-the geometry is [`ownermap.render.ribbon`](../../../ownermap/render/ribbon/README.md)'s.
+the geometry is [`base.ribbon`](../../../base/ribbon/README.md)'s.
 
 Part of [the political map](../../README.md),
 in Klark Morrigan's Utilities (KMU);

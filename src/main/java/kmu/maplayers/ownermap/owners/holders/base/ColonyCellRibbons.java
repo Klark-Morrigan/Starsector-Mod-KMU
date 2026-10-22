@@ -2,8 +2,9 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.OwnerPresence;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.OwnerRibbonRuns;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -67,7 +68,7 @@ public final class ColonyCellRibbons {
             List<String> rankedBlocIds,
             RibbonPlanInputs inputs) {
 
-        return RibbonPlan.planCellRibbon(
+        return OwnerRibbonRuns.planCellRibbon(
             paintingBlocId,
             collectColouredPresences(
                 orderCountsForBand(

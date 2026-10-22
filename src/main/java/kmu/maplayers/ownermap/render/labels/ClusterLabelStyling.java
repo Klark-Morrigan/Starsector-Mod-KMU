@@ -10,6 +10,7 @@ import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
+import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
@@ -31,7 +32,8 @@ import java.util.function.Function;
  * the fills resolve theirs, so a label never drifts from the cluster group it names. The
  * placement search owns where a label sits; this owns what shade it draws in and which
  * owner's name it spells, and hands the search both as plain functions of an owner ID so the
- * search itself stays ignorant of owners.
+ * search itself stays ignorant of owners. This is the whole of what the owner tier adds to a
+ * name: the fit drive below it is the same for every layer.
  *
  * <p>Both attributes follow the owner reading off filter and the filter rules under one. The
  * colour is baked from the same {@link MapPalettes} mapping the border uses, off the very
@@ -51,6 +53,30 @@ final class ClusterLabelStyling {
 
     // Resolves only; never instantiated.
     private ClusterLabelStyling() {
+    }
+
+    // The resolver pair the fit names and shades each cluster through, off everything the pass was
+    // baked under. Everything comes off the paints the build beneath the names was painted in,
+    // production or tracing. The desaturation palette is that scheme's, so a desaturated owner's
+    // name matches its recoloured fill and border exactly. The style decision every label follows
+    // is the very one the fills were painted from, remembered per owner by the paints: under a
+    // filter it recedes every non-spotlit owner and leaves the spotlit one full, so a receded name
+    // matches its receded fill and a spotlit name stays full, the drift a filter opens.
+    static ClusterLabelResolvers createLabelResolvers(ClusterLabelStylingSnapshot labelStyling) {
+
+        var paints = labelStyling.paints();
+        var styling = paints.getStyling();
+
+        return new ClusterLabelResolvers(
+            newLabelColourResolver(
+                labelStyling.ownerBySystemKey(),
+                new OwnerNameStyles(styling.categories().readNameStyles()),
+                paints::resolveOwnerStyleDecisionOf,
+                styling.desaturationPalette()),
+            newNameEstimatorResolver(
+                paints.getReading(),
+                paints.getContentInputs(),
+                labelStyling.labelFace()));
     }
 
     // The colour a cluster's name (and its debug dot) draws in: the colour choice of the name

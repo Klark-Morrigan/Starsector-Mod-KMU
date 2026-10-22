@@ -3,12 +3,14 @@ package kmu.maplayers.ownermap.render.labels;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.FontAtlas;
 
+import kmu.maplayers.base.labels.anchor.ClusterAnchorFitInputs;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import java.util.Map;
 
@@ -61,6 +63,28 @@ public record ClusterLabelStylingSnapshot(
             clusters.getOccupancy().getOwnerBySystemKey(),
             clusters.getBuildInputs().getPaints(),
             labelFace);
+    }
+
+    /**
+     * The owner tier's half of a name fit: the owners as the keys the clusters are cut by, the face,
+     * which consumers want the fit, and the resolver pair this snapshot names and shades by.
+     *
+     * <p>The clusters are cut by owner ID. Under a filter that is a synthetic spotlight key, so the
+     * solid and contested clusters trace as their own clusters exactly as the fills do.
+     *
+     * <p>The anchor overlay's toggle is read here, the one point every path asks for its inputs, so
+     * the production rebuild, the incremental refresh and the tracing view all gate the same way.
+     *
+     * @return the inputs the fit drive stands on
+     */
+    public ClusterAnchorFitInputs createFitInputs() {
+
+        return new ClusterAnchorFitInputs(
+            SystemOwner.mapOwnerIdBySystemKey(ownerBySystemKey),
+            labelFace,
+            paints.getContentInputs().nameFormat().areNamesDrawn(),
+            KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors(),
+            () -> ClusterLabelStyling.createLabelResolvers(this));
     }
 
     /**

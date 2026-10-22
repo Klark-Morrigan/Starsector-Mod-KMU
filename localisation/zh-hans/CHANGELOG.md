@@ -92,6 +92,8 @@
 | `BlocAffiliation`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness` 及其 `areBlocsFriendly(Set, Set)` | KMLib 的 `kmlib.starsector.factions.relation.FactionSetFriendliness`，及其 `areSetsFriendly(Set, Set)` 和 `createForSector(SectorAPI)` |
 | `base.labels.anchor.DiagnosticPalette` | `base.render.DiagnosticPalette`，供标签与区域的调试显示共用 |
+| `ownermap.ribbon` 中的 `RibbonSegment` 和 `RibbonSegmentLengths`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonPath`、`CellRibbonBuilder`、`RibbonPathTracer`、`RibbonPathVerdict`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle`、`CellRibbonPathRenderer` 和 `RibbonBakePhases` | `base.ribbon`，与色带计划值 `RibbonPlan` 放在一起：色带是沿单元边界内侧排布的色段，与色段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
+| `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`：任何有区域的图层都以同样方式拟合名称 |
 | `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，不再实现 `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`，与读取它的悬停框放在一起 |
 | `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`：它不读取任何 Nexerelin 类型 |
@@ -126,7 +128,8 @@
 | --- | --- |
 | `OwnerPaintedView` 的 `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`、`buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerReading, BlocStatsRead, ListSortModes)` 和 `resolveSelectableBlocGate(HolderGrouping)` | 位于 `HolderPaintedView`，其中 `buildBlocPickerRead` 改为 `readPickerUnderOneGrouping(SectorAPI, Function, ListSortModes)`：只对分组采样一次，并通过视图自身的读取为各行命名。`OwnerPaintedView` 保留 `resolveOwnerPickerRead(SectorAPI)`，默认为空 |
 | `HolderPaintedView.resolveContestGrouping()` | `resolveContestAffiliation()`，返回 `OwnerAffiliation` |
-| 基于 `BlocAffiliation` 的 `RibbonPlan.planCellRibbon(Optional, List, BlocAffiliation, RibbonPlanRules)` | 基于 `kmu.maplayers.ownermap.owners.OwnerAffiliation`，由 `BlocAffiliation` 实现 |
+| 基于 `BlocAffiliation` 的 `RibbonPlan.planCellRibbon(Optional, List, BlocAffiliation, RibbonPlanRules)` | `ownermap.ribbon.OwnerRibbonRuns.planCellRibbon(Optional, List, OwnerAffiliation, RibbonPlanRules)`，基于 `kmu.maplayers.ownermap.owners.OwnerAffiliation`，由 `BlocAffiliation` 实现。它返回的计划为 `base.ribbon.RibbonPlan` |
+| `ClusterAnchorsBuilder.rebuildClusterAnchors(StandingClusterAnchors, RevisedCellGeometry, ClusterLabelStylingSnapshot)`，以及接受同样三个参数的 `rebuildDiagnosticClusterAnchors` | 以 `base.labels.anchor.ClusterAnchorFitInputs` 代替快照，由 `ClusterLabelStylingSnapshot.createFitInputs()` 给出：区域的键、字体、哪些使用方需要拟合，以及一对解析函数 |
 | `SpotlitBlocs.findPresentSystemKeys(HolderPass, String, Set)` 和 `isBlocPresentIn(HolderPass, String, StarSystemAPI)` | `HolderInhabitation.findSpotlitPresenceSystemKeys(HolderPass, String, Set)` 和 `HolderInhabitation.isBlocPresentIn(HolderPass, String, StarSystemAPI)` |
 | `HolderOwnerSource(HolderGrouping, HolderGrouping, HolderProvider, SystemHolderResolveSource, Function)` | `HolderOwnerSource(HolderGrouping, HolderPaintedView)`：其余部分由视图给出 |
 | `HolderOwnerSource.grouping()`、`BlocAffiliation.NONE` 和 `BlocAffiliation.areBlocsAllied(String, String)` | `grouping()` 已移除，改由视图的 `resolveGrouping()` 给出。`NONE` 改用 `OwnerAffiliation.NONE` 或 `new BlocAffiliation(FactionAlliances.NONE)`。`areBlocsAllied` 改为 `areOwnersAllied` |

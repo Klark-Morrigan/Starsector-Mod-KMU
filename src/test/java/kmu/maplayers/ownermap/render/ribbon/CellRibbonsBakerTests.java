@@ -12,14 +12,14 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 
@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
-import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -92,7 +92,7 @@ final class CellRibbonsBakerTests {
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
 
     // The row a bake lands on.
-    private static final String BAKE_SECTION = "ownerMap.bakeRibbons";
+    private static final String BAKE_SECTION = "mapLayer.bakeRibbons";
 
     // A plan with a run in it, so a cell that reaches the geometry comes back carrying a band and
     // one the pass never reached is told apart by drawing none.

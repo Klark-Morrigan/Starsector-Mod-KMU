@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.profiling.PhasedSection;
 import kmlib.profiling.ProfilePhase;
@@ -6,15 +6,14 @@ import kmlib.profiling.ProfilePhase;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 
 /**
- * The section a bake of the presence bands is measured under, and the four separable things a bake
- * does to each cell: counting what the cell's system holds, tracing the ring its band runs along,
- * carving the names and the cell's own narrow places off that ring, and stroking what is left into
- * triangles.
+ * The section a bake of the cell bands is measured under, and the four separable things a bake
+ * does to each cell: planning the cell's runs, tracing the ring its band runs along, carving the
+ * names and the cell's own narrow places off that ring, and stroking what is left into triangles.
  *
  * <p>Four rather than one because they grow on different axes - the trace with the cells whose ring
- * had to be walked, the carve with the cells times the names, the count with what the systems hold
- * - so one total could say a bake got slower without saying which of them did. Which axis each grows
- * on, and why, is the package README's.
+ * had to be walked, the carve with the cells times the names, the plan with whatever the layer's rule
+ * reads per cell - so one total could say a bake got slower without saying which of them did. Which
+ * axis each grows on, and why, is the package README's.
  *
  * <p>Phases of one scope rather than sections of their own, so what the readout reports is what one
  * cell costs in each of them: a bake is one call and a cell is one turn of its loop, and it is the
@@ -22,7 +21,7 @@ import kmu.maplayers.base.profiling.RebuildStepTerms;
  */
 public final class RibbonBakePhases {
 
-    private static final String BAKE_SECTION_NAME = "ownerMap.bakeRibbons";
+    private static final String BAKE_SECTION_NAME = "mapLayer.bakeRibbons";
 
     // One spelling per phase, since each is named twice - once declaring the loop's steps and once
     // resolving the constant a caller marks with - and two spellings would be two steps.
@@ -46,7 +45,7 @@ public final class RibbonBakePhases {
         CARVE_PHASE_NAME,
         STROKE_PHASE_NAME);
 
-    /** Counting what the cell's system holds, which walks everything standing in that system. */
+    /** Planning the cell's runs by the layer's rule, which may walk everything the cell holds. */
     public static final ProfilePhase PLAN_PHASE = BAKE_SECTION.resolvePhase(PLAN_PHASE_NAME);
 
     /** Reaching for the ring the band runs along, and walking it where none stands. */

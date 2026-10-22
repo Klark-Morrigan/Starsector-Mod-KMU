@@ -1,57 +1,37 @@
-package kmu.maplayers.ownermap.render.labels;
+package kmu.maplayers.base.labels.anchor;
 
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
+import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.SystemClusters;
-import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
-import kmu.maplayers.base.labels.anchor.ClusterAnchor;
-import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement.ClusterAnchorFit;
-import kmu.maplayers.base.labels.anchor.ClusterIdentity;
-import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
-import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
-import kmu.maplayers.base.labels.anchor.ClusterPartition;
-import kmu.maplayers.base.labels.anchor.FontToleranceAnnouncement;
-import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
-import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * Drives the cluster-label placements: clusters the owned systems, reads the live tuning and
- * palette, wires the owner reading and any active filter into the per-owner colour and name
- * resolvers, and hands it all to the pure {@link ClusterAnchorPlacement} search - then keeps
- * the resulting overlay list current in place.
+ * Drives the cluster-name fit: cuts the cells into clusters by the layer's keys, carries over every
+ * placement a change did not disturb, fits the rest through the pure {@link ClusterAnchorPlacement}
+ * search, and reports what the fit cost - then keeps the caller's placements current in place.
  *
- * <p>The collaborators split by responsibility so this one stays the thin, settings-fed seam:
- * {@link ClusterLabelStyling} resolves each label's colour and name (the reading off filter, filter
- * rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over the
- * plain functions of an owner ID those resolvers hand it, and {@link LabelAnchorSpecification}
- * carries the search's tuning. This is the whole of what the owner map contributes to a
- * label: everything from the resolved colour and name onward is layer-agnostic framework.
+ * <p>Any layer with clusters runs a fit this same way, so the drive sits below every layer and asks
+ * a layer for one value only, {@link ClusterAnchorFitInputs}: its keys, its face, which consumers
+ * want the fit, and the resolver pair that names and shades a cluster. What a key means stays the
+ * layer's; everything from the resolved shade and name onward is the same for every layer.
  *
- * <p>Kept apart from
- * {@link kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder} because the anchors
- * are an independent overlay, not part of the production draw lists: they draw over the normal
- * render and the debug border-tracing overlay alike, so they cannot live inside either view's
- * build. The overlay list is owned by the owner map's drawables, beside both views, and rebuilt in
- * place here, whichever base view a rebuild produced.
+ * <p>Kept apart from whatever builds a layer's fills, because the placements are an independent
+ * overlay rather than part of the production draw lists: they draw over the normal render and over
+ * a debug view alike, so they cannot live inside either view's build.
  *
- * <p>Both entry points take a {@link ClusterLabelStylingSnapshot} rather than the owners, the
- * palette, the categories and reading and the picks the pass was baked under one by one, so the two
- * paths differ only in where that snapshot came from and a label can never be styled from two
- * passes at once.
- *
- * <p>Both also take the caller's {@link StandingClusterAnchors} and leave their own pass in it,
- * rather than reading a list and answering an {@link AnchorFitFingerprint} for it. The pair is
+ * <p>Both entry points take the caller's {@link StandingClusterAnchors} and leave their own pass in
+ * it, rather than reading a list and answering an {@link AnchorFitFingerprint} for it. The pair is
  * the caller's and not kept here, because a fingerprint parked in a static would describe
  * whichever path ran last - exactly the disagreement a second entry point can cause.
  *
@@ -74,33 +54,31 @@ public final class ClusterAnchorsBuilder {
     // Every fit writes its line: it runs on a rebuild rather than per frame, and it is the
     // rebuild's largest cost, so a reader following one through the log wants each of them.
     private static final ProfileSection FIT_ANCHORS_SECTION = ProfileSection.registerSection(
-        "ownerMap.fitClusterAnchors", RebuildStepTerms.LOGGED_EVERY_CALL);
+        "mapLayer.fitClusterAnchors", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // Drives only; never instantiated.
     private ClusterAnchorsBuilder() {
     }
 
     /**
-     * Rebuilds the cluster-label placements in place, replacing the standing pair with this pass's.
+     * Rebuilds the cluster-name placements in place, replacing the standing pair with this pass's.
      *
-     * <p>The placements feed the owner-name labels and the debug anchor overlay, so they are
-     * fitted whenever either is on - one search both share - and each consumer draws under its own
-     * toggle. Shared by the full rebuild and the incremental refresh, and the toggles and the
-     * search's tuning are read here rather than at the call sites, so every path gates identically
-     * and a settings change re-fits on the rebuild it triggers.
+     * <p>The placements feed the drawn names and the debug anchor overlay, so they are fitted
+     * whenever either is on - one search both share - and each consumer draws under its own
+     * toggle. The search's tuning is read here rather than by the callers, so every path fits
+     * under one reading of it and a settings change re-fits on the rebuild it triggers.
      *
-     * <p>The snapshot's reading supplies each owner's label and the style its colour follows; under
-     * a filter the names recede exactly as the fills do, and the synthetic spotlight keys resolve to
-     * the selected owner's name, since the reading cannot name a synthetic ID. The standing pair that
-     * came in lets placements whose clusters still stand carry over rather than be searched again,
-     * and the pair left behind states the rules this fit ran under, which only this build knows.
+     * <p>The standing pair that came in lets placements whose clusters still stand carry over
+     * rather than be searched again, and the pair left behind states the rules this fit ran under,
+     * which only this build knows.
      *
      * @param standingAnchors the caller's placements and what they were fitted under, replaced
      *                        here with this pass's
      * @param cellGeometry    the cells the fit clips and trims against, carrying the revision that
      *                        names them, so no path can fit against one reading of the geometry
      *                        and label its placements with another
-     * @param labelStyling    everything the pass was baked under that styles a label
+     * @param fitInputs       the layer's half of the fit: its keys, its face, which consumers want
+     *                        the fit, and how a cluster is named and shaded
      * @return which names this pass moved: the list left behind says where every name ended up
      *         and nothing about which are new, and this is the only point where both lists exist
      *         at once. Reported by the gated-off path too, where every standing name vanishing is
@@ -109,12 +87,12 @@ public final class ClusterAnchorsBuilder {
     public static ClusterNameDisturbance rebuildClusterAnchors(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot labelStyling) {
+            ClusterAnchorFitInputs fitInputs) {
 
         // Read ahead of the gate rather than inside it, because the standing pair needs
         // labelling either way: a rebuild that fits nothing still leaves a list behind, and an
         // unlabelled one is indistinguishable from one fitted under rules that still hold.
-        var fitFingerprint = readFitFingerprint(cellGeometry.revision(), labelStyling);
+        var fitFingerprint = readFitFingerprint(cellGeometry.revision(), fitInputs);
 
         // Indexed before this pass replaces the pair, since that is where the previous one
         // survives - the two move together, so there is no window where the list is emptied
@@ -126,8 +104,7 @@ public final class ClusterAnchorsBuilder {
         // this pass's own output as what stood before it.
         var standingNames = List.copyOf(standingAnchors.getAnchors());
 
-        if (!labelStyling.paints().getContentInputs().nameFormat().areNamesDrawn()
-                && !KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
+        if (!fitInputs.areNamesDrawn() && !fitInputs.isAnchorOverlayShown()) {
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
 
             return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
@@ -137,7 +114,7 @@ public final class ClusterAnchorsBuilder {
         // drift apart on a rebuild that straddles a settings change.
         var fittedAnchors = fitClusterAnchors(
             cellGeometry,
-            labelStyling,
+            fitInputs,
             fitFingerprint,
             reusableAnchors);
 
@@ -147,120 +124,90 @@ public final class ClusterAnchorsBuilder {
     }
 
     /**
-     * The rebuild for a path with no built clusters at hand - the debug border-tracing view, which
-     * builds no production draw lists to borrow an owner map from - gated behind the anchors toggle
-     * so the fit only runs while someone is actually looking at the anchors.
+     * The rebuild for a debug view that builds no production draw lists, gated behind the anchor
+     * overlay alone so the fit only runs while someone is actually looking at the anchors.
      *
      * <p>Leaves the caller's pair labelled with what produced it exactly as the shared path does, so
      * the caller holds one fact about its placements whichever view built them. What the shared
-     * rebuild reports about the names it moved is dropped rather than passed on: that view replaces
-     * the production draw lists outright, so there is nothing laid around the names for a moved one
-     * to oblige.
+     * rebuild reports about the names it moved is dropped rather than passed on: such a view
+     * replaces the production draw lists outright, so there is nothing laid around the names for a
+     * moved one to oblige.
      *
      * @param standingAnchors the caller's placements and what they were fitted under, replaced
      *                        here with this pass's
      * @param cellGeometry    the cells the fit clips and trims against, carrying their revision
-     * @param labelStyling    the styling the traced owners are named under, from
-     *                        {@link ClusterLabelStylingSnapshot#resolveForTracing}
+     * @param fitInputs       the debug view's half of the fit
      */
     public static void rebuildDiagnosticClusterAnchors(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot labelStyling) {
+            ClusterAnchorFitInputs fitInputs) {
 
-        if (!KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
+        if (!fitInputs.isAnchorOverlayShown()) {
             // The fit is what the toggle is guarding, so it is skipped - but the list it leaves
             // empty still has to say what produced it, which costs a settings read and no fit at
             // all. Emptying it and labelling it is the one write the pair takes, so this path's
             // skip cannot leave the two disagreeing.
             standingAnchors.replaceAnchors(
                 List.of(),
-                readFitFingerprint(cellGeometry.revision(), labelStyling));
+                readFitFingerprint(cellGeometry.revision(), fitInputs));
             return;
         }
-        rebuildClusterAnchors(standingAnchors, cellGeometry, labelStyling);
+        rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
     }
 
     // The sweep itself, measured as its own row: past the gate the skipped path never reaches, and
-    // the rebuild's largest cost, so it needs a duration of its own beside the owner resolve's and
-    // the cell shaping's rather than only inside the whole-rebuild total. The placements go back
-    // to the caller rather than into the standing pair here, so what a fit produced and what a
-    // rebuild does with it stay two statements.
+    // the rebuild's largest cost, so it needs a duration of its own beside the layer's other
+    // rebuild steps rather than only inside the whole-rebuild total. The placements go back to the
+    // caller rather than into the standing pair here, so what a fit produced and what a rebuild
+    // does with it stay two statements.
     private static List<ClusterAnchor> fitClusterAnchors(
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot labelStyling,
+            ClusterAnchorFitInputs fitInputs,
             AnchorFitFingerprint fitFingerprint,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
 
         try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
-            return fitClusterAnchorsInScope(
-                cellGeometry, labelStyling, fitFingerprint, reusableAnchors, fitScope);
+
+            var spec = fitFingerprint.specification();
+            var partition = cutClusterPartition(cellGeometry, fitInputs.ownerKeyBySystemKey());
+
+            FontToleranceAnnouncement.announceIfMoved(spec);
+
+            var fit = ClusterAnchorPlacement.computeClusterAnchors(
+                partition,
+                spec,
+                fitInputs.labelResolversSource().get(),
+                reusableAnchors);
+
+            reportFitCosts(fitScope, spec, partition, fit);
+
+            return fit.anchors();
         }
     }
 
-    // The sweep inside its scope, reporting what it ran onto it.
-    private static List<ClusterAnchor> fitClusterAnchorsInScope(
+    // The clusters a fit names, with the cells they were cut from. The cells are grouped by the
+    // system each draws as and that system's key, so whatever the layer keys a cluster by is what
+    // the names trace: a layer that cuts one owner's systems into two keys gets two clusters, each
+    // fitted inside its own border exactly as its fills are drawn.
+    //
+    // The clusters and the cells travel on as one value: the sweep reads all of it against itself
+    // per cluster, so a partition assembled from two passes would fit a name inside a border traced
+    // from cells that no longer group that way. The edges are read once for both halves, so the
+    // clustering and the geometry the fit clips against cannot be two readings of the cache.
+    private static ClusterPartition cutClusterPartition(
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot labelStyling,
-            AnchorFitFingerprint fitFingerprint,
-            Map<ClusterIdentity, ClusterAnchor> reusableAnchors,
-            ProfileScope fitScope) {
+            Map<SystemKey, String> ownerKeyBySystemKey) {
 
-        var spec = fitFingerprint.specification();
-
-        // The agnostic clustering and border trace group the drawn cells, resolving each to
-        // the system it draws as and that system to its owner ID; the owner map is still
-        // carried for the per-owner colour. Under a filter that key is a synthetic spotlight
-        // key, so the solid and contested clusters trace as their own clusters exactly as
-        // the fills do.
         var cells = cellGeometry.cells();
         var edgesByCellKey = cells.getCellEdgesByCellKey();
-        var ownerBySystemKey = labelStyling.ownerBySystemKey();
-        var cellGrouping = SystemOwner.mapCellGrouping(
-            cells.getSystemKeyByCellKey(),
-            ownerBySystemKey);
+        var cellGrouping = new CellGrouping(cells.getSystemKeyByCellKey(), ownerKeyBySystemKey);
 
-        // The clusters and the cells they were cut from travel on as one value: the sweep reads
-        // all of it against itself per cluster, so a partition assembled from two passes would
-        // fit a name inside a border traced from cells that no longer group that way. The edges
-        // are read once for both halves, so the clustering and the geometry the fit clips
-        // against cannot be two readings of the cache.
-        var partition = new ClusterPartition(
+        return new ClusterPartition(
             SystemClusters.findClusters(edgesByCellKey, cellGrouping),
             edgesByCellKey,
             cells.getSiteBySystemKey(),
             cellGrouping);
-
-        // Everything a label is styled by comes off the paints the build beneath the names was
-        // painted in, production or tracing. The desaturation palette is that scheme's, so a
-        // desaturated owner's name matches its recoloured fill and border exactly. The style
-        // decision every label follows is the very one the fills were painted from, remembered per
-        // owner by the paints: under a filter it recedes every non-spotlit owner and leaves the
-        // spotlit one full, so a receded name matches its receded fill and a spotlit name stays
-        // full, the drift a filter opens.
-        var paints = labelStyling.paints();
-        var styling = paints.getStyling();
-
-        FontToleranceAnnouncement.announceIfMoved(spec);
-
-        var fit = ClusterAnchorPlacement.computeClusterAnchors(
-            partition,
-            spec,
-            new ClusterLabelResolvers(
-                ClusterLabelStyling.newLabelColourResolver(
-                    ownerBySystemKey,
-                    new OwnerNameStyles(styling.categories().readNameStyles()),
-                    paints::resolveOwnerStyleDecisionOf,
-                    styling.desaturationPalette()),
-                ClusterLabelStyling.newNameEstimatorResolver(
-                    paints.getReading(),
-                    paints.getContentInputs(),
-                    fitFingerprint.labelFace())),
-            reusableAnchors);
-
-        reportFitCosts(fitScope, spec, partition, fit);
-
-        return fit.anchors();
     }
 
     // The standing placements a fit made now may carry over, filed under the cluster each of
@@ -281,16 +228,16 @@ public final class ClusterAnchorsBuilder {
 
     // Mints the fingerprint a fit made now would run under: the live tuning read off the
     // settings, against the revision the cells it clips and trims within stand at, in the face the
-    // pass settled its names on. One point reads all three for both the fit and its fingerprint, so
+    // layer settled its names on. One point reads all three for both the fit and its fingerprint, so
     // no path can fit under one reading and report another.
     private static AnchorFitFingerprint readFitFingerprint(
             int geometryRevision,
-            ClusterLabelStylingSnapshot labelStyling) {
+            ClusterAnchorFitInputs fitInputs) {
 
         return new AnchorFitFingerprint(
             LabelAnchorSpecification.readFromLunaSettings(),
             geometryRevision,
-            labelStyling.labelFace());
+            fitInputs.labelFace());
     }
 
     // Writes what a fit ran onto its scope, apart from the sweep so the sweep reads as the fit

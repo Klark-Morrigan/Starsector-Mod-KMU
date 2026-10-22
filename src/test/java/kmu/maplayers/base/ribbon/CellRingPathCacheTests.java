@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SystemKey;

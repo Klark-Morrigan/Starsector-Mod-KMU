@@ -1,9 +1,9 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import java.awt.Color;
 
 /**
- * One run of a cell's presence band as the renderer paints it: a colour and the triangles
+ * One run of a cell's band as the renderer paints it: a colour and the triangles
  * covering the stretch of ring that run occupies.
  *
  * <p>Triangles rather than a wide line, because a band laid along world geometry turns corners:
@@ -12,8 +12,7 @@ import java.awt.Color;
  * since nothing about the geometry moves between rebuilds - which is what makes a band cost a
  * draw call rather than a walk.
  *
- * @param colour    the shade this run draws in: an owner's bright colour for a stake, its dark
- *                  colour for the parting between two of them
+ * @param colour    the shade this run draws in, as the plan laid it
  * @param triangles the run's triangles as a flat {@code [x, y, x, y, ...]} world-coordinate run,
  *                  every three vertices one triangle
  */

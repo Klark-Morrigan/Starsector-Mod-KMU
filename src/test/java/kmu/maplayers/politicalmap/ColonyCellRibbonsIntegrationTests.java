@@ -7,9 +7,9 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;

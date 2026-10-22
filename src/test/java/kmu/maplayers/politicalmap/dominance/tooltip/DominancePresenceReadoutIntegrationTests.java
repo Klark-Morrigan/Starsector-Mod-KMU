@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.dominance.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;

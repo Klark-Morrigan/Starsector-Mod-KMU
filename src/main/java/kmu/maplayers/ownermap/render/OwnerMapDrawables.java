@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -16,7 +17,6 @@ import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.style.MapStyling;
@@ -212,12 +212,14 @@ final class OwnerMapDrawables {
         ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
             standingAnchors,
             cellGeometry,
-            ClusterLabelStylingSnapshot.resolveForTracing(
-                owners.ownerBySystemKey(),
-                styling,
-                viewReading.reading(),
-                contentInputs,
-                labelFaceSource.get()));
+            ClusterLabelStylingSnapshot
+                .resolveForTracing(
+                    owners.ownerBySystemKey(),
+                    styling,
+                    viewReading.reading(),
+                    contentInputs,
+                    labelFaceSource.get())
+                .createFitInputs());
     }
 
     /**
@@ -260,7 +262,9 @@ final class OwnerMapDrawables {
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
-            ClusterLabelStylingSnapshot.resolveFrom(clusters, labelFaceSource.get()));
+            ClusterLabelStylingSnapshot
+                .resolveFrom(clusters, labelFaceSource.get())
+                .createFitInputs());
 
         // The bands come last, after the names have places, because they are laid around
         // them: a band is cut by the room the names take, so baking one before the fit

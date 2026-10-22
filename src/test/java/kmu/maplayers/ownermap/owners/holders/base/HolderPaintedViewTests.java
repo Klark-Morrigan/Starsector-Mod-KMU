@@ -6,6 +6,7 @@ import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.testfixtures.statics.StaticSeams;
 
+import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
@@ -13,7 +14,6 @@ import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
 
 import org.junit.jupiter.api.AfterEach;

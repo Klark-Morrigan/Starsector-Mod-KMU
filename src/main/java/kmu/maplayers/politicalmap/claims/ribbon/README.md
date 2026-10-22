@@ -5,7 +5,7 @@ on a cell the mechanic painted,
 and on one it left bare.
 How many colonies each bloc draws is one shared rule's answer for every layer,
 in [`ownermap.ribbon`](../../../ownermap/ribbon/README.md);
-the geometry is [`ownermap.render.ribbon`](../../../ownermap/render/ribbon/README.md)'s.
+the geometry is [`base.ribbon`](../../../base/ribbon/README.md)'s.
 
 Part of [the political map](../../README.md),
 in Klark Morrigan's Utilities (KMU);

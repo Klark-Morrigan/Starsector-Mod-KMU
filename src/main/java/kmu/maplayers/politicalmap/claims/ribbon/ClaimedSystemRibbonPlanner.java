@@ -6,8 +6,8 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
+import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.SectorClaims;

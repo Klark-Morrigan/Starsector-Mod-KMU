@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
+package kmu.maplayers.base.ribbon;
 
 import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;
@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Paints the debug band-path overlay on the sector (M) map: the ring each cell's presence band
+ * Paints the debug band-path overlay on the sector (M) map: the ring each cell's band
  * would run along, in the shade of what that cell's room lets a band do with it, the ring the
  * cell's own shape denied it in the discarded shade, plus a dot at the point every band starts
  * from.

@@ -472,6 +472,7 @@ So a word of one axis never stands in for another:
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
+| fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
@@ -485,6 +486,7 @@ So a word of one axis never stands in for another:
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
 | reset hook (a call that empties held state back to its start) | 重置钩子 | 重置, to reset, with 钩子, a hook, as KMLib's reference writes it |
+| resolver (a function answering one value per owner, such as a name's shade) | 解析函数 | 解析, to resolve, with 函数, a function |
 | sealed type (a type whose every case is named where it is declared) | 密封类型 | the usual Java word, 密封, sealed |
 | seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |

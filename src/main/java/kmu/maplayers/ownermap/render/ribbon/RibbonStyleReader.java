@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.base.ribbon.RibbonStyle;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 
 /**

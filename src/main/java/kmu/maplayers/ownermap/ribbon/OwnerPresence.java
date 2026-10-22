@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.ribbon;
 
 import kmlib.colour.ColourPair;
 
+import kmu.maplayers.base.ribbon.RibbonPlan;
+
 /**
  * One owner's share of one cell's presence ribbon: who it is, the two shades its runs draw
  * in, and how many stakes it has in the cell.

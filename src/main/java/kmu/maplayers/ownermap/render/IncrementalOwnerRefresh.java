@@ -11,12 +11,12 @@ import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.ClusterGroupBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 
@@ -236,7 +236,9 @@ public final class IncrementalOwnerRefresh {
         var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             standingMap.cellGeometry(),
-            ClusterLabelStylingSnapshot.resolveFrom(clusters, standingAnchors.getFitFingerprint().labelFace()));
+            ClusterLabelStylingSnapshot
+                .resolveFrom(clusters, standingAnchors.getFitFingerprint().labelFace())
+                .createFitInputs());
 
         // The name choice off the standing map rather than off the preference: this fold edits the
         // build already on screen, so whether its labels draw is what that build was baked under. A

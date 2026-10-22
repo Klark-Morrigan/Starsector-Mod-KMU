@@ -1,6 +1,4 @@
-package kmu.maplayers.ownermap.render.ribbon;
-
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
+package kmu.maplayers.base.ribbon;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
