@@ -225,14 +225,18 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .isEqualTo(expectedLabelCount);
         }
 
+        // A slow fit is read off which of its inputs grew, so every one of them rides on the call.
         @Test
         void tagsTheCallWithEveryMultiplicandOfItsCost() {
-            // A slow fit is read off which of its inputs grew, so every one of them rides on the
-            // call: two clusters, the three swept directions plus the two the fan always adds, one
-            // offset, the ten candidates that fan crosses over both clusters, the band fits those
-            // candidates actually spent (twenty-one apiece at this tolerance), and the three sites
-            // every box keeps clear of.
+
+            // ARRANGE
+            // Two clusters, the three swept directions plus the two the fan always adds, one offset,
+            // the ten candidates that fan crosses over both clusters, the band fits those candidates
+            // actually spent (twenty-one apiece at this tolerance), and the three sites every box
+            // keeps clear of.
             var expectedTag = "clusters=2 directions=5/3 offsets=1 candidates=10 bandFits=210 keepOuts=3";
+
+            // ACT
             var actualTag = RecordedCapture
                 .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     standingAnchors,
@@ -242,6 +246,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .getWorstCall()
                 .getTag();
 
+            // ASSERT
             assertThat(actualTag)
                 .isEqualTo(expectedTag);
         }
