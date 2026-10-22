@@ -9,31 +9,25 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.ribbon.CellRibbonBuilder;
 import kmu.maplayers.base.ribbon.CellRibbonPath;
-import kmu.maplayers.base.ribbon.CellRingPathCache;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
 import kmu.maplayers.base.ribbon.RibbonPathTracer;
-import kmu.maplayers.base.ribbon.RibbonPlan;
-import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.base.ribbon.RibbonStyle;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
-import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
-import kmu.settings.KmuOwnerMapRibbonSettings;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * One bake's band source: everything a cell's band is settled from, sampled once, so asking
  * for a cell's band is a call rather than a fresh set of reads.
  *
  * <p>What it holds is what must not vary across a pass: the planner the owner source counts by, so
- * no cell is counted by a different mechanic; one read of the player's proportions, so a slider
- * moved mid-pass cannot leave two cells drawn to different designs; and the map those bands go on
- * ({@link RibbonBakeSurface}). Sampling them here mirrors how the rest of a rebuild is driven - one
+ * no cell is counted by a different mechanic; the pass's one read of the player's proportions
+ * ({@link RibbonBakeSettings}), so a slider moved mid-pass cannot leave two cells drawn to
+ * different designs; and the map those bands go on ({@link RibbonBakeSurface}). Sampling them here mirrors how the rest of a rebuild is driven - one
  * snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a band
  * identical to the one the full rebuild would have.
  *
@@ -65,8 +59,7 @@ import java.util.Set;
  *
  * <p>The diagnostic overlay's paths are traced through the same pass, from the same sizes and the
  * same gate, for the reason the overlay exists at all: it is worth looking at only while it is the
- * cells' own paths it is drawing. A pass with the bands switched off holds nothing to lay them out
- * from, so it traces nothing either. That trace is taken fresh rather than read from the store,
+ * cells' own paths it is drawing. That trace is taken fresh rather than read from the store,
  * because the overlay walks its own inset ladder: the cells it exists to explain are exactly the
  * ones the band pass refused a path.
  *
@@ -76,13 +69,6 @@ import java.util.Set;
  * level up between a mechanic's answer and the rule that shapes it.
  */
 public final class CellRibbonSource {
-
-    // What a pass with the bands switched off is laid out by. Zeroes and refusals rather than the
-    // player's knobs because no band is ever laid out at all: such a pass answers every cell at
-    // its gate, well before a ring is traced, so reading the real answers for it would be a
-    // settings read taken to settle nothing.
-    private static final RibbonStyle BANDLESS_STYLE =
-        new RibbonStyle(0, 0, 0, new RibbonSegmentLengths(0, 0), false);
 
     private final SystemRibbonPlanner planner;
     private final RibbonStyle style;
@@ -102,46 +88,38 @@ public final class CellRibbonSource {
     }
 
     /**
-     * The bake's band source, stated over everything one pass's bands are settled from - or over
-     * nothing at all where the player has the bands switched off, in which case every cell is
-     * answered "no band" without a count, a size read, or a ring traced.
+     * The bake's band source, stated over everything one pass's bands are settled from.
      *
-     * @param walk    the walk of the sector the counts are made off - the rebuild's own, or a
-     *                batch's. Whose walk it is, and so how current it is, is the caller's to decide
-     * @param source  the owner source the build's owners came from, supplying the mechanic its
-     *                cells are counted by - the same one they were painted by
-     * @param surface the drawn map the bands go on: which cells take one, where each starts, the
-     *                room it keeps clear of, and the rings already traced. Taken as the one value
-     *                this reads rather than as the cells and caches holding those answers, so what
-     *                a band is laid out from is stated in the signature rather than reachable
-     *                through it
+     * <p>Only a pass that draws bands builds one. A pass with the bands switched off answers every
+     * cell "no band" before reaching here, so no mechanic is resolved and no sector index is read.
+     *
+     * @param walk      the walk of the sector the counts are made off - the rebuild's own, or a
+     *                  batch's. Whose walk it is, and so how current it is, is the caller's to
+     *                  decide
+     * @param source    the owner source the build's owners came from, supplying the mechanic its
+     *                  cells are counted by - the same one they were painted by
+     * @param surface   the drawn map the bands go on: which cells take one, where each starts, the
+     *                  room it keeps clear of, and the rings already traced. Taken as the one value
+     *                  this reads rather than as the cells and caches holding those answers, so
+     *                  what a band is laid out from is stated in the signature rather than
+     *                  reachable through it
+     * @param style     the sizes every band in the pass is laid at, as the pass sampled them
+     * @param planRules how far a band's runs reach, as the pass sampled them; handed to whatever
+     *                  planner the source resolves, so every mechanic lays its cells by one rule
      * @return the source the pass bakes its bands through
      */
     public static CellRibbonSource createForPass(
             SectorWalk walk,
             OwnerSource source,
-            RibbonBakeSurface surface) {
-
-        // Asked before the source is, so a pass with the bands switched off reads no more live
-        // state than it reads sizes: nothing it sampled would settle anything.
-        if (!KmuOwnerMapRibbonSettings.shouldDrawOwnerMapRibbons()) {
-            return createBandlessPass();
-        }
-        var style = RibbonStyleReader.readRibbonStyle();
-
-        // The laying rules are sampled here, once, and handed to whatever planner the source
-        // resolves - so every mechanic lays its cells by one rule.
-        var planner = source.resolveRibbonPlanner(
-            walk,
-            new RibbonPlanRules(
-                style.lengths(),
-                UncontestedRibbonRuns.readFromLunaSettings()));
+            RibbonBakeSurface surface,
+            RibbonStyle style,
+            RibbonPlanRules planRules) {
 
         // Off the walk's own index rather than a traversal of this bake's own: the cells were cut
         // from that same index, and a second traversal here would put a rebuild over the time the
         // frame allows it.
         return new CellRibbonSource(
-            planner,
+            source.resolveRibbonPlanner(walk, planRules),
             style,
             surface,
             walk.sectorIndex().readSystemsByKey());
@@ -183,7 +161,7 @@ public final class CellRibbonSource {
         // Nothing the layer counts is present here, so nothing was planned and nothing is laid
         // out. Answered here rather than by the geometry because what it saves is the ring walk -
         // a cell with nothing to say must not pay for a path nothing would be laid on.
-        if (plan.sumLengthUnits() <= 0) {
+        if (!plan.hasLength()) {
             return CellRibbon.NONE;
         }
         var ringPath = findOrTraceRingPath(cellKey, fillPolygon, site);
@@ -275,19 +253,5 @@ public final class CellRibbonSource {
             return null;
         }
         return surface.siteBySystemKey().get(drawnSystemKey);
-    }
-
-    // A pass with the bands switched off, which the empty inhabited set states outright: that set
-    // is the gate every cell is answered by, so an empty one answers "no band" for the whole
-    // sector. Nothing is sampled for it - no planner resolved, no system index built, no sizes
-    // read, and the cells' own traced rings left where they are rather than reached for - so the
-    // switch takes the counting off the rebuild as well as the bands off the map, which is the half
-    // of it a player cannot see and the half that costs.
-    private static CellRibbonSource createBandlessPass() {
-        return new CellRibbonSource(
-            system -> RibbonPlan.NONE,
-            BANDLESS_STYLE,
-            new RibbonBakeSurface(Set.of(), Map.of(), List.of(), new CellRingPathCache()),
-            Map.of());
     }
 }

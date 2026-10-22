@@ -7,16 +7,17 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.ribbon.CellRibbonPath;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellStore;
-import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Bakes the presence bands over cells that have already been shaped and named.
@@ -40,8 +41,14 @@ import java.util.Map;
  * when its cell is re-shaped. So the store the cells keep their traced rings in is handed to the
  * source, which walks a ring only where none stands.
  *
- * <p>The diagnostic overlay's paths are traced in the same loop, under a toggle read once per pass
- * like everything else a pass is settled by. Beside the bands rather than as a pass of its own
+ * <p>Everything a pass is settled by arrives as one {@link RibbonBakeSettings} its caller read.
+ * With the bands switched off, the pass builds no band source at all: no mechanic is resolved, no
+ * sizes are laid out, no name room is measured, and every cell is answered "no band". That takes
+ * the counting off the rebuild as well as the bands off the map, which is the half of the switch a
+ * player cannot see and the half that costs.
+ *
+ * <p>The diagnostic overlay's paths are traced in the same loop. Beside the bands rather than as a
+ * pass of its own
  * because a path is traced inside the very shape the band beside it was laid in, and two passes
  * over the same cells could only ever agree about that by both being run.
  *
@@ -63,13 +70,16 @@ public final class CellRibbonsBaker {
     // factory below needs the whole build for is settled before the first cell is baked.
     private final PaintedCellStore paintedCells;
     private final Map<SystemKey, SystemKey> systemKeyByCellKey;
-    private final CellRibbonSource ribbonSource;
+
+    // Empty on a pass with the bands switched off, which bakes every cell bare.
+    private final Optional<CellRibbonSource> ribbonSource;
+
     private final boolean isRibbonPathShown;
 
     private CellRibbonsBaker(
             PaintedCellStore paintedCells,
             Map<SystemKey, SystemKey> systemKeyByCellKey,
-            CellRibbonSource ribbonSource,
+            Optional<CellRibbonSource> ribbonSource,
             boolean isRibbonPathShown) {
 
         this.paintedCells = paintedCells;
@@ -89,13 +99,15 @@ public final class CellRibbonsBaker {
      *                        so how current it is, is the caller's to decide
      * @param standingAnchors the cluster names' placements, whose boxes the bands keep out of, with the
      *                        face they were fitted in
+     * @param settings        the player's band knobs, read once for this pass by its caller
      * @return the pass, ready to bake whichever cells the caller names
      */
     public static CellRibbonsBaker createForPass(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
             SectorWalk walk,
-            StandingClusterAnchors standingAnchors) {
+            StandingClusterAnchors standingAnchors,
+            RibbonBakeSettings settings) {
 
         // The cell-to-system lookup is taken here, once, rather than per cell inside the loop: the
         // read hands back a fresh unmodifiable view over the live cells, so asking per cell would
@@ -104,11 +116,8 @@ public final class CellRibbonsBaker {
         return new CellRibbonsBaker(
             clusters.getPaintedCells(),
             geometryCache.getSystemKeyByCellKey(),
-            CellRibbonSource.createForPass(
-                walk,
-                clusters.getBuildInputs().getViewReading().source(),
-                RibbonBakeSurface.createForPass(clusters, geometryCache, standingAnchors)),
-            KmuOwnerMapDiagnosticsSettings.shouldShowOwnerMapRibbonPaths());
+            createRibbonSource(clusters, geometryCache, walk, standingAnchors, settings),
+            settings.isRibbonPathShown());
     }
 
     /** Bakes the band of every drawn cell, replacing whatever each was carrying. */
@@ -159,18 +168,22 @@ public final class CellRibbonsBaker {
             if (fillPolygon == null) {
                 continue;
             }
+
             // Named by the cell, so the slowest turn of the pass says which cell it was over -
             // which is the one fact a mean over the whole sector cannot carry.
             bakeScope.beginIteration(cellKey.systemId());
 
-            var ribbon = ribbonSource.buildCellRibbon(
-                cellKey,
-                systemKeyByCellKey.get(cellKey),
-                fillPolygon,
-                bakeScope);
+            var ribbon = ribbonSource
+                .map(source -> source.buildCellRibbon(
+                    cellKey,
+                    systemKeyByCellKey.get(cellKey),
+                    fillPolygon,
+                    bakeScope))
+                .orElse(CellRibbon.NONE);
 
             paintedCells.putCellRibbon(cellKey, ribbon);
             paintedCells.putCellRibbonPath(cellKey, traceCellRibbonPath(cellKey, fillPolygon));
+
             bakedCells += ribbon.isEmpty() ? 0 : 1;
 
             // Closed after the overlay's own trace, so a turn covers everything a cell costs the
@@ -178,12 +191,15 @@ public final class CellRibbonsBaker {
             // the turn.
             bakeScope.endIteration();
         }
+
         return bakedCells;
     }
 
     // The cell's path for the diagnostic overlay, or nothing at all while the player has it off -
     // which is what empties the paths a pass taken while it was on left behind, since a settings
-    // change rebuilds every cell.
+    // change rebuilds every cell. A pass with the bands switched off traces nothing either: no
+    // layout is in play, so a ring drawn from sizes nothing is laid at would be a diagnostic of its
+    // own arithmetic.
     //
     // A second trace of the same ring rather than a reading of the one the band was laid on: what
     // the overlay is asked about is the cells whose bands were never laid, so there is no result
@@ -191,8 +207,40 @@ public final class CellRibbonsBaker {
     // is on, and it buys a production return type that carries nothing diagnostic.
     private CellRibbonPath traceCellRibbonPath(SystemKey cellKey, List<double[]> fillPolygon) {
 
-        return isRibbonPathShown
-            ? ribbonSource.traceCellRibbonPath(systemKeyByCellKey.get(cellKey), fillPolygon)
-            : CellRibbonPath.NONE;
+        if (!isRibbonPathShown) {
+            return CellRibbonPath.NONE;
+        }
+        return ribbonSource
+            .map(source -> source.traceCellRibbonPath(systemKeyByCellKey.get(cellKey), fillPolygon))
+            .orElse(CellRibbonPath.NONE);
+    }
+
+    // The pass's band source, or none where the player has the bands switched off. Nothing is
+    // sampled for a switched-off pass: no mechanic resolved, no system index built, no name room
+    // measured, and the cells' own traced rings left where they are rather than reached for.
+    private static Optional<CellRibbonSource> createRibbonSource(
+            OwnerMapClusters clusters,
+            CellGeometryCache geometryCache,
+            SectorWalk walk,
+            StandingClusterAnchors standingAnchors,
+            RibbonBakeSettings settings) {
+
+        if (!settings.areRibbonsDrawn()) {
+            return Optional.empty();
+        }
+
+        var surface = RibbonBakeSurface.createForPass(
+            clusters,
+            geometryCache,
+            standingAnchors,
+            settings.isRibbonKeptClearOfNames(),
+            settings.nameClearance());
+
+        return Optional.of(CellRibbonSource.createForPass(
+            walk,
+            clusters.getBuildInputs().getViewReading().source(),
+            surface,
+            settings.ribbonStyle(),
+            settings.planRules()));
     }
 }

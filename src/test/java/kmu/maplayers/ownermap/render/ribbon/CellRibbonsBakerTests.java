@@ -20,14 +20,9 @@ import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.settings.KmuOwnerMapDiagnosticsSettings;
-import kmu.settings.KmuOwnerMapRibbonSettings;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -43,7 +38,6 @@ import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -67,11 +61,15 @@ import static org.mockito.Mockito.when;
  * read the store from one that quietly re-derived what it found there.
  *
  * <p>A bake per bake rather than one reused, because that is how a rebuild drives it - each one
- * samples the settings and the names afresh - so a case that reused one would be posing an
- * arrangement production never has. The walk of the sector each is handed is opened here for
+ * is handed the settings its caller just read and samples the names afresh - so a case that reused
+ * one would be posing an arrangement production never has. The walk of the sector each is handed is opened here for
  * the same reason it is opened by a rebuild: whose walk it is belongs to the caller, and every
  * case here is about what the bake does with the cells rather than about how current its counts
  * are.
+ *
+ * <p>The switched-off cases are the bake's because the switch is: a pass with the bands off builds
+ * no source at all, so it has to be seen to ask the owner source nothing, walk no ring, and leave
+ * every cell bare - the bands a pass with them on laid included.
  */
 final class CellRibbonsBakerTests {
 
@@ -98,30 +96,6 @@ final class CellRibbonsBakerTests {
     // one the pass never reached is told apart by drawing none.
     private static final RibbonPlan ANY_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(BAND_COLOUR, 1)));
-
-    // The band knobs stand in for the settings the bake reads, so it takes its sizes from a stub
-    // rather than from a LunaLib the test JVM has no game to load.
-    private MockedStatic<KmuOwnerMapRibbonSettings> settingsMock;
-
-    // The diagnostics stand in for the same reason: a bake asks whether to lay the band-path
-    // overlay over its answer. The stub's own false is the answer unless a case turns it on.
-    private MockedStatic<KmuOwnerMapDiagnosticsSettings> diagnosticsSettingsMock;
-
-    @BeforeEach
-    void stubBandSettings() {
-
-        settingsMock = mockStatic(KmuOwnerMapRibbonSettings.class);
-        diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
-
-        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
-    }
-
-    @AfterEach
-    void releaseBandSettings() {
-
-        diagnosticsSettingsMock.close();
-        settingsMock.close();
-    }
 
     @Nested
     class BakeAllCellRibbons {
@@ -258,14 +232,10 @@ final class CellRibbonsBakerTests {
             // The overlay rides the same loop as the bands, so every cell the pass bands is a cell
             // it traces: a path missing beside a band would leave the one cell a reader looked at
             // with nothing to compare its band against.
-            diagnosticsSettingsMock
-                .when(KmuOwnerMapDiagnosticsSettings::shouldShowOwnerMapRibbonPaths)
-                .thenReturn(true);
-
             var clusters = buildTwoDrawnCells();
             var expectedCellKeys = Set.of(BANDED_CELL, OTHER_BANDED_CELL);
 
-            bakeEveryCellThrough(clusters);
+            bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsTracingPaths());
 
             var actualCellKeys = clusters
                 .getPaintedCells()
@@ -280,20 +250,94 @@ final class CellRibbonsBakerTests {
         void clearsThePathsAPassTakenWithTheOverlayOnLeftBehind() {
             // Nothing else empties them: a settings change rebuilds every cell, and the pass that
             // runs with the overlay off has to be what takes the old paths down.
-            diagnosticsSettingsMock
-                .when(KmuOwnerMapDiagnosticsSettings::shouldShowOwnerMapRibbonPaths)
-                .thenReturn(true);
+            var clusters = buildTwoDrawnCells();
 
+            bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsTracingPaths());
+            bakeEveryCellThrough(clusters);
+
+            var actualRibbonPaths = clusters
+                .getPaintedCells()
+                .getRibbonPathByCellKey();
+
+            assertThat(actualRibbonPaths)
+                .isEmpty();
+        }
+
+        // The switch takes the bands off a map that already carries them, so a pass with it off
+        // has to clear the bands an earlier pass laid rather than only lay none of its own.
+        @Test
+        void bakesEveryCellBareWhileTheBandsAreSwitchedOff() {
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
 
             bakeEveryCellThrough(clusters);
 
-            diagnosticsSettingsMock
-                .when(KmuOwnerMapDiagnosticsSettings::shouldShowOwnerMapRibbonPaths)
-                .thenReturn(false);
+            // ACT
+            bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsWithBandsOff());
 
-            bakeEveryCellThrough(clusters);
+            // ASSERT
+            var actualRibbons = clusters
+                .getPaintedCells()
+                .getRibbonByCellKey();
 
+            assertThat(actualRibbons)
+                .isEmpty();
+        }
+
+        // The half of the switch a player cannot see and the half that costs: with the bands off,
+        // a rebuild must not still be counting what every settled system holds for a readout
+        // nothing will draw.
+        @Test
+        void asksTheSourceNothingWhileTheBandsAreSwitchedOff() {
+
+            // ARRANGE
+            var sourceFake = buildSourcePlanningEveryCell();
+            var clusters = buildTwoDrawnCellsCountedBy(sourceFake);
+
+            // ACT
+            bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsWithBandsOff());
+
+            // ASSERT
+            var actualPlannerWalks = sourceFake.readRibbonPlannerWalks();
+
+            assertThat(actualPlannerWalks)
+                .isEmpty();
+        }
+
+        // Nothing is laid with the bands off, so no cell's ring is worth walking.
+        @Test
+        void walksNoRingWhileTheBandsAreSwitchedOff() {
+
+            // ARRANGE
+            var clusters = buildTwoDrawnCells();
+
+            // ACT
+            bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsWithBandsOff());
+
+            // ASSERT
+            var actualRingPath = clusters
+                .getPaintedCells()
+                .getRingPathCache()
+                .findRingPathOf(BANDED_CELL);
+
+            assertThat(actualRingPath)
+                .isNull();
+        }
+
+        // With the bands off no layout is in play, so the overlay has nothing to report on even
+        // while it is on: a ring drawn from sizes nothing is laid at would be a diagnostic of its
+        // own arithmetic.
+        @Test
+        void tracesNoPathWhileTheBandsAreSwitchedOff() {
+
+            // ARRANGE
+            var clusters = buildTwoDrawnCells();
+
+            // ACT
+            bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsWithBandsOff());
+
+            // ASSERT
             var actualRibbonPaths = clusters
                 .getPaintedCells()
                 .getRibbonPathByCellKey();
@@ -338,13 +382,19 @@ final class CellRibbonsBakerTests {
     // arrangement a pass runs over, and the smallest one that can show a bake reaching every cell
     // rather than only the first.
     private static OwnerMapClusters buildTwoDrawnCells() {
+        return buildTwoDrawnCellsCountedBy(buildSourcePlanningEveryCell());
+    }
+
+    // The same two cells, counted through a source the case holds, for the case reading what the
+    // source was asked.
+    private static OwnerMapClusters buildTwoDrawnCellsCountedBy(OwnerSourceFake sourceFake) {
 
         return drawCells(
             OwnerMapClusterFixtures.createClustersOwnedBy(
                 Map.of(
                     BANDED_SYSTEM_ID, buildOwner(),
                     OTHER_BANDED_SYSTEM_ID, buildOwner()),
-                buildSourcePlanningEveryCell()),
+                sourceFake),
             BANDED_CELL,
             OTHER_BANDED_CELL);
     }
@@ -391,7 +441,20 @@ final class CellRibbonsBakerTests {
     }
 
     private static void bakeEveryCellThrough(OwnerMapClusters clusters) {
-        bakeThrough(clusters).bakeAllCellRibbons();
+        bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsDrawingBands());
+    }
+
+    private static void bakeEveryCellThrough(
+            OwnerMapClusters clusters,
+            RibbonBakeSettings settings) {
+
+        bakeThrough(clusters, settings).bakeAllCellRibbons();
+    }
+
+    // A fresh bake over the given clusters with the bands on and the overlay off, which is what
+    // every case not about either switch poses.
+    private static CellRibbonsBaker bakeThrough(OwnerMapClusters clusters) {
+        return bakeThrough(clusters, RibbonSettingsFixtures.createSettingsDrawingBands());
     }
 
     // A fresh bake over the given clusters, as a rebuild mints one per bake, over a walk of the
@@ -400,7 +463,9 @@ final class CellRibbonsBakerTests {
     // The geometry and the sector are derived from the cells the clusters actually drew rather
     // than named here, so a case adding a cell gets it placed and listed without a second fixture
     // to keep in step - which is what let the settled-but-unheld case below be posed at all.
-    private static CellRibbonsBaker bakeThrough(OwnerMapClusters clusters) {
+    private static CellRibbonsBaker bakeThrough(
+            OwnerMapClusters clusters,
+            RibbonBakeSettings settings) {
 
         var drawnCellKeys = clusters.getFillPolygonByCellKey().keySet();
 
@@ -412,7 +477,8 @@ final class CellRibbonsBakerTests {
                 MapVisibilityRules.BASE),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.
-            new StandingClusterAnchors());
+            new StandingClusterAnchors(),
+            settings);
     }
 
     // Each cell drawing as the system of its own name, each system placed at the same site: the

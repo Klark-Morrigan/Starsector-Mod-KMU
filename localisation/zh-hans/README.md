@@ -411,6 +411,7 @@ So a word of one axis never stands in for another:
 | fill state (how one system fills inside its cluster: solid fill, hatch fill or no fill) | 填充状态 | 填充 with 状态, a state |
 | hatch fill | 斜线填充 | 斜线, diagonal lines, before 填充 |
 | inner border | 内边界（省界） | the province seam |
+| keep clear of (a band breaking where a cluster name lies over its cell) | 避让 | to give way, as traffic does to what has the right of way; the band yields the ring to the name |
 | nebulae (the map's, which an overlay part paints below or above) | 地图星云 | vanilla's 星云 with 地图, as the settings and the compatibility notices write it |
 | no fill | 不填充 | the negative of 填充 |
 | outer border | 外边界（国界） | the national border |
@@ -441,6 +442,7 @@ So a word of one axis never stands in for another:
 | caption (the words beside a sidebar control) | 标题 | the plain word for a control's heading text |
 | category (the kind a map sorts a cell into, which picks its style) | 类别 | the plain word for a class something is sorted into |
 | cluster group (one owner's clusters drawn together) | 区域组 | from 区域, a cluster, with 组, a group |
+| contested, uncontested (a cell a rival holds something in, and one nobody contends for) | 有争夺的, 无人争夺的 | 争夺, to contend for, with 有, there is, or 无人, nobody, before it |
 | cover (anything drawn over the map where the cursor rests) | 遮挡 | to block from view, which a cover does to the cells under it |
 | cursor | 光标 | the usual UI word for the pointer on screen |
 | dev display (an overlay a Dev setting draws over the map) | 调试显示 | 调试, the usual word for debugging, with 显示, a display |
@@ -483,6 +485,7 @@ So a word of one axis never stands in for another:
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
 | plan (a band's runs, before they are laid round its ring) | 计划 | the plain word for a plan |
+| plan rules (the lengths a band's runs are laid at) | 计划规则 | 计划, a band's plan, with 规则, rules |
 | port (the interface a feature's own code reaches the game through) | 端口 | the usual word for a port in a ports-and-adapters design |
 | prefix (the part of a profiling row's name before its first dot) | 前缀 | the plain computing word |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
@@ -497,6 +500,7 @@ So a word of one axis never stands in for another:
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
+| take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
 
 ### Terms borrowed from HOI4

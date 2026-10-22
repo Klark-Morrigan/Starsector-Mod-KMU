@@ -22,16 +22,10 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
-import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
-import kmu.settings.KmuOwnerMapRibbonSettings;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
@@ -46,24 +40,20 @@ import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins which cells are counted at all, what a cell missing part of its identity does, and what the
- * player's switch takes away when it is off.
+ * Pins which cells are counted at all, and what a cell missing part of its identity does.
  *
  * <p>The gate is the point, and what it reads is inhabitation rather than this layer's holding. A
  * band reports how a system splits, so a cell nobody lives in has nothing for one to say - and the
  * counting of a mechanic that weighs a system's economy walks every settlement in it, so a pass that asked
  * it about every empty cell in the sector would pay for a contest nobody is contesting. Both halves
- * are stated here: the empty cell gets no band, and the planner is not even asked. The switch is
- * stated the same way and for the same reason - it has to take the counting off the rebuild, not
- * merely the bands off the map, since a rebuild already stalls elsewhere and a switched-off feature
- * that still walks every settlement in the sector is a cost with nothing to show for it.
+ * are stated here: the empty cell gets no band, and the planner is not even asked. The player's
+ * switch is the baker's to answer, since a pass with the bands off builds no source at all.
  *
  * <p>A settled system is offered a band whether or not the active layer's holding accounts for it,
  * which is why no case here poses an owner at all: an owner rule that admits only some settlements
@@ -78,9 +68,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>The pass cases are about the pass rather than about any one cell: the mechanic a band is
  * counted by is asked of the owner source once, before the first cell is counted, so two cells in
- * one bake can never be counted against two samplings of it. The switched-off pass is held to the
- * same bar it is held to everywhere else here - it asks nothing, the mechanic no more than a
- * size.
+ * one bake can never be counted against two samplings of it.
  *
  * <p>The diagnostic trace is pinned against the same gate rather than against its own, because
  * what makes the overlay worth looking at is that it answers for exactly the cells the band pass
@@ -121,28 +109,15 @@ final class CellRibbonSourceTests {
     private static final RibbonPlan ANY_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(BAND_COLOUR, 1)));
 
+    // The sizes and laying rules the pass is handed: sizes a band draws at, which is all any case
+    // here needs of them.
+    private static final RibbonBakeSettings SETTINGS = RibbonSettingsFixtures.createSettingsDrawingBands();
+
     // Where a pass marks what its cells cost it. Handed in and never read back here: which cells
     // are offered a band at all is what these cases pin, not what one takes to bake. The silent
     // profiler's scope rather than a mock, since nothing here is asked of it.
     private final IterationScope passScope =
         SilentProfiler.INSTANCE.openIterations(RibbonBakePhases.BAKE_SECTION);
-
-    // The player's knobs stand in for the whole settings class here, so the switch under test is
-    // read from a stub rather than from a LunaLib the test JVM has no game to load.
-    private MockedStatic<KmuOwnerMapRibbonSettings> settingsMock;
-
-    @BeforeEach
-    void stubBandSettings() {
-
-        settingsMock = mockStatic(KmuOwnerMapRibbonSettings.class);
-
-        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
-    }
-
-    @AfterEach
-    void releaseBandSettings() {
-        settingsMock.close();
-    }
 
     @Nested
     class BuildCellRibbon {
@@ -257,31 +232,6 @@ final class CellRibbonSourceTests {
         }
 
         @Test
-        void drawsNoBandForASettledCellWhileTheBandsAreSwitchedOff() {
-
-            switchBandsOff();
-
-            assertThat(buildFor(INHABITED_SYSTEM))
-                .isEqualTo(CellRibbon.NONE);
-        }
-
-        @Test
-        void asksNoPlannerAboutASettledCellWhileTheBandsAreSwitchedOff() {
-            // The half of the switch that is invisible either way: with the bands off, a rebuild
-            // must not still be counting what every settled system holds for a readout nothing
-            // will draw.
-            switchBandsOff();
-
-            var plannerMock = mock(SystemRibbonPlanner.class);
-
-            buildWith(plannerMock)
-                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
-
-            verify(plannerMock, never())
-                .planSystemRibbon(any());
-        }
-
-        @Test
         void drawsNoBandForACellWhosePlanIsEmpty() {
             // A settled cell where nothing the layer counts is present, so there is no footprint
             // for a band to report.
@@ -370,41 +320,30 @@ final class CellRibbonSourceTests {
             assertThat(traceFor(SITELESS_SYSTEM))
                 .isEqualTo(CellRibbonPath.NONE);
         }
-
-        @Test
-        void tracesNoPathForASettledCellWhileTheBandsAreSwitchedOff() {
-            // With the bands off there is no layout in play, so the overlay has nothing to report
-            // on: a ring drawn from sizes nothing is laid at would be a diagnostic of its own
-            // arithmetic.
-            switchBandsOff();
-
-            assertThat(traceFor(INHABITED_SYSTEM))
-                .isEqualTo(CellRibbonPath.NONE);
-        }
     }
 
     @Nested
     class CreateForPass {
 
+        // The one place the pass's laying rules reach the counting: they are carried into the
+        // planner every cell is counted by. Handed anything else, the uncontested knob would show
+        // only as a setting a player moves to no effect.
         @Test
-        void handsThePlayersUncontestedAnswerToTheSourcesMechanic() {
-            // The one place the uncontested knob reaches the counting: it is sampled by the pass
-            // and carried in the rules every planner is built from. Read anywhere else, or not
-            // read at all, it would show only as a setting a player moves to no effect. Answered
-            // off rather than on, which is not the shipped default, so an answer that ignored the
-            // setting could not pass.
-            settingsMock
-                .when(KmuOwnerMapRibbonSettings::shouldShortenOwnerMapUncontestedRibbonRuns)
-                .thenReturn(false);
+        void handsThePassesOwnPlanRulesToTheSourcesMechanic() {
 
+            // ARRANGE
             var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
+            var expectedPlanRules = SETTINGS.planRules();
 
+            // ACT
             buildThrough(sourceFake, new CellRingPathCache());
 
-            assertThat(sourceFake.readRibbonPlanRules())
+            // ASSERT
+            var actualPlanRules = sourceFake.readRibbonPlanRules();
+
+            assertThat(actualPlanRules)
                 .singleElement()
-                .extracting(RibbonPlanRules::uncontestedRuns)
-                .isEqualTo(new UncontestedRibbonRuns(false));
+                .isSameAs(expectedPlanRules);
         }
 
         @Test
@@ -418,7 +357,9 @@ final class CellRibbonSourceTests {
             CellRibbonSource.createForPass(
                 walk,
                 sourceFake,
-                buildSurfaceKeeping(new CellRingPathCache()));
+                buildSurfaceKeeping(new CellRingPathCache()),
+                SETTINGS.ribbonStyle(),
+                SETTINGS.planRules());
 
             assertThat(sourceFake.readRibbonPlannerWalks())
                 .singleElement()
@@ -439,20 +380,6 @@ final class CellRibbonSourceTests {
             assertThat(sourceFake.readRibbonPlannerWalks())
                 .hasSize(1);
         }
-
-        @Test
-        void asksTheSourceNothingWhileTheBandsAreSwitchedOff() {
-            // A switched-off pass reads no live state at all, the mechanic no more than the sizes:
-            // nothing it sampled would settle anything, every cell being answered at the gate.
-            switchBandsOff();
-
-            var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
-
-            buildThrough(sourceFake, new CellRingPathCache());
-
-            assertThat(sourceFake.readRibbonPlannerWalks())
-                .isEmpty();
-        }
     }
 
     private CellRibbon buildFor(String drawnSystemId) {
@@ -465,13 +392,6 @@ final class CellRibbonSourceTests {
 
         return buildWith(system -> ANY_PLAN)
             .traceCellRibbonPath(buildCellKey(drawnSystemId), SQUARE_CELL);
-    }
-
-    private void switchBandsOff() {
-
-        settingsMock
-            .when(KmuOwnerMapRibbonSettings::shouldDrawOwnerMapRibbons)
-            .thenReturn(false);
     }
 
     // The standing pass counted through the given planner, keeping its traced rings to itself.
@@ -506,7 +426,9 @@ final class CellRibbonSourceTests {
         return CellRibbonSource.createForPass(
             buildWalkOverTheStandingSystems(),
             ownerSource,
-            buildSurfaceKeeping(ringPathCache));
+            buildSurfaceKeeping(ringPathCache),
+            SETTINGS.ribbonStyle(),
+            SETTINGS.planRules());
     }
 
     // Two settled systems - one placed, one with no site recorded - and one system nobody lives in.

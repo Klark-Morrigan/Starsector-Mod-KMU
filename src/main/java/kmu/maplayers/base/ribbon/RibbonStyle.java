@@ -11,12 +11,10 @@ package kmu.maplayers.base.ribbon;
  * and is drawn thereafter as the fills are - so a band occupies the same share of its cell's
  * outline at every zoom, and a frame measures nothing about it at all.
  *
- * <p>The two lengths ride here with the two sizes because they are the same authored decision:
- * how long a stake's run is relative to the parting between two of them is what makes a long
- * run read as several stakes, and reading it apart from the width those lengths are multiples
- * of would let one be tuned against a stale reading of the other.
+ * <p>How long each run is never appears here: a plan's runs arrive carrying their lengths in
+ * widths, so the band reads only what a width is worth.
  *
- * @param widthWorld        how thick the band is, half of it either side of the path it is drawn
+ * @param widthWorld       how thick the band is, half of it either side of the path it is drawn
  *                          along
  * @param insetPadWorld     how far clear of the cell's own ring the band's near edge runs, so the
  *                          band reads as sitting inside the border rather than as part of it
@@ -24,7 +22,6 @@ package kmu.maplayers.base.ribbon;
  *                          width, before the corner is bevelled instead. Shared by the inset that
  *                          finds the path and the stroke that gives it girth, so a corner sharp
  *                          enough to spike is given up on at one angle rather than at two
- * @param lengths           how far a stake's segment and an interjection run, in widths
  * @param isBandAlwaysDrawn whether a cell that planned a band gets one even where its ring has no
  *                          room to hold it - the names covering the whole of it, or the cell being
  *                          too narrow for the band and its pad together. The layer's to answer,
@@ -35,7 +32,6 @@ public record RibbonStyle(
     double widthWorld,
     double insetPadWorld,
     double miterSpikeLimit,
-    RibbonSegmentLengths lengths,
     boolean isBandAlwaysDrawn) {
 
     /**

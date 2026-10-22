@@ -8,7 +8,6 @@ import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
-import kmu.settings.KmuOwnerMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;
 
 import org.junit.jupiter.api.AfterEach;
@@ -32,8 +31,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the map one bake is laid against: the settled systems, the sites and the ring store handed
  * over as the build's own, and the room the names take resolved from the build's own name format
- * and the two band knobs - none while the names are off or the bands ignore them, and otherwise
- * whichever of the two readings the player picked.
+ * and the two band answers the bake sampled - none while the names are off or the bands ignore
+ * them, and otherwise whichever of the two readings the player picked.
  *
  * <p>The two readings are seams here. What a name measures to is each reading's own suite's, and
  * measuring the drawn words needs the label face, which no test JVM loads; what belongs here is
@@ -44,6 +43,10 @@ final class RibbonBakeSurfaceTests {
 
     // A system something stands in, the one the settled set is read back for.
     private static final String SETTLED_SYSTEM = "settled";
+
+    // The bands' two answers about the names, named so each case reads which it poses.
+    private static final boolean KEPT_CLEAR_OF_NAMES = true;
+    private static final boolean RUN_UNDER_NAMES = false;
 
     // The boxes each reading hands back, distinct instances so a case reads which one arrived.
     private static final List<List<double[]>> FITTED_BOXES =
@@ -60,17 +63,11 @@ final class RibbonBakeSurfaceTests {
     // The classes this arrangement stands in for, closed on the way out.
     private final StaticSeams seams = new StaticSeams();
 
-    private MockedStatic<KmuOwnerMapRibbonSettings> settingsMock;
     private MockedStatic<ClusterNameBoxes> fittedBoxesMock;
     private MockedStatic<LabelLineBoxes> wordBoxesMock;
 
     @BeforeEach
     void openSeams() {
-
-        // The bands on and kept clear of the names, under the fitted-box reading: what every case
-        // starts from, each re-stubbing the one knob it is about on top.
-        settingsMock = seams.openSeam(KmuOwnerMapRibbonSettings.class);
-        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
         fittedBoxesMock = seams.openSeam(ClusterNameBoxes.class);
         fittedBoxesMock
@@ -102,7 +99,12 @@ final class RibbonBakeSurfaceTests {
             when(geometryCacheMock.getSiteBySystemKey())
                 .thenReturn(siteBySystemKey);
 
-            var surface = RibbonBakeSurface.createForPass(clusters, geometryCacheMock, standingAnchors);
+            var surface = RibbonBakeSurface.createForPass(
+                clusters,
+                geometryCacheMock,
+                standingAnchors,
+                KEPT_CLEAR_OF_NAMES,
+                RibbonNameClearanceChoice.FITTED_BOX);
 
             assertThat(surface.inhabitedSystemKeys())
                 .containsExactly(buildCellKey(SETTLED_SYSTEM));
@@ -115,7 +117,10 @@ final class RibbonBakeSurfaceTests {
         @Test
         void keepsClearOfTheFittedBoxesUnderTheFittedBoxReading() {
 
-            var surface = createSurfaceSpelling(OwnerNameFormatChoice.SHORT);
+            var surface = createSurfaceSpelling(
+                OwnerNameFormatChoice.SHORT,
+                KEPT_CLEAR_OF_NAMES,
+                RibbonNameClearanceChoice.FITTED_BOX);
 
             assertThat(surface.nameBoxes())
                 .isSameAs(FITTED_BOXES);
@@ -126,11 +131,10 @@ final class RibbonBakeSurfaceTests {
         @Test
         void keepsClearOfTheDrawnWordsUnderTheWordsReading() {
 
-            settingsMock
-                .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonNameClearance)
-                .thenReturn(RibbonNameClearanceChoice.WORDS);
-
-            var surface = createSurfaceSpelling(OwnerNameFormatChoice.SHORT);
+            var surface = createSurfaceSpelling(
+                OwnerNameFormatChoice.SHORT,
+                KEPT_CLEAR_OF_NAMES,
+                RibbonNameClearanceChoice.WORDS);
 
             assertThat(surface.nameBoxes())
                 .isSameAs(WORD_BOXES);
@@ -143,7 +147,10 @@ final class RibbonBakeSurfaceTests {
             // Read off the build's name format rather than off the placements being empty: the
             // placements are built for the anchor overlay too, so they can stand while nothing is
             // drawn for a band to give way to.
-            var surface = createSurfaceSpelling(OwnerNameFormatChoice.NONE);
+            var surface = createSurfaceSpelling(
+                OwnerNameFormatChoice.NONE,
+                KEPT_CLEAR_OF_NAMES,
+                RibbonNameClearanceChoice.FITTED_BOX);
 
             assertThat(surface.nameBoxes())
                 .isEmpty();
@@ -156,11 +163,10 @@ final class RibbonBakeSurfaceTests {
         void keepsClearOfNothingWhileTheBandsIgnoreTheNames() {
             // The other reason a band has nothing to keep clear of: the names are drawn, and the
             // player would rather the band ran whole beneath them.
-            settingsMock
-                .when(KmuOwnerMapRibbonSettings::shouldKeepOwnerMapRibbonsClearOfNames)
-                .thenReturn(false);
-
-            var surface = createSurfaceSpelling(OwnerNameFormatChoice.SHORT);
+            var surface = createSurfaceSpelling(
+                OwnerNameFormatChoice.SHORT,
+                RUN_UNDER_NAMES,
+                RibbonNameClearanceChoice.FITTED_BOX);
 
             assertThat(surface.nameBoxes())
                 .isEmpty();
@@ -170,12 +176,20 @@ final class RibbonBakeSurfaceTests {
         }
     }
 
-    // The surface over a build holding nobody, whose names are spelled the given way - the one
-    // input the room kept for them is read off.
-    private RibbonBakeSurface createSurfaceSpelling(OwnerNameFormatChoice nameFormat) {
+    // The surface over a build holding nobody, whose names are spelled the given way, under the
+    // given answers about the room kept for them.
+    private RibbonBakeSurface createSurfaceSpelling(
+            OwnerNameFormatChoice nameFormat,
+            boolean isRibbonKeptClearOfNames,
+            RibbonNameClearanceChoice nameClearance) {
 
         var clusters = OwnerMapClusterFixtures.createClustersSpellingNames(Map.of(), nameFormat);
 
-        return RibbonBakeSurface.createForPass(clusters, geometryCacheMock, standingAnchors);
+        return RibbonBakeSurface.createForPass(
+            clusters,
+            geometryCacheMock,
+            standingAnchors,
+            isRibbonKeptClearOfNames,
+            nameClearance);
     }
 }

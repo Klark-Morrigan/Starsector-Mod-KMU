@@ -25,6 +25,7 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuMapLabelSettings;
@@ -487,11 +488,15 @@ final class OwnerMapDrawablesTests {
             .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()))
             .thenReturn(clusters);
 
+        seams.openSeam(ClusterAnchorsBuilder.class);
+
+        // The bake's settings are read live by the drawables, from knobs no test JVM holds; the
+        // bake they are handed to is stood in for, so nothing reads them back.
         seams
-            .openSeam(ClusterAnchorsBuilder.class);
+            .openSeam(RibbonBakeSettings.class);
         seams
             .openSeam(CellRibbonsBaker.class)
-            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
+            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
             .thenReturn(mock(CellRibbonsBaker.class));
 
         drawables.rebuildClustersAndBands(

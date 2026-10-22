@@ -36,13 +36,16 @@ see the [mod README](../../../../../../../README.md) for project context.
 an ordered list of `RibbonSegment`,
 each a colour and a length in band widths,
 read clockwise from the cell's top centre.
-`RibbonPlan.NONE` is the cell that draws no band.
+`RibbonPlan.NONE` is the cell that draws no band,
+and `hasLength()` is what a layer asks before walking a ring for one.
 
-A run reads as a count.
-A long run is several *stakes* of one colour,
-each parted from the next by a short *interjection*,
-and `RibbonSegmentLengths` pairs those two lengths,
-so the proportion that makes a run read as several stakes is one authored decision.
+A plan is a value:
+it copies the runs it is handed,
+so nobody still holding the list can lengthen a band already planned.
+A rule laying runs one at a time builds through `RibbonPlanBuilder` instead,
+whose list the plan takes over rather than copies.
+The builder refuses every run once the plan is built,
+so the copy would protect nothing.
 
 Lengths are counts of widths,
 never world sizes.
@@ -55,6 +58,7 @@ and keep the proportions between them - the proportions being the whole of what 
 | Class | Scope | Job |
 | --- | --- | --- |
 | `RibbonPlan` | one cell | the runs, in draw order |
+| `RibbonPlanBuilder` | one cell | lays a plan run by run, handing its list over without a copy |
 | `RibbonPathTracer` | one cell | pure geometry: the ring a band runs along, at whichever inset fits |
 | `CellRibbonBuilder` | one cell | pure geometry: path plus plan in, `CellRibbon` out |
 | `CellRingPathCache` | one build | the rings already walked, so a re-bake walks only what was re-shaped |
@@ -276,11 +280,12 @@ Being one band on one stretch is what makes that true of a cell with names acros
 `RibbonStyle` is how one bake is laid out:
 the width,
 the clearance from the border,
-the two run lengths those are multiples of,
 the mitre spike limit,
 and whether a cell short of room draws a band anyway.
 The sizes are all world sizes,
 so nothing about a band is asked of the camera.
+How long each run is never appears here:
+a plan's runs arrive carrying their lengths in widths.
 Where they come from is the layer's -
 this package reads no setting.
 

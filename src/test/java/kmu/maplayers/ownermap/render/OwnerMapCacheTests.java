@@ -30,6 +30,7 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapLabelSettings;
@@ -656,13 +657,17 @@ final class OwnerMapCacheTests {
             .when(() -> OwnerMapBuilder.resolveOwners(any(), any(), any()))
             .thenReturn(ResolvedOwners.createEmpty());
 
+        // The bake's settings are read live on every production rebuild, from knobs no test JVM
+        // holds; the bake they are handed to is stood in for below, so nothing reads them back.
+        seams.openSeam(RibbonBakeSettings.class);
+
         // The bake is asked for by the production view on every rebuild, so it has to hand back
         // something to bake on rather than the seam's null.
         var ribbonsBakerMock = mock(CellRibbonsBaker.class);
         var ribbonsBakerSeamMock = seams.openSeam(CellRibbonsBaker.class);
 
         ribbonsBakerSeamMock
-            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
+            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
             .thenReturn(ribbonsBakerMock);
     }
 

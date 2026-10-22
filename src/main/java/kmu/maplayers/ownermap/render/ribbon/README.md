@@ -30,7 +30,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 | `CellRibbonsBaker` | the pass | drives the loop over cells and writes each band back |
 | `CellRibbonSource` | the pass | holds what a pass is settled from; refuses the cells that take no band and answers the rest one at a time |
 | `RibbonBakeSurface` | the pass | the drawn map bands go on: the inhabitation gate, where each band starts, the room it keeps clear of, the rings already traced |
-| `RibbonStyleReader` | the pass | reads the player's band knobs into one `RibbonStyle` |
+| `RibbonBakeSettings` | the pass | every band knob, read once by the bake's caller and handed to `CellRibbonsBaker` |
 
 `CellRibbonsBaker` runs as its own **stage**,
 after the rest of a rebuild,
@@ -151,7 +151,8 @@ Why that is safe with no key and no revision is [`base.ribbon`](../../../base/ri
 
 ## Which room the names take
 
-Whether the bands keep clear of the names at all is the player's:
+Whether the bands keep clear of the names at all is the player's,
+arriving with the rest of the bake's settings:
 `RibbonBakeSurface.resolveNameBoxes` hands over no boxes when the names are switched off,
 and none when the player would rather keep the whole band.
 How much room a name is taken to need is the player's as well,
@@ -165,15 +166,35 @@ Either way the builder is handed world boxes and carves the same way.
 
 ## Sizes and drawing
 
-`RibbonStyleReader` reads `RibbonStyle` from the player's Visuals tab:
-the width,
-the clearance from the border,
-the two run lengths those are multiples of,
-and whether a cell short of room draws a band anyway (**Always draw a planned band**, on by default).
+`RibbonBakeSettings.readFromLunaSettings` reads every band knob in one go,
+and the bake's caller hands the value to `CellRibbonsBaker`,
+so no stage of a bake reads a setting of its own.
+It holds:
+
+- whether the bands draw at all;
+- the `RibbonStyle` from the player's Visuals tab:
+  the width,
+  the clearance from the border,
+  and whether a cell short of room draws a band anyway (**Always draw a planned band**, on by default);
+- the `RibbonPlanRules`:
+  the two run lengths,
+  and whether an uncontested cell's runs are shortened;
+- whether the bands keep clear of the names,
+  and by which reading;
+- whether the path overlay shows.
+
 The mitre spike limit is authored rather than exposed -
 it is the angle past which a corner's mitre becomes a spike,
 a property of stroking a polyline rather than of how the readout looks.
-A pass with the bands switched off reads none of them.
+
+With the bands switched off,
+`CellRibbonsBaker` builds no `CellRibbonSource` and no `RibbonBakeSurface`:
+no planner is resolved,
+no name room is measured,
+no ring is walked,
+and every cell is written back bare -
+which also clears the bands an earlier pass laid.
+That takes the counting off the rebuild as well as the bands off the map.
 
 `base.ribbon`'s `CellRibbonRenderer` draws the bands in the render band the layer hands the tier,
 as the `ribbonBand` of its `OwnerMapBandLayout`;
@@ -185,9 +206,12 @@ is the layer's to say.
 
 **Show presence band paths** (Map - Dev, off by default) turns on `base.ribbon`'s path overlay.
 `CellRibbonsBaker` traces in the same loop as the bake,
-under a toggle read once per pass,
+under the toggle the bake's settings carry,
 and hands over nothing for every cell while it is off -
 which is also what clears the paths a pass taken while it was on left behind.
+A pass with the bands switched off traces nothing either,
+toggle or not:
+a ring drawn from sizes nothing is laid at would be a diagnostic of its own arithmetic.
 The cost of that second walk is paid only while the toggle is on.
 
 ## What a bake spends its time on

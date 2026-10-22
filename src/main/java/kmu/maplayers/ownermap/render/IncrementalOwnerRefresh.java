@@ -19,6 +19,7 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 
 import org.apache.log4j.Logger;
 
@@ -294,7 +295,8 @@ public final class IncrementalOwnerRefresh {
                 clusters,
                 geometryCache,
                 walk,
-                standingMap.standingAnchors())
+                standingMap.standingAnchors(),
+                RibbonBakeSettings.readFromLunaSettings())
             .bakeCellRibbonsOf(cellKeys);
     }
 

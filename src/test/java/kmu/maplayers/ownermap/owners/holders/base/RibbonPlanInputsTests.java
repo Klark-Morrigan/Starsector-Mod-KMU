@@ -3,10 +3,9 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
+import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,9 +28,12 @@ import static org.mockito.Mockito.when;
  */
 final class RibbonPlanInputsTests {
 
+    private static final boolean UNCONTESTED_RUNS_SHORTENED = true;
+
     // Laying rules no default lands on, so carrying them is seen.
-    private static final RibbonPlanRules RULES =
-        new RibbonPlanRules(new RibbonSegmentLengths(4, 2), new UncontestedRibbonRuns(true));
+    private static final RibbonPlanRules RULES = RibbonPlanRules.createFromAuthoredLengths(
+        new RibbonSegmentLengths(4, 2),
+        UNCONTESTED_RUNS_SHORTENED);
 
     @Nested
     class Palettes {

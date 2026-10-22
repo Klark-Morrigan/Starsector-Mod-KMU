@@ -10,33 +10,41 @@ import java.util.List;
  * says and nothing about who decided it. Whoever paints the map lays the runs by its own rule; this
  * is what every such rule hands the drawn band.
  *
- * <p>A value: two plans of the same runs are equal. A class rather than a record so the runs can
- * be copied on the way in, where a record would hold whatever list a caller still has a hand on.
+ * <p>A value: two plans of the same runs are equal, and the runs are copied on the way in, so a
+ * caller still holding the list it built from cannot lengthen a ribbon already planned. A rule
+ * laying runs one at a time builds through {@link RibbonPlanBuilder} instead, whose list the plan
+ * takes over rather than copies, since nothing else ever holds it.
+ *
+ * @param segments the ribbon's runs in draw order, starting from the cell's top centre; empty when
+ *                 the cell draws no ribbon at all
  */
-public final class RibbonPlan {
+public record RibbonPlan(
+    List<RibbonSegment> segments) {
 
     // The cell draws no band: the layer planned no runs for it, so there is nothing to report.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
-    private final List<RibbonSegment> segments;
+    // The type is how a builder's list is recognised, and the only route there is: every way of making
+    // a record runs this constructor, so a builder cannot hand its list over past the copy. Nor can it
+    // hand over a list the copy would keep, since List.copyOf keeps only the JDK's own immutable lists
+    // and every way of making one copies too.
+    public RibbonPlan {
 
-    /**
-     * A plan of the given runs, copied, so a caller reusing the list it built from cannot lengthen
-     * a ribbon already planned.
-     *
-     * @param segments the ribbon's runs in draw order, starting from the cell's top centre; empty
-     *                 when the cell draws no ribbon at all
-     */
-    public RibbonPlan(List<RibbonSegment> segments) {
-        this.segments = List.copyOf(segments);
+        if (!(segments instanceof AdoptedRibbonSegments)) {
+            segments = List.copyOf(segments);
+        }
     }
 
     /**
-     * @return the ribbon's runs in draw order, starting from the cell's top centre; empty when the
-     *         cell draws no ribbon at all
+     * Whether the ribbon runs any length at all.
+     *
+     * <p>What decides whether a cell's ring is worth walking: a plan with no length has nothing to
+     * lay on it, whether no run was planned or every planned run is empty.
+     *
+     * @return whether the runs add up to more than nothing
      */
-    public List<RibbonSegment> segments() {
-        return segments;
+    public boolean hasLength() {
+        return sumLengthUnits() > 0;
     }
 
     /**
@@ -57,20 +65,5 @@ public final class RibbonPlan {
         }
 
         return lengthUnits;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        return other instanceof RibbonPlan plan && segments.equals(plan.segments);
-    }
-
-    @Override
-    public int hashCode() {
-        return segments.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return "RibbonPlan[segments=" + segments + "]";
     }
 }

@@ -30,6 +30,8 @@ over a ranked list of `OwnerPresence` -
 an owner,
 its palette,
 and how many stakes it has in the cell.
+It lays the runs one at a time through `base.ribbon`'s `RibbonPlanBuilder`,
+so each banded cell's runs are held once.
 
 The grammar it lays down:
 
@@ -41,8 +43,15 @@ The grammar it lays down:
 - The band's last run is left open,
   so a divider never ends a band.
 
-`base.ribbon`'s `RibbonSegmentLengths` pairs the two proportions the grammar is stated in,
-and `RibbonPlanRules` pairs those with the shortening below.
+`RibbonSegmentLengths` pairs the two proportions the grammar is stated in,
+so the proportion that makes a run read as several stakes is one authored decision.
+`RibbonPlanRules` settles from that pair,
+and the shortening below,
+the lengths a contested and an uncontested cell are laid at -
+one factory over one authored pair,
+so a pass's shortening can never be put over another pass's lengths.
+Both are this tier's rather than the band's:
+the band is handed runs that already carry their lengths.
 
 Lengths are counts of widths,
 never world sizes,
@@ -65,7 +74,7 @@ Contest decides only the length its runs are laid at:
 1. A **contested** cell draws at the player's authored lengths -
    this is the readout the bands exist for,
    and the fill cannot report it.
-2. An **uncontested** one draws at whatever `UncontestedRibbonRuns` answers,
+2. An **uncontested** one draws at whatever `RibbonPlanRules.getUncontestedLengths()` answers,
    which is a single width a stake unless the player turns the shortening off.
    Its fill has already said whose the system is,
    so the band is a tally,

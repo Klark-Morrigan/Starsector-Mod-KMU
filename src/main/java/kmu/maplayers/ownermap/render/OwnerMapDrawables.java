@@ -19,6 +19,7 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.ArrayList;
@@ -290,7 +291,8 @@ final class OwnerMapDrawables {
                 clusters,
                 cellGeometry.cells(),
                 walk,
-                standingAnchors)
+                standingAnchors,
+                RibbonBakeSettings.readFromLunaSettings())
             .bakeAllCellRibbons();
     }
 

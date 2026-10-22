@@ -23,7 +23,6 @@ final class RibbonStyleTests {
     private static final double WIDTH_WORLD = 400.0;
     private static final double INSET_PAD_WORLD = 200.0;
     private static final double MITER_SPIKE_LIMIT = 2.0;
-    private static final RibbonSegmentLengths LENGTHS = new RibbonSegmentLengths(3, 1);
 
     // Whether a cell with no room for the band draws one anyway, which neither sum below reads -
     // both are arithmetic over the sizes, and which of them a cell is traced at is the builder's
@@ -60,7 +59,6 @@ final class RibbonStyleTests {
             WIDTH_WORLD,
             INSET_PAD_WORLD,
             MITER_SPIKE_LIMIT,
-            LENGTHS,
             BAND_ALWAYS_DRAWN);
     }
 }

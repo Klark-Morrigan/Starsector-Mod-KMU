@@ -46,7 +46,6 @@ final class RibbonPathTracerTests {
         400.0,
         200.0,
         2.0,
-        new RibbonSegmentLengths(3, 1),
         false);
 
     // The same sizes with the shipped answer to a cell that has no room: draw the band anyway.
@@ -54,7 +53,6 @@ final class RibbonPathTracerTests {
         400.0,
         200.0,
         2.0,
-        new RibbonSegmentLengths(3, 1),
         true);
 
     @Nested

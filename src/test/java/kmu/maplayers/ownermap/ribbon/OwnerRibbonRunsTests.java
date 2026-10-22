@@ -4,7 +4,6 @@ import kmlib.colour.ColourPair;
 
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
-import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 
 import org.junit.jupiter.api.Nested;
@@ -59,6 +58,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the rule ranks nothing itself and a case that happened to be sorted would hide it.
  */
 final class OwnerRibbonRunsTests {
+
+    // The shortening switched off, for the one case laying its own lengths on a contested cell,
+    // where the shortening never reaches.
+    private static final boolean UNCONTESTED_RUNS_AUTHORED = false;
 
     @Nested
     class PlanCellRibbon {
@@ -522,9 +525,9 @@ final class OwnerRibbonRunsTests {
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
                 OwnerAffiliation.NONE,
-                new RibbonPlanRules(
+                RibbonPlanRules.createFromAuthoredLengths(
                     new RibbonSegmentLengths(4, 2),
-                    STANDARD_RULES.uncontestedRuns()));
+                    UNCONTESTED_RUNS_AUTHORED));
 
             assertThat(plan.segments())
                 .containsExactly(

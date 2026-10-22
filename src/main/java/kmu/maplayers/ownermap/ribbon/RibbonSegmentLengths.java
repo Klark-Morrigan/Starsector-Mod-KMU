@@ -1,9 +1,13 @@
-package kmu.maplayers.base.ribbon;
+package kmu.maplayers.ownermap.ribbon;
 
 /**
  * How far the ribbon's two kinds of run go, in ribbon widths: the segment one stake draws,
  * and the interjection parting two runs - two stakes of one colour, or one colour's whole run
  * from the next.
+ *
+ * <p>The owner tier's rather than the band's, because only the laying rule reads them: the band is
+ * handed runs that already carry their lengths, and a stake is this tier's word for what one run
+ * stands for.
  *
  * <p>Paired in a value of their own so two lengths of the same type can never be handed over
  * the wrong way round, and so the proportion between them is set in one place. That

@@ -12,8 +12,7 @@ import java.awt.Color;
  * leaves the proportions between them exactly as planned - the proportions being the whole
  * of what the band says.
  *
- * @param colour      the shade this run draws in, whichever rule laid it - a stake's colour, or
- *                    a parting's
+ * @param colour      the shade this run draws in, whichever rule laid it
  * @param lengthUnits how far the run goes, in ribbon widths
  */
 public record RibbonSegment(

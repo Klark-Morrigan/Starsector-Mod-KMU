@@ -24,6 +24,56 @@ final class RibbonPlanTests {
     private static final Color SECOND_RUN_COLOUR = new Color(40, 40, 200);
 
     @Nested
+    class HasLength {
+
+        @Test
+        void answersYesForAPlanWithARunOfAnyLength() {
+
+            // ARRANGE
+            var plan = new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 1)));
+
+            // ACT
+            var actualHasLength = plan.hasLength();
+
+            // ASSERT
+            assertThat(actualHasLength)
+                .isTrue();
+        }
+
+        @Test
+        void answersNoForACellWithNoRibbon() {
+
+            // ARRANGE
+            var plan = RibbonPlan.NONE;
+
+            // ACT
+            var actualHasLength = plan.hasLength();
+
+            // ASSERT
+            assertThat(actualHasLength)
+                .isFalse();
+        }
+
+        // A rule may plan runs that come out empty, and a ring walked for them would carry
+        // nothing, so a plan of zero-length runs counts as having no length at all.
+        @Test
+        void answersNoForAPlanWhoseRunsAreAllEmpty() {
+
+            // ARRANGE
+            var plan = new RibbonPlan(List.of(
+                new RibbonSegment(FIRST_RUN_COLOUR, 0),
+                new RibbonSegment(PARTING_COLOUR, 0)));
+
+            // ACT
+            var actualHasLength = plan.hasLength();
+
+            // ASSERT
+            assertThat(actualHasLength)
+                .isFalse();
+        }
+    }
+
+    @Nested
     class SumLengthUnits {
 
         @Test

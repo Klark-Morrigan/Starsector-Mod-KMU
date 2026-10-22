@@ -3,11 +3,10 @@ package kmu.maplayers.ownermap.ribbon;
 import kmlib.colour.ColourPair;
 
 import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonPlanBuilder;
 import kmu.maplayers.base.ribbon.RibbonSegment;
-import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +25,7 @@ import java.util.Optional;
  *
  * <p>A cell draws a ribbon when anything is present in it at all. What contest adds is the length
  * its runs are laid at: a contested cell keeps the player's authored lengths, and an uncontested
- * one takes whatever {@link UncontestedRibbonRuns} answers. Contest is one question - does the
+ * one takes whatever {@link RibbonPlanRules#getUncontestedLengths()} answers. Contest is one question - does the
  * band say something its own fill does not - asked of the two kinds of fill a cell can have.
  *
  * <p>With a painter, that is any other owner holding something and not standing with the painter.
@@ -98,7 +97,7 @@ public final class OwnerRibbonRuns {
         var judgedAgainstOwnerId = paintingOwnerId.or(() -> firstPresentOwnerId);
 
         if (isCellContested(judgedAgainstOwnerId, rankedPresences, affiliation)) {
-            return layOwnerRuns(rankedPresences, rules.lengths());
+            return layOwnerRuns(rankedPresences, rules.getContestedLengths());
         }
 
         // Nothing the fill does not already say is here, so what is left to report is the size of
@@ -107,7 +106,7 @@ public final class OwnerRibbonRuns {
         if (firstPresentOwnerId.isEmpty()) {
             return RibbonPlan.NONE;
         }
-        return layOwnerRuns(rankedPresences, rules.resolveUncontestedLengths());
+        return layOwnerRuns(rankedPresences, rules.getUncontestedLengths());
     }
 
     // Lays the whole band: every owner's run in the order handed over, each closed off by its own
@@ -121,7 +120,7 @@ public final class OwnerRibbonRuns {
             List<OwnerPresence> rankedPresences,
             RibbonSegmentLengths lengths) {
 
-        var segments = new ArrayList<RibbonSegment>();
+        var planBuilder = new RibbonPlanBuilder();
         OwnerPresence outgoingOwner = null;
 
         for (var presence : rankedPresences) {
@@ -135,12 +134,12 @@ public final class OwnerRibbonRuns {
             // incoming one's: it is that owner's stakes ending, and drawn in the newcomer's
             // shade it would read as a gap belonging to whoever arrives next.
             if (outgoingOwner != null) {
-                segments.add(createParting(outgoingOwner.palette(), lengths));
+                planBuilder.appendSegment(createParting(outgoingOwner.palette(), lengths));
             }
-            appendOwnerRun(segments, presence, lengths);
+            appendOwnerRun(planBuilder, presence, lengths);
             outgoingOwner = presence;
         }
-        return new RibbonPlan(segments);
+        return planBuilder.buildPlan();
     }
 
     // Whether the band would say anything the cell's own fill does not, which is what decides the
@@ -212,7 +211,7 @@ public final class OwnerRibbonRuns {
     // strictly between two of one owner's stakes - so a run neither opens nor closes on one,
     // and whether it is closed off at all is the caller's to decide from what follows it.
     private static void appendOwnerRun(
-            List<RibbonSegment> segments,
+            RibbonPlanBuilder planBuilder,
             OwnerPresence presence,
             RibbonSegmentLengths lengths) {
 
@@ -221,9 +220,9 @@ public final class OwnerRibbonRuns {
         for (var stake = 0; stake < presence.stakeCount(); stake++) {
 
             if (stake > 0) {
-                segments.add(createParting(palette, lengths));
+                planBuilder.appendSegment(createParting(palette, lengths));
             }
-            segments.add(new RibbonSegment(
+            planBuilder.appendSegment(new RibbonSegment(
                 palette.primaryColour(),
                 lengths.stakeLengthUnits()));
         }

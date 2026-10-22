@@ -9,7 +9,7 @@ import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.ribbon.CellRingPathCache;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.settings.KmuOwnerMapRibbonSettings;
+import kmu.settings.RibbonNameClearanceChoice;
 
 import java.util.List;
 import java.util.Map;
@@ -56,14 +56,20 @@ public record RibbonBakeSurface(
      * @param clusters        the built cells, read for which systems are settled and for the store
      *                        their traced rings are kept in
      * @param geometryCache   the cells' geometry, read for the site each system draws at
-     * @param standingAnchors the cluster names' placements, whose boxes the bands keep out of, with the
-     *                        face they were fitted in, which their drawn lines are measured in
+     * @param standingAnchors          the cluster names' placements, whose boxes the bands keep out
+     *                                 of, with the face they were fitted in, which their drawn lines
+     *                                 are measured in
+     * @param isRibbonKeptClearOfNames whether the player has the bands break around the names, as
+     *                                 the bake sampled it
+     * @param nameClearance            how much room a name takes, as the bake sampled it
      * @return the map this bake is laid against
      */
     public static RibbonBakeSurface createForPass(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
-            StandingClusterAnchors standingAnchors) {
+            StandingClusterAnchors standingAnchors,
+            boolean isRibbonKeptClearOfNames,
+            RibbonNameClearanceChoice nameClearance) {
 
         return new RibbonBakeSurface(
             // The inhabited set rather than the owner map, so a settled system the layer's rule gives
@@ -80,7 +86,9 @@ public record RibbonBakeSurface(
             // a second reading could carve the bands around names the map is not drawing.
             resolveNameBoxes(
                 standingAnchors,
-                clusters.getBuildInputs().getContentInputs().nameFormat()),
+                clusters.getBuildInputs().getContentInputs().nameFormat(),
+                isRibbonKeptClearOfNames,
+                nameClearance),
             clusters.getPaintedCells().getRingPathCache());
     }
 
@@ -98,15 +106,14 @@ public record RibbonBakeSurface(
     // this call.
     private static List<List<double[]>> resolveNameBoxes(
             StandingClusterAnchors standingAnchors,
-            OwnerNameFormatChoice nameFormat) {
+            OwnerNameFormatChoice nameFormat,
+            boolean isRibbonKeptClearOfNames,
+            RibbonNameClearanceChoice nameClearance) {
 
-        var isBandKeptClearOfNames = nameFormat.areNamesDrawn()
-            && KmuOwnerMapRibbonSettings.shouldKeepOwnerMapRibbonsClearOfNames();
-
-        if (!isBandKeptClearOfNames) {
+        if (!nameFormat.areNamesDrawn() || !isRibbonKeptClearOfNames) {
             return List.of();
         }
-        return switch (KmuOwnerMapRibbonSettings.getOwnerMapRibbonNameClearance()) {
+        return switch (nameClearance) {
             case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(standingAnchors.getAnchors());
             case WORDS -> LabelLineBoxes.listLineBoxes(standingAnchors);
         };

@@ -167,7 +167,6 @@ final class CellRibbonBuilderTests {
         400.0,
         200.0,
         2.0,
-        new RibbonSegmentLengths(3, 1),
         false);
 
     // The same sizes with the shipped answer to a cell that has no room: draw the band anyway.
@@ -175,7 +174,6 @@ final class CellRibbonBuilderTests {
         400.0,
         200.0,
         2.0,
-        new RibbonSegmentLengths(3, 1),
         true);
 
     private static final Color BRIGHT = new Color(140, 160, 220);
@@ -323,7 +321,7 @@ final class CellRibbonBuilderTests {
 
         @Test
         void compressesACrowdedBandRatherThanCuttingItShort() {
-            // A stake-dense system plans more band than its cell has outline. Every run still
+            // A run-dense plan asks for more band than its cell has outline. Every run still
             // draws - the whole point of compressing what a width is worth rather than truncating
             // is that no run drops off the readout - so a crowded cell reads as crowded.
             var crowdedRuns = new ArrayList<RibbonSegment>();

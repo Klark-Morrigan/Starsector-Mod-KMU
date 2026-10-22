@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.ribbon;
 
-import kmu.maplayers.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 
 import java.awt.Color;
@@ -32,10 +31,14 @@ public final class OwnerRibbonRunsFixtures {
     public static final Color DIKTAT_BRIGHT = new Color(220, 150, 120);
     public static final Color DIKTAT_DARK = new Color(90, 50, 40);
 
+    // The shortening switch's two answers, named so each rules value below reads which it poses.
+    private static final boolean UNCONTESTED_RUNS_SHORTENED = true;
+    private static final boolean UNCONTESTED_RUNS_AUTHORED = false;
+
     /**
      * The design's own proportions - a stake three widths long, parted by one width - paired with
      * the uncontested shortening switched off, so every cell's runs come out at those same lengths
-     * whether a rival is in it or not. What the shortening does to them is the uncontested-runs
+     * whether a rival is in it or not. What the shortening does to them is the plan rules' own
      * suite's.
      *
      * <p>The widths are not exported for a case to assert with. A case states the run lengths it
@@ -43,9 +46,9 @@ public final class OwnerRibbonRunsFixtures {
      * band back rather than moving their expectations along with it.
      */
     public static final RibbonPlanRules STANDARD_RULES =
-        new RibbonPlanRules(
+        RibbonPlanRules.createFromAuthoredLengths(
             new RibbonSegmentLengths(3, 1),
-            new UncontestedRibbonRuns(false));
+            UNCONTESTED_RUNS_AUTHORED);
 
     /**
      * The same proportions with the shortening switched on, which is the shipped answer and the
@@ -57,9 +60,9 @@ public final class OwnerRibbonRunsFixtures {
      * drift into disagreeing about what an unshortened run is.
      */
     public static final RibbonPlanRules SHORTENED_UNCONTESTED_RULES =
-        new RibbonPlanRules(
-            STANDARD_RULES.lengths(),
-            new UncontestedRibbonRuns(true));
+        RibbonPlanRules.createFromAuthoredLengths(
+            STANDARD_RULES.getContestedLengths(),
+            UNCONTESTED_RUNS_SHORTENED);
 
     // The two owners standing together under the affiliation below.
     private static final Set<String> ALLIED_PAIR = Set.of(HEGEMONY, TRITACHYON);
