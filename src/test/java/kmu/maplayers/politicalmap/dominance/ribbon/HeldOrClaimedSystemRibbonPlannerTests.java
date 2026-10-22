@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

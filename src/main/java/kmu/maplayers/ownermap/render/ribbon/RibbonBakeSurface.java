@@ -89,7 +89,7 @@ public record RibbonBakeSurface(
                 clusters.getBuildInputs().getContentInputs().nameFormat(),
                 isRibbonKeptClearOfNames,
                 nameClearance),
-            clusters.getPaintedCells().getRingPathCache());
+            clusters.getPaintedCells().getRibbonStore().getRingPathCache());
     }
 
     // The room the names take up, or none at all for either of two reasons, answered side by side

@@ -312,7 +312,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             // Nothing else moved: a re-bake is not a re-shape.
@@ -350,7 +350,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -397,7 +397,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             fittedBoxesMock.verifyNoInteractions();
@@ -427,7 +427,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
@@ -463,7 +463,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
@@ -511,7 +511,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(DISTANT_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -698,7 +698,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .doesNotContainKey(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -730,7 +730,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -756,7 +756,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(DISTANT_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 

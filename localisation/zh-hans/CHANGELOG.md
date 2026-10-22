@@ -63,6 +63,8 @@
 - **`SmoothingStageSink`** 和 **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**：平滑会报告实际运行的每一道平滑处理，因此展示各阶段的调用方按地图绘制时的顺序和开关展示它们。`ClusterBorderStageCollector` 即为其一。
 - **`base.ribbon.RibbonPlanBuilder`**：逐个色段排布的计划，计划会接管它的列表而不复制。
 - **`RibbonPlan.hasLength()`**：计划的色段长度之和是否大于零，据此决定是否为它遍历单元的环线。
+- **`base.ribbon.CellRibbonStore`**：一次构建的色带、色带路径和色带所沿的环线；单元形状改变时三者一起丢弃。
+- **`base.ribbon.RibbonPathInset`**：描绘色带路径的两种位置，保留内缩或放弃内缩。
 
 #### 修复
 
@@ -95,7 +97,8 @@
 | `BlocAffiliation`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness` 及其 `areBlocsFriendly(Set, Set)` | KMLib 的 `kmlib.starsector.factions.relation.FactionSetFriendliness`，及其 `areSetsFriendly(Set, Set)` 和 `createForSector(SectorAPI)` |
 | `base.labels.anchor.DiagnosticPalette` | `base.render.DiagnosticPalette`，供标签与区域的调试显示共用 |
-| `ownermap.ribbon` 中的 `RibbonPlan` 和 `RibbonSegment`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonPath`、`CellRibbonBuilder`、`RibbonPathTracer`、`RibbonPathVerdict`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle`、`CellRibbonPathRenderer` 和 `RibbonBakePhases` | `base.ribbon`：色带是沿单元的环线排布的色段，与色段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
+| `ownermap.ribbon` 中的 `RibbonPlan`、`RibbonSegment` 和 `SystemRibbonPlanner`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonBuilder`、`RibbonPathTracer`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle` 和 `RibbonBakePhases` | `base.ribbon`：色带是沿单元的环线排布的色段，与色段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
+| `ownermap.render.ribbon` 中的 `CellRibbonPath`、`RibbonPathVerdict` 和 `CellRibbonPathRenderer` | `base.ribbon.overlay`：色带路径叠加层，与色带本身分开。构建禁止它导入 `base.ribbon` 的其余部分 |
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`：任何有区域的图层都以同样方式拟合名称 |
 | `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，不再实现 `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`，与读取它的悬停框放在一起 |
@@ -156,6 +159,10 @@
 | 记录类型 `RibbonPlanRules(RibbonSegmentLengths, UncontestedRibbonRuns)` 及其 `lengths()`、`uncontestedRuns()` 和 `resolveUncontestedLengths()`，以及 `UncontestedRibbonRuns` | 改为不可继承的类，只能由 `RibbonPlanRules.createFromAuthoredLengths(RibbonSegmentLengths, boolean)` 创建，其中的开关表示无人争夺的单元是否把每个殖民地的色段缩短为一个宽度。读取方法为 `getContestedLengths()` 和 `getUncontestedLengths()`。`UncontestedRibbonRuns` 已移除 |
 | `RibbonStyle(double, double, double, RibbonSegmentLengths, boolean)` 和 `RibbonStyleReader.readRibbonStyle()` | `RibbonStyle(double, double, double, boolean)`：色段长度归计划规则所有。`ownermap.render.ribbon.RibbonBakeSettings.readFromLunaSettings()` 一次读取所有色带设置，样式也在其中 |
 | 各自读取所需设置的 `CellRibbonsBaker.createForPass(OwnerMapClusters, CellGeometryCache, SectorWalk, StandingClusterAnchors)`、`CellRibbonSource.createForPass(SectorWalk, OwnerSource, RibbonBakeSurface)` 和 `RibbonBakeSurface.createForPass(OwnerMapClusters, CellGeometryCache, StandingClusterAnchors)` | `CellRibbonsBaker.createForPass(OwnerMapClusters, CellGeometryCache, SectorWalk, StandingClusterAnchors, RibbonBakeSettings)`，接收调用方读取的设置。`CellRibbonSource.createForPass` 还接收 `RibbonStyle` 和 `RibbonPlanRules`，`RibbonBakeSurface.createForPass` 还接收色带是否避让区域名称以及 `RibbonNameClearanceChoice`。关闭色带时，本次烘焙两者都不创建 |
+| 由图层依次调用的各个步骤 `CellRibbonBuilder.buildCellRibbon(RingPath, RibbonPlan, RibbonStyle, List, IterationScope)` 和 `RibbonPathTracer.traceLaidRibbonPath(List, double[], RibbonStyle)` | `CellRibbonBuilder.layCellRibbon(SystemKey, List, double[], RibbonPlan, RibbonStyle, List, CellRingPathCache, IterationScope)`：一次调用排布一个单元的色带。计划为空时，在遍历任何环线之前就给出结果；环线通过已保存的环线取得。它自行标记描绘、裁切和描边三个环节，因此 `RibbonBakePhases` 留给图层的只有 `BAKE_SECTION` 和 `PLAN_PHASE` |
+| `RibbonPathTracer.traceInspectedRibbonPath(List, double[], RibbonStyle)` 和 `CellRibbonSource.traceCellRibbonPath(SystemKey, List)` | `traceInspectedRibbonPath(SystemKey, List, double[], RibbonStyle, CellRingPathCache)` 和 `traceCellRibbonPath(SystemKey, SystemKey, List)`，单元的键在前：叠加层读取色带烘焙已遍历的环线 |
+| `CellRingPathCache` 的 `findRingPathOf(SystemKey)`、`putRingPath(SystemKey, RingPath)` 和 `dropRingPathOf(SystemKey)` | `findRingPathOf(SystemKey, RibbonPathInset)`：单元为每种描绘位置各保存一条环线。写入归色带自身所有 |
+| `PaintedCellStore` 的 `getRibbonByCellKey()`、`getRibbonPathByCellKey()`、`getRingPathCache()`、`putCellRibbon(SystemKey, CellRibbon)` 和 `putCellRibbonPath(SystemKey, CellRibbonPath)` | 移到 `PaintedCellStore.getRibbonStore()` 给出的 `base.ribbon.CellRibbonStore` 上，其 `dropRingFittedWorkOf(SystemKey)` 一并清除单元的色带、色带路径和环线 |
 | `OwnerMapBuildInputs`，基于绘制方案、视图读取、选择和两个填充集合的记录类型 | 改为不可继承的类，基于绘制方案、视图读取、选择、锚点叠加层是否显示和 `SystemFillStates`，持有构建的 `MapPaints`，只与自身相等。读取方法为 `getStyling()`、`getViewReading()`、`getContentInputs()`、`isAnchorOverlayShown()`、`getFillStates()` 和 `getPaints()` |
 | `HolderResolution` 与 `ResolvedOwners` 的 `contestedSystemKeys` 和 `unfilledSystemKeys`，以及 `FillSplit.splitMembersByFillState(CellGrouping, List, Set, Set)` 和 `FillSplit.classifyFillState(SystemKey, Set, Set)` | 合为一个 `SystemFillStates fillStates`，因此不会有星系同时以斜线和不填充绘制。拆分改为接受它：`splitMembersByFillState(CellGrouping, List, SystemFillStates)`；单个星系的状态由 `resolveFillStateOf(SystemKey)` 给出 |
 | `ClusterLabelStylingSnapshot(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)` | `ClusterLabelStylingSnapshot(Map, MapPaints, FontAtlas, boolean)`：正式构建的快照携带构建自身的绘制方式，因此名称按其填充所依据的同一样式决定着色。最后一个组件为是否需要拟合，`resolveFrom` 依据构建的名称与锚点叠加层给出 |

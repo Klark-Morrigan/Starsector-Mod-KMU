@@ -2,20 +2,19 @@ package kmu.maplayers.ownermap.render.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.ribbon.CellRibbonBuilder;
-import kmu.maplayers.base.ribbon.CellRibbonPath;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
 import kmu.maplayers.base.ribbon.RibbonPathTracer;
 import kmu.maplayers.base.ribbon.RibbonStyle;
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.base.ribbon.overlay.CellRibbonPath;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import java.util.List;
 import java.util.Map;
@@ -48,20 +47,14 @@ import java.util.Map;
  * ask walking what a system holds - for some mechanics settling a whole contest over it. What
  * its looser reading costs is weighed in this package's README.
  *
- * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
- * nothing lives in or with nowhere to start from, a system the sector no longer lists, and a cell
- * whose plan came back empty, because nothing the layer counts is present in it. Every cell with
- * something counted in it bands, contested or not. The empty plan has to be answered before the
- * geometry rather than inside it, since what it saves is the ring walk.
+ * <p>Which cells are offered a band at all is settled here: a cell nothing lives in or with nowhere
+ * to start from, and a system the sector no longer lists, are refused before anything is counted.
+ * Every other cell is counted, and its plan handed to {@link CellRibbonBuilder#layCellRibbon}, which
+ * answers a plan with nothing in it before any ring is walked.
  *
- * <p>A cell's ring is asked of the surface's store before it is traced and written back once it is,
- * which leaves a re-bake walking rings only for the cells a change actually re-shaped.
- *
- * <p>The diagnostic overlay's paths are traced through the same pass, from the same sizes and the
- * same gate, for the reason the overlay exists at all: it is worth looking at only while it is the
- * cells' own paths it is drawing. That trace is taken fresh rather than read from the store,
- * because the overlay walks its own inset ladder: the cells it exists to explain are exactly the
- * ones the band pass refused a path.
+ * <p>The diagnostic overlay's paths are traced through the same pass, from the same sizes, the same
+ * gate and the same kept rings, for the reason the overlay exists at all: it is worth looking at
+ * only while it is the cells' own paths it is drawing.
  *
  * <p>Named a source rather than a builder because the per-cell work is
  * {@link CellRibbonBuilder}'s: what this adds is the pass the work is done under, which is the
@@ -156,23 +149,17 @@ public final class CellRibbonSource {
         // system walks what it holds, so how much the sector holds moves this and the cells' own
         // ring work by different factors.
         var plan = planner.planSystemRibbon(system);
+
         bakeScope.markPhase(RibbonBakePhases.PLAN_PHASE);
 
-        // Nothing the layer counts is present here, so nothing was planned and nothing is laid
-        // out. Answered here rather than by the geometry because what it saves is the ring walk -
-        // a cell with nothing to say must not pay for a path nothing would be laid on.
-        if (!plan.hasLength()) {
-            return CellRibbon.NONE;
-        }
-        var ringPath = findOrTraceRingPath(cellKey, fillPolygon, site);
-
-        bakeScope.markPhase(RibbonBakePhases.TRACE_PHASE);
-
-        return CellRibbonBuilder.buildCellRibbon(
-            ringPath,
+        return CellRibbonBuilder.layCellRibbon(
+            cellKey,
+            fillPolygon,
+            site,
             plan,
             style,
             surface.nameBoxes(),
+            surface.ringPathCache(),
             bakeScope);
     }
 
@@ -186,12 +173,14 @@ public final class CellRibbonSource {
      * above is everything downstream of the ring - a cell whose plan came back empty, and one
      * refused the room to draw what it planned, both still show the path they would have used.
      *
+     * @param cellKey        the cell being traced, the key its traced rings are kept under
      * @param drawnSystemKey the system the cell draws as, or null for a cell with no star of its
      *                       own - which nothing paints, so no band is ever laid on it
      * @param fillPolygon    the cell's painted outline, the ring the path runs inside
      * @return the cell's traced path, or {@link CellRibbonPath#NONE} where none was traced
      */
     public CellRibbonPath traceCellRibbonPath(
+            SystemKey cellKey,
             SystemKey drawnSystemKey,
             List<double[]> fillPolygon) {
 
@@ -199,39 +188,12 @@ public final class CellRibbonSource {
 
         return site == null
             ? CellRibbonPath.NONE
-            : RibbonPathTracer.traceInspectedRibbonPath(fillPolygon, site, style);
-    }
-
-    // The ring this cell's band runs along: the one already traced inside the shape the cell holds
-    // now, or a fresh trace where none stands.
-    //
-    // Asked of the cache first because a bake is repeated far more often than a cell is re-shaped.
-    // A bake runs whenever a cluster name may have moved - which is every change the layer marks,
-    // since a re-fit can place a name on a cell the change never touched - while the ring itself
-    // is settled by which of a cell's edges are same-owner seams, so it moves only when the cell
-    // is cut again.
-    // Between the two, every cell in the sector would otherwise re-trace to arrive at the path it
-    // discarded a moment earlier.
-    //
-    // What the phase covers is the whole answer rather than the walk alone, so a bake over cells
-    // whose rings already stood reports the near-nothing a cache read costs - which is the
-    // difference the cache is there to make and the one worth being able to read, as the phase's
-    // own number rather than a gap in somebody else's.
-    private RingPath findOrTraceRingPath(
-            SystemKey cellKey,
-            List<double[]> fillPolygon,
-            double[] site) {
-
-        var standingPath = surface.ringPathCache().findRingPathOf(cellKey);
-
-        if (standingPath != null) {
-            return standingPath;
-        }
-        var tracedPath = RibbonPathTracer.traceLaidRibbonPath(fillPolygon, site, style);
-
-        surface.ringPathCache().putRingPath(cellKey, tracedPath);
-
-        return tracedPath;
+            : RibbonPathTracer.traceInspectedRibbonPath(
+                cellKey,
+                fillPolygon,
+                site,
+                style,
+                surface.ringPathCache());
     }
 
     // The point a cell's band is laid out from, or null on a cell no band is laid on at all.

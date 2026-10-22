@@ -1,4 +1,4 @@
-package kmu.maplayers.base.ribbon;
+package kmu.maplayers.base.ribbon.overlay;
 
 import kmlib.opengl.GlBlendMode;
 import kmlib.opengl.GlColour;

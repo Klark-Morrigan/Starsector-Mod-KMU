@@ -572,7 +572,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
             new LinkedHashSet<>(occupancy.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
-            new LinkedHashMap<>(territories.getPaintedCells().getRibbonByCellKey()));
+            new LinkedHashMap<>(territories.getPaintedCells().getRibbonStore().getRibbonByCellKey()));
     }
 
     // The systems the fixture sector lists, keyed by ID and in row order.

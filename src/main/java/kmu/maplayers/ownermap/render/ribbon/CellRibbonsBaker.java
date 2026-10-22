@@ -8,11 +8,11 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.ribbon.CellRibbon;
-import kmu.maplayers.base.ribbon.CellRibbonPath;
+import kmu.maplayers.base.ribbon.CellRibbonStore;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
+import kmu.maplayers.base.ribbon.overlay.CellRibbonPath;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.PaintedCellStore;
 
 import java.util.Collection;
 import java.util.List;
@@ -38,8 +38,8 @@ import java.util.Optional;
  *
  * <p>The rings those bands run along are read back from the cells too, and for the reason the pass
  * runs as often as it does: a bake happens whenever a name may have moved, while a ring moves only
- * when its cell is re-shaped. So the store the cells keep their traced rings in is handed to the
- * source, which walks a ring only where none stands.
+ * when its cell is re-shaped. So the cells' own band store is where the bands are written, and its
+ * kept rings are what the source lays them along, walking a ring only where none stands.
  *
  * <p>Everything a pass is settled by arrives as one {@link RibbonBakeSettings} its caller read.
  * With the bands switched off, the pass builds no band source at all: no mechanic is resolved, no
@@ -65,11 +65,13 @@ import java.util.Optional;
  */
 public final class CellRibbonsBaker {
 
-    // The cells alone, not the build they belong to: every cell this pass reads, writes or walks a
-    // ring for is in here, and nothing it does per cell asks the build anything else. What the
-    // factory below needs the whole build for is settled before the first cell is baked.
-    private final PaintedCellStore paintedCells;
+    // The cells alone, not the build they belong to: every cell this pass reads is in the first map,
+    // every band it lays goes in the store, and nothing it does per cell asks the build anything
+    // else. What the factory below needs the whole build for is settled before the first cell is
+    // baked.
+    private final Map<SystemKey, List<double[]>> fillPolygonByCellKey;
     private final Map<SystemKey, SystemKey> systemKeyByCellKey;
+    private final CellRibbonStore ribbonStore;
 
     // Empty on a pass with the bands switched off, which bakes every cell bare.
     private final Optional<CellRibbonSource> ribbonSource;
@@ -77,13 +79,15 @@ public final class CellRibbonsBaker {
     private final boolean isRibbonPathShown;
 
     private CellRibbonsBaker(
-            PaintedCellStore paintedCells,
+            Map<SystemKey, List<double[]>> fillPolygonByCellKey,
             Map<SystemKey, SystemKey> systemKeyByCellKey,
+            CellRibbonStore ribbonStore,
             Optional<CellRibbonSource> ribbonSource,
             boolean isRibbonPathShown) {
 
-        this.paintedCells = paintedCells;
+        this.fillPolygonByCellKey = fillPolygonByCellKey;
         this.systemKeyByCellKey = systemKeyByCellKey;
+        this.ribbonStore = ribbonStore;
         this.ribbonSource = ribbonSource;
         this.isRibbonPathShown = isRibbonPathShown;
     }
@@ -114,15 +118,16 @@ public final class CellRibbonsBaker {
         // mint a wrapper per cell to answer one lookup. Taking it apart from the cache is also what
         // lets this state the one map it reads instead of holding the cache it lives in.
         return new CellRibbonsBaker(
-            clusters.getPaintedCells(),
+            clusters.getPaintedCells().getFillPolygonByCellKey(),
             geometryCache.getSystemKeyByCellKey(),
+            clusters.getPaintedCells().getRibbonStore(),
             createRibbonSource(clusters, geometryCache, walk, standingAnchors, settings),
             settings.isRibbonPathShown());
     }
 
     /** Bakes the band of every drawn cell, replacing whatever each was carrying. */
     public void bakeAllCellRibbons() {
-        bakeCellRibbonsOf(paintedCells.getFillPolygonByCellKey().keySet());
+        bakeCellRibbonsOf(fillPolygonByCellKey.keySet());
     }
 
     /**
@@ -164,7 +169,7 @@ public final class CellRibbonsBaker {
 
         for (var cellKey : cellKeys) {
 
-            var fillPolygon = paintedCells.getFillPolygonByCellKey().get(cellKey);
+            var fillPolygon = fillPolygonByCellKey.get(cellKey);
             if (fillPolygon == null) {
                 continue;
             }
@@ -181,8 +186,8 @@ public final class CellRibbonsBaker {
                     bakeScope))
                 .orElse(CellRibbon.NONE);
 
-            paintedCells.putCellRibbon(cellKey, ribbon);
-            paintedCells.putCellRibbonPath(cellKey, traceCellRibbonPath(cellKey, fillPolygon));
+            ribbonStore.putCellRibbon(cellKey, ribbon);
+            ribbonStore.putCellRibbonPath(cellKey, traceCellRibbonPath(cellKey, fillPolygon));
 
             bakedCells += ribbon.isEmpty() ? 0 : 1;
 
@@ -200,18 +205,16 @@ public final class CellRibbonsBaker {
     // change rebuilds every cell. A pass with the bands switched off traces nothing either: no
     // layout is in play, so a ring drawn from sizes nothing is laid at would be a diagnostic of its
     // own arithmetic.
-    //
-    // A second trace of the same ring rather than a reading of the one the band was laid on: what
-    // the overlay is asked about is the cells whose bands were never laid, so there is no result
-    // to read on exactly the cells it exists for. The cost is a dev toggle's, paid only while it
-    // is on, and it buys a production return type that carries nothing diagnostic.
     private CellRibbonPath traceCellRibbonPath(SystemKey cellKey, List<double[]> fillPolygon) {
 
         if (!isRibbonPathShown) {
             return CellRibbonPath.NONE;
         }
         return ribbonSource
-            .map(source -> source.traceCellRibbonPath(systemKeyByCellKey.get(cellKey), fillPolygon))
+            .map(source -> source.traceCellRibbonPath(
+                cellKey,
+                systemKeyByCellKey.get(cellKey),
+                fillPolygon))
             .orElse(CellRibbonPath.NONE);
     }
 

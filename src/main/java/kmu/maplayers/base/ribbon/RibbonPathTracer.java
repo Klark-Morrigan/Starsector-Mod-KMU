@@ -3,6 +3,10 @@ package kmu.maplayers.base.ribbon;
 import kmlib.math.geometry.RingPath;
 import kmlib.math.geometry.RingStretch;
 import kmlib.opengl.GlVertexRuns;
+import kmlib.starsector.systems.SystemKey;
+
+import kmu.maplayers.base.ribbon.overlay.CellRibbonPath;
+import kmu.maplayers.base.ribbon.overlay.RibbonPathVerdict;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +22,13 @@ import java.util.List;
  * with it - including the fall the style switches off, which is the whole of why that cell draws
  * nothing.
  *
- * <p>Pure over a ring, an anchor and the sizes - no sector, no settings read, no GL - so a cell
- * roomy enough for the pad, one narrowed to a neck in one place, one too narrow for the pad
- * everywhere, and one narrower than the band itself are each settled by those three alone.
+ * <p>Each rung is asked of the cell's kept rings before it is walked, and kept once it is. So the
+ * overlay reads the rings the band pass already walked rather than walking them a second time, and
+ * a re-bake walks only the cells a change re-shaped.
+ *
+ * <p>Pure geometry otherwise - no sector, no settings read, no GL - so a cell roomy enough for the
+ * pad, one narrowed to a neck in one place, one too narrow for the pad everywhere, and one narrower
+ * than the band itself are each settled by its ring, its anchor and the sizes alone.
  */
 public final class RibbonPathTracer {
 
@@ -30,6 +38,40 @@ public final class RibbonPathTracer {
 
     // Traces only; never instantiated.
     private RibbonPathTracer() {
+    }
+
+    /**
+     * The same path the band pass lays on, with the reading the overlay colours by, and traced
+     * whether or not a band would be laid on it.
+     *
+     * <p>The shallower inset is walked here even where the style switches the fall off, which
+     * is the one way this differs from the band pass and the reason the overlay is worth having:
+     * a cell refused for want of the pad and a cell with nothing to report both draw nothing, and
+     * only this can tell them apart.
+     *
+     * @param cellKey       the cell being traced, the key its rings are kept under
+     * @param ring          the cell's painted outline, the shape the path runs inside
+     * @param topAnchor     the {x, y} the path's start is found above
+     * @param style         the sizes the band is drawn at
+     * @param ringPathCache the rings already walked inside the cells' current shapes, asked before a
+     *                      rung is walked and written back when one is
+     * @return the path flattened for the overlay, or {@link CellRibbonPath#NONE} where the cell
+     *         held no stretch of path at either inset
+     */
+    public static CellRibbonPath traceInspectedRibbonPath(
+            SystemKey cellKey,
+            List<double[]> ring,
+            double[] topAnchor,
+            RibbonStyle style,
+            CellRingPathCache ringPathCache) {
+
+        var rung = walkInsetLadder(
+            new CellRings(cellKey, ring, topAnchor, style, ringPathCache),
+            true);
+
+        return rung.path().hasStretchHoldingItsInset()
+            ? flattenTracedPath(rung.path(), rung.verdict())
+            : CellRibbonPath.NONE;
     }
 
     /**
@@ -46,78 +88,55 @@ public final class RibbonPathTracer {
      * dropping the pad there would move the whole band onto the border to rescue a stretch that was
      * never the problem.
      *
-     * @param ring      the cell's painted outline, the shape the path runs inside
-     * @param topAnchor the {x, y} the path's start is found above
-     * @param style     the sizes the band is drawn at, which settle both insets and whether the
-     *                  shallower one may be fallen to at all
+     * @param cellKey       the cell being traced, the key its rings are kept under
+     * @param ring          the cell's painted outline, the shape the path runs inside
+     * @param topAnchor     the {x, y} the path's start is found above
+     * @param style         the sizes the band is drawn at, which settle both insets and whether the
+     *                      shallower one may be fallen to at all
+     * @param ringPathCache the rings already walked inside the cells' current shapes
      * @return the traced path, holding no stretch where the cell holds no band
      */
-    public static RingPath traceLaidRibbonPath(
-            List<double[]> ring,
-            double[] topAnchor,
-            RibbonStyle style) {
-
-        var paddedPath = traceRingAtInset(ring, topAnchor, style, style.computeCentrelineInset());
-
-        if (paddedPath.hasStretchHoldingItsInset() || !style.isBandAlwaysDrawn()) {
-            return paddedPath;
-        }
-        return traceRingAtInset(ring, topAnchor, style, style.computeUnpaddedCentrelineInset());
-    }
-
-    /**
-     * The same path with the reading the overlay colours by, and traced whether or not a band
-     * would be laid on it.
-     *
-     * <p>The shallower inset is walked here even where the style switches the fall off, which
-     * is the one way this differs from the pass above and the reason the overlay is worth having:
-     * a cell refused for want of the pad and a cell with nothing to report both draw nothing, and
-     * only this can tell them apart.
-     *
-     * @param ring      the cell's painted outline, the shape the path runs inside
-     * @param topAnchor the {x, y} the path's start is found above
-     * @param style     the sizes the band is drawn at
-     * @return the path flattened for the overlay, or {@link CellRibbonPath#NONE} where the cell
-     *         held no stretch of path at either inset
-     */
-    public static CellRibbonPath traceInspectedRibbonPath(
-            List<double[]> ring,
-            double[] topAnchor,
-            RibbonStyle style) {
-
-        var paddedPath = traceRingAtInset(ring, topAnchor, style, style.computeCentrelineInset());
-
-        if (paddedPath.hasStretchHoldingItsInset()) {
-            return flattenTracedPath(paddedPath, RibbonPathVerdict.LAID_AT_PAD);
-        }
-        var unpaddedPath = traceRingAtInset(
-            ring,
-            topAnchor,
-            style,
-            style.computeUnpaddedCentrelineInset());
-
-        if (!unpaddedPath.hasStretchHoldingItsInset()) {
-            return CellRibbonPath.NONE;
-        }
-        // The path stands either way; what the style's answer decides is whether a band goes on
-        // it. Reported rather than withheld, so a cell left bare by that answer is visibly a cell
-        // the setting emptied rather than a system with nothing to say.
-        return flattenTracedPath(
-            unpaddedPath,
-            style.isBandAlwaysDrawn()
-                ? RibbonPathVerdict.LAID_UNPADDED
-                : RibbonPathVerdict.REFUSED);
-    }
-
-    // The ring walked at one named inset, so the two the ladder chooses between differ in the one
-    // thing that is different about them.
-    private static RingPath traceRingAtInset(
+    static RingPath traceLaidRibbonPath(
+            SystemKey cellKey,
             List<double[]> ring,
             double[] topAnchor,
             RibbonStyle style,
-            double insetDistance) {
+            CellRingPathCache ringPathCache) {
 
-        return RingPath.traceInsetRing(ring, insetDistance, style.miterSpikeLimit(), topAnchor);
+        return walkInsetLadder(
+            new CellRings(cellKey, ring, topAnchor, style, ringPathCache),
+            false).path();
+    }
+
+    // The ladder itself: the authored inset, then the pad given up, and what a band does with the
+    // rung it stops on.
+    //
+    // The band pass stops on the padded rung where the style keeps the pad, since a band is never
+    // laid on the rung below it then and walking it would be spent on nothing. The overlay walks
+    // on regardless, which is the one thing the two callers do differently.
+    private static TracedRung walkInsetLadder(CellRings cellRings, boolean isRefusedFallWalked) {
+
+        var style = cellRings.style();
+        var paddedPath = cellRings.getOrTraceRingPathAt(RibbonPathInset.PADDED);
+
+        if (paddedPath.hasStretchHoldingItsInset()) {
+            return new TracedRung(paddedPath, RibbonPathVerdict.LAID_AT_PAD);
+        }
+
+        if (!style.isBandAlwaysDrawn() && !isRefusedFallWalked) {
+            return new TracedRung(paddedPath, RibbonPathVerdict.REFUSED);
+        }
+
+        var unpaddedPath = cellRings.getOrTraceRingPathAt(RibbonPathInset.UNPADDED);
+
+        // The path stands either way; what the style's answer decides is whether a band goes on
+        // it. Reported rather than withheld, so a cell left bare by that answer is visibly a cell
+        // the setting emptied rather than a system with nothing to say.
+        return new TracedRung(
+            unpaddedPath,
+            unpaddedPath.hasStretchHoldingItsInset() && style.isBandAlwaysDrawn()
+                ? RibbonPathVerdict.LAID_UNPADDED
+                : RibbonPathVerdict.REFUSED);
     }
 
     // The traced ring packed for emission as the two things it is - the stretches a band may lie
@@ -146,9 +165,49 @@ public final class RibbonPathTracer {
         var polylines = new ArrayList<float[]>(stretches.size());
 
         for (var stretch : stretches) {
+
             polylines.add(GlVertexRuns.flattenVertices(
                 path.collectPointsBetween(stretch.startArcLength(), stretch.endArcLength())));
         }
+
         return polylines;
+    }
+
+    // One cell's ring as the ladder walks it: everything a rung is traced from, and where the rungs
+    // already walked are kept. Held together so a rung is asked for by its inset alone, the five
+    // things that settle it being the same for every rung of one cell.
+    private record CellRings(
+        SystemKey cellKey,
+        List<double[]> ring,
+        double[] topAnchor,
+        RibbonStyle style,
+        CellRingPathCache ringPathCache) {
+
+        // The rung kept for this cell at the inset, or a fresh walk of it where none stands, kept
+        // for the next bake.
+        RingPath getOrTraceRingPathAt(RibbonPathInset inset) {
+
+            var standingPath = ringPathCache.findRingPathOf(cellKey, inset);
+            if (standingPath != null) {
+                return standingPath;
+            }
+
+            var tracedPath = RingPath.traceInsetRing(
+                ring,
+                inset.computeInsetDistance(style),
+                style.miterSpikeLimit(),
+                topAnchor);
+
+            ringPathCache.putRingPath(cellKey, inset, tracedPath);
+
+            return tracedPath;
+        }
+    }
+
+    // The rung the ladder stopped on and what a band does with it. The band pass reads the path
+    // alone; the verdict is the overlay's.
+    private record TracedRung(
+        RingPath path,
+        RibbonPathVerdict verdict) {
     }
 }

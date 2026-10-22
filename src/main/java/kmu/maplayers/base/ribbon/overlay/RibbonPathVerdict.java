@@ -1,4 +1,4 @@
-package kmu.maplayers.base.ribbon;
+package kmu.maplayers.base.ribbon.overlay;
 
 /**
  * What one cell's ring lets a band do with it, as the trace that looks for room already knows.

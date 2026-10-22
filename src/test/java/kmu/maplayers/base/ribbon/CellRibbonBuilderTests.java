@@ -1,7 +1,9 @@
 package kmu.maplayers.base.ribbon;
 
+import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
+import kmlib.starsector.systems.SystemKey;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,6 +12,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND;
 import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND_SITE;
 import static kmu.maplayers.base.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD;
@@ -19,6 +22,7 @@ import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -71,8 +75,18 @@ import static org.mockito.Mockito.verify;
  * read as one; a stretch reaching only one of them is not, whichever end it reaches. The
  * distinction is invisible on a cell with no name near its start and decides where the band goes
  * on every cell with one, so all three are posed rather than the first alone.
+ *
+ * <p>The entry point's cases are about the work rather than the band: a cell is walked when its ring
+ * is not already standing, once however often it is baked, and never at all where its plan came
+ * back empty. That last one is where the gate has to sit to be worth anything - a cell answered
+ * after its ring was walked has already paid the cost the gate exists to save.
  */
 final class CellRibbonBuilderTests {
+
+    // The cell a case lays its band in, which is the key its traced rings are kept under, and a
+    // second cell for the one case about rings being kept per cell.
+    private static final SystemKey CELL = buildCellKey("cell");
+    private static final SystemKey OTHER_CELL = buildCellKey("other");
 
     // A map whose names are all somewhere else, which is the state most cells are in: the band
     // has its cell's whole ring to itself.
@@ -218,6 +232,144 @@ final class CellRibbonBuilderTests {
     // silent profiler's scope rather than a mock, since nothing here is asked of it.
     private final IterationScope passScope =
         SilentProfiler.INSTANCE.openIterations(RibbonBakePhases.BAKE_SECTION);
+
+    @Nested
+    class LayCellRibbon {
+
+        @Test
+        void laysThePlannedBandAlongTheCellsRing() {
+
+            // ARRANGE
+            var expectedColour = BRIGHT;
+
+            // ACT
+            var actualRibbon = layBandIn(
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                new CellRingPathCache(),
+                passScope);
+
+            // ASSERT
+            assertThat(actualRibbon.bands())
+                .extracting(RibbonBand::colour)
+                .containsExactly(expectedColour);
+        }
+
+        // Nothing the layer counts is present in the cell, so nothing is laid out.
+        @Test
+        void drawsNoBandForACellWhosePlanIsEmpty() {
+
+            // ARRANGE
+            var expectedRibbon = CellRibbon.NONE;
+
+            // ACT
+            var actualRibbon = layBandIn(
+                RibbonPlan.NONE,
+                new CellRingPathCache(),
+                passScope);
+
+            // ASSERT
+            assertThat(actualRibbon)
+                .isSameAs(expectedRibbon);
+        }
+
+        // The cost half of that gate, and why it is answered before the geometry: walking a ring
+        // for a band nothing would be laid on is inset and arc-length work spent on nothing - so
+        // no ring is walked, none is kept, and no trace is marked.
+        @Test
+        void walksNoRingForACellWhosePlanIsEmpty() {
+
+            // ARRANGE
+            var ringPathCache = new CellRingPathCache();
+            var bakeScopeMock = mock(IterationScope.class);
+
+            // ACT
+            layBandIn(RibbonPlan.NONE, ringPathCache, bakeScopeMock);
+
+            // ASSERT
+            var actualRingPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.PADDED);
+
+            assertThat(actualRingPath)
+                .isNull();
+
+            verify(bakeScopeMock, never())
+                .markPhase(RibbonBakePhases.TRACE_PHASE);
+        }
+
+        // Reaching for the ring is a phase of its own, marked after the reach whether the ring was
+        // walked or read, and before the carve and stroke that follow it.
+        @Test
+        void marksTheCellsTraceCarveAndStrokeOnThePass() {
+
+            // ARRANGE
+            var bakeScopeMock = mock(IterationScope.class);
+
+            // ACT
+            layBandIn(
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                new CellRingPathCache(),
+                bakeScopeMock);
+
+            // ASSERT
+            var phaseOrder = inOrder(bakeScopeMock);
+
+            phaseOrder
+                .verify(bakeScopeMock)
+                .markPhase(RibbonBakePhases.TRACE_PHASE);
+            phaseOrder
+                .verify(bakeScopeMock)
+                .markPhase(RibbonBakePhases.CARVE_PHASE);
+            phaseOrder
+                .verify(bakeScopeMock)
+                .markPhase(RibbonBakePhases.STROKE_PHASE);
+        }
+
+        // What the kept ring is for. A bake runs whenever a cluster name may have moved, while the
+        // ring a band runs along moves only when its cell is re-shaped - so the second bake of an
+        // untouched cell must walk nothing. The kept path itself is compared, since a walk that
+        // happened again would leave a second one behind.
+        @Test
+        void walksACellsRingOnceHoweverOftenItIsBaked() {
+
+            // ARRANGE
+            var ringPathCache = new CellRingPathCache();
+            var plan = new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH)));
+
+            layBandIn(plan, ringPathCache, passScope);
+
+            var expectedRingPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.PADDED);
+
+            // ACT
+            layBandIn(plan, ringPathCache, passScope);
+
+            // ASSERT
+            var actualRingPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.PADDED);
+
+            assertThat(actualRingPath)
+                .isSameAs(expectedRingPath);
+        }
+
+        // A path describes one cell's shape, so it is kept per cell and not per pass: a cell
+        // reached while another's path stands is walked, and comes back with the band its own
+        // ring holds rather than with whatever the neighbour's said.
+        @Test
+        void walksTheRingOfACellWithNoPathStandingOfItsOwn() {
+
+            // ARRANGE
+            var ringPathCache = new CellRingPathCache();
+
+            ringPathCache.putRingPath(OTHER_CELL, RibbonPathInset.PADDED, RingPath.nothingLeftToTrace());
+
+            // ACT
+            var actualRibbon = layBandIn(
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                ringPathCache,
+                passScope);
+
+            // ASSERT
+            assertThat(actualRibbon.bands())
+                .isNotEmpty();
+        }
+    }
 
     @Nested
     class BuildCellRibbon {
@@ -746,11 +898,36 @@ final class CellRibbonBuilderTests {
             List<List<double[]>> nameBoxes,
             IterationScope bakeScope) {
 
+        var ringPath = RibbonPathTracer.traceLaidRibbonPath(
+            CELL,
+            ring,
+            topAnchor,
+            style,
+            new CellRingPathCache());
+
         return CellRibbonBuilder.buildCellRibbon(
-            RibbonPathTracer.traceLaidRibbonPath(ring, topAnchor, style),
+            ringPath,
             plan,
             style,
             nameBoxes,
+            bakeScope);
+    }
+
+    // One cell's band laid through the entry point a layer calls, over the square cell and the
+    // given kept rings, with no names anywhere near it.
+    private static CellRibbon layBandIn(
+            RibbonPlan plan,
+            CellRingPathCache ringPathCache,
+            IterationScope bakeScope) {
+
+        return CellRibbonBuilder.layCellRibbon(
+            CELL,
+            SQUARE_CELL,
+            SQUARE_CELL_SITE,
+            plan,
+            STYLE,
+            NO_NAMES,
+            ringPathCache,
             bakeScope);
     }
 
@@ -783,6 +960,7 @@ final class CellRibbonBuilderTests {
                 return true;
             }
         }
+
         return false;
     }
 }

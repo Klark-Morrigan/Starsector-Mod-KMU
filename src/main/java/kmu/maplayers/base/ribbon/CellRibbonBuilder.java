@@ -6,6 +6,7 @@ import kmlib.math.geometry.RingPath;
 import kmlib.math.geometry.RingStretch;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.IterationScope;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,20 +21,24 @@ import java.util.List;
  * take before the band would outrun it. Splitting the two keeps the counting rule free of rings
  * and the geometry free of counts, with neither needing the other's inputs.
  *
- * <p>Handed the path rather than tracing one, because a path outlives the bake that traced it -
- * a ring moves when its cell is re-shaped, while a bake runs whenever a cluster name may have
- * moved - so which cells pay for a walk is the pass's business and not one cell's. What is left
- * here is the part that genuinely differs per bake: the names have moved, so the carve and
- * everything after it is done again.
+ * <p>The one entry point a layer lays a cell's band through. A layer settles which cells are offered
+ * a band and plans each by its own rule; everything from the plan onwards is the same for every
+ * layer, so it is stated here once rather than by each layer's bake: the empty plan answered before
+ * any ring is walked, the ring reached for through the cells' kept rings, and the carve and stroke.
  *
- * <p>Pure over a path, a plan and the names' boxes - no sector, no settings read, no GL - so a
- * corner split, a compressed band, a name lying across the ring, a ring narrowed to a neck in one
- * place, and a cell too small to hold a band at all are each settled by those three alone. The
- * pass's scope is marked and never read, so what it records cannot change the band.
+ * <p>The ring is reached for rather than traced afresh, because a path outlives the bake that
+ * traced it - a ring moves when its cell is re-shaped, while a bake runs whenever a cluster name may
+ * have moved. What is left to do per bake is the part that genuinely differs: the names have moved,
+ * so the carve and everything after it is done again.
  *
- * <p>Two of a bake's four phases are marked here, and separately: what a cell spends carving the
- * names off its path and what it spends stroking the result grow on different axes, so a bake that
- * slowed down is answered here rather than guessed at.
+ * <p>Pure geometry past that ring - no sector, no settings read, no GL - so a corner split, a
+ * compressed band, a name lying across the ring, a ring narrowed to a neck in one place, and a cell
+ * too small to hold a band at all are each settled by the path, the plan and the names' boxes alone.
+ * The pass's scope is marked and never read, so what it records cannot change the band.
+ *
+ * <p>Three of a bake's four phases are marked here, and separately: what a cell spends reaching for
+ * its ring, carving the names off it and stroking the result grow on different axes, so a bake that
+ * slowed down is answered here rather than guessed at. The fourth, planning, is the layer's.
  */
 public final class CellRibbonBuilder {
 
@@ -41,30 +46,81 @@ public final class CellRibbonBuilder {
     }
 
     /**
-     * Builds one cell's band, or nothing where the cell's own ring cannot carry one.
+     * Lays one cell's planned band inside the ring that cell holds, or nothing where it draws none.
+     *
+     * <p>A cell comes back bare two ways. It planned no band at all, the layer finding nothing in
+     * it to report; that is answered first, since such a cell must not pay for a ring walk nothing
+     * would be laid on. Or its ring has no room to hold the band, which is the design's answer
+     * rather than a failure.
+     *
+     * @param cellKey       the cell being laid, the key its traced rings are kept under
+     * @param fillPolygon   the cell's painted outline, the ring the band runs inside
+     * @param site          the {x, y} the band's start is found above
+     * @param plan          the cell's runs in draw order, as the layer's rule planned them
+     * @param style         the sizes every band in the pass is laid at
+     * @param nameBoxes     the room the drawn cluster names take up, as world rings the band keeps
+     *                      out of; the whole map's, since a name sits where its own cluster is
+     *                      roomiest and that can be over this cell
+     * @param ringPathCache the rings already walked inside the cells' current shapes, asked before
+     *                      this cell's ring is walked and written back when it is
+     * @param bakeScope     the pass's open scope, whose turn is this cell and on which this cell's
+     *                      trace, carve and stroke are marked
+     * @return the baked band, or {@link CellRibbon#NONE} where the cell draws none
+     */
+    public static CellRibbon layCellRibbon(
+            SystemKey cellKey,
+            List<double[]> fillPolygon,
+            double[] site,
+            RibbonPlan plan,
+            RibbonStyle style,
+            List<List<double[]>> nameBoxes,
+            CellRingPathCache ringPathCache,
+            IterationScope bakeScope) {
+
+        if (!plan.hasLength()) {
+            return CellRibbon.NONE;
+        }
+
+        var ringPath = RibbonPathTracer.traceLaidRibbonPath(
+            cellKey,
+            fillPolygon,
+            site,
+            style,
+            ringPathCache);
+
+        // What the phase covers is the whole reach for the ring rather than the walk alone, so a
+        // bake over cells whose rings already stood reports the near-nothing a cache read costs -
+        // which is the difference the kept rings are there to make, as the phase's own number
+        // rather than a gap in somebody else's.
+        bakeScope.markPhase(RibbonBakePhases.TRACE_PHASE);
+
+        return buildCellRibbon(
+            ringPath,
+            plan,
+            style,
+            nameBoxes,
+            bakeScope);
+    }
+
+    /**
+     * Builds one cell's band along a ring already traced, or nothing where that ring cannot carry
+     * one.
      *
      * <p>A cell drops out where its ring has no room to hold the band - a cell smaller than the
      * pad and width together, or one whose ring the names and its own narrow places leave so
-     * little of that what remains could not state the plan at any size - and that is the design's
-     * answer rather than a failure. A cell narrowed to a neck in one place is not that cell: the
-     * neck costs its own stretch of ring and the band goes on the longest of what is left.
-     *
-     * <p>The other way a cell comes back bare - it planned no band at all, the layer counting
-     * nothing in it - is answered before this, by whatever traced the path:
-     * such a cell must not pay for a ring walk nothing would be laid on. So the plan handed over
-     * here is one with runs in it.
+     * little of that what remains could not state the plan at any size. A cell narrowed to a neck
+     * in one place is not that cell: the neck costs its own stretch of ring and the band goes on
+     * the longest of what is left.
      *
      * @param path         the ring traced round the cell, at whichever inset it had room for
      * @param plan         the cell's runs in draw order, at least one of them with length
      * @param style        the sizes the band is drawn at, the same ones the path was traced at
      * @param nameBoxes    the room the drawn cluster names take up, as world rings the band
-     *                     keeps out of; the whole map's, since a name sits where its own
-     *                     cluster is roomiest and that can be over this cell
-     * @param bakeScope    the pass's open scope, whose turn is this cell and on which this cell's
-     *                     carve and stroke are marked
+     *                     keeps out of
+     * @param bakeScope    the pass's open scope, on which this cell's carve and stroke are marked
      * @return the baked band, or {@link CellRibbon#NONE} where the cell draws none
      */
-    public static CellRibbon buildCellRibbon(
+    static CellRibbon buildCellRibbon(
             RingPath path,
             RibbonPlan plan,
             RibbonStyle style,

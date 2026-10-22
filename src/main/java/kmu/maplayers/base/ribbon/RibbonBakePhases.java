@@ -18,6 +18,10 @@ import kmu.maplayers.base.profiling.RebuildStepTerms;
  * <p>Phases of one scope rather than sections of their own, so what the readout reports is what one
  * cell costs in each of them: a bake is one call and a cell is one turn of its loop, and it is the
  * turn a rebuild's cost scales with.
+ *
+ * <p>Only the section and the plan phase are a layer's to reach for. The layer opens the scope and
+ * plans each cell by its own rule; the other three phases are marked by the band's own laying, so a
+ * layer cannot mark one where the work it names was not done.
  */
 public final class RibbonBakePhases {
 
@@ -49,13 +53,13 @@ public final class RibbonBakePhases {
     public static final ProfilePhase PLAN_PHASE = BAKE_SECTION.resolvePhase(PLAN_PHASE_NAME);
 
     /** Reaching for the ring the band runs along, and walking it where none stands. */
-    public static final ProfilePhase TRACE_PHASE = BAKE_SECTION.resolvePhase(TRACE_PHASE_NAME);
+    static final ProfilePhase TRACE_PHASE = BAKE_SECTION.resolvePhase(TRACE_PHASE_NAME);
 
     /** Taking the names and the pinches off that ring and placing the band on what is left. */
-    public static final ProfilePhase CARVE_PHASE = BAKE_SECTION.resolvePhase(CARVE_PHASE_NAME);
+    static final ProfilePhase CARVE_PHASE = BAKE_SECTION.resolvePhase(CARVE_PHASE_NAME);
 
     /** Laying the planned runs end to end and stroking them into triangles. */
-    public static final ProfilePhase STROKE_PHASE = BAKE_SECTION.resolvePhase(STROKE_PHASE_NAME);
+    static final ProfilePhase STROKE_PHASE = BAKE_SECTION.resolvePhase(STROKE_PHASE_NAME);
 
     private RibbonBakePhases() {
     }

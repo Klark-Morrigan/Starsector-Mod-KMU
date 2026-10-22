@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.colour.ColourPair;
+import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.RecordedCapture;
@@ -12,6 +13,7 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.ribbon.RibbonPathInset;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -107,7 +109,7 @@ final class CellRibbonsBakerTests {
 
             bakeEveryCellThrough(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL, OTHER_BANDED_CELL);
         }
 
@@ -122,7 +124,7 @@ final class CellRibbonsBakerTests {
 
             bakeEveryCellThrough(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL, UNHELD_SETTLED_CELL);
         }
 
@@ -165,65 +167,84 @@ final class CellRibbonsBakerTests {
                 .isEqualTo("banded=2");
         }
 
+        // The wiring this suite exists for. A pass handed a store of its own would bake an
+        // identical map and throw every ring away at the end of it, which nothing about the
+        // bands can show - so what is asserted is that the rings landed where the cells keep
+        // them, which is also where the write that re-shapes a cell will drop them.
         @Test
         void keepsEachWalkedRingInTheStoreTheCellsThemselvesHold() {
-            // The wiring this suite exists for. A pass handed a store of its own would bake an
-            // identical map and throw every ring away at the end of it, which nothing about the
-            // bands can show - so what is asserted is that the rings landed where the cells keep
-            // them, which is also where the write that re-shapes a cell will drop them.
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
 
+            // ACT
             bakeEveryCellThrough(clusters);
 
-            assertThat(clusters.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL))
+            // ASSERT
+            var actualBandedRing = findPaddedRingOf(clusters, BANDED_CELL);
+            var actualOtherBandedRing = findPaddedRingOf(clusters, OTHER_BANDED_CELL);
+
+            assertThat(actualBandedRing)
                 .isNotNull();
-            assertThat(clusters.getPaintedCells().getRingPathCache().findRingPathOf(OTHER_BANDED_CELL))
+            assertThat(actualOtherBandedRing)
                 .isNotNull();
         }
 
+        // What the store is for. A bake runs whenever a cluster name may have moved, which is
+        // every flip the layer marks, while a cell's ring moves only when the cell is cut
+        // again - so the second pass over an untouched cell must walk nothing and lay its band
+        // along the ring already standing.
         @Test
         void laysALaterPassesBandsAlongTheRingsTheFirstPassWalked() {
-            // What the store is for. A bake runs whenever a cluster name may have moved, which is
-            // every flip the layer marks, while a cell's ring moves only when the cell is cut
-            // again - so the second pass over an untouched cell must walk nothing and lay its band
-            // along the ring already standing.
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
 
             bakeEveryCellThrough(clusters);
 
-            var ringAfterFirstPass = clusters.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL);
+            var expectedRing = findPaddedRingOf(clusters, BANDED_CELL);
 
-            // Stated before the identity below rather than left to the case above: two passes that
-            // both kept their rings to themselves leave null standing either side of the second
-            // bake, and "the same nothing" would read as a ring carried over.
-            assertThat(ringAfterFirstPass)
+            // Stated before the identity below: two passes that both kept their rings to
+            // themselves leave null standing either side of the second bake, and "the same
+            // nothing" would read as a ring carried over.
+            assertThat(expectedRing)
                 .isNotNull();
 
+            // ACT
             bakeEveryCellThrough(clusters);
 
-            assertThat(clusters.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL))
-                .isSameAs(ringAfterFirstPass);
+            // ASSERT
+            var actualRing = findPaddedRingOf(clusters, BANDED_CELL);
+
+            assertThat(actualRing)
+                .isSameAs(expectedRing);
         }
 
+        // The other half of that, and why the store needs no key: the write that records a
+        // cell's new shape drops the ring walked inside its old one, so the next pass walks a
+        // ring for the shape the cell holds now rather than serving one traced round a cell
+        // that is no longer there.
         @Test
         void walksACellsRingAgainOnceItHasBeenReshaped() {
-            // The other half of that, and why the store needs no key: the write that records a
-            // cell's new shape drops the ring walked inside its old one, so the next pass walks a
-            // ring for the shape the cell holds now rather than serving one traced round a cell
-            // that is no longer there.
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
 
             bakeEveryCellThrough(clusters);
 
-            var ringBeforeReshape = clusters.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL);
+            var ringBeforeReshape = findPaddedRingOf(clusters, BANDED_CELL);
 
             clusters.getPaintedCells().putPaintedCell(
                 BANDED_CELL,
                 OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
+            // ACT
             bakeEveryCellThrough(clusters);
 
-            assertThat(clusters.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL))
+            // ASSERT
+            var actualRing = findPaddedRingOf(clusters, BANDED_CELL);
+
+            assertThat(actualRing)
                 .isNotSameAs(ringBeforeReshape);
         }
 
@@ -239,6 +260,7 @@ final class CellRibbonsBakerTests {
 
             var actualCellKeys = clusters
                 .getPaintedCells()
+                .getRibbonStore()
                 .getRibbonPathByCellKey()
                 .keySet();
 
@@ -257,6 +279,7 @@ final class CellRibbonsBakerTests {
 
             var actualRibbonPaths = clusters
                 .getPaintedCells()
+                .getRibbonStore()
                 .getRibbonPathByCellKey();
 
             assertThat(actualRibbonPaths)
@@ -279,6 +302,7 @@ final class CellRibbonsBakerTests {
             // ASSERT
             var actualRibbons = clusters
                 .getPaintedCells()
+                .getRibbonStore()
                 .getRibbonByCellKey();
 
             assertThat(actualRibbons)
@@ -316,10 +340,7 @@ final class CellRibbonsBakerTests {
             bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsWithBandsOff());
 
             // ASSERT
-            var actualRingPath = clusters
-                .getPaintedCells()
-                .getRingPathCache()
-                .findRingPathOf(BANDED_CELL);
+            var actualRingPath = findPaddedRingOf(clusters, BANDED_CELL);
 
             assertThat(actualRingPath)
                 .isNull();
@@ -340,6 +361,7 @@ final class CellRibbonsBakerTests {
             // ASSERT
             var actualRibbonPaths = clusters
                 .getPaintedCells()
+                .getRibbonStore()
                 .getRibbonPathByCellKey();
 
             assertThat(actualRibbonPaths)
@@ -358,7 +380,7 @@ final class CellRibbonsBakerTests {
 
             bakeThrough(clusters).bakeCellRibbonsOf(List.of(BANDED_CELL));
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL);
         }
 
@@ -373,7 +395,7 @@ final class CellRibbonsBakerTests {
             assertThatCode(() -> bakeThrough(clusters).bakeCellRibbonsOf(List.of(UNDRAWN_CELL)))
                 .doesNotThrowAnyException();
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
     }
@@ -479,6 +501,17 @@ final class CellRibbonsBakerTests {
             // inside one cell rather than by which cells a pass reaches.
             new StandingClusterAnchors(),
             settings);
+    }
+
+    // The ring a band was laid along in one cell, as the cells' own store keeps it. The padded ring,
+    // since every cell this suite draws has room for the pad.
+    private static RingPath findPaddedRingOf(OwnerMapClusters clusters, SystemKey cellKey) {
+
+        return clusters
+            .getPaintedCells()
+            .getRibbonStore()
+            .getRingPathCache()
+            .findRingPathOf(cellKey, RibbonPathInset.PADDED);
     }
 
     // Each cell drawing as the system of its own name, each system placed at the same site: the

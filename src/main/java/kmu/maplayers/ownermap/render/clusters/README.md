@@ -285,24 +285,21 @@ so a refresh that replaces the group recomputes once and a refresh that does not
 ### `PaintedCellStore`: what one cell carries
 
 Everything held per drawn cell lives in its own type,
-reached through `getPaintedCells`.
-Five stores,
+reached through `getPaintedCells`,
 all keyed by cell:
 the `StyledCell`,
 the ring it was painted on,
-the presence band laid inside that ring
-(`CellRibbon`, from `base.ribbon`),
-that band's path for the diagnostic overlay (`CellRibbonPath`),
-and the traced ring the band was laid along (`CellRingPathCache`).
+and the presence bands laid inside those rings,
+held in `base.ribbon`'s `CellRibbonStore` with their overlay paths and the rings they were traced along.
 
-They are five stores rather than one record per cell because most cells are in only two of them:
-a band reports what is held in a system and most of the sector is cells nobody lives in,
-and a path exists only while the player has the diagnostic on.
-What makes them one type is that they are **dropped together**.
-Everything after the ring is cut to one particular ring,
+The bands sit in a store of their own because most cells carry none:
+a band reports what is held in a system and most of the sector is cells nobody lives in.
+What makes the band store part of this type is that it is **dropped with the ring**.
+Everything in it is cut to one particular ring,
 so a cell re-shaped while keeping any of it would draw the last shape's work inside this shape's cell.
-Owning the five in one place is what makes a re-shape clear them by construction,
-rather than by each caller on a larger model remembering the same five fields.
+Both writes of a cell's ring call the band store's one drop,
+which is what makes a re-shape clear the bands by construction
+rather than by each caller on a larger model remembering to.
 
 The draw records are also kept parted by form,
 fused cells apart from lone ones,
@@ -326,16 +323,13 @@ because it is settled from more than the cell it sits in:
 it keeps clear of the cluster names (a default the player can switch off),
 and those are placed only once every cell has been shaped.
 So the ring goes in first and `CellRibbonsBaker` reads it back off the store rather than being handed one -
-the store being the only thing that pass is given,
+the fill polygons and the band store being the only things that pass is given,
 since nothing it does per cell asks the build anything else.
 
-The ring cache is the one member nothing paints.
-A bake happens whenever a cluster name may have moved,
-while a cell's ring changes only when the cell is cut again,
-so without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just discarded.
-Being dropped with its cell is the whole of why it needs no key:
-a cache whose lifetime is the object holding it is correct by construction,
-where a keyed one is a rule somebody has to keep true.
+The band store's kept rings are the one part of it nothing paints.
+Why they need no key,
+being dropped with their cell,
+is [`base.ribbon`](../../../base/ribbon/README.md#a-ring-that-outlives-the-bake-that-walked-it)'s.
 
 ### `OwnerMapBuildInputs`: what the build was baked under
 

@@ -146,8 +146,8 @@ so a layer holding the same values gets the same answer without the pipeline:
 | the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the `SystemFillStates` |
 | the border trace and smoothing | the substrate's `ClusterBorderTrace` and `BorderSmoothing`, over rings and a style |
 | the label fit (the substrate's `ClusterAnchorsBuilder`) | the cells, the standing placements, and the `ClusterAnchorFitInputs` a `ClusterLabelStylingSnapshot` over the build's `MapPaints` creates |
-| the band planner | the source's `SystemRibbonPlanner`, over a `SectorWalk` and the `RibbonPlanRules` |
-| the band layout and draw | the substrate's `base.ribbon`, over a `RibbonPlan`, a traced ring, a `RibbonStyle` and the names' boxes |
+| the band planner | the source's `SystemRibbonPlanner`, the substrate's port, over a `SectorWalk` and the `RibbonPlanRules` |
+| the band layout and draw | the substrate's `base.ribbon`, over a `RibbonPlan`, the cell's kept rings, a `RibbonStyle` and the names' boxes |
 
 The label fit and the band layout sit below the tier,
 because neither is about owners:
@@ -235,7 +235,7 @@ since that is what a player's stored setting is keyed by.
 | [`render/style`](render/style/README.md) | player settings into each element's colours, widths and opacities, resolved per build through `MapPaints`, and the categories a layer declares (`OwnerCategories`) |
 | `render/labels` | what a cluster's name reads and what shade it draws in, handed to the substrate's fit drive as its `ClusterAnchorFitInputs` |
 | [`render/ribbon`](render/ribbon/README.md) | the bake: which cells band, whose runs each plans, and the player's band settings |
-| [`ribbon`](ribbon/README.md) | how an owner-painted cell's runs are laid from the ranked count a layer hands over: their lengths and their dividers, and the `SystemRibbonPlanner` port the count arrives through |
+| [`ribbon`](ribbon/README.md) | how an owner-painted cell's runs are laid from the ranked count a layer hands over: their lengths and their dividers, behind the substrate's `SystemRibbonPlanner` port the count arrives through |
 | `render` | the cache, the compositor stacking the sub-layers in their band order, the incremental refresh, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
 | `render/hover` | what the cursor is over on this map, the seam a layer answers the picker preview through, and the tier's shared answers to it and to the substrate's cursor switches |
 | `sidebar` | the body controls a layer built on this tier offers, and the memo behind its picker |

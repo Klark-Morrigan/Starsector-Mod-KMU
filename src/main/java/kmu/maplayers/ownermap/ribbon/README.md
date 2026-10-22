@@ -59,7 +59,7 @@ which is what keeps this whole package pure data.
 
 ## The port it reads through
 
-`SystemRibbonPlanner` is the counting itself:
+[`base.ribbon`](../../base/ribbon/README.md)'s `SystemRibbonPlanner` is the counting itself:
 one system in,
 one plan out.
 A layer's owner source answers it once per bake,

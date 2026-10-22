@@ -1,4 +1,4 @@
-package kmu.maplayers.base.ribbon;
+package kmu.maplayers.base.ribbon.overlay;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

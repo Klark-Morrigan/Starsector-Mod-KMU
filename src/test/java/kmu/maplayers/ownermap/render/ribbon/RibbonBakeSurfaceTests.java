@@ -111,7 +111,7 @@ final class RibbonBakeSurfaceTests {
             assertThat(surface.siteBySystemKey())
                 .isSameAs(siteBySystemKey);
             assertThat(surface.ringPathCache())
-                .isSameAs(clusters.getPaintedCells().getRingPathCache());
+                .isSameAs(clusters.getPaintedCells().getRibbonStore().getRingPathCache());
         }
 
         @Test

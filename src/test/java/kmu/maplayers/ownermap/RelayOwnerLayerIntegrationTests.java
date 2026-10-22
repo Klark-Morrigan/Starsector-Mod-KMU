@@ -26,6 +26,7 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -49,7 +50,6 @@ import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.settings.KmuMapLabelSettings;
 
 import org.junit.jupiter.api.AfterEach;

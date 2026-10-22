@@ -477,8 +477,10 @@ which is what keeps a band from outliving the ring it was laid in;
 the band stage then fills it back in.
 
 The ring a band is laid along is kept beside the shape it was walked inside,
+one per inset,
 in a [`CellRingPathCache`](../../src/main/java/kmu/maplayers/base/ribbon/CellRingPathCache.java)
-the clusters hold and the bake asks before it walks anything.
+held in the clusters' `CellRibbonStore`,
+which the bake asks before it walks anything.
 A bake runs whenever a cluster name may have moved,
 while a cell's ring changes only when the cell is cut again,
 so without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just discarded.
@@ -502,9 +504,10 @@ Held only while the toggle is on:
 the bake hands over nothing per cell while it is off,
 and a settings change rebuilds every cell,
 so switching it off is what clears what an earlier pass left behind.
-That trace walks its own ring rather than reading the cache above,
-deliberately:
-the cells it exists to explain are the ones the bake has no path for.
+That trace reads the rings the cache above already holds,
+so it walks only what the band pass did not:
+a cell with nothing to lay,
+and the shallower inset of a cell refused the pad.
 
 A frame measures nothing about a band at all:
 every size in one is a world size,

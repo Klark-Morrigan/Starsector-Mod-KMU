@@ -71,17 +71,17 @@ the sites,
 the names' boxes and the rings,
 read together off cells that have already been shaped and named,
 so a bake cannot be handed a gate from one reading and sites from another.
-`CellRibbonSource` settles which cells get a band at all,
+`CellRibbonSource` settles which cells are offered a band at all,
 off the gate and sites the surface supplies,
-in three refusals read in one place:
+in two refusals read in one place:
 a cell nobody lives in or with nowhere to start from,
-a system the sector no longer lists,
-and a cell whose plan came back empty because nothing the layer counts is present in it.
+and a system the sector no longer lists.
+Each is a cost gate as much as an answer,
+since a planner may walk everything a system holds for its count.
+Every other cell is counted and handed to `base.ribbon`'s `CellRibbonBuilder.layCellRibbon`,
+which answers a plan with nothing counted in it before any ring is walked.
 Every cell with something counted in it bands,
 contested or not.
-Each refusal is a cost gate as much as an answer -
-a planner may walk everything a system holds for its count,
-and the empty plan is what spares a cell with nothing counted a ring walk.
 
 The second of those refusals is answered against the pass's own systems-by-key index
 rather than one this bake traverses the sector for.
@@ -144,9 +144,12 @@ so the third reason cannot arise on it and only the marked systems' bands are re
 
 ## Where the rings are kept
 
-`PaintedCellStore` holds the `CellRingPathCache` next to its fill polygons,
-the write that records a cell's shape drops that cell's path exactly as it drops that cell's band,
-and `CellRibbonSource` asks for the standing path before walking one.
+`PaintedCellStore` holds `base.ribbon`'s `CellRibbonStore` next to its fill polygons,
+and the write that records a cell's shape calls the store's one drop,
+which takes that cell's band,
+path and rings together.
+`RibbonBakeSurface` hands the store's kept rings to the source,
+so every bake lays its bands along the rings already standing.
 Why that is safe with no key and no revision is [`base.ribbon`](../../../base/ribbon/README.md#a-ring-that-outlives-the-bake-that-walked-it)'s.
 
 ## Which room the names take
@@ -212,19 +215,23 @@ which is also what clears the paths a pass taken while it was on left behind.
 A pass with the bands switched off traces nothing either,
 toggle or not:
 a ring drawn from sizes nothing is laid at would be a diagnostic of its own arithmetic.
-The cost of that second walk is paid only while the toggle is on.
+The overlay reads the rings the bake keeps,
+so it walks only what the band pass did not:
+a cell with nothing counted,
+and the shallower inset of a cell refused the pad.
 
 ## What a bake spends its time on
 
 The four phases are [`base.ribbon`](../../../base/ribbon/README.md#what-a-bake-spends-its-time-on)'s.
 `CellRibbonsBaker` opens the scope once,
 begins a turn per cell named by that cell,
-and `CellRibbonSource` marks `plan` and `trace` as it finishes each.
+and `CellRibbonSource` marks `plan` as it finishes each count;
+`base.ribbon` marks the other three.
 Here `plan` is the owner source's planner counting what a system holds,
 which may walk all of it.
 What the four leave unaccounted -
 the loop itself,
-and the overlay's second trace while a player has it on -
+and the overlay's trace while a player has it on -
 is the difference between their sum and the turn.
 
 ## What is not here

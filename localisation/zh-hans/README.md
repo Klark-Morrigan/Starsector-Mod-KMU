@@ -404,6 +404,7 @@ So a word of one axis never stands in for another:
 | --- | --- | --- |
 | border | 边界 | the plain word; the outer and inner borders add 国界 and 省界 |
 | border gore | 边界地狱 | the players' word for tangled borders |
+| band path (the ring a cell's band would run along, as its dev overlay draws it) | 色带路径 | 色带, the band, with 路径, a path: the way a band would go round its cell |
 | border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
 | cell | 单元 | one system's area on the map, never a UI control |
 | cluster (a run of one owner's systems, and the name drawn over it) | 区域 | a region, since the run reads as one area on the map |
@@ -411,6 +412,7 @@ So a word of one axis never stands in for another:
 | fill state (how one system fills inside its cluster: solid fill, hatch fill or no fill) | 填充状态 | 填充 with 状态, a state |
 | hatch fill | 斜线填充 | 斜线, diagonal lines, before 填充 |
 | inner border | 内边界（省界） | the province seam |
+| inset, pad (how far inside a cell's border a band runs) | 内缩 | 内, inward, with 缩, to draw in: the band set back from the border; giving the pad up is 放弃内缩 |
 | keep clear of (a band breaking where a cluster name lies over its cell) | 避让 | to give way, as traffic does to what has the right of way; the band yields the ring to the name |
 | nebulae (the map's, which an overlay part paints below or above) | 地图星云 | vanilla's 星云 with 地图, as the settings and the compatibility notices write it |
 | no fill | 不填充 | the negative of 填充 |
@@ -473,6 +475,7 @@ So a word of one axis never stands in for another:
 | bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
+| carve (taking the names and a cell's narrow places off a band's ring) | 裁切 | the plain word for cutting something away |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
@@ -484,6 +487,7 @@ So a word of one axis never stands in for another:
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
+| phase (one part of a profiled loop's turn) | 环节 | a link in a process; kept apart from 阶段, a smoothing stage |
 | plan (a band's runs, before they are laid round its ring) | 计划 | the plain word for a plan |
 | plan rules (the lengths a band's runs are laid at) | 计划规则 | 计划, a band's plan, with 规则, rules |
 | port (the interface a feature's own code reaches the game through) | 端口 | the usual word for a port in a ports-and-adapters design |
@@ -499,9 +503,12 @@ So a word of one axis never stands in for another:
 | seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
+| stroke (a band's runs turned into triangles) | 描边 | the usual graphics word for stroking a line |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
 | take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
+| trace (finding a cell's ring at an inset) | 描绘 | to draw a line along an outline, the word border tracing already takes |
+| walk (going round a cell's ring once) | 遍历 | the usual computing word for visiting every part of something; kept apart from 扫描, a sweep of the sector |
 
 ### Terms borrowed from HOI4
 

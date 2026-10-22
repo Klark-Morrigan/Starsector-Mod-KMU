@@ -12,8 +12,8 @@ import kmu.maplayers.base.render.MapFrameCompositor;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
-import kmu.maplayers.base.ribbon.CellRibbonPathRenderer;
 import kmu.maplayers.base.ribbon.CellRibbonRenderer;
+import kmu.maplayers.base.ribbon.overlay.CellRibbonPathRenderer;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
@@ -245,12 +245,17 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // bands are gated the same way - a cell where nothing is present bakes none.
     private void renderPresenceBands(MapFrame mapFrame) {
 
+        var ribbonStore = cache
+            .getClusters()
+            .getPaintedCells()
+            .getRibbonStore();
+
         CellRibbonRenderer.renderOnMap(
-            cache.getClusters().getPaintedCells().getRibbonByCellKey().values(),
+            ribbonStore.getRibbonByCellKey().values(),
             mapFrame);
 
         CellRibbonPathRenderer.renderOnMap(
-            cache.getClusters().getPaintedCells().getRibbonPathByCellKey().values(),
+            ribbonStore.getRibbonPathByCellKey().values(),
             mapFrame);
     }
 

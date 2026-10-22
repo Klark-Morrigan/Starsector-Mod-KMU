@@ -59,34 +59,48 @@ and keep the proportions between them - the proportions being the whole of what 
 | --- | --- | --- |
 | `RibbonPlan` | one cell | the runs, in draw order |
 | `RibbonPlanBuilder` | one cell | lays a plan run by run, handing its list over without a copy |
-| `RibbonPathTracer` | one cell | pure geometry: the ring a band runs along, at whichever inset fits |
-| `CellRibbonBuilder` | one cell | pure geometry: path plus plan in, `CellRibbon` out |
+| `SystemRibbonPlanner` | one system | the port a layer plans a system's band through |
+| `CellRibbonBuilder` | one cell | the entry point: plan in, `CellRibbon` out, the ring reached for through the kept rings |
+| `RibbonPathTracer` | one cell | the ring a band runs along, at whichever inset fits |
+| `RibbonPathInset` | one cell | the two insets a ring is traced and kept at |
 | `CellRingPathCache` | one build | the rings already walked, so a re-bake walks only what was re-shaped |
+| `CellRibbonStore` | one build | the bands, their overlay paths and the kept rings, dropped together per cell |
 | `RibbonStyle` | the pass | every size a band is laid out at |
 | `RibbonBakePhases` | the pass | the section a bake is measured under and its four phases; see [what a bake spends its time on](#what-a-bake-spends-its-time-on) |
 | `CellRibbonRenderer` | the frame | draws the baked bands |
-| `CellRibbonPathRenderer` | the frame | draws the diagnostic path overlay |
+
+The path overlay is the `overlay` subpackage:
+`CellRibbonPath`,
+`RibbonPathVerdict`
+and `CellRibbonPathRenderer`;
+see [seeing the path a cell did not use](#seeing-the-path-a-cell-did-not-use).
 
 What drives a bake over a whole map -
 which cells are offered a band,
-whose plan each takes,
+which `SystemRibbonPlanner` plans them,
 and when a bake runs -
 is the layer's.
 
 ## Laying a band inside a ring
 
-`CellRibbonBuilder` is pure over a path,
-a plan and the name boxes -
-no sector,
-no settings,
-no GL,
-and the pass's timings written to but never read:
+`CellRibbonBuilder.layCellRibbon` is the one call a layer lays a cell's band through.
+The layer settles which cells are offered a band and plans each by its own rule;
+everything from the plan onwards is the same for every layer,
+so it is stated here once.
+It reads no sector,
+no settings
+and no GL,
+and the pass's timings are written to but never read.
 
-1. `RibbonPathTracer` insets the cell's ring by the pad plus half the width through `RingPath.traceInsetRing`,
+A plan with no length is answered first,
+so a cell with nothing to report never pays for a ring walk.
+Every other cell goes through five steps:
+
+1. `RibbonPathTracer` reaches for the cell's ring,
+   inset by the pad plus half the width through `RingPath.traceInsetRing`,
    which normalises the winding and parameterises the ring by arc length from the cell's top centre,
    clockwise.
-   Done by the caller rather than by the builder,
-   since the result outlives one bake;
+   A ring standing in the kept rings is read rather than walked;
    see [a ring that outlives the bake that walked it](#a-ring-that-outlives-the-bake-that-walked-it).
 2. The name boxes are carved off that path -
    as are the stretches of it the cell's own outline leaves no room on -
@@ -125,9 +139,21 @@ an inset and a fold splice and a clearance walk and an arc-length walk,
 to arrive at the path it discarded a moment earlier.
 
 So the walked path is kept beside the shape it was walked inside,
-in a `CellRingPathCache` the layer holds next to its cells' fill polygons.
-The write that records a cell's shape drops that cell's path,
-and a bake asks for the standing path before walking one.
+in a `CellRingPathCache`,
+one path per `RibbonPathInset` the cell was traced at.
+A narrow cell can stand at both:
+its padded ring refused,
+its unpadded ring holding the band.
+Kept per inset,
+the overlay can read which of the two a band ended up on without walking either again.
+
+The cache lives in a `CellRibbonStore` beside the bands and their overlay paths,
+and the layer holds the store next to its cells' fill polygons.
+The write that records a cell's shape calls the store's one drop,
+`dropRingFittedWorkOf`,
+which takes the cell's band,
+path and rings together.
+A bake asks for the standing path before walking one.
 What is left per bake is the part that genuinely changed:
 the carve,
 the placement and the stroke.
@@ -343,11 +369,16 @@ then the pad given up -
 so the path drawn is the path a band would use,
 rather than a second reading that agrees with it by coincidence.
 They differ in one thing:
-the overlay traces the shallower inset even where the fall is switched off,
+the overlay walks on to the shallower inset even where the fall is switched off,
 since that cell is exactly the one it is looked at to explain.
-That is also why it walks the ring afresh rather than reading the kept path above -
-the cells it exists for are the ones the band pass has no path for.
+Each rung is read from the kept rings where it stands,
+so the overlay draws the very rings the band pass walked and walks only the rung the band pass stopped short of.
 
+The overlay types sit in `base.ribbon.overlay`,
+apart from the band they explain.
+The tracer hands them their paths and the store holds them;
+the build closes the subpackage to the rest of `base.ribbon`,
+so the diagnostic never grows back into the band.
 `CellRibbonPathRenderer` draws the paths and nothing else.
 The layer orders the two renderers,
 drawing the paths over the bands so a band and the path it was laid on can be read against each other.
@@ -368,10 +399,11 @@ per cell:
 
 Four rather than one because those axes differ,
 so a single total can say a bake got slower without saying which of them did.
-The builder marks `carve` and `stroke`;
-the layer driving the bake opens the scope,
+The layer driving the bake opens the scope,
 begins a turn per cell,
-and marks the other two.
+and marks `plan`;
+`layCellRibbon` marks the other three,
+which is why only `BAKE_SECTION` and `PLAN_PHASE` are public.
 
 Phases of one open scope rather than sections of their own,
 because a bake is one call and a cell is one turn of its loop -

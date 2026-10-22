@@ -68,6 +68,12 @@ enforcePackageLayering {
                       'kmu.maplayers.base.sidebar',
                       'kmu.maplayers.base.tooltip']
 
+    // The band's path overlay draws what the band pass hands it and knows nothing of the band
+    // itself, so the diagnostic never grows back into the production package it was split from.
+    forbidImport under: 'kmu.maplayers.base.ribbon.overlay',
+                 of: [under: 'kmu.maplayers.base.ribbon',
+                      except: 'kmu.maplayers.base.ribbon.overlay']
+
     forbidImport under: 'kmu.maplayers.ownermap',
                  of: ['kmu.maplayers.politicalmap',
                       'kmu.mods']

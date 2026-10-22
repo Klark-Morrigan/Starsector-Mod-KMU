@@ -3,7 +3,6 @@ package kmu.maplayers.ownermap.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
 import kmlib.starsector.systems.SectorPassIndex;
@@ -11,18 +10,18 @@ import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.ribbon.CellRibbon;
-import kmu.maplayers.base.ribbon.CellRibbonPath;
 import kmu.maplayers.base.ribbon.CellRingPathCache;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
 import kmu.maplayers.base.ribbon.RibbonBand;
-import kmu.maplayers.base.ribbon.RibbonPathVerdict;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.base.ribbon.overlay.CellRibbonPath;
+import kmu.maplayers.base.ribbon.overlay.RibbonPathVerdict;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -59,12 +58,6 @@ import static org.mockito.Mockito.when;
  * which is why no case here poses an owner at all: an owner rule that admits only some settlements
  * leaves settled systems unheld, and gating on what it resolved would leave them uncounted on the
  * one layer that has nothing else to say about them.
- *
- * <p>The ring cases are the same question asked once more, of the work rather than of the count: a
- * cell is walked when its path is not already standing, once however often it is baked, and never
- * at all where its plan came back empty. That last one is where the gate has to sit to be worth
- * anything - a cell answered after its ring was walked has already paid the cost the gate exists
- * to save.
  *
  * <p>The pass cases are about the pass rather than about any one cell: the mechanic a band is
  * counted by is asked of the owner source once, before the first cell is counted, so two cells in
@@ -240,58 +233,8 @@ final class CellRibbonSourceTests {
                 .isEqualTo(CellRibbon.NONE);
         }
 
-        @Test
-        void walksNoRingForACellWhosePlanIsEmpty() {
-            // The cost half of that gate, and why it is answered here rather than by the geometry.
-            // Walking a ring for a band nothing would be laid on is inset and arc-length work
-            // spent on nothing - so no ring is walked and none is kept.
-            var ringPathCache = new CellRingPathCache();
-            var bakeScopeMock = mock(IterationScope.class);
 
-            buildCachingInto(system -> RibbonPlan.NONE, ringPathCache)
-                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, bakeScopeMock);
 
-            verify(bakeScopeMock, never())
-                .markPhase(RibbonBakePhases.TRACE_PHASE);
-
-            assertThat(ringPathCache.findRingPathOf(CELL))
-                .isNull();
-        }
-
-        @Test
-        void walksACellsRingOnceHoweverOftenItIsBaked() {
-            // What the kept ring is for. A bake runs whenever a cluster name may have moved, which
-            // is every flip the layer marks, while the ring a band runs along moves only when its
-            // cell is re-shaped - so the second bake of an untouched cell must walk nothing.
-            var ringPathCache = new CellRingPathCache();
-            var ribbonSource = buildCachingInto(system -> ANY_PLAN, ringPathCache);
-
-            ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
-
-            var pathAfterFirstBake = ringPathCache.findRingPathOf(CELL);
-
-            ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
-
-            // The kept path itself, since a walk that happened again would leave a second one
-            // behind: the phase's own duration is what a bake spent either way.
-            assertThat(ringPathCache.findRingPathOf(CELL))
-                .isSameAs(pathAfterFirstBake);
-        }
-
-        @Test
-        void walksTheRingOfACellWithNoPathStandingOfItsOwn() {
-            // A path describes one cell's shape, so it is kept per cell and not per pass: a cell
-            // reached while another's path stands is walked, and comes back with the band its own
-            // ring holds rather than with whatever the neighbour's said.
-            var ringPathCache = new CellRingPathCache();
-
-            ringPathCache.putRingPath(OTHER_CELL, RingPath.nothingLeftToTrace());
-
-            assertThat(buildCachingInto(system -> ANY_PLAN, ringPathCache)
-                    .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope)
-                    .bands())
-                .isNotEmpty();
-        }
     }
 
     @Nested
@@ -336,7 +279,7 @@ final class CellRibbonSourceTests {
             var expectedPlanRules = SETTINGS.planRules();
 
             // ACT
-            buildThrough(sourceFake, new CellRingPathCache());
+            buildThrough(sourceFake);
 
             // ASSERT
             var actualPlanRules = sourceFake.readRibbonPlanRules();
@@ -357,7 +300,7 @@ final class CellRibbonSourceTests {
             CellRibbonSource.createForPass(
                 walk,
                 sourceFake,
-                buildSurfaceKeeping(new CellRingPathCache()),
+                buildSurface(),
                 SETTINGS.ribbonStyle(),
                 SETTINGS.planRules());
 
@@ -372,7 +315,7 @@ final class CellRibbonSourceTests {
             // whose inputs moved while a bake was running would otherwise leave one cell banded as a
             // contest between two owners and the cell beside it banded as their joint holding.
             var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
-            var ribbonSource = buildThrough(sourceFake, new CellRingPathCache());
+            var ribbonSource = buildThrough(sourceFake);
 
             ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
             ribbonSource.buildCellRibbon(OTHER_CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
@@ -391,21 +334,12 @@ final class CellRibbonSourceTests {
     private CellRibbonPath traceFor(String drawnSystemId) {
 
         return buildWith(system -> ANY_PLAN)
-            .traceCellRibbonPath(buildCellKey(drawnSystemId), SQUARE_CELL);
+            .traceCellRibbonPath(CELL, buildCellKey(drawnSystemId), SQUARE_CELL);
     }
 
     // The standing pass counted through the given planner, keeping its traced rings to itself.
     private static CellRibbonSource buildWith(SystemRibbonPlanner planner) {
-        return buildCachingInto(planner, new CellRingPathCache());
-    }
-
-    // The same pass writing its traced rings into a store the case holds, for the cases about
-    // which cells are walked at all.
-    private static CellRibbonSource buildCachingInto(
-            SystemRibbonPlanner planner,
-            CellRingPathCache ringPathCache) {
-
-        return buildThrough(buildSourcePlanning(planner), ringPathCache);
+        return buildThrough(buildSourcePlanning(planner));
     }
 
     // The source the pass asks for its mechanic, answering with the given planner. Built apart from
@@ -419,14 +353,12 @@ final class CellRibbonSourceTests {
         return sourceFake;
     }
 
-    private static CellRibbonSource buildThrough(
-            OwnerSource ownerSource,
-            CellRingPathCache ringPathCache) {
+    private static CellRibbonSource buildThrough(OwnerSource ownerSource) {
 
         return CellRibbonSource.createForPass(
             buildWalkOverTheStandingSystems(),
             ownerSource,
-            buildSurfaceKeeping(ringPathCache),
+            buildSurface(),
             SETTINGS.ribbonStyle(),
             SETTINGS.planRules());
     }
@@ -454,7 +386,7 @@ final class CellRibbonSourceTests {
         return new SectorWalk(new SectorPassIndex(sectorMock), MapVisibilityRules.BASE);
     }
 
-    private static RibbonBakeSurface buildSurfaceKeeping(CellRingPathCache ringPathCache) {
+    private static RibbonBakeSurface buildSurface() {
 
         // The settled set and the sites are stated the one way the build addresses a system, so
         // the gate and the site read answer under the same key.
@@ -477,7 +409,7 @@ final class CellRibbonSourceTests {
             // No names anywhere near these cells: where a name falls is pinned by the builder that
             // lays a band inside one cell, not by which cells are offered a band at all.
             List.of(),
-            ringPathCache);
+            new CellRingPathCache());
     }
 
     private static StarSystemAPI buildSystem(String systemId) {

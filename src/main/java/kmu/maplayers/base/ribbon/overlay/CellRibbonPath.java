@@ -1,4 +1,4 @@
-package kmu.maplayers.base.ribbon;
+package kmu.maplayers.base.ribbon.overlay;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ import java.util.List;
  * its length that ring can fold outside the cell's own border - so a path drawn as one loop shows
  * a line escaping the very shape it reports on, with nothing to say which part of it was real.
  *
- * <p>Flattened at bake rather than at draw, exactly as {@link RibbonBand} is: the overlay is
+ * <p>Flattened at bake rather than at draw, exactly as a band's triangles are: the overlay is
  * emitted every frame the map is open, and the path it emits changes only when the cells are
  * re-shaped.
  *
