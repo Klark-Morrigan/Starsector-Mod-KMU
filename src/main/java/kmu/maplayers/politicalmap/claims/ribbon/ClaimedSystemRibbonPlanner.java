@@ -8,6 +8,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
@@ -74,10 +75,10 @@ public final class ClaimedSystemRibbonPlanner
 
         var contest = breakdownReader.readBreakdown(system);
 
-        return ClaimCellRibbons.planClaimCellRibbon(
+        return ColonyCellRibbons.planCellRibbon(
             resolvePaintingBlocId(contest),
             system,
-            contest,
+            ClaimBlocRanker.rankBlocsByContest(contest, inputs.grouping()),
             inputs);
     }
 

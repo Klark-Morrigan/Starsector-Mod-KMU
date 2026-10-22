@@ -1,10 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.ribbon;
 
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-
-import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
-import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.dominance.standings.StandingRankOrder;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
@@ -12,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * The order a held cell's band comes out in: the fill's own order, read off the footprints the
@@ -30,48 +25,24 @@ import java.util.Optional;
  *
  * <p>A bloc the weights never reached - one holding nothing but colonies the economy does not list,
  * which have no industries, conditions or stability for the arithmetic to read - takes no place in
- * this ranking and draws behind it in ID order. It is present in the system and counted like any
- * other bloc; what it has no claim to is a rank among the blocs that were weighed.
- *
- * <p>Pure over the footprints a pass already read, every live read reached through the inputs.
+ * this ranking. It is present in the system and counted like any other bloc; what it has no claim
+ * to is a rank among the blocs that were weighed.
  */
-public final class HeldCellRibbons {
+final class HeldBlocRanker {
 
-    private HeldCellRibbons() {
+    private HeldBlocRanker() {
     }
 
     /**
-     * Plans one held cell's band, ranked by the footprints its system was decided from.
+     * Ranks the blocs the weights reached in one held cell, in the band's order.
      *
      * @param paintingBlocId    the bloc the cell's fill was painted for - the dominant bloc, which
      *                          leads the band whatever settled its lead
-     * @param system            the system the cell draws as, whose colonies the band counts
      * @param footprintByBlocId each bloc's footprint in the cell's system, as the dominance pass
      *                          folded them under the view's grouping
-     * @param inputs            everything one bake's bands are settled from, sampled once by the
-     *                          bake
-     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
-     *         counts is present in the cell
+     * @return the bloc IDs, best placed first
      */
-    public static RibbonPlan planHeldCellRibbon(
-            String paintingBlocId,
-            StarSystemAPI system,
-            Map<String, MarketFootprint> footprintByBlocId,
-            RibbonPlanInputs inputs) {
-
-        // A painter always: the held mechanic paints a cell for the bloc its weights led, and a
-        // system no bloc holds anything in raises no footprints for one to be resolved from.
-        return ColonyCellRibbons.planCellRibbon(
-            Optional.of(paintingBlocId),
-            system,
-            rankBlocsByWeight(paintingBlocId, footprintByBlocId),
-            inputs);
-    }
-
-    // The blocs the weights reached, in the band's order. The weights are read no further than
-    // this - what the band reports is the count - so the ordering is the last thing a footprint is
-    // consulted for.
-    private static List<String> rankBlocsByWeight(
+    static List<String> rankBlocsByWeight(
             String paintingBlocId,
             Map<String, MarketFootprint> footprintByBlocId) {
 
@@ -83,6 +54,7 @@ public final class HeldCellRibbons {
         for (var blocFootprint : ranked) {
             rankedBlocIds.add(blocFootprint.getKey());
         }
+
         return rankedBlocIds;
     }
 

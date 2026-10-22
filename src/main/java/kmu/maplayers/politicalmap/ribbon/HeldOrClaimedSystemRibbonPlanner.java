@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.dominance.ribbon;
+package kmu.maplayers.politicalmap.ribbon;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -9,6 +9,7 @@ import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
+import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;
 
 import org.apache.log4j.Logger;
 
@@ -23,10 +24,9 @@ import org.apache.log4j.Logger;
  * carried alongside to remember the split.
  *
  * <p>Composed rather than branched inside either planner, so each one stays a plain statement of
- * its own mechanic and this holds the one rule about which of them speaks for a cell. It sits on
- * the dominance side rather than between the two because that is the side that reaches for it: a
- * claim counts a cell here only where dominance paints nothing, which is a fact about how the
- * dominance-painted views extend themselves, not a mechanic of its own.
+ * its own mechanic and this holds the one rule about which of them speaks for a cell. It sits
+ * beside the two mechanics rather than inside either, as the holder sources folding claims onto
+ * held dominance do: shelved under one mechanic, it would make that mechanic name the other.
  */
 public final class HeldOrClaimedSystemRibbonPlanner
         implements SystemRibbonPlanner {
@@ -48,7 +48,7 @@ public final class HeldOrClaimedSystemRibbonPlanner
      * @param claimedPlanner the claim mechanic's planner, asked for the systems the held one
      *                       paints nothing in
      */
-    public HeldOrClaimedSystemRibbonPlanner(
+    HeldOrClaimedSystemRibbonPlanner(
             HeldSystemRibbonSource heldSource,
             SystemRibbonPlanner claimedPlanner) {
 
@@ -73,7 +73,7 @@ public final class HeldOrClaimedSystemRibbonPlanner
             ClaimBreakdownReaderSource claimReaderSource) {
 
         return new HeldOrClaimedSystemRibbonPlanner(
-            HeldSystemRibbonPlanner.createForPass(inputs),
+            HeldSystemRibbonPlanner.createForPass(inputs)::planHeldSystemRibbon,
             ClaimedSystemRibbonPlanner.createForPass(inputs, claimReaderSource));
     }
 

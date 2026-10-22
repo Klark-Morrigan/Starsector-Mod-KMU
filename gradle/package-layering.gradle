@@ -150,10 +150,13 @@ enforcePackageLayering {
                       'kmu.maplayers.base.visibility.structures',
                       'kmu.maplayers.base.visibility.systems']
 
-    // The held layers band a claimed system through the claim contest, so the claim contest may not
-    // reach back into them.
+    // The two mechanics are peers. What composes them - the views, the holder sources, the band
+    // planner - sits beside both, so neither names the other.
     forbidImport under: 'kmu.maplayers.politicalmap.claims',
                  of: 'kmu.maplayers.politicalmap.dominance'
+
+    forbidImport under: 'kmu.maplayers.politicalmap.dominance',
+                 of: 'kmu.maplayers.politicalmap.claims'
 
     // The contest weighs colonies through weighting, so weighting may not reach back into it.
     forbidImport under: 'kmu.maplayers.politicalmap.dominance.weighting',

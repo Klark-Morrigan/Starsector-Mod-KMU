@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.dominance.ribbon;
+package kmu.maplayers.politicalmap.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
@@ -17,10 +17,11 @@ import java.util.Optional;
  * mechanic a composed planner should ask next.
  *
  * <p>A port rather than the concrete planner, so the composition that reads it is a rule over two
- * answers rather than a rule bound to an economy walk.
+ * answers rather than a rule bound to an economy walk. It is the composition's own, declared beside
+ * it, so the dominance mechanic names nothing of the views it is composed into.
  */
 @FunctionalInterface
-public interface HeldSystemRibbonSource {
+interface HeldSystemRibbonSource {
 
     /**
      * Plans a system's band, and says whether the held mechanic paints the system at all.

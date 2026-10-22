@@ -32,7 +32,8 @@ not the top standing:
 read it off the wrong faction and a system where the claimant is the junior standing draws no band,
 or a lone claimant's cell draws one the fill never earned.
 The **ranking** is the contest's own,
-which `ClaimCellRibbons` folds into blocs.
+which `ClaimBlocRanker` folds into blocs.
+The planner hands both to the shared count itself.
 
 The reader is built over the bake's own colony walk,
 so the contest and the count beneath it read one reading of the system rather than two.

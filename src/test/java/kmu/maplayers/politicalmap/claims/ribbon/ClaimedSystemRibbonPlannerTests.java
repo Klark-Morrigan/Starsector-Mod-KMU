@@ -11,7 +11,7 @@ import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildAlliedInputsFor;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildInputsFor;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildSectorHolding;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
@@ -39,8 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * one.
  *
  * <p>The counting and the ordering both have suites of their own - the band counts the system's own
- * colonies and keeps the contest's ranking. What is stated here is the one thing this planner
- * decides: which bloc counts as the painter.
+ * colonies and keeps the contest's ranking. What is stated here is what this planner decides:
+ * which bloc counts as the painter, and that the bake's alliance set reaches the counting rule.
  *
  * <p>Every cell with anything in it bands, so the painter shows in the run lengths rather than in
  * whether there is a band: a cell the painter is alone in draws its colonies as a tally, and one
@@ -152,6 +153,34 @@ final class ClaimedSystemRibbonPlannerTests {
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
+        // The bake's alliance set has to reach the shared rule through this planner, or a claimed
+        // system two allies share bands as though they fought over it. The fill is per faction
+        // here, as it is on the claims layer, so the two keep their own runs and their own places -
+        // all their standing together reaches is the length.
+        @Test
+        void shortensTheRunsWhereTheOnlyOtherBlocStandsWithTheClaimant() {
+
+            // ARRANGE
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON);
+
+            var contest = new SystemClaimBreakdown(
+                NO_DECREE,
+                HEGEMONY,
+                List.of(
+                    buildStanding(HEGEMONY, LEADING_SCORE),
+                    buildStanding(TRITACHYON, TRAILING_SCORE)));
+
+            // ACT
+            var actualPlan = planUnder(contest, sector, buildAlliedInputsFor(openPassOver(sector)));
+
+            // ASSERT
+            assertThat(actualPlan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+        }
+
         @Test
         void plansNoBandForASystemNobodyClaimsAndNobodyLivesIn() {
             // The other half of dropping the refusal, and what keeps the widening from banding the
@@ -168,7 +197,7 @@ final class ClaimedSystemRibbonPlannerTests {
 
     // The planner over a posed contest, counting the colonies of the stubbed sector's one system.
     private static RibbonPlan planFrom(SystemClaimBreakdown contest, SectorAPI sector) {
-        return planUnder(contest, sector, STANDARD_RULES);
+        return planUnder(contest, sector, buildInputsFor(openPassOver(sector), STANDARD_RULES));
     }
 
     // The same planner with the uncontested shortening on, which is what a case turning on the
@@ -177,27 +206,30 @@ final class ClaimedSystemRibbonPlannerTests {
             SystemClaimBreakdown contest,
             SectorAPI sector) {
 
-        return planUnder(contest, sector, SHORTENED_UNCONTESTED_RULES);
+        return planUnder(
+            contest,
+            sector,
+            buildInputsFor(openPassOver(sector), SHORTENED_UNCONTESTED_RULES));
     }
 
-    // The one call both make, with the laying rules as the only thing between them. The pass is
-    // spelt once here rather than at each: every case poses the faction view and the fog where the
-    // player finds it, and two spellings of one pass would read as a difference the cases do not
-    // mean.
+    // The one call every case makes, with the inputs as the only thing between them.
     private static RibbonPlan planUnder(
             SystemClaimBreakdown contest,
             SectorAPI sector,
-            RibbonPlanRules rules) {
+            RibbonPlanInputs inputs) {
 
         var readerFake = new ClaimBreakdownReaderFake();
         readerFake.setBreakdown(SYSTEM_ID, contest);
 
-        return new ClaimedSystemRibbonPlanner(
-                readerFake,
-                buildInputsFor(
-                    HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()),
-                    rules))
+        return new ClaimedSystemRibbonPlanner(readerFake, inputs)
             .planSystemRibbon(buildOnlySystem(sector));
+    }
+
+    // The pass is spelt once here rather than at each case: every case poses the faction view and
+    // the fog where the player finds it, and two spellings of one pass would read as a difference the
+    // cases do not mean.
+    private static HolderPass openPassOver(SectorAPI sector) {
+        return HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
     }
 
     // One faction's weighed standing at the given score. What a standing is made of is the counting

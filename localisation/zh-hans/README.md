@@ -488,6 +488,7 @@ So a word of one axis never stands in for another:
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
+| mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
@@ -495,9 +496,11 @@ So a word of one axis never stands in for another:
 | phase (one part of a profiled loop's turn) | 环节 | a link in a process; kept apart from 阶段, a smoothing stage |
 | plan (a band's runs, before they are laid round its ring) | 计划 | the plain word for a plan |
 | plan rules (the lengths a band's runs are laid at) | 计划规则 | 计划, a band's plan, with 规则, rules |
+| planner (what answers a system's band plan) | 计划器 | 计划, a band's plan, with 器, the usual suffix for a thing that does a job |
 | port (the interface a feature's own code reaches the game through) | 端口 | the usual word for a port in a ports-and-adapters design |
 | prefix (the part of a profiling row's name before its first dot) | 前缀 | the plain computing word |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
+| rank (a bloc's place in a mechanic's order) | 排名 | the plain word for a place in a ranking |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |

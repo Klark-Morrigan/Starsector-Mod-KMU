@@ -8,18 +8,22 @@ import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
+import kmu.maplayers.politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.NEUTRAL;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildAlliedInputsFor;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildInputsFor;
 import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_BRIGHT;
@@ -44,9 +48,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>An integration test rather than a unit one: the decline is reached through the economy read
  * the pass performs, so posing "no bloc holds a counted market here" means wiring an economy that
- * holds none rather than stubbing a seam that says so. The counting grammar beneath it - how many
- * widths a run takes, where a divider falls - is {@link HeldCellRibbonsTests}'s, and is read here
- * only far enough to show that the ranked counts reached it.
+ * holds none rather than stubbing a seam that says so. The order is {@link HeldBlocRankerTests}'s
+ * and the counting grammar beneath it - how many widths a run takes, where a divider falls - is
+ * the shared rule's, read here only far enough to show that the ranked counts and the bake's
+ * alliance set reached it.
  */
 final class HeldSystemRibbonPlannerIntegrationTests {
 
@@ -167,20 +172,51 @@ final class HeldSystemRibbonPlannerIntegrationTests {
             assertThat(buildPlanner(sector).planSystemRibbon(systemOf(sector)).segments())
                 .startsWith(new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
+
+        // The bake's alliance set has to reach the shared rule through this planner, or a held
+        // cell two allies share bands as though they fought over it. They keep their own runs in
+        // their own colours - what standing together reaches is the length alone.
+        @Test
+        void shortensTheRunsWhereTheOnlyOtherBlocStandsWithThePainter() {
+
+            // ARRANGE
+            var sector = SectorOwnershipFixtures.buildSectorWith(
+                SYSTEM_ID,
+                buildColony(HEGEMONY, LARGER_COLONY),
+                buildColony(TRITACHYON, SMALLER_COLONY));
+
+            // ACT
+            var actualPlan = buildPlannerUnder(sector, holding -> buildAlliedInputsFor(holding))
+                .planSystemRibbon(systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+        }
     }
 
     // The planner under a pass reading the shared stability-weighted rule under the plain faction
     // grouping, which is the pass a faction-view rebuild resolves.
+    private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
+        return buildPlannerUnder(sector, holding -> buildInputsFor(holding));
+    }
+
+    // The same planner under the inputs a case builds over its pass.
     //
     // The ranking and the counting take the one reading of the sector, as they do in a live bake:
     // built apart, the weights could be read off one walk of a system and its colonies off another.
-    private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
+    private static HeldSystemRibbonPlanner buildPlannerUnder(
+            SectorAPI sector,
+            Function<HolderPass, RibbonPlanInputs> inputsOverPass) {
 
         var holding = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
         return new HeldSystemRibbonPlanner(
             DominancePass.createOver(holding, DominancePassFixtures.buildStabilityWeightedRules()),
-            buildInputsFor(holding));
+            inputsOverPass.apply(holding));
     }
 
     private static Optional<RibbonPlan> planFor(SectorAPI sector, StarSystemAPI system) {

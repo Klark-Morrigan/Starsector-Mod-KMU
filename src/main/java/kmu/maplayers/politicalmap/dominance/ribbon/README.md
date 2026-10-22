@@ -1,11 +1,12 @@
 # Held-cell band ranking (`dominance.ribbon`)
 
-Where a band's painter and its order come from on a cell the **dominance** mechanic painted,
-plus the rule deciding which mechanic speaks for a cell at all.
+Where a band's painter and its order come from on a cell the **dominance** mechanic painted.
 How many colonies each bloc draws is one shared count for every layer painting holders,
 [the holders' band count](../../../ownermap/owners/holders/README.md#the-band-count);
 how its runs are laid is [`ownermap.ribbon`](../../../ownermap/ribbon/README.md)'s,
 and the geometry is [`base.ribbon`](../../../base/ribbon/README.md)'s.
+Which mechanic speaks for a cell on a view that folds claims onto held territory is
+[`politicalmap.ribbon`](../../ribbon/README.md)'s.
 
 Part of [the political map](../../README.md),
 in Klark Morrigan's Utilities (KMU);
@@ -14,15 +15,16 @@ see the [mod README](../../../../../../../../README.md) for project context.
 ## Index
 
 - [The order](#the-order)
-- [Held or claimed](#held-or-claimed)
 
 ## The order
 
-`HeldCellRibbons` performs no walk and states no count.
-What it reads off the footprints the map already ranked the system by is their order,
-and `HeldSystemRibbonPlanner` is the live read behind it -
-taking both the weights and the winner through the same `DominancePass` the fills were resolved under,
+`HeldSystemRibbonPlanner` is the live read behind a held cell's band.
+It takes both the weights and the winner through the same `DominancePass` the fills were resolved under,
 so a band cannot be ordered under a weighting rule or a visibility setting the player has since moved.
+It hands the winner and the ranked blocs to the shared count itself.
+
+`HeldBlocRanker` performs no walk and states no count.
+What it reads off the footprints the map already ranked the system by is their order.
 
 The bloc the cell was **painted for** leads,
 whatever settled that.
@@ -45,26 +47,6 @@ takes no place in this ranking.
 It is present in the system and counted like any other bloc,
 and draws behind the weighed ones in ID order under the shared rule's fallback.
 
-## Held or claimed
-
-`HeldOrClaimedSystemRibbonPlanner` is the composition the faction
-and alliance views resolve through:
-each system counted by whichever mechanic painted it.
-It asks the held side first and falls through to the claim contest only
-where the held side **declines**.
-
-That decline is the whole hinge,
-and it is why `HeldSystemRibbonSource` exists as a narrow seam beside the planner interface.
-A planner can only ever answer with a plan;
-what this composition needs is the one thing a plan cannot say -
-whether the mechanic speaks for the system at all.
-So the source answers `Optional`,
-where empty means "no bloc holds a weighed market here" and a present `RibbonPlan.NONE` means "held,
-but with no contest to report".
-
-Both halves are built from the one set of inputs,
-so they share the bake's single walk of each system.
-The composition lives on the dominance side rather than between the two mechanics
-because a claim counts a cell here only where dominance paints nothing -
-a fact about how the dominance-painted views extend themselves,
-not a mechanic of its own.
+`HeldSystemRibbonPlanner.planHeldSystemRibbon` also says whether the mechanic speaks for a system at all:
+empty where no bloc holds a weighed market there.
+That answer is what [the held-or-claimed composition](../../ribbon/README.md) turns on.

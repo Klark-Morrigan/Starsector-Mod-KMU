@@ -106,6 +106,7 @@
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`：任何有区域的图层都以同样方式拟合名称 |
 | `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，不再实现 `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`，与读取它的悬停框放在一起 |
+| `politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner` | `politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner`，与它所组合的两种机制并列。构建禁止 `politicalmap.dominance` 与 `politicalmap.claims` 相互导入 |
 | `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`：它不读取任何 Nexerelin 类型 |
 | `kmu.ui.context` 和 `kmu.ui.geometry.KmuUiSize` | `kmu.conditions.ui.context` 和 `kmu.conditions.ui.picker.render.KmuUiSize`，位于它们唯一服务的功能中。`kmu.ui` 已移除 |
 | `KmuStringKeys` 的字符串 ID | `kmu.util` 中每个读取方一个键类：`KmuMapStringKeys`、`KmuOwnerMapStringKeys`、`KmuPoliticalMapStringKeys` 和 `KmuMarketConditionStringKeys`。`KmuStringKeys` 保留字符串类别、`get(String)`、`format(String, Object...)` 和 LunaLib 设置的一对键 |
@@ -178,6 +179,8 @@
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`：构建的边界描绘参数随主题一同携带，区域组不会再按各自的实时读取来描绘 |
 | 自行读取绘制方案的 `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)` | `buildClusters(CellGeometryCache, ViewReading, ContentInputs, boolean, ResolvedOwners, MapStyling)`：重建只读取一次绘制方案，供它构建的一切使用，并在采样选择的同时采样锚点叠加层是否显示 |
 | `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` 和 `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`。`palettes()` 返回本次计算自身的配色读取，因此色带只能经由填充所用的同一读取着色 |
+| `HeldCellRibbons.planHeldCellRibbon(String, StarSystemAPI, Map, RibbonPlanInputs)` 和 `ClaimCellRibbons.planClaimCellRibbon(Optional, StarSystemAPI, SystemClaimBreakdown, RibbonPlanInputs)` | 改为包私有的 `HeldBlocRanker.rankBlocsByWeight(String, Map)` 和 `ClaimBlocRanker.rankBlocsByContest(SystemClaimBreakdown, HolderGrouping)`，返回按排名排列的集团 ID。各计划器自行把排名交给 `ColonyCellRibbons.planCellRibbon` |
+| 公开的 `HeldSystemRibbonSource`（由 `HeldSystemRibbonPlanner` 实现），以及公开的 `HeldOrClaimedSystemRibbonPlanner(HeldSystemRibbonSource, SystemRibbonPlanner)` | 改为 `politicalmap.ribbon` 中的包私有类型，即该组合自身的端口。`HeldOrClaimedSystemRibbonPlanner.createForPass` 把 `HeldSystemRibbonPlanner.planHeldSystemRibbon` 绑定到它 |
 | `HolderRankingRules.createByLowestId(Predicate)` 和 `createOpenContestByLowestId()` | 已移除：每个实际排名都经由 `createByMarketProximity` 按远近裁定平局。没有几何信息的读取方改为构建 `new HolderRankingRules(Comparator.naturalOrder(), candidacy)` |
 | `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`：被捕获的失败总会留下记录 |
 | 继承 `BaseCampaignEventListener` 的 `StarsectorMarketUiContextTracker` | 实现 `ColonyInteractionListener`，即监听器管理器向其传递市场事件的接口 |

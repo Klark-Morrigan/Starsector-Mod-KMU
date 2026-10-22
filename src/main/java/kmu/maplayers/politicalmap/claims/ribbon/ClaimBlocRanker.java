@@ -1,18 +1,13 @@
 package kmu.maplayers.politicalmap.claims.ribbon;
 
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
-import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * The order a cell's band comes out in on the claims layer: the contest's own ranking, folded
@@ -35,48 +30,28 @@ import java.util.Optional;
  * colours, and all their standing together reaches is the length the runs are laid at.
  *
  * <p>A bloc the contest never listed - one present only through colonies the mechanic's walk did
- * not reach - is not ranked here at all, and draws behind the ranked blocs in ID order. Inventing
- * a place for it among the standings would say it took part in a contest it never entered.
- *
- * <p>Pure over a finished contest and a grouping, every live read reached through the inputs.
+ * not reach - is not ranked here at all. Inventing a place for it among the standings would say it
+ * took part in a contest it never entered.
  */
-public final class ClaimCellRibbons {
+final class ClaimBlocRanker {
 
-    private ClaimCellRibbons() {
+    private ClaimBlocRanker() {
     }
 
     /**
-     * Plans one cell's band, ranked by the contest over its system's claim.
+     * Ranks the blocs of a claim contest in the order it ranked their factions, each at its
+     * best-placed member's position.
      *
-     * @param paintingBlocId the bloc the cell's fill was painted for - the claimant's bloc, or the
-     *                       decreed one where a memory flag took the system outright; empty on a
-     *                       system nobody claims, whose cell no fill of this layer's covers
-     * @param system         the system the cell draws as, whose colonies the band counts
-     * @param contest        the whole claim contest for the cell's system, standings and all
-     * @param inputs         everything one bake's bands are settled from, sampled once by the bake
-     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
-     *         counts is present in the cell
+     * @param contest  the whole claim contest for the cell's system, standings and all
+     * @param grouping the grouping the pass folds factions into blocs under
+     * @return the bloc IDs, best placed first
      */
-    public static RibbonPlan planClaimCellRibbon(
-            Optional<String> paintingBlocId,
-            StarSystemAPI system,
-            SystemClaimBreakdown contest,
-            RibbonPlanInputs inputs) {
-
-        return ColonyCellRibbons.planCellRibbon(
-            paintingBlocId,
-            system,
-            rankBlocsByContest(contest, inputs.grouping()),
-            inputs);
-    }
-
-    // The blocs of the contest in the order it ranked their factions, each at its best-placed
-    // member's position. The standings arrive ranked, so first mention is that position and a
-    // second member of the same bloc adds nothing to say.
-    private static List<String> rankBlocsByContest(
+    static List<String> rankBlocsByContest(
             SystemClaimBreakdown contest,
             HolderGrouping grouping) {
 
+        // The standings arrive ranked, so first mention is a bloc's position and a second member
+        // of the same bloc adds nothing to say.
         var rankedBlocIds = new LinkedHashSet<String>();
 
         for (var standing : contest.standings()) {

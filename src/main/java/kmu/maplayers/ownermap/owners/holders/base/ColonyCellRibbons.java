@@ -7,11 +7,12 @@ import kmu.maplayers.ownermap.ribbon.OwnerPresence;
 import kmu.maplayers.ownermap.ribbon.OwnerRibbonRuns;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The one rule that counts a cell's band, whichever mechanic painted the cell: every colony the
@@ -68,46 +69,22 @@ public final class ColonyCellRibbons {
             List<String> rankedBlocIds,
             RibbonPlanInputs inputs) {
 
+        var habitationByBlocId = inputs.readHabitationIn(system).habitationByBlocId();
+
         return OwnerRibbonRuns.planCellRibbon(
             paintingBlocId,
             collectColouredPresences(
-                orderCountsForBand(
-                    inputs.readHabitationIn(system).habitationByBlocId(),
-                    rankedBlocIds),
+                orderBlocIdsForBand(habitationByBlocId.keySet(), rankedBlocIds),
+                habitationByBlocId,
                 inputs.palettes()),
             inputs.affiliation(),
             inputs.rules());
     }
 
-    // Colours the ordered counts into the presences a plan is stated over, in the order given.
-    //
-    // A bloc with no shades is dropped rather than painted in a stand-in shade: its colour faction
-    // has gone from the sector, so it is one the map cannot name - the same answer the holder
-    // resolve gives a system whose colour faction has gone.
-    private static List<OwnerPresence> collectColouredPresences(
-            Map<String, Integer> marketCountByBlocId,
-            BlocPaletteReader palettes) {
-
-        var presences = new ArrayList<OwnerPresence>(marketCountByBlocId.size());
-
-        for (var blocMarketCount : marketCountByBlocId.entrySet()) {
-
-            var palette = palettes.readBlocPalette(blocMarketCount.getKey());
-            if (palette != null) {
-
-                presences.add(new OwnerPresence(
-                    blocMarketCount.getKey(),
-                    palette,
-                    blocMarketCount.getValue()));
-            }
-        }
-
-        return presences;
-    }
-
-    // The counts in the order their runs are drawn: the mechanic's ranking first, then whatever it
-    // did not rank, by ID. Read off the habitation's per-bloc fold, so two allies' colonies arrive as
-    // one bloc's count and the band names each colony's owner as every other surface does.
+    // The counted blocs in the order their runs are drawn: the mechanic's ranking first, then
+    // whatever it did not rank, by ID. Read off the habitation's per-bloc fold, so two allies'
+    // colonies arrive as one bloc's count and the band names each colony's owner as every other
+    // surface does.
     //
     // The tail exists because the count and the ranking come from different places. A mechanic ranks
     // the blocs it scored, and the habitation projection hands back blocs no score was computed for -
@@ -115,44 +92,51 @@ public final class ColonyCellRibbons {
     // is arbitrary and says so: any place among the ranked blocs would state they took part in a
     // contest they never entered.
     //
-    // A ranking naming one bloc twice - which two members of one group produce - keeps the place
-    // its first mention took, since a map insertion does not move an existing key.
-    private static Map<String, Integer> orderCountsForBand(
-            Map<String, BlocHabitation> habitationByBlocId,
+    // A bloc already placed keeps its first place, since a set insertion does not move an existing
+    // member. That covers a ranking naming one bloc twice - which two members of one group produce -
+    // and keeps the ID-ordered tail from re-adding a ranked bloc.
+    private static Set<String> orderBlocIdsForBand(
+            Set<String> countedBlocIds,
             List<String> rankedBlocIds) {
 
-        var orderedCountByBlocId = new LinkedHashMap<String, Integer>();
+        var orderedBlocIds = new LinkedHashSet<String>();
 
         for (var blocId : rankedBlocIds) {
 
-            var blocHabitation = habitationByBlocId.get(blocId);
-            if (blocHabitation != null) {
-                orderedCountByBlocId.put(blocId, blocHabitation.colonyCount());
+            if (countedBlocIds.contains(blocId)) {
+                orderedBlocIds.add(blocId);
             }
         }
 
-        for (var blocId : sortUnrankedBlocIds(habitationByBlocId.keySet(), orderedCountByBlocId.keySet())) {
-            orderedCountByBlocId.put(blocId, habitationByBlocId.get(blocId).colonyCount());
-        }
+        orderedBlocIds.addAll(new TreeSet<>(countedBlocIds));
 
-        return orderedCountByBlocId;
+        return orderedBlocIds;
     }
 
-    // The counted blocs the mechanic's ranking never named, in ID order.
-    private static List<String> sortUnrankedBlocIds(
-            Set<String> countedBlocIds,
-            Set<String> rankedBlocIds) {
+    // Colours the ordered blocs' counts into the presences a plan is stated over, in the order given.
+    //
+    // A bloc with no shades is dropped rather than painted in a stand-in shade: its colour faction
+    // has gone from the sector, so it is one the map cannot name - the same answer the holder
+    // resolve gives a system whose colour faction has gone.
+    private static List<OwnerPresence> collectColouredPresences(
+            Set<String> orderedBlocIds,
+            Map<String, BlocHabitation> habitationByBlocId,
+            BlocPaletteReader palettes) {
 
-        var unrankedBlocIds = new ArrayList<String>();
+        var presences = new ArrayList<OwnerPresence>(orderedBlocIds.size());
 
-        for (var blocId : countedBlocIds) {
+        for (var blocId : orderedBlocIds) {
 
-            if (!rankedBlocIds.contains(blocId)) {
-                unrankedBlocIds.add(blocId);
+            var palette = palettes.readBlocPalette(blocId);
+            if (palette != null) {
+
+                presences.add(new OwnerPresence(
+                    blocId,
+                    palette,
+                    habitationByBlocId.get(blocId).colonyCount()));
             }
         }
 
-        unrankedBlocIds.sort(String::compareTo);
-        return unrankedBlocIds;
+        return presences;
     }
 }

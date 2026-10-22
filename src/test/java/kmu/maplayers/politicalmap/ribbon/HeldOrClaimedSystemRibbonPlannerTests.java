@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.dominance.ribbon;
+package kmu.maplayers.politicalmap.ribbon;
 
 import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;

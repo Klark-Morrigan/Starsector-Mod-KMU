@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 
@@ -11,7 +12,7 @@ import java.util.Optional;
 
 /**
  * The live read behind a held cell's band: one system's footprints under the pass that paints
- * the map, ranked by {@link HeldCellRibbons}.
+ * the map, ranked by {@link HeldBlocRanker} and counted by {@link ColonyCellRibbons}.
  *
  * <p>The whole of what this adds to the rule is the weight read and the winner the band is ordered
  * around, both taken through the same {@link DominancePass} the fills are resolved under - so a
@@ -22,7 +23,8 @@ import java.util.Optional;
  * <p>The footprints come off the pass's own walk of the system, which the counting beneath them
  * shares, so ranking a band costs no walk of its own.
  */
-public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldSystemRibbonSource {
+public final class HeldSystemRibbonPlanner
+        implements SystemRibbonPlanner {
 
     private final DominancePass pass;
     private final RibbonPlanInputs inputs;
@@ -62,18 +64,18 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
     /**
      * Plans a system's band, and says whether the held mechanic paints the system at all.
      *
-     * <p>Both answers come off one economy walk, which is what keeps the distinction the
-     * composition turns on from costing a second one.
+     * <p>Both answers come off one economy walk, which is what keeps the distinction a composed
+     * planner turns on from costing a second one.
      *
      * @param system the system to count
      * @return the system's plan, or empty where no bloc holds a counted market there
      */
-    @Override
     public Optional<RibbonPlan> planHeldSystemRibbon(StarSystemAPI system) {
 
         if (system == null || !pass.canReadEconomy()) {
             return Optional.empty();
         }
+
         var footprintByBlocId = pass.readBlocFootprints(system);
         if (footprintByBlocId.isEmpty()) {
             return Optional.empty();
@@ -84,10 +86,10 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
         // do not say so.
         var dominantBlocId = pass.resolveDominantBlocId(system, footprintByBlocId);
 
-        return Optional.of(HeldCellRibbons.planHeldCellRibbon(
-            dominantBlocId,
+        return Optional.of(ColonyCellRibbons.planCellRibbon(
+            Optional.of(dominantBlocId),
             system,
-            footprintByBlocId,
+            HeldBlocRanker.rankBlocsByWeight(dominantBlocId, footprintByBlocId),
             inputs));
     }
 }
