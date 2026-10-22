@@ -94,6 +94,8 @@ public final class RibbonPathTracer {
      * @param style         the sizes the band is drawn at, which settle both insets and whether the
      *                      shallower one may be fallen to at all
      * @param ringPathCache the rings already walked inside the cells' current shapes
+     * @param bakeTally     the bake call's counts, to which this cell is added by whether any rung
+     *                      had to be walked or every rung it asked for stood already
      * @return the traced path, holding no stretch where the cell holds no band
      */
     static RingPath traceLaidRibbonPath(
@@ -101,11 +103,15 @@ public final class RibbonPathTracer {
             List<double[]> ring,
             double[] topAnchor,
             RibbonStyle style,
-            CellRingPathCache ringPathCache) {
+            CellRingPathCache ringPathCache,
+            RibbonBakeTally bakeTally) {
 
-        return walkInsetLadder(
-            new CellRings(cellKey, ring, topAnchor, style, ringPathCache),
-            false).path();
+        var cellRings = new CellRings(cellKey, ring, topAnchor, style, ringPathCache);
+        var path = walkInsetLadder(cellRings, false).path();
+
+        bakeTally.countRingReach(cellRings.hasTracedRing);
+
+        return path;
     }
 
     // The ladder itself: the authored inset, then the pad given up, and what a band does with the
@@ -116,7 +122,7 @@ public final class RibbonPathTracer {
     // on regardless, which is the one thing the two callers do differently.
     private static TracedRung walkInsetLadder(CellRings cellRings, boolean isRefusedFallWalked) {
 
-        var style = cellRings.style();
+        var style = cellRings.style;
         var paddedPath = cellRings.getOrTraceRingPathAt(RibbonPathInset.PADDED);
 
         if (paddedPath.hasStretchHoldingItsInset()) {
@@ -173,15 +179,36 @@ public final class RibbonPathTracer {
         return polylines;
     }
 
-    // One cell's ring as the ladder walks it: everything a rung is traced from, and where the rungs
-    // already walked are kept. Held together so a rung is asked for by its inset alone, the five
-    // things that settle it being the same for every rung of one cell.
-    private record CellRings(
-        SystemKey cellKey,
-        List<double[]> ring,
-        double[] topAnchor,
-        RibbonStyle style,
-        CellRingPathCache ringPathCache) {
+    // One cell's ring as the ladder walks it: everything a rung is traced from, where the rungs
+    // already walked are kept, and whether this walk of the ladder had to walk any rung itself.
+    // Held together so a rung is asked for by its inset alone, the five things that settle it being
+    // the same for every rung of one cell.
+    //
+    // The walk is remembered here rather than answered per rung, because the ladder may ask for
+    // two rungs and the bake counts the cell once: a cell traced at either rung is a cell that
+    // walked a ring.
+    private static final class CellRings {
+
+        private final SystemKey cellKey;
+        private boolean hasTracedRing;
+        private final List<double[]> ring;
+        private final CellRingPathCache ringPathCache;
+        private final RibbonStyle style;
+        private final double[] topAnchor;
+
+        CellRings(
+                SystemKey cellKey,
+                List<double[]> ring,
+                double[] topAnchor,
+                RibbonStyle style,
+                CellRingPathCache ringPathCache) {
+
+            this.cellKey = cellKey;
+            this.ring = ring;
+            this.topAnchor = topAnchor;
+            this.style = style;
+            this.ringPathCache = ringPathCache;
+        }
 
         // The rung kept for this cell at the inset, or a fresh walk of it where none stands, kept
         // for the next bake.
@@ -199,6 +226,7 @@ public final class RibbonPathTracer {
                 topAnchor);
 
             ringPathCache.putRingPath(cellKey, inset, tracedPath);
+            hasTracedRing = true;
 
             return tracedPath;
         }

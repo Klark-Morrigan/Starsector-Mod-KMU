@@ -139,6 +139,11 @@ fits what was not carried through `ClusterAnchorPlacement`,
 reports what the fit cost under `mapLayer.fitClusterAnchors`,
 and leaves its pass in the caller's `StandingClusterAnchors`.
 It answers which names moved as a `ClusterNameDisturbance`.
+The cost tag ends with how many names were carried over,
+and whether reuse was offered or which part of the fingerprint dropped it,
+since a refit that searched every cluster reads the same on the clock whatever moved.
+A fit nobody wants opens no row,
+so it writes a debug line instead.
 
 A layer's whole half is one value,
 [`ClusterAnchorFitInputs`](anchor/ClusterAnchorFitInputs.java):

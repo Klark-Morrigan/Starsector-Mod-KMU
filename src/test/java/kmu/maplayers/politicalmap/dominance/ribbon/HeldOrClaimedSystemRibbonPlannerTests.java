@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.dominance.ribbon;
 
-import com.fs.starfarer.api.campaign.StarSystemAPI;
+import kmlib.testfixtures.logging.LogAppenderFake;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
@@ -14,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 /**
  * Pins which mechanic speaks for a cell on a view that paints held territory and extends it with
@@ -42,6 +42,9 @@ final class HeldOrClaimedSystemRibbonPlannerTests {
     private static final RibbonPlan CLAIMED_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(CLAIMED_COLOUR, 3)));
 
+    // The system every case plans.
+    private static final String SYSTEM_ID = "corvus";
+
     @Nested
     class PlanSystemRibbon {
 
@@ -68,6 +71,40 @@ final class HeldOrClaimedSystemRibbonPlannerTests {
             assertThat(planFrom(Optional.empty()).segments())
                 .containsExactly(new RibbonSegment(CLAIMED_COLOUR, 3));
         }
+
+        // The map shows a band, never which mechanic counted it, so the line is what says the
+        // band followed the fill.
+        @Test
+        void writesThatTheHeldMechanicCountedAHeldSystem() {
+
+            // ARRANGE
+            var expectedLine = "System band planned; system=corvus mechanic=held";
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                HeldOrClaimedSystemRibbonPlanner.class,
+                () -> planFrom(Optional.of(HELD_PLAN)));
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
+        }
+
+        @Test
+        void writesThatTheClaimMechanicCountedASystemNoBlocHolds() {
+
+            // ARRANGE
+            var expectedLine = "System band planned; system=corvus mechanic=claimed";
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                HeldOrClaimedSystemRibbonPlanner.class,
+                () -> planFrom(Optional.empty()));
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
+        }
     }
 
     // The composition over a held source giving the posed answer and a claim planner giving a
@@ -77,11 +114,11 @@ final class HeldOrClaimedSystemRibbonPlannerTests {
         HeldSystemRibbonSource heldSourceFake = system -> heldAnswer;
         SystemRibbonPlanner claimedPlannerFake = system -> CLAIMED_PLAN;
 
-        // Nothing is read off the system - both mechanics are stand-ins here - so it only has to
-        // be the one handed through.
-        var systemMock = mock(StarSystemAPI.class);
+        // Nothing but its ID is read off the system - both mechanics are stand-ins here - and the
+        // ID only by the debug line naming it.
+        var system = StarSystemFixture.buildSystem(SYSTEM_ID);
 
         return new HeldOrClaimedSystemRibbonPlanner(heldSourceFake, claimedPlannerFake)
-            .planSystemRibbon(systemMock);
+            .planSystemRibbon(system);
     }
 }

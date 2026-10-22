@@ -71,6 +71,9 @@ final class RibbonPathTracerTests {
         2.0,
         true);
 
+    // The counts every band-pass trace adds its cell to, read back by the cases about them.
+    private final RibbonBakeTally bakeTally = new RibbonBakeTally();
+
     @Nested
     class TraceLaidRibbonPath {
 
@@ -104,7 +107,8 @@ final class RibbonPathTracerTests {
                 CELL_TOO_NARROW_FOR_THE_PAD,
                 CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 STYLE,
-                ringPathCache);
+                ringPathCache,
+                bakeTally);
 
             // ASSERT
             assertThat(actualPath.hasStretchHoldingItsInset())
@@ -162,7 +166,8 @@ final class RibbonPathTracerTests {
                 CELL_NARROWER_THAN_THE_BAND,
                 CELL_NARROWER_THAN_THE_BAND_SITE,
                 STYLE_FORCING_A_BAND,
-                ringPathCache);
+                ringPathCache,
+                bakeTally);
 
             // ASSERT
             assertThat(actualPath.hasStretchHoldingItsInset())
@@ -182,7 +187,8 @@ final class RibbonPathTracerTests {
                 SQUARE_CELL,
                 SQUARE_CELL_SITE,
                 STYLE,
-                ringPathCache);
+                ringPathCache,
+                bakeTally);
 
             // ACT
             var actualPath = RibbonPathTracer.traceLaidRibbonPath(
@@ -190,7 +196,8 @@ final class RibbonPathTracerTests {
                 SQUARE_CELL,
                 SQUARE_CELL_SITE,
                 STYLE,
-                ringPathCache);
+                ringPathCache,
+                bakeTally);
 
             // ASSERT
             assertThat(actualPath)
@@ -211,7 +218,8 @@ final class RibbonPathTracerTests {
                 CELL_TOO_NARROW_FOR_THE_PAD,
                 CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 STYLE_FORCING_A_BAND,
-                ringPathCache);
+                ringPathCache,
+                bakeTally);
 
             // ASSERT
             var actualPaddedPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.PADDED);
@@ -237,13 +245,93 @@ final class RibbonPathTracerTests {
                 CELL_TOO_NARROW_FOR_THE_PAD,
                 CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 STYLE,
-                ringPathCache);
+                ringPathCache,
+                bakeTally);
 
             // ASSERT
             var actualUnpaddedPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.UNPADDED);
 
             assertThat(actualUnpaddedPath)
                 .isNull();
+        }
+
+        // A first trace has nothing standing to read, so the cell is counted as one that walked.
+        @Test
+        void countsACellWhoseRingItWalkedAsTraced() {
+
+            // ARRANGE
+            var expectedTally = "banded=0 traced=1 reused=0 unplanned=0 refusedForRoom=0";
+
+            // ACT
+            RibbonPathTracer.traceLaidRibbonPath(
+                CELL,
+                SQUARE_CELL,
+                SQUARE_CELL_SITE,
+                STYLE,
+                new CellRingPathCache(),
+                bakeTally);
+
+            // ASSERT
+            var actualTally = bakeTally.describeTally();
+
+            assertThat(actualTally)
+                .isEqualTo(expectedTally);
+        }
+
+        // The saving the kept rings exist for, stated where a bake's readout can show it.
+        @Test
+        void countsACellReadingItsStandingRingAsReused() {
+
+            // ARRANGE
+            var ringPathCache = new CellRingPathCache();
+            var expectedTally = "banded=0 traced=0 reused=1 unplanned=0 refusedForRoom=0";
+
+            RibbonPathTracer.traceLaidRibbonPath(
+                CELL,
+                SQUARE_CELL,
+                SQUARE_CELL_SITE,
+                STYLE,
+                ringPathCache,
+                new RibbonBakeTally());
+
+            // ACT
+            RibbonPathTracer.traceLaidRibbonPath(
+                CELL,
+                SQUARE_CELL,
+                SQUARE_CELL_SITE,
+                STYLE,
+                ringPathCache,
+                bakeTally);
+
+            // ASSERT
+            var actualTally = bakeTally.describeTally();
+
+            assertThat(actualTally)
+                .isEqualTo(expectedTally);
+        }
+
+        // The tally counts cells, not rungs: a narrow cell walking both rungs is one cell that
+        // walked a ring.
+        @Test
+        void countsANarrowCellWalkingBothRungsOnce() {
+
+            // ARRANGE
+            var expectedTally = "banded=0 traced=1 reused=0 unplanned=0 refusedForRoom=0";
+
+            // ACT
+            RibbonPathTracer.traceLaidRibbonPath(
+                CELL,
+                CELL_TOO_NARROW_FOR_THE_PAD,
+                CELL_TOO_NARROW_FOR_THE_PAD_SITE,
+                STYLE_FORCING_A_BAND,
+                new CellRingPathCache(),
+                bakeTally);
+
+            // ASSERT
+            var actualTally = bakeTally.describeTally();
+
+            assertThat(actualTally)
+                .isEqualTo(expectedTally);
         }
     }
 
@@ -379,7 +467,8 @@ final class RibbonPathTracerTests {
                 SQUARE_CELL,
                 SQUARE_CELL_SITE,
                 STYLE,
-                ringPathCache);
+                ringPathCache,
+                bakeTally);
 
             // ACT
             var actualRibbonPath = RibbonPathTracer.traceInspectedRibbonPath(
@@ -409,7 +498,8 @@ final class RibbonPathTracerTests {
             ring,
             topAnchor,
             style,
-            new CellRingPathCache());
+            new CellRingPathCache(),
+            new RibbonBakeTally());
     }
 
     // The overlay's path through a cache of its own, for the same cases.

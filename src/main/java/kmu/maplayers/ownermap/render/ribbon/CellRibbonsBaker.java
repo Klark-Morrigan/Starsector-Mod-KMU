@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.IterationScope;
 import kmlib.starsector.systems.SystemKey;
@@ -10,9 +12,12 @@ import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.ribbon.CellRibbonStore;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
+import kmu.maplayers.base.ribbon.RibbonBakeTally;
 import kmu.maplayers.base.ribbon.overlay.CellRibbonPath;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
+
+import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
@@ -56,7 +61,8 @@ import java.util.Optional;
  * things - counts, traces, carves and strokes - that grow on different axes. See
  * {@link RibbonBakePhases}: the pass opens one scope over the whole loop and marks each phase as
  * the cell in hand finishes it, so the readout states what a cell costs rather than what a bake
- * does.
+ * does. What became of the cells rides on the call as a {@link RibbonBakeTally}, since a cell
+ * drawing no band looks the same on the map whatever the reason.
  *
  * <p>Sampled once per pass and then asked, like the band source it holds: what a pass bakes from -
  * the cells, their geometry, and the room the names took - must not vary between the cells of one
@@ -64,6 +70,8 @@ import java.util.Optional;
  * over the same snapshot rather than two calls that have to be handed matching inputs.
  */
 public final class CellRibbonsBaker {
+
+    private static final Logger LOG = Global.getLogger(CellRibbonsBaker.class);
 
     // The cells alone, not the build they belong to: every cell this pass reads is in the first map,
     // every band it lays goes in the store, and nothing it does per cell asks the build anything
@@ -113,6 +121,10 @@ public final class CellRibbonsBaker {
             StandingClusterAnchors standingAnchors,
             RibbonBakeSettings settings) {
 
+        // Once per pass rather than per call: the settings are what the pass was sampled under, and
+        // a band that looks wrong is first read against the sizes and rules it was laid at.
+        LOG.debug(describeBakeSettings(settings));
+
         // The cell-to-system lookup is taken here, once, rather than per cell inside the loop: the
         // read hands back a fresh unmodifiable view over the live cells, so asking per cell would
         // mint a wrapper per cell to answer one lookup. Taking it apart from the cache is also what
@@ -151,21 +163,23 @@ public final class CellRibbonsBaker {
                 .resolveProfiler()
                 .openIterations(RibbonBakePhases.BAKE_SECTION)) {
 
-            var bakedCells = bakeCellRibbons(cellKeys, bakeScope);
+            var bakeTally = new RibbonBakeTally();
 
-            // The cells asked for are what the bake is paid per; how many of them came back with
-            // anything to draw is a fact about this one call rather than a volume of work.
+            bakeCellRibbons(cellKeys, bakeScope, bakeTally);
+
+            // The cells asked for are what the bake is paid per; what became of them is a fact
+            // about this one call rather than a volume of work, so it rides on the call.
             bakeScope.addCount(MapBuildCounters.CELLS, cellKeys.size());
-            bakeScope.tagCall("banded=" + bakedCells);
+            bakeScope.tagCall(bakeTally.describeTally());
         }
     }
 
-    // Bakes each named cell's band inside the shape that cell already records, reporting how many
-    // of them came back with anything to draw and charging what each cell cost to the pass's own
-    // scope, a turn per cell.
-    private int bakeCellRibbons(Collection<SystemKey> cellKeys, IterationScope bakeScope) {
-
-        var bakedCells = 0;
+    // Bakes each named cell's band inside the shape that cell already records, counting what became
+    // of each and charging what each cell cost to the pass's own scope, a turn per cell.
+    private void bakeCellRibbons(
+            Collection<SystemKey> cellKeys,
+            IterationScope bakeScope,
+            RibbonBakeTally bakeTally) {
 
         for (var cellKey : cellKeys) {
 
@@ -183,21 +197,18 @@ public final class CellRibbonsBaker {
                     cellKey,
                     systemKeyByCellKey.get(cellKey),
                     fillPolygon,
-                    bakeScope))
+                    bakeScope,
+                    bakeTally))
                 .orElse(CellRibbon.NONE);
 
             ribbonStore.putCellRibbon(cellKey, ribbon);
             ribbonStore.putCellRibbonPath(cellKey, traceCellRibbonPath(cellKey, fillPolygon));
-
-            bakedCells += ribbon.isEmpty() ? 0 : 1;
 
             // Closed after the overlay's own trace, so a turn covers everything a cell costs the
             // pass; what the four phases leave unaccounted is the difference between their sum and
             // the turn.
             bakeScope.endIteration();
         }
-
-        return bakedCells;
     }
 
     // The cell's path for the diagnostic overlay, or nothing at all while the player has it off -
@@ -245,5 +256,30 @@ public final class CellRibbonsBaker {
             surface,
             settings.ribbonStyle(),
             settings.planRules()));
+    }
+
+    // The pass's settings as its debug line states them. A pass with the bands off says only that,
+    // since none of the rest is read by it.
+    private static String describeBakeSettings(RibbonBakeSettings settings) {
+
+        if (!settings.areRibbonsDrawn()) {
+            return "Band bake with the bands switched off; every cell bakes bare";
+        }
+
+        var style = settings.ribbonStyle();
+        var contestedLengths = settings.planRules().getContestedLengths();
+        var uncontestedLengths = settings.planRules().getUncontestedLengths();
+
+        return "Band bake settings;"
+            + " width=" + style.widthWorld()
+            + " pad=" + style.insetPadWorld()
+            + " alwaysDrawn=" + style.isBandAlwaysDrawn()
+            + " contestedRuns="
+            + contestedLengths.stakeLengthUnits() + "/" + contestedLengths.interjectionLengthUnits()
+            + " uncontestedRuns="
+            + uncontestedLengths.stakeLengthUnits() + "/" + uncontestedLengths.interjectionLengthUnits()
+            + " keptClearOfNames=" + settings.isRibbonKeptClearOfNames()
+            + " nameClearance=" + settings.nameClearance()
+            + " pathsShown=" + settings.isRibbonPathShown();
     }
 }

@@ -8,6 +8,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.ribbon.CellRibbonBuilder;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
+import kmu.maplayers.base.ribbon.RibbonBakeTally;
 import kmu.maplayers.base.ribbon.RibbonPathTracer;
 import kmu.maplayers.base.ribbon.RibbonStyle;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
@@ -127,13 +128,16 @@ public final class CellRibbonSource {
      * @param fillPolygon     the cell's painted outline, the ring the band runs inside
      * @param bakeScope       the pass's open scope, whose turn is this cell and whose phases this
      *                        cell's count and the geometry that follows it are marked on
+     * @param bakeTally       the bake call's counts, which a cell refused here is left out of: it
+     *                        was never offered a band, so there is nothing about one to count
      * @return the cell's baked band, or {@link CellRibbon#NONE} where it draws none
      */
     public CellRibbon buildCellRibbon(
             SystemKey cellKey,
             SystemKey drawnSystemKey,
             List<double[]> fillPolygon,
-            IterationScope bakeScope) {
+            IterationScope bakeScope,
+            RibbonBakeTally bakeTally) {
 
         var site = resolveBandLayoutSite(drawnSystemKey);
         var system = site == null ? null : systemByKey.get(drawnSystemKey);
@@ -160,7 +164,8 @@ public final class CellRibbonSource {
             style,
             surface.nameBoxes(),
             surface.ringPathCache(),
-            bakeScope);
+            bakeScope,
+            bakeTally);
     }
 
     /**

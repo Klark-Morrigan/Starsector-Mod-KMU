@@ -67,6 +67,7 @@ and keep the proportions between them - the proportions being the whole of what 
 | `CellRibbonStore` | one build | the bands, their overlay paths and the kept rings, dropped together per cell |
 | `RibbonStyle` | the pass | every size a band is laid out at |
 | `RibbonBakePhases` | the pass | the section a bake is measured under and its four phases; see [what a bake spends its time on](#what-a-bake-spends-its-time-on) |
+| `RibbonBakeTally` | one bake call | what became of the cells it laid, written on the call |
 | `CellRibbonRenderer` | the frame | draws the baked bands |
 
 The path overlay is the `overlay` subpackage:
@@ -409,6 +410,17 @@ Phases of one open scope rather than sections of their own,
 because a bake is one call and a cell is one turn of its loop -
 and it is the turn a rebuild's cost scales with.
 Measuring a cell as a section of its own would cost about what a cell's work costs.
+
+What became of the cells rides on the call rather than on the phases.
+`layCellRibbon` counts each cell on the bake call's `RibbonBakeTally`:
+banded,
+planned nothing,
+or refused the room to draw what it planned,
+and whether its ring was walked or found standing.
+A cell drawing no band looks the same on the map whatever the reason,
+and the kept rings' saving shows only as `reused` climbing while `traced` stays low.
+A cell the layer refuses before planning is not counted,
+since it never reached the band.
 
 ## What is not here
 

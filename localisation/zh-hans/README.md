@@ -475,12 +475,17 @@ So a word of one axis never stands in for another:
 | bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
+| call tag (the words a profiled call is written with) | 调用标签 | 调用, a call, with 标签, a tag, as KMLib's reference writes a command's tags |
+| carry over (a fit keeping a standing name rather than searching again) | 沿用 | the plain word for carrying something on, as settings and saves carry over |
 | carve (taking the names and a cell's narrow places off a band's ring) | 裁切 | the plain word for cutting something away |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
+| debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
+| fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
+| GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |

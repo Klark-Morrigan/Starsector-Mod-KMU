@@ -5,6 +5,7 @@ import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
+import kmlib.testfixtures.logging.LogAppenderFake;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -471,6 +472,34 @@ final class ClusterLabelStylingTests {
 
             assertThat(actualEstimator)
                 .isEqualTo(STAND_IN_ESTIMATOR);
+        }
+
+        // An unnamed cluster draws nothing and looks like a fit that found no room, so the
+        // blank name is said once per owner, however many clusters ask for it.
+        @Test
+        void writesOneDebugLinePerOwnerResolvingABlankName() {
+
+            // ARRANGE
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "  ")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedLine = "Cluster owner resolves no name, so its clusters draw none;"
+                + " ownerId=F nameFormat=FULL";
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                ClusterLabelStyling.class,
+                () -> {
+
+                    resolver.apply("F");
+                    resolver.apply("F");
+                });
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
         }
 
         @Test

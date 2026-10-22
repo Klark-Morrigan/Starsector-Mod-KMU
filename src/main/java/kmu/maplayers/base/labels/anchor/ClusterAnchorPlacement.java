@@ -119,6 +119,7 @@ public final class ClusterAnchorPlacement {
 
         var clusters = partition.clusterMemberSystemKeys();
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
+        var carriedCount = 0;
         var candidateCount = 0;
         var bandFitCount = 0;
 
@@ -140,9 +141,10 @@ public final class ClusterAnchorPlacement {
 
             var carried = carryOverAnchor(reusableAnchors.get(subject.identity()), subject);
             if (carried != null) {
-                // A carried placement is the saving itself, so it contributes to neither
+                // A carried placement is the saving itself, so it contributes to neither cost
                 // count: no candidate was generated for it and no band was fitted.
                 anchors.add(carried);
+                carriedCount++;
                 continue;
             }
             var axis = resolveClusterAxis(memberSystemKeys, partition.edgesByCellKey(), sites);
@@ -165,7 +167,7 @@ public final class ClusterAnchorPlacement {
             candidateCount += search.candidateCount();
             bandFitCount += search.bandFitCount();
         }
-        return new ClusterAnchorFit(anchors, candidateCount, bandFitCount);
+        return new ClusterAnchorFit(anchors, carriedCount, candidateCount, bandFitCount);
     }
 
     // The standing placement for a cluster when it can stand as this pass's, restyled to the
@@ -560,19 +562,23 @@ public final class ClusterAnchorPlacement {
     }
 
     /**
-     * A whole sweep's anchors together with what producing them cost. The two counts ride
-     * back with the anchors because only the sweep knows them: the candidates it generated
-     * (which the tuning alone understates, the fan carrying fixed extras) and the band fits
-     * those candidates spent (which the candidate count understates again, each candidate
-     * costing many). Carried as measurements rather than as a product recomputed from the
-     * tuning, so a cluster the sweep bailed out of early is counted as the nothing it cost.
+     * A whole sweep's anchors together with what producing them cost. The counts ride back
+     * with the anchors because only the sweep knows them: how many placements it carried over
+     * rather than searched (an offer can still be turned down, a renamed owner's box among
+     * them), the candidates it generated (which the tuning alone understates, the fan carrying
+     * fixed extras) and the band fits those candidates spent (which the candidate count
+     * understates again, each candidate costing many). Carried as measurements rather than as a
+     * product recomputed from the tuning, so a cluster the sweep bailed out of early is counted
+     * as the nothing it cost.
      *
      * @param anchors        one anchor per cluster with a site to fit, in cluster order
+     * @param carriedCount   the placements carried over from the standing pass unsearched
      * @param candidateCount the candidate chords the sweep generated across every cluster
      * @param bandFitCount   the band fits those candidates spent across every cluster
      */
     public record ClusterAnchorFit(
         List<ClusterAnchor> anchors,
+        int carriedCount,
         int candidateCount,
         int bandFitCount) {
     }

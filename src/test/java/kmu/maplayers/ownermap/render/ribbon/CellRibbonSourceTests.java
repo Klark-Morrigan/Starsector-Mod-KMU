@@ -12,6 +12,7 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.ribbon.CellRingPathCache;
 import kmu.maplayers.base.ribbon.RibbonBakePhases;
+import kmu.maplayers.base.ribbon.RibbonBakeTally;
 import kmu.maplayers.base.ribbon.RibbonBand;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
@@ -112,6 +113,9 @@ final class CellRibbonSourceTests {
     private final IterationScope passScope =
         SilentProfiler.INSTANCE.openIterations(RibbonBakePhases.BAKE_SECTION);
 
+    // The bake call's counts, read back by the case about which cells reach them.
+    private final RibbonBakeTally bakeTally = new RibbonBakeTally();
+
     @Nested
     class BuildCellRibbon {
 
@@ -131,7 +135,7 @@ final class CellRibbonSourceTests {
             // names a system by ID, so a system whose key states an anchor arm still passes the
             // gate and is offered a band.
             assertThat(buildWith(system -> ANY_PLAN)
-                    .buildCellRibbon(CELL, ANCHORED_SYSTEM, SQUARE_CELL, passScope)
+                    .buildCellRibbon(CELL, ANCHORED_SYSTEM, SQUARE_CELL, passScope, bakeTally)
                     .bands())
                 .extracting(RibbonBand::colour)
                 .containsExactly(BAND_COLOUR);
@@ -152,7 +156,7 @@ final class CellRibbonSourceTests {
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, passScope);
+                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, passScope, bakeTally);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -167,7 +171,7 @@ final class CellRibbonSourceTests {
             var bakeScopeMock = mock(IterationScope.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, bakeScopeMock);
+                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, bakeScopeMock, bakeTally);
 
             verify(bakeScopeMock).markPhase(RibbonBakePhases.PLAN_PHASE);
         }
@@ -179,9 +183,27 @@ final class CellRibbonSourceTests {
             var bakeScopeMock = mock(IterationScope.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, bakeScopeMock);
+                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, bakeScopeMock, bakeTally);
 
             verifyNoInteractions(bakeScopeMock);
+        }
+
+        // A cell refused at the gate was never offered a band, so it is none of the band's counts:
+        // counted as unplanned it would read as a layer finding nothing in a system nobody lives in.
+        @Test
+        void leavesACellNothingLivesInOutOfTheTally() {
+
+            // ARRANGE
+            var expectedTally = "banded=0 traced=0 reused=0 unplanned=0 refusedForRoom=0";
+
+            // ACT
+            buildFor(EMPTY_SYSTEM);
+
+            // ASSERT
+            var actualTally = bakeTally.describeTally();
+
+            assertThat(actualTally)
+                .isEqualTo(expectedTally);
         }
 
         @Test
@@ -218,7 +240,7 @@ final class CellRibbonSourceTests {
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, buildCellKey(DELISTED_SYSTEM), SQUARE_CELL, passScope);
+                .buildCellRibbon(CELL, buildCellKey(DELISTED_SYSTEM), SQUARE_CELL, passScope, bakeTally);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -229,7 +251,7 @@ final class CellRibbonSourceTests {
             // A settled cell where nothing the layer counts is present, so there is no footprint
             // for a band to report.
             assertThat(buildWith(system -> RibbonPlan.NONE)
-                    .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope))
+                    .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope, bakeTally))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -317,8 +339,19 @@ final class CellRibbonSourceTests {
             var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
             var ribbonSource = buildThrough(sourceFake);
 
-            ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
-            ribbonSource.buildCellRibbon(OTHER_CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
+            ribbonSource.buildCellRibbon(
+                CELL,
+                buildCellKey(INHABITED_SYSTEM),
+                SQUARE_CELL,
+                passScope,
+                bakeTally);
+
+            ribbonSource.buildCellRibbon(
+                OTHER_CELL,
+                buildCellKey(INHABITED_SYSTEM),
+                SQUARE_CELL,
+                passScope,
+                bakeTally);
 
             assertThat(sourceFake.readRibbonPlannerWalks())
                 .hasSize(1);
@@ -328,7 +361,7 @@ final class CellRibbonSourceTests {
     private CellRibbon buildFor(String drawnSystemId) {
 
         return buildWith(system -> ANY_PLAN)
-            .buildCellRibbon(CELL, buildCellKey(drawnSystemId), SQUARE_CELL, passScope);
+            .buildCellRibbon(CELL, buildCellKey(drawnSystemId), SQUARE_CELL, passScope, bakeTally);
     }
 
     private CellRibbonPath traceFor(String drawnSystemId) {

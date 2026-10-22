@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.colour.ColourPair;
 import kmlib.colour.Colours;
 import kmlib.starsector.systems.SystemKey;
@@ -20,6 +22,7 @@ import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
 import kmu.maplayers.ownermap.render.style.OwnerStyleDecision;
 
+import org.apache.log4j.Logger;
 import org.lazywizard.lazylib.ui.LazyFont;
 
 import java.awt.Color;
@@ -44,6 +47,8 @@ import java.util.function.Function;
  * colour and name.
  */
 final class ClusterLabelStyling {
+
+    private static final Logger LOG = Global.getLogger(ClusterLabelStyling.class);
 
     // The stand-in name shape (length as a multiple of line height) sized against when
     // no real measurement exists - the label font failed to load, or a cluster's owner
@@ -236,6 +241,13 @@ final class ClusterLabelStyling {
 
         var name = reading.resolveName(ownerId, nameFormat);
         if (name == null || name.isBlank()) {
+
+            // Once per owner per rebuild, through the memo above: a stand-in wraps no lines, so
+            // every cluster of this owner goes unnamed on the map, and nothing else says why.
+            LOG.debug("Cluster owner resolves no name, so its clusters draw none;"
+                + " ownerId=" + ownerId
+                + " nameFormat=" + nameFormat);
+
             return new AspectLabelLengthEstimator(FALLBACK_NAME_ASPECT);
         }
 

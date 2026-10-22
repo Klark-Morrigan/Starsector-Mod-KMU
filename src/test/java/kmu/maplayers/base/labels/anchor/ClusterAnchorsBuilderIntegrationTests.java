@@ -7,6 +7,7 @@ import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
+import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -237,8 +238,9 @@ final class ClusterAnchorsBuilderIntegrationTests {
             // Two clusters, the three swept directions plus the two the fan always adds, one offset,
             // the ten candidates that fan crosses over both clusters, the band fits those candidates
             // actually spent (twenty-one apiece at this tolerance), and the three sites every box
-            // keeps clear of.
-            var expectedTag = "clusters=2 directions=5/3 offsets=1 candidates=10 bandFits=210 keepOuts=3";
+            // keeps clear of. Nothing carried, the caller holding no record of an earlier fit.
+            var expectedTag = "clusters=2 directions=5/3 offsets=1 candidates=10 bandFits=210 keepOuts=3"
+                + " carried=0 reuse=unrecorded";
 
             // ACT
             var actualTag = RecordedCapture
@@ -253,6 +255,84 @@ final class ClusterAnchorsBuilderIntegrationTests {
             // ASSERT
             assertThat(actualTag)
                 .isEqualTo(expectedTag);
+        }
+
+        // The rebuild that changes nothing, read off its tag: both names carried over, so the
+        // sweep spent nothing.
+        @Test
+        void tagsARefitUnderTheSameRulesWithTheNamesItCarried() {
+
+            // ARRANGE
+            var fitInputs = buildInputsWantingAFit(PAIR_AND_LONE_KEYS);
+            var expectedTag = "clusters=2 directions=5/3 offsets=1 candidates=0 bandFits=0 keepOuts=3"
+                + " carried=2 reuse=offered";
+
+            ClusterAnchorsBuilder.rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
+
+            // ACT
+            var actualTag = RecordedCapture
+                .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    standingAnchors,
+                    cellGeometry,
+                    fitInputs))
+                .findNode(FIT_ANCHORS_SECTION)
+                .getWorstCall()
+                .getTag();
+
+            // ASSERT
+            assertThat(actualTag)
+                .isEqualTo(expectedTag);
+        }
+
+        // A refit that searched every cluster again says which part of the fingerprint cost it the
+        // carry-over, since the duration alone reads the same whatever moved.
+        @Test
+        void tagsARefitWhoseGeometryMovedWithTheReuseItDropped() {
+
+            // ARRANGE
+            var fitInputs = buildInputsWantingAFit(PAIR_AND_LONE_KEYS);
+            var expectedTag = "clusters=2 directions=5/3 offsets=1 candidates=10 bandFits=210 keepOuts=3"
+                + " carried=0 reuse=dropped moved=geometry";
+
+            ClusterAnchorsBuilder.rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
+
+            // ACT
+            var actualTag = RecordedCapture
+                .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    standingAnchors,
+                    new RevisedCellGeometry(geometryCacheMock, MOVED_GEOMETRY_REVISION),
+                    fitInputs))
+                .findNode(FIT_ANCHORS_SECTION)
+                .getWorstCall()
+                .getTag();
+
+            // ASSERT
+            assertThat(actualTag)
+                .isEqualTo(expectedTag);
+        }
+
+        // A skipped fit opens no row, so without this line the log would show nothing at all for
+        // a rebuild that took every name off the map.
+        @Test
+        void writesADebugLineWhenNoFitIsWanted() {
+
+            // ARRANGE
+            var fitInputs = buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH));
+            var expectedLine = "Cluster name fit not wanted; droppedNames=1";
+
+            standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                ClusterAnchorsBuilder.class,
+                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    standingAnchors,
+                    cellGeometry,
+                    fitInputs));
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
         }
 
         // The row times the sweep, and a gated-off pass runs none: a row opened anyway would read as

@@ -233,6 +233,9 @@ final class CellRibbonBuilderTests {
     private final IterationScope passScope =
         SilentProfiler.INSTANCE.openIterations(RibbonBakePhases.BAKE_SECTION);
 
+    // The counts a laid cell is added to, read back by the cases about them.
+    private final RibbonBakeTally bakeTally = new RibbonBakeTally();
+
     @Nested
     class LayCellRibbon {
 
@@ -246,7 +249,8 @@ final class CellRibbonBuilderTests {
             var actualRibbon = layBandIn(
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 new CellRingPathCache(),
-                passScope);
+                passScope,
+                bakeTally);
 
             // ASSERT
             assertThat(actualRibbon.bands())
@@ -265,7 +269,8 @@ final class CellRibbonBuilderTests {
             var actualRibbon = layBandIn(
                 RibbonPlan.NONE,
                 new CellRingPathCache(),
-                passScope);
+                passScope,
+                bakeTally);
 
             // ASSERT
             assertThat(actualRibbon)
@@ -283,7 +288,7 @@ final class CellRibbonBuilderTests {
             var bakeScopeMock = mock(IterationScope.class);
 
             // ACT
-            layBandIn(RibbonPlan.NONE, ringPathCache, bakeScopeMock);
+            layBandIn(RibbonPlan.NONE, ringPathCache, bakeScopeMock, bakeTally);
 
             // ASSERT
             var actualRingPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.PADDED);
@@ -307,7 +312,8 @@ final class CellRibbonBuilderTests {
             layBandIn(
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 new CellRingPathCache(),
-                bakeScopeMock);
+                bakeScopeMock,
+                bakeTally);
 
             // ASSERT
             var phaseOrder = inOrder(bakeScopeMock);
@@ -334,12 +340,12 @@ final class CellRibbonBuilderTests {
             var ringPathCache = new CellRingPathCache();
             var plan = new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH)));
 
-            layBandIn(plan, ringPathCache, passScope);
+            layBandIn(plan, ringPathCache, passScope, bakeTally);
 
             var expectedRingPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.PADDED);
 
             // ACT
-            layBandIn(plan, ringPathCache, passScope);
+            layBandIn(plan, ringPathCache, passScope, bakeTally);
 
             // ASSERT
             var actualRingPath = ringPathCache.findRingPathOf(CELL, RibbonPathInset.PADDED);
@@ -363,11 +369,81 @@ final class CellRibbonBuilderTests {
             var actualRibbon = layBandIn(
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 ringPathCache,
-                passScope);
+                passScope,
+                bakeTally);
 
             // ASSERT
             assertThat(actualRibbon.bands())
                 .isNotEmpty();
+        }
+
+        // A cell the layer planned nothing for is counted apart from one whose ring had no room,
+        // since the two draw the same nothing on the map.
+        @Test
+        void countsACellWhosePlanIsEmptyAsUnplanned() {
+
+            // ARRANGE
+            var expectedTally = "banded=0 traced=0 reused=0 unplanned=1 refusedForRoom=0";
+
+            // ACT
+            layBandIn(
+                RibbonPlan.NONE,
+                new CellRingPathCache(),
+                passScope,
+                bakeTally);
+
+            // ASSERT
+            var actualTally = bakeTally.describeTally();
+
+            assertThat(actualTally)
+                .isEqualTo(expectedTally);
+        }
+
+        @Test
+        void countsACellLaidAlongItsRingAsBanded() {
+
+            // ARRANGE
+            var expectedTally = "banded=1 traced=1 reused=0 unplanned=0 refusedForRoom=0";
+
+            // ACT
+            layBandIn(
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                new CellRingPathCache(),
+                passScope,
+                bakeTally);
+
+            // ASSERT
+            var actualTally = bakeTally.describeTally();
+
+            assertThat(actualTally)
+                .isEqualTo(expectedTally);
+        }
+
+        // Planned, walked, and still bare: the ring held no room for the band, which is the
+        // design's answer rather than the layer's.
+        @Test
+        void countsACellWhoseRingHasNoRoomAsRefused() {
+
+            // ARRANGE
+            var expectedTally = "banded=0 traced=1 reused=0 unplanned=0 refusedForRoom=1";
+
+            // ACT
+            CellRibbonBuilder.layCellRibbon(
+                CELL,
+                CELL_NARROWER_THAN_THE_BAND,
+                CELL_NARROWER_THAN_THE_BAND_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                STYLE,
+                NO_NAMES,
+                new CellRingPathCache(),
+                passScope,
+                bakeTally);
+
+            // ASSERT
+            var actualTally = bakeTally.describeTally();
+
+            assertThat(actualTally)
+                .isEqualTo(expectedTally);
         }
     }
 
@@ -903,7 +979,8 @@ final class CellRibbonBuilderTests {
             ring,
             topAnchor,
             style,
-            new CellRingPathCache());
+            new CellRingPathCache(),
+            new RibbonBakeTally());
 
         return CellRibbonBuilder.buildCellRibbon(
             ringPath,
@@ -918,7 +995,8 @@ final class CellRibbonBuilderTests {
     private static CellRibbon layBandIn(
             RibbonPlan plan,
             CellRingPathCache ringPathCache,
-            IterationScope bakeScope) {
+            IterationScope bakeScope,
+            RibbonBakeTally bakeTally) {
 
         return CellRibbonBuilder.layCellRibbon(
             CELL,
@@ -928,7 +1006,8 @@ final class CellRibbonBuilderTests {
             STYLE,
             NO_NAMES,
             ringPathCache,
-            bakeScope);
+            bakeScope,
+            bakeTally);
     }
 
     // How far right a run's triangles reach. A band on the necked cell's right side stands at

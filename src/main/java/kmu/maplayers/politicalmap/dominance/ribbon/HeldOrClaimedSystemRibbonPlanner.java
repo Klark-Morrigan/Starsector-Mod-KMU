@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.ribbon;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
@@ -8,6 +9,8 @@ import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
+
+import org.apache.log4j.Logger;
 
 /**
  * The planner behind a view whose cells are painted by held dominance and extended by claims:
@@ -25,7 +28,14 @@ import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
  * claim counts a cell here only where dominance paints nothing, which is a fact about how the
  * dominance-painted views extend themselves, not a mechanic of its own.
  */
-public final class HeldOrClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
+public final class HeldOrClaimedSystemRibbonPlanner
+        implements SystemRibbonPlanner {
+
+    // What the debug line calls each mechanic.
+    private static final String CLAIMED_MECHANIC = "claimed";
+    private static final String HELD_MECHANIC = "held";
+
+    private static final Logger LOG = Global.getLogger(HeldOrClaimedSystemRibbonPlanner.class);
 
     private final HeldSystemRibbonSource heldSource;
     private final SystemRibbonPlanner claimedPlanner;
@@ -69,8 +79,24 @@ public final class HeldOrClaimedSystemRibbonPlanner implements SystemRibbonPlann
 
     @Override
     public RibbonPlan planSystemRibbon(StarSystemAPI system) {
-        return heldSource
-            .planHeldSystemRibbon(system)
-            .orElseGet(() -> claimedPlanner.planSystemRibbon(system));
+
+        var heldPlan = heldSource.planHeldSystemRibbon(system);
+
+        logAnsweringMechanic(system, heldPlan.isPresent());
+
+        return heldPlan.orElseGet(() -> claimedPlanner.planSystemRibbon(system));
+    }
+
+    // Which mechanic counted the system. The band follows the fill only while this agrees with the
+    // mechanic that painted the cell, and the map shows the band, not which of the two drew it.
+    //
+    // At debug, since the game's log4j predates the trace level.
+    private static void logAnsweringMechanic(StarSystemAPI system, boolean isHeld) {
+
+        var mechanic = isHeld
+            ? HELD_MECHANIC
+            : CLAIMED_MECHANIC;
+
+        LOG.debug("System band planned; system=" + system.getId() + " mechanic=" + mechanic);
     }
 }

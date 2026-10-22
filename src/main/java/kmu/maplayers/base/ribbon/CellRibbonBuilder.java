@@ -65,6 +65,8 @@ public final class CellRibbonBuilder {
      *                      this cell's ring is walked and written back when it is
      * @param bakeScope     the pass's open scope, whose turn is this cell and on which this cell's
      *                      trace, carve and stroke are marked
+     * @param bakeTally     the bake call's counts, to which this cell is added by what it came back
+     *                      as and whether its ring had to be walked
      * @return the baked band, or {@link CellRibbon#NONE} where the cell draws none
      */
     public static CellRibbon layCellRibbon(
@@ -75,9 +77,12 @@ public final class CellRibbonBuilder {
             RibbonStyle style,
             List<List<double[]>> nameBoxes,
             CellRingPathCache ringPathCache,
-            IterationScope bakeScope) {
+            IterationScope bakeScope,
+            RibbonBakeTally bakeTally) {
 
         if (!plan.hasLength()) {
+
+            bakeTally.countUnplannedCell();
             return CellRibbon.NONE;
         }
 
@@ -86,7 +91,8 @@ public final class CellRibbonBuilder {
             fillPolygon,
             site,
             style,
-            ringPathCache);
+            ringPathCache,
+            bakeTally);
 
         // What the phase covers is the whole reach for the ring rather than the walk alone, so a
         // bake over cells whose rings already stood reports the near-nothing a cache read costs -
@@ -94,12 +100,16 @@ public final class CellRibbonBuilder {
         // rather than a gap in somebody else's.
         bakeScope.markPhase(RibbonBakePhases.TRACE_PHASE);
 
-        return buildCellRibbon(
+        var ribbon = buildCellRibbon(
             ringPath,
             plan,
             style,
             nameBoxes,
             bakeScope);
+
+        bakeTally.countLaidCell(ribbon);
+
+        return ribbon;
     }
 
     /**

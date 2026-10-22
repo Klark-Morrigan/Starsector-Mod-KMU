@@ -63,13 +63,17 @@ public final class CellRibbonRenderer {
             return;
         }
         // Profiled like the other map passes, since this runs every frame the map is open; only
-        // the profiler's accumulated view is affordable here, never a per-frame log line.
-        try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
-            GlPasses.runBlendedPass(
-                GlBlendMode.ALPHA,
-                GlLineQuality.ALIASED,
-                () -> drawBands(ribbons, mapFrame));
-        }
+        // the profiler's accumulated view is affordable here, never a per-frame log line. Opened
+        // inside the GL state push, where every map pass opens its scope, so the rows compare the
+        // draws alone rather than one of them carrying the push.
+        GlPasses.runBlendedPass(
+            GlBlendMode.ALPHA,
+            GlLineQuality.ALIASED,
+            () -> {
+                try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
+                    drawBands(ribbons, mapFrame);
+                }
+            });
     }
 
     // Every run of every band, in the order they were laid around their rings.

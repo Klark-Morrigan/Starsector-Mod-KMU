@@ -7,6 +7,7 @@ import kmlib.colour.ColourPair;
 import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
@@ -153,8 +154,8 @@ final class CellRibbonsBakerTests {
         @Test
         void countsTheCellsItWasAskedToBand() {
             // The number the pass's duration is read against, reported where the profiler sees
-            // it. How many of them came back with a band to draw is on
-            // the call's name instead, being a fact about one call rather than a volume of work.
+            // it. What became of them is on the call's tag instead, being a fact about one call
+            // rather than a volume of work.
             var baker = bakeThrough(buildTwoDrawnCells());
 
             var bakeRow = RecordedCapture
@@ -164,7 +165,32 @@ final class CellRibbonsBakerTests {
             assertThat(bakeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
                 .isEqualTo(2);
             assertThat(bakeRow.getWorstCall().getTag())
-                .isEqualTo("banded=2");
+                .isEqualTo("banded=2 traced=2 reused=0 unplanned=0 refusedForRoom=0");
+        }
+
+        // The kept rings' saving, stated on the call a later bake writes: both cells laid along
+        // the rings the first bake walked, and none walked again.
+        @Test
+        void tagsALaterPassWithTheRingsItFoundStanding() {
+
+            // ARRANGE
+            var clusters = buildTwoDrawnCells();
+            var expectedTag = "banded=2 traced=0 reused=2 unplanned=0 refusedForRoom=0";
+
+            bakeEveryCellThrough(clusters);
+
+            var baker = bakeThrough(clusters);
+
+            // ACT
+            var actualTag = RecordedCapture
+                .recordWhile(baker::bakeAllCellRibbons)
+                .findNode(BAKE_SECTION)
+                .getWorstCall()
+                .getTag();
+
+            // ASSERT
+            assertThat(actualTag)
+                .isEqualTo(expectedTag);
         }
 
         // The wiring this suite exists for. A pass handed a store of its own would bake an
@@ -397,6 +423,50 @@ final class CellRibbonsBakerTests {
 
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class CreateForPass {
+
+        // A band that looks wrong is first read against what it was laid at, so the pass states
+        // every part of its settings once.
+        @Test
+        void statesThePassesSettingsOnItsDebugLine() {
+
+            // ARRANGE
+            var clusters = buildTwoDrawnCells();
+            var expectedLine = "Band bake settings;"
+                + " width=120.0 pad=60.0 alwaysDrawn=false"
+                + " contestedRuns=3/1 uncontestedRuns=3/1"
+                + " keptClearOfNames=true nameClearance=FITTED_BOX pathsShown=false";
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                CellRibbonsBaker.class,
+                () -> bakeThrough(clusters));
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
+        }
+
+        // With the bands off none of the rest is read, so the line says only that.
+        @Test
+        void statesOnlyThatTheBandsAreOffWhileTheyAreSwitchedOff() {
+
+            // ARRANGE
+            var clusters = buildTwoDrawnCells();
+            var expectedLine = "Band bake with the bands switched off; every cell bakes bare";
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                CellRibbonsBaker.class,
+                () -> bakeThrough(clusters, RibbonSettingsFixtures.createSettingsWithBandsOff()));
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
         }
     }
 

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.labels.anchor;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
@@ -13,8 +15,12 @@ import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Drives the cluster-name fit: cuts the cells into clusters by the layer's keys, carries over every
@@ -50,6 +56,8 @@ import java.util.Map;
  * the other side, and this is the only point where both lists exist at once.
  */
 public final class ClusterAnchorsBuilder {
+
+    private static final Logger LOG = Global.getLogger(ClusterAnchorsBuilder.class);
 
     // Every fit writes its line: it runs on a rebuild rather than per frame, and it is the
     // rebuild's largest cost, so a reader following one through the log wants each of them.
@@ -97,6 +105,7 @@ public final class ClusterAnchorsBuilder {
         // survives - the two move together, so there is no window where the list is emptied
         // ahead of the fit that fills it.
         var reusableAnchors = indexReusableAnchors(standingAnchors, fitFingerprint);
+        var reuseVerdict = describeAnchorReuse(standingAnchors.getFitFingerprint(), fitFingerprint);
 
         // Copied for the same reason, and copied rather than held: the caller's list is a live
         // view of the placements this pass is about to replace, so a reference to it would report
@@ -104,6 +113,11 @@ public final class ClusterAnchorsBuilder {
         var standingNames = List.copyOf(standingAnchors.getAnchors());
 
         if (!fitInputs.isFitWanted()) {
+
+            // A pass that fits nothing opens no fit row, so this line is what tells a skipped fit
+            // from one that never ran.
+            LOG.debug("Cluster name fit not wanted; droppedNames=" + standingNames.size());
+
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
 
             return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
@@ -115,7 +129,8 @@ public final class ClusterAnchorsBuilder {
             cellGeometry,
             fitInputs,
             fitFingerprint,
-            reusableAnchors);
+            reusableAnchors,
+            reuseVerdict);
 
         standingAnchors.replaceAnchors(fittedAnchors, fitFingerprint);
 
@@ -131,7 +146,8 @@ public final class ClusterAnchorsBuilder {
             RevisedCellGeometry cellGeometry,
             ClusterAnchorFitInputs fitInputs,
             AnchorFitFingerprint fitFingerprint,
-            Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
+            Map<ClusterIdentity, ClusterAnchor> reusableAnchors,
+            String reuseVerdict) {
 
         try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
 
@@ -146,7 +162,7 @@ public final class ClusterAnchorsBuilder {
                 fitInputs.labelResolversByFace().apply(fitFingerprint.labelFace()),
                 reusableAnchors);
 
-            reportFitCosts(fitScope, spec, partition, fit);
+            reportFitCosts(fitScope, spec, partition, fit, reuseVerdict);
 
             return fit.anchors();
         }
@@ -219,11 +235,15 @@ public final class ClusterAnchorsBuilder {
     // fan crossed with the offsets over every cluster; and the band fits are what those candidates
     // actually spent, many apiece, which is the level the duration tracks. Measured rather than
     // recomputed from the knobs here, so a sweep that bailed out early reads as cheap.
+    //
+    // The carry-over closes the tag, because it is the saving against all of those: how many
+    // clusters skipped the sweep, and whether any were offered the chance at all.
     private static void reportFitCosts(
             ProfileScope fitScope,
             LabelAnchorSpecification spec,
             ClusterPartition partition,
-            ClusterAnchorFit fit) {
+            ClusterAnchorFit fit,
+            String reuseVerdict) {
 
         fitScope.addCount(MapBuildCounters.LABELS, fit.anchors().size());
         fitScope.tagCall("clusters=" + partition.clusterMemberSystemKeys().size()
@@ -233,6 +253,40 @@ public final class ClusterAnchorsBuilder {
             + " offsets=" + spec.search().offsetCount()
             + " candidates=" + fit.candidateCount()
             + " bandFits=" + fit.bandFitCount()
-            + " keepOuts=" + partition.siteBySystemKey().size());
+            + " keepOuts=" + partition.siteBySystemKey().size()
+            + " carried=" + fit.carriedCount()
+            + " " + reuseVerdict);
+    }
+
+    // Whether the standing placements are offered to this fit, and where not, why. A fit that
+    // offers none searches every cluster, so which part of the fingerprint moved says whether the
+    // tuning, the cells or the face cost the rebuild its carry-over.
+    private static String describeAnchorReuse(
+            AnchorFitFingerprint standingFingerprint,
+            AnchorFitFingerprint fitFingerprint) {
+
+        if (standingFingerprint == null) {
+            return "reuse=unrecorded";
+        }
+
+        if (standingFingerprint.equals(fitFingerprint)) {
+            return "reuse=offered";
+        }
+
+        var movedParts = new ArrayList<String>();
+
+        if (!Objects.equals(standingFingerprint.specification(), fitFingerprint.specification())) {
+            movedParts.add("tuning");
+        }
+
+        if (standingFingerprint.geometryRevision() != fitFingerprint.geometryRevision()) {
+            movedParts.add("geometry");
+        }
+
+        if (!Objects.equals(standingFingerprint.labelFace(), fitFingerprint.labelFace())) {
+            movedParts.add("face");
+        }
+
+        return "reuse=dropped moved=" + String.join(",", movedParts);
     }
 }
