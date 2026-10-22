@@ -144,19 +144,23 @@ A layer's whole half is one value,
 [`ClusterAnchorFitInputs`](anchor/ClusterAnchorFitInputs.java):
 the key each system clusters by,
 the face every name is measured in,
-whether the names are drawn,
-whether the anchor overlay is shown,
-and a supplier of its `ClusterLabelResolvers`.
-The fit runs whenever either consumer is on,
-and skips the search entirely when neither is,
+whether a fit is wanted,
+and its `ClusterLabelResolvers` as a function of a face.
+The drive asks only whether to fit,
+so which of a layer's drawings want the placements is the layer's to answer.
+A fit nobody wants skips the search,
 emptying and labelling the list all the same.
-The resolvers arrive as a supplier because resolving them loads the label font,
-which a pass fitting nothing must not pay for.
 
-A debug view that builds no fills enters through `rebuildDiagnosticClusterAnchors`,
-which gates on the overlay alone.
+The resolvers arrive unresolved for two reasons.
+Resolving them loads the label font,
+which a pass fitting nothing must not pay for.
+And the drive hands them the face its fingerprint records,
+so the names are measured in the face the placements are labelled with.
+
 The search's tuning is the one setting the drive reads for itself,
 so every path fits under one reading of it.
+The drive also groups the cells by the keys it was handed,
+since it sits below every layer and has no build to ask.
 
 ## The room a name takes
 

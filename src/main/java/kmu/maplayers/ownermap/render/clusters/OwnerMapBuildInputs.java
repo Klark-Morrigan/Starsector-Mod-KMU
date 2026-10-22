@@ -10,8 +10,8 @@ import kmu.maplayers.ownermap.render.style.MapStyling;
 /**
  * What one build was baked under, retained whole so a cell rebuilt after it is resolved against
  * exactly the inputs the full build used: the paint scheme, the view and the owner reading it was
- * styled by, the sidebar picks it sampled, and the fill state its owner source decided for each
- * system - which owned systems hatch, and which paint no fill.
+ * styled by, the sidebar picks it sampled, whether the anchor overlay was on, and the fill state its
+ * owner source decided for each system - which owned systems hatch, and which paint no fill.
  *
  * <p>Fixed once the build ends, which is what parts it from the {@link SystemOccupancy} beside it:
  * the occupancy is folded per marked system as what stands there comes and goes, while nothing
@@ -25,29 +25,40 @@ import kmu.maplayers.ownermap.render.style.MapStyling;
  * build and a later batch would each keep a memo of their own. What this adds beside the paints is
  * the view and its source, which a batch re-derives through, and the fill states, which come off
  * the owner source rather than off any one of the three samplings.
+ *
+ * <p>The anchor overlay's toggle is held beside the picks because a batch re-fits the names, and the
+ * fit is owed while either the names or the overlay reads the placements. Read live, a batch would
+ * fit or empty the placements for an overlay the standing build was never baked under.
  */
 public final class OwnerMapBuildInputs {
 
     private final SystemFillStates fillStates;
+    private final boolean isAnchorOverlayShown;
     private final MapPaints paints;
     private final ViewReading viewReading;
 
     /**
-     * @param styling       the resolved paint scheme every cell and cluster group is styled from
-     * @param viewReading   the view painted, the owner reading it was styled by, and the source its
-     *                      owners came from, which a batch re-derives a marked system through
-     * @param contentInputs the sidebar picks the build sampled, as its one reading of them
-     * @param fillStates    the state each system fills in: hatched where a spotlit owner is present
-     *                      in a system it does not win, unfilled where an owner holds a system for
-     *                      border and label alone, solid everywhere else
+     * @param styling              the resolved paint scheme every cell and cluster group is styled
+     *                             from
+     * @param viewReading          the view painted, the owner reading it was styled by, and the
+     *                             source its owners came from, which a batch re-derives a marked
+     *                             system through
+     * @param contentInputs        the sidebar picks the build sampled, as its one reading of them
+     * @param isAnchorOverlayShown whether the diagnostic anchor overlay was on, as the rebuild
+     *                             sampled it
+     * @param fillStates           the state each system fills in: hatched where a spotlit owner is
+     *                             present in a system it does not win, unfilled where an owner holds
+     *                             a system for border and label alone, solid everywhere else
      */
     public OwnerMapBuildInputs(
             MapStyling styling,
             ViewReading viewReading,
             ContentInputs contentInputs,
+            boolean isAnchorOverlayShown,
             SystemFillStates fillStates) {
 
         this.fillStates = fillStates;
+        this.isAnchorOverlayShown = isAnchorOverlayShown;
         this.viewReading = viewReading;
 
         paints = new MapPaints(styling, viewReading.reading(), contentInputs);
@@ -58,7 +69,8 @@ public final class OwnerMapBuildInputs {
      * falls back on after a failed first build is built under.
      *
      * <p>Each snapshot's own placeholder, named by the record that owns it, plus no reading, no
-     * source and every system solid. It carries the active view rather than naming a concrete one,
+     * source, no overlay and every system solid. It carries the active view rather than naming a
+     * concrete one,
      * keeping the model view-agnostic. The null reading and source are the honest record of a build
      * that never resolved either, and {@link #wasBuilt()} is what every reader that would reach them
      * asks first.
@@ -72,6 +84,7 @@ public final class OwnerMapBuildInputs {
             MapStyling.createEmpty(),
             new ViewReading(view, null, null),
             ContentInputs.createEmpty(),
+            false,
             SystemFillStates.ALL_SOLID);
     }
 
@@ -98,6 +111,11 @@ public final class OwnerMapBuildInputs {
     /** @return the view painted, with the owner reading and source the build was styled by */
     public ViewReading getViewReading() {
         return viewReading;
+    }
+
+    /** @return whether the diagnostic anchor overlay was on when the build sampled it */
+    public boolean isAnchorOverlayShown() {
+        return isAnchorOverlayShown;
     }
 
     /**

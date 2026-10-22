@@ -298,6 +298,7 @@ public final class OwnerMapClusterFixtures {
                     OwnerReadingFake.createAnsweringNothing(),
                     ownerSource),
                 contentInputs,
+                false, // No anchor overlay.
                 SystemFillStates.ALL_SOLID));
     }
 
@@ -347,6 +348,7 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE), // Presence palette.
                 new ViewReading(view, reading, new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
+                false, // No anchor overlay.
                 SystemFillStates.ALL_SOLID));
     }
 

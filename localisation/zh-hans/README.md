@@ -467,12 +467,12 @@ So a word of one axis never stands in for another:
 | --- | --- | --- |
 | alliance record (one alliance as plain data) | 联盟记录 | 联盟 with 记录, a record |
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
+| anchor overlay (the dev overlay showing each name's fitted line) | 锚点叠加层 | the Dev tab's own wording for it, 锚点, an anchor, with 叠加层 |
 | bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
-| consumer (what a fit is run for: the drawn names, the anchor overlay) | 使用方 | 使用, to use, with 方, a party, as in 读取方 for a reader |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |

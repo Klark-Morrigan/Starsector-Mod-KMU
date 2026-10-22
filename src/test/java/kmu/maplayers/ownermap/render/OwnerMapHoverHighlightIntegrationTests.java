@@ -167,6 +167,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
                     OwnerReadingFake.createAnsweringNothing(),
                     new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
+                false,
                 SystemFillStates.ALL_SOLID));
     }
 

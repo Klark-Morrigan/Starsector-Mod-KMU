@@ -2,6 +2,7 @@ package kmu.maplayers.base.labels.anchor;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.FontAtlas;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.BandFitSpecification;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +47,12 @@ import static org.mockito.Mockito.when;
  * disturb, and it labels and reports every pass it leaves behind.
  *
  * <p>The gate is the rule worth guarding hardest, because both of its halves are silent when
- * wrong. The placements feed the drawn names and the debug anchor overlay, so fitting whenever
- * either is switched on is what keeps them one shared computation - and skipping the fit when
- * neither is on is what keeps a rebuild off the sector's whole cluster geometry while nobody is
- * looking. The gate empties the standing list itself, so switching the names off drops the
- * placements already fitted rather than leaving the last pass's overlay frozen on the map.
+ * wrong. The layer says whether anything it draws reads the placements: fitting when it does is
+ * what keeps its drawings on one shared computation, and skipping the fit when it does not is what
+ * keeps a rebuild off the sector's whole cluster geometry while nobody is looking. The gate empties
+ * the standing list itself, so a layer that stops wanting a fit drops the placements already fitted
+ * rather than leaving the last pass's frozen on the map. Which drawings want a fit is the layer's
+ * vocabulary, pinned beside the layer.
  *
  * <p>What each path leaves labelling its list is pinned alongside, on every path rather than only
  * the fitting one: the drive is the only place the live tuning is read, so a list left behind
@@ -161,8 +164,9 @@ final class ClusterAnchorsBuilderIntegrationTests {
     // and no rules recorded for them, which is what a session's first rebuild starts from.
     private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
 
-    // How many times a fit asked for its resolver pair, so the gate's saving can be read.
-    private int resolvedPairCount;
+    // The face each resolver pair a fit asked for was measured in, in order, so the gate's saving
+    // and the face the names were measured in can both be read.
+    private final List<FontAtlas> resolvedPairFaces = new ArrayList<>();
 
     private MockedStatic<LabelAnchorSpecification> specificationMock;
 
@@ -199,7 +203,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsDrawingNames(PAIR_AND_LONE_KEYS));
+                buildInputsWantingAFit(PAIR_AND_LONE_KEYS));
 
             // Two names, not three: the two touching cells of one key are named once between them,
             // which is what makes a name read as naming a cluster rather than a system.
@@ -216,7 +220,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     standingAnchors,
                     cellGeometry,
-                    buildInputsDrawingNames(PAIR_AND_LONE_KEYS)))
+                    buildInputsWantingAFit(PAIR_AND_LONE_KEYS)))
                 .findNode(FIT_ANCHORS_SECTION);
 
             var actualLabelCount = fitRow.findCount(MapBuildCounters.LABELS).getTotals().getTotal();
@@ -241,7 +245,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     standingAnchors,
                     cellGeometry,
-                    buildInputsDrawingNames(PAIR_AND_LONE_KEYS)))
+                    buildInputsWantingAFit(PAIR_AND_LONE_KEYS)))
                 .findNode(FIT_ANCHORS_SECTION)
                 .getWorstCall()
                 .getTag();
@@ -251,17 +255,23 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .isEqualTo(expectedTag);
         }
 
+        // The row times the sweep, and a gated-off pass runs none: a row opened anyway would read as
+        // a fit that cost nothing, hiding that no fit happened.
         @Test
-        void opensNoFitRowWhenNamesAndTheOverlayAreBothOff() {
-            // The row times the sweep, and a gated-off pass runs none: a row opened anyway would
-            // read as a fit that cost nothing, hiding that no fit happened.
+        void opensNoFitRowWhenNoFitIsWanted() {
+
+            // ARRANGE
+            var fitInputs = buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH));
+
+            // ACT
             var actualHasFitRow = RecordedCapture
                 .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     standingAnchors,
                     cellGeometry,
-                    buildInputsFittingNothing(Map.of(PAIRED_SYSTEM, NORTH))))
+                    fitInputs))
                 .hasNode(FIT_ANCHORS_SECTION);
 
+            // ASSERT
             assertThat(actualHasFitRow)
                 .isFalse();
         }
@@ -272,7 +282,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsDrawingNames(PAIR_AND_LONE_KEYS));
+                buildInputsWantingAFit(PAIR_AND_LONE_KEYS));
 
             // The clusters come back in first-seen cell order, so the fused pair leads and the lone
             // cell follows - each carrying the shade the layer's resolver gave its own key.
@@ -282,44 +292,65 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .isEqualTo(Color.CYAN);
         }
 
+        // Nothing the layer draws reads the placements, so the sector's whole cluster search is
+        // skipped rather than run for placements nothing will draw.
         @Test
-        void fitsNamesForTheOverlayWhenNamesAreOff() {
-            // The debug anchor overlay draws the same placements the names hang off, so it has to
-            // be able to hold the search open on its own - otherwise the diagnostic shows nothing
-            // exactly when the player turned the names off to look at it.
+        void fitsNothingWhenNoFitIsWanted() {
+
+            // ARRANGE
+            var fitInputs = buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH));
+
+            // ACT
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputs(Map.of(PAIRED_SYSTEM, NORTH), false, true));
+                fitInputs);
 
-            assertThat(standingAnchors.getAnchors())
-                .hasSize(1);
-        }
+            var actualAnchors = standingAnchors.getAnchors();
 
-        @Test
-        void fitsNothingWhenNamesAndTheOverlayAreBothOff() {
-            // Neither consumer is looking, so the sector's whole cluster search is skipped rather
-            // than run for placements nothing will draw.
-            ClusterAnchorsBuilder.rebuildClusterAnchors(
-                standingAnchors,
-                cellGeometry,
-                buildInputsFittingNothing(Map.of(PAIRED_SYSTEM, NORTH)));
-
-            assertThat(standingAnchors.getAnchors())
+            // ASSERT
+            assertThat(actualAnchors)
                 .isEmpty();
         }
 
+        // Resolving the pair loads the label font and opens a memo per key, so a pass that fits
+        // nothing must not ask for it at all.
         @Test
-        void resolvesNoNamesWhenNamesAndTheOverlayAreBothOff() {
-            // Resolving the pair loads the label font and opens a memo per key, so a pass that fits
-            // nothing must not ask for it at all.
+        void resolvesNoNamesWhenNoFitIsWanted() {
+
+            // ARRANGE
+            var fitInputs = buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH));
+
+            // ACT
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsFittingNothing(Map.of(PAIRED_SYSTEM, NORTH)));
+                fitInputs);
 
-            assertThat(resolvedPairCount)
-                .isEqualTo(0);
+            // ASSERT
+            assertThat(resolvedPairFaces)
+                .isEmpty();
+        }
+
+        // The names are measured in the face the fingerprint records, which the drive hands the
+        // layer's resolvers itself. A layer measuring in a face of its own would label placements
+        // with a face no name was measured in, and the carry-over would trust them.
+        @Test
+        void measuresTheNamesInTheFaceItRecords() {
+
+            // ARRANGE
+            var fitInputs = buildInputsWantingAFit(Map.of(PAIRED_SYSTEM, NORTH));
+            var expectedFaces = List.of(StarsectorFont.VANILLA_INSIGNIA_25);
+
+            // ACT
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
+                cellGeometry,
+                fitInputs);
+
+            // ASSERT
+            assertThat(resolvedPairFaces)
+                .isEqualTo(expectedFaces);
         }
 
         @Test
@@ -332,7 +363,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsFittingNothing(Map.of(PAIRED_SYSTEM, NORTH)));
+                buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -345,7 +376,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsDrawingNames(Map.of(PAIRED_SYSTEM, NORTH)));
+                buildInputsWantingAFit(Map.of(PAIRED_SYSTEM, NORTH)));
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -357,7 +388,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             // pair, the drive must hand the placements themselves on rather than searching the same
             // clusters again - the accepted line being the very object the first pass produced is
             // what says so.
-            var fitInputs = buildInputsDrawingNames(PAIR_AND_LONE_KEYS);
+            var fitInputs = buildInputsWantingAFit(PAIR_AND_LONE_KEYS);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
 
@@ -382,7 +413,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsDrawingNames(PAIR_AND_LONE_KEYS));
+                buildInputsWantingAFit(PAIR_AND_LONE_KEYS));
 
             var pairAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
             var loneAxis = standingAnchors.getAnchors().get(1).acceptedAxis();
@@ -394,7 +425,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             var disturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsDrawingNames(Map.of(
+                buildInputsWantingAFit(Map.of(
                     PAIRED_SYSTEM, NORTH,
                     PAIR_NEIGHBOUR_SYSTEM, NORTH,
                     LONE_SYSTEM, WEST)));
@@ -414,7 +445,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             // The keep-out sites every box is trimmed clear of are the whole sector's, so a recut of
             // the cells moves fits no membership change would touch - and no cluster's identity can
             // see that. The fingerprint catches it and drops the whole carry-over.
-            var fitInputs = buildInputsDrawingNames(PAIR_AND_LONE_KEYS);
+            var fitInputs = buildInputsWantingAFit(PAIR_AND_LONE_KEYS);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
 
@@ -439,7 +470,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildInputsFittingNothing(Map.of(PAIRED_SYSTEM, NORTH)));
+                buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -452,7 +483,7 @@ final class ClusterAnchorsBuilderIntegrationTests {
             // The rebuild that changes nothing, which is most of them: every cluster still names the
             // same members and keeps the placement it had, so anything laid around those names may
             // stand.
-            var fitInputs = buildInputsDrawingNames(PAIR_AND_LONE_KEYS);
+            var fitInputs = buildInputsWantingAFit(PAIR_AND_LONE_KEYS);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
 
@@ -480,125 +511,37 @@ final class ClusterAnchorsBuilderIntegrationTests {
                     .rebuildClusterAnchors(
                         standingAnchors,
                         cellGeometry,
-                        buildInputsFittingNothing(Map.of(PAIRED_SYSTEM, NORTH)))
+                        buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH)))
                     .isDisturbingNothing())
                 .isFalse();
         }
     }
 
-    @Nested
-    class RebuildDiagnosticClusterAnchors {
-
-        @Test
-        void fitsNamesToTheHandedKeys() {
-            // A debug view builds no draw lists, so this path is handed the keys that view traced,
-            // and the names key off the same answer its borders were drawn from.
-            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
-                standingAnchors,
-                cellGeometry,
-                buildInputs(PAIR_AND_LONE_KEYS, true, true));
-
-            assertThat(standingAnchors.getAnchors())
-                .hasSize(2);
-            assertThat(standingAnchors.getAnchors().get(0).colour())
-                .isEqualTo(Color.RED);
-        }
-
-        @Test
-        void fitsNamesThoughTheNamesAreNotDrawn() {
-            // This path exists for the overlay, so whether the names draw has no say over it: the
-            // diagnostic still draws its dots for a player reading the map by colour alone.
-            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
-                standingAnchors,
-                cellGeometry,
-                buildInputs(Map.of(PAIRED_SYSTEM, NORTH), false, true));
-
-            assertThat(standingAnchors.getAnchors())
-                .hasSize(1);
-        }
-
-        @Test
-        void recordsWhatItFittedUnder() {
-            // This path delegates the fit, so it must hand its own caller's pair down rather than
-            // fitting into something of its own.
-            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
-                standingAnchors,
-                cellGeometry,
-                buildInputs(Map.of(PAIRED_SYSTEM, NORTH), false, true));
-
-            assertThat(standingAnchors.getFitFingerprint())
-                .isEqualTo(FITTED_UNDER);
-        }
-
-        @Test
-        void carriesStandingPlacementsThroughToTheSharedFit() {
-            // Dropping the standing half on the way down would leave the diagnostic view
-            // re-searching every cluster on every rebuild while the production view reuses - a
-            // difference nothing but the frame time would show.
-            var fitInputs = buildInputs(PAIR_AND_LONE_KEYS, false, true);
-
-            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(standingAnchors, cellGeometry, fitInputs);
-
-            var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
-
-            // Guarded, because two collapsed passes would both carry a null line and the assertion
-            // below would hold without anything having been carried.
-            assertThat(firstPassAxis)
-                .isNotNull();
-
-            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(standingAnchors, cellGeometry, fitInputs);
-
-            assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
-                .isSameAs(firstPassAxis);
-        }
-
-        @Test
-        void skipsTheFitWhileTheOverlayIsOff() {
-            // The fit is the cost here, so the overlay's toggle gates it and not just the drawing -
-            // even with the names on. The standing names still go, as on every other path, and the
-            // list is still labelled.
-            standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
-
-            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
-                standingAnchors,
-                cellGeometry,
-                buildInputsDrawingNames(Map.of(PAIRED_SYSTEM, NORTH)));
-
-            assertThat(standingAnchors.getAnchors())
-                .isEmpty();
-            assertThat(standingAnchors.getFitFingerprint())
-                .isEqualTo(FITTED_UNDER);
-            assertThat(resolvedPairCount)
-                .isEqualTo(0);
-        }
+    // The layer's half of a fit it wants, the reading most cases are about.
+    private ClusterAnchorFitInputs buildInputsWantingAFit(Map<String, String> keyBySystemId) {
+        return buildInputs(keyBySystemId, true);
     }
 
-    // The layer's half of a fit with the names drawn and the overlay off, the reading most cases
-    // are about.
-    private ClusterAnchorFitInputs buildInputsDrawingNames(Map<String, String> keyBySystemId) {
-        return buildInputs(keyBySystemId, true, false);
-    }
-
-    // The layer's half of a fit with neither consumer asking for one.
-    private ClusterAnchorFitInputs buildInputsFittingNothing(Map<String, String> keyBySystemId) {
-        return buildInputs(keyBySystemId, false, false);
+    // The layer's half of a fit nothing it draws asks for.
+    private ClusterAnchorFitInputs buildInputsWantingNoFit(Map<String, String> keyBySystemId) {
+        return buildInputs(keyBySystemId, false);
     }
 
     // The layer's half of a fit over the given keys, with a resolver pair shading each key by its
-    // own colour and measuring every name at one plausible proportion. The pair counts how often it
-    // is asked for, so the gate's saving can be read.
+    // own colour and measuring every name at one plausible proportion. The pair records the face it
+    // is asked for in, so the gate's saving and the face the names were measured in can be read.
     private ClusterAnchorFitInputs buildInputs(
             Map<String, String> keyBySystemId,
-            boolean areNamesDrawn,
-            boolean isAnchorOverlayShown) {
+            boolean isFitWanted) {
 
         return new ClusterAnchorFitInputs(
             buildKeyedValues(keyBySystemId),
             SETTLED_LABEL_FACE,
-            areNamesDrawn,
-            isAnchorOverlayShown,
-            () -> {
-                resolvedPairCount++;
+            isFitWanted,
+            fitFace -> {
+
+                resolvedPairFaces.add(fitFace);
+
                 return new ClusterLabelResolvers(
                     COLOUR_BY_KEY::get,
                     key -> new AspectLabelLengthEstimator(NAME_ASPECT));

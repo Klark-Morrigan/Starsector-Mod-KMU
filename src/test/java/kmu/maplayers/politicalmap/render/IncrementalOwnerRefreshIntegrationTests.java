@@ -492,6 +492,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 cellsMock,
                 viewReading,
                 contentInputs,
+                false,
                 OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs),
                 MapStyling.readFromLunaSettings(
                     viewReading.view().resolveCategories(),

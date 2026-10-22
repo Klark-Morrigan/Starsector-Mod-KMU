@@ -524,9 +524,13 @@ final class ClusterLabelStylingTests {
         private static final ColourPair DESATURATION_PALETTE =
             new ColourPair(Color.GREEN, Color.YELLOW);
 
-        // A settled face rather than the face labels ask for, so a pair measuring in the asked-for
-        // face cannot pass.
+        // The face the fit hands over, a settled one rather than the face labels ask for, so a pair
+        // measuring in the asked-for face cannot pass.
         private static final StarsectorFont SETTLED_LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_25;
+
+        // The face the snapshot itself carries, kept apart from the one the fit hands over, so a pair
+        // measuring in the snapshot's own face cannot pass.
+        private static final StarsectorFont SNAPSHOT_LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_42;
 
         private final OwnerCategories categoriesMock = mock(OwnerCategories.class);
 
@@ -566,8 +570,9 @@ final class ClusterLabelStylingTests {
         void shadesEachOwnerByItsOwnPalette() {
             // The pair is the owner tier's whole answer to a name, so it must key off the owner the
             // fit asks about rather than one shared pick.
-            var resolvers = ClusterLabelStyling.createLabelResolvers(buildSnapshot(
-                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL)));
+            var resolvers = ClusterLabelStyling.createLabelResolvers(
+                buildSnapshot(ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL)),
+                SETTLED_LABEL_FACE);
 
             assertThat(resolvers.labelColourByOwner().apply("F"))
                 .isEqualTo(PRIMARY);
@@ -580,28 +585,36 @@ final class ClusterLabelStylingTests {
             // Under a filter every owner but the spotlit one recedes, and its name has to recede with
             // its fill: the shared palette this pass recoloured that fill to is the one the name
             // draws in, so the two cannot drift apart while a spotlight is up.
-            var resolvers = ClusterLabelStyling.createLabelResolvers(buildSnapshot(new ContentInputs(
-                "F",
-                new ElementStyleAdjustment(FULL_OPACITY, true),
-                ElementStyleAdjustment.NONE,
-                OwnerNameFormatChoice.FULL,
-                false)));
+            var resolvers = ClusterLabelStyling.createLabelResolvers(
+                buildSnapshot(new ContentInputs(
+                    "F",
+                    new ElementStyleAdjustment(FULL_OPACITY, true),
+                    ElementStyleAdjustment.NONE,
+                    OwnerNameFormatChoice.FULL,
+                    false)),
+                SETTLED_LABEL_FACE);
 
             assertThat(resolvers.labelColourByOwner().apply("G"))
                 .isEqualTo(Color.GREEN);
         }
 
+        // The face the boxes are sized to is the one the fit records and the mint draws in;
+        // measuring in any other, the snapshot's own included, would size the boxes for glyphs
+        // nothing draws.
         @Test
-        void measuresTheNamesInTheFaceTheSnapshotSettled() {
-            // The face the boxes are sized to is the one the mint draws in; measuring in any other
-            // would size the boxes for glyphs nothing draws.
+        void measuresTheNamesInTheFaceItIsHanded() {
+
+            // ARRANGE
+            var snapshot = buildSnapshot(ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL));
+
+            // ACT
             ClusterLabelStyling
-                .createLabelResolvers(buildSnapshot(
-                    ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL)))
+                .createLabelResolvers(snapshot, SETTLED_LABEL_FACE)
                 .nameEstimatorByOwner()
                 .apply("F");
 
-            fontsMock.verify(() -> LazyFontCache.loadByFace(SETTLED_LABEL_FACE));
+            // ASSERT
+            fontsMock.verify(() -> LazyFontCache.loadByFace(StarsectorFont.VANILLA_INSIGNIA_25));
         }
 
         // A snapshot over the two owners, under the given picks, desaturating a receded owner to the
@@ -620,7 +633,8 @@ final class ClusterLabelStylingTests {
                         UNUSED_PALETTE),
                     OwnerReadingFake.createAnsweringNothing(),
                     contentInputs),
-                SETTLED_LABEL_FACE);
+                SNAPSHOT_LABEL_FACE,
+                true);
         }
     }
 }

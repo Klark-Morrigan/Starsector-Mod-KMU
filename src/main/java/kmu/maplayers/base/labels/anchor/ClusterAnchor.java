@@ -13,9 +13,8 @@ import java.util.Map;
  * input the cluster-name renderer draws from - {@code nameLines}, {@code fontHeight},
  * {@code (anchorX, anchorY)}, {@code colour}, and {@code acceptedAxis}'s slant - and the
  * debug marker the "show cluster anchors" overlay draws as a dot plus up to three
- * lines. The placement search runs whenever either the names or the anchor overlay is
- * on, so the two consumers share one computation; each then draws only under its own
- * toggle.
+ * lines. The placement search runs once whenever the layer wants either of them, so the two
+ * consumers share one computation; each then draws only under its own toggle.
  *
  * <p>{@code identity} names the cluster the fit was made for - the owner its name and shade
  * were resolved from, and the exact members whose cells the search ran inside. It rides on

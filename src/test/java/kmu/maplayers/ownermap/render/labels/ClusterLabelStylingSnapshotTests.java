@@ -21,13 +21,9 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
-import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.Map;
@@ -45,6 +41,10 @@ import static org.mockito.Mockito.mockStatic;
  * read is pinned by identity checks against the clusters' own retained state rather than by value
  * comparisons: a snapshot that copied or re-derived any of them could drift from the fills it must
  * match. What the snapshot then hands the fit drive is pinned last.
+ *
+ * <p>Whether a fit is wanted is the one answer the two paths give differently, so each path's
+ * answer is pinned under every reading of the names and the overlay that tells it apart. Both are
+ * the rebuild's own samplings, so no case here stubs a setting.
  */
 final class ClusterLabelStylingSnapshotTests {
 
@@ -146,6 +146,71 @@ final class ClusterLabelStylingSnapshotTests {
             assertThat(styling.labelFace())
                 .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_25);
         }
+
+        // The names hang off the placements, so drawing them is reason enough to fit.
+        @Test
+        void wantsAFitWhileTheBuildDrawsNames() {
+
+            // ARRANGE
+            var clusters = buildClusters(
+                Map.of(),
+                buildViewReading(),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                false);
+
+            // ACT
+            var actualIsFitWanted = ClusterLabelStylingSnapshot
+                .resolveFrom(clusters, LABEL_FACE)
+                .isFitWanted();
+
+            // ASSERT
+            assertThat(actualIsFitWanted)
+                .isTrue();
+        }
+
+        // The anchor overlay draws the same placements the names hang off, so it has to be able to
+        // hold the fit open on its own. Otherwise the diagnostic shows nothing exactly when the
+        // player turned the names off to look at it.
+        @Test
+        void wantsAFitForTheOverlayWhileTheBuildDrawsNoNames() {
+
+            // ARRANGE
+            var clusters = buildClusters(
+                Map.of(),
+                buildViewReading(),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.NONE),
+                true);
+
+            // ACT
+            var actualIsFitWanted = ClusterLabelStylingSnapshot
+                .resolveFrom(clusters, LABEL_FACE)
+                .isFitWanted();
+
+            // ASSERT
+            assertThat(actualIsFitWanted)
+                .isTrue();
+        }
+
+        // Nothing drawn reads the placements, so the sector's whole cluster search is skipped.
+        @Test
+        void wantsNoFitWhileTheBuildDrawsNeitherNamesNorTheOverlay() {
+
+            // ARRANGE
+            var clusters = buildClusters(
+                Map.of(),
+                buildViewReading(),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.NONE),
+                false);
+
+            // ACT
+            var actualIsFitWanted = ClusterLabelStylingSnapshot
+                .resolveFrom(clusters, LABEL_FACE)
+                .isFitWanted();
+
+            // ASSERT
+            assertThat(actualIsFitWanted)
+                .isFalse();
+        }
     }
 
     @Nested
@@ -168,6 +233,7 @@ final class ClusterLabelStylingSnapshotTests {
                 mapStyling,
                 reading,
                 ContentInputs.createEmpty(),
+                false,
                 LABEL_FACE);
 
             assertThat(styling.ownerBySystemKey())
@@ -192,6 +258,7 @@ final class ClusterLabelStylingSnapshotTests {
                 buildStyling(),
                 OwnerReadingFake.createAnsweringNothing(),
                 spotlightPicks,
+                false,
                 LABEL_FACE);
 
             assertThat(styling.paints().getContentInputs().isFiltering())
@@ -199,32 +266,48 @@ final class ClusterLabelStylingSnapshotTests {
             assertThat(styling.paints().getContentInputs().nameFormat())
                 .isEqualTo(spotlightPicks.nameFormat());
         }
+
+        // The view is a look at the anchors, so the overlay holds the fit open whatever the names do:
+        // its dots still show for a player reading the map by colour alone.
+        @Test
+        void wantsAFitWhileTheOverlayIsShownThoughNoNamesAreDrawn() {
+
+            // ARRANGE
+            var contentInputs = ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.NONE);
+
+            // ACT
+            var actualIsFitWanted = buildTracedSnapshot(contentInputs, true).isFitWanted();
+
+            // ASSERT
+            assertThat(actualIsFitWanted)
+                .isTrue();
+        }
+
+        // The fit is the cost here, so the overlay gates it and not just the drawing, even with the
+        // names on: the view fits nothing while nobody is looking at the anchors.
+        @Test
+        void wantsNoFitWhileTheOverlayIsOffThoughNamesAreDrawn() {
+
+            // ARRANGE
+            var contentInputs = ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL);
+
+            // ACT
+            var actualIsFitWanted = buildTracedSnapshot(contentInputs, false).isFitWanted();
+
+            // ASSERT
+            assertThat(actualIsFitWanted)
+                .isFalse();
+        }
     }
 
     @Nested
     class CreateFitInputs {
 
-        private MockedStatic<KmuOwnerMapDiagnosticsSettings> settingsMock;
-
-        @BeforeEach
-        void openTheSettingsSeam() {
-
-            settingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
-            settingsMock
-                .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
-                .thenReturn(false);
-        }
-
-        @AfterEach
-        void closeTheSettingsSeam() {
-            settingsMock.close();
-        }
-
         @Test
         void cutsTheClustersByOwnerId() {
             // The fit clusters cells by the key it is handed, so the owner tier hands it the owner
             // ID its fills fuse by, and the names trace as the fills do.
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
 
             assertThat(fitInputs.ownerKeyBySystemKey())
                 .isEqualTo(Map.of(buildCellKey("corvus"), SPOTLIT_OWNER_ID));
@@ -250,47 +333,63 @@ final class ClusterLabelStylingSnapshotTests {
                 .isEqualTo(expectedOwnerKeys);
         }
 
+        // A pass that wants no fit fits nothing, so handing over the inputs must not reach the label
+        // font: the resolvers arriving as a function is what defers it.
         @Test
         void loadsNoFontUntilTheResolversAreAsked() {
-            // A pass whose two consumers are both off fits nothing, so handing over the inputs must
-            // not reach the label font: the supplier is what defers it.
+
+            // ARRANGE
+            var snapshot = buildTracedSnapshot(ContentInputs.createEmpty(), false);
+
             try (var fontsMock = mockStatic(LazyFontCache.class)) {
 
-                buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+                // ACT
+                snapshot.createFitInputs();
 
+                // ASSERT
                 fontsMock.verifyNoInteractions();
             }
         }
 
+        // The names are measured in the face the fit hands over, not the snapshot's own: the fit
+        // records that face beside its placements, so measuring in another would label them falsely.
         @Test
-        void loadsTheSnapshotsFaceOnceTheResolversAreAsked() {
+        void loadsTheFaceTheFitHandsOverOnceTheResolversAreAsked() {
+
+            // ARRANGE
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
 
             try (var fontsMock = mockStatic(LazyFontCache.class)) {
 
-                buildTracedSnapshot(ContentInputs.createEmpty())
-                    .createFitInputs()
-                    .labelResolversSource()
-                    .get();
+                // ACT
+                fitInputs
+                    .labelResolversByFace()
+                    .apply(StarsectorFont.VANILLA_INSIGNIA_25);
 
-                fontsMock.verify(() -> LazyFontCache.loadByFace(LABEL_FACE));
+                // ASSERT
+                fontsMock.verify(() -> LazyFontCache.loadByFace(StarsectorFont.VANILLA_INSIGNIA_25));
             }
         }
 
+        // The resolvers are this snapshot's, so a name shades in the palette its owner was painted
+        // in rather than one the fit drive could look up for itself.
         @Test
         void shadesEachOwnerByTheSnapshotsOwnPaints() {
-            // The resolvers are this snapshot's, so a name shades in the palette its owner was
-            // painted in rather than one the fit drive could look up for itself.
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+
+            // ARRANGE
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
             var expectedColour = Color.BLUE;
 
             try (var fontsMock = mockStatic(LazyFontCache.class)) {
 
+                // ACT
                 var actualColour = fitInputs
-                    .labelResolversSource()
-                    .get()
+                    .labelResolversByFace()
+                    .apply(LABEL_FACE)
                     .labelColourByOwner()
                     .apply(SPOTLIT_OWNER_ID);
 
+                // ASSERT
                 assertThat(actualColour)
                     .isEqualTo(expectedColour);
             }
@@ -299,65 +398,62 @@ final class ClusterLabelStylingSnapshotTests {
         @Test
         void carriesTheFaceTheSnapshotSettled() {
 
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
+            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
 
             assertThat(fitInputs.labelFace())
                 .isEqualTo(LABEL_FACE);
         }
 
+        // The demand is the snapshot's, answered by the path that made it; handing it over is all
+        // this does, so a snapshot that wants a fit hands over a fit wanted.
         @Test
-        void drawsNamesWhereThePicksSpellThem() {
+        void wantsAFitWhereTheSnapshotDoes() {
 
-            var fitInputs = buildTracedSnapshot(
-                    ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL))
-                .createFitInputs();
+            // ARRANGE
+            var snapshot = buildTracedSnapshot(ContentInputs.createEmpty(), true);
 
-            assertThat(fitInputs.areNamesDrawn())
+            // ACT
+            var actualIsFitWanted = snapshot.createFitInputs().isFitWanted();
+
+            // ASSERT
+            assertThat(actualIsFitWanted)
                 .isTrue();
         }
 
+        // The other half of the case above, so a demand handed over as a constant cannot pass both.
         @Test
-        void drawsNoNamesWhereThePicksSpellNone() {
+        void wantsNoFitWhereTheSnapshotDoesNot() {
 
-            var fitInputs = buildTracedSnapshot(
-                    ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.NONE))
-                .createFitInputs();
+            // ARRANGE
+            var snapshot = buildTracedSnapshot(ContentInputs.createEmpty(), false);
 
-            assertThat(fitInputs.areNamesDrawn())
+            // ACT
+            var actualIsFitWanted = snapshot.createFitInputs().isFitWanted();
+
+            // ASSERT
+            assertThat(actualIsFitWanted)
                 .isFalse();
         }
+    }
 
-        @Test
-        void showsTheAnchorOverlayWhereThePlayerHasItOn() {
-            // Read here, the one point every path asks for its inputs, so every path gates alike.
-            settingsMock
-                .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
-                .thenReturn(true);
+    // A built map whose build sampled the anchor overlay off, for the cases about anything else.
+    private static OwnerMapClusters buildClusters(
+            Map<SystemKey, SystemOwner> ownerBySystemKey,
+            ViewReading viewReading,
+            ContentInputs contentInputs) {
 
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty()).createFitInputs();
-
-            assertThat(fitInputs.isAnchorOverlayShown())
-                .isTrue();
-        }
-
-        // A snapshot over one owned system under the given picks, with a scheme no case reads into.
-        private ClusterLabelStylingSnapshot buildTracedSnapshot(ContentInputs contentInputs) {
-
-            return ClusterLabelStylingSnapshot.resolveForTracing(
-                Map.of(
-                    buildCellKey("corvus"),
-                    new SystemOwner(SPOTLIT_OWNER_ID, new ColourPair(Color.BLUE, Color.DARK_GRAY))),
-                buildStyling(),
-                OwnerReadingFake.createAnsweringNothing(),
-                contentInputs,
-                LABEL_FACE);
-        }
+        return buildClusters(
+            ownerBySystemKey,
+            viewReading,
+            contentInputs,
+            false);
     }
 
     private static OwnerMapClusters buildClusters(
             Map<SystemKey, SystemOwner> ownerBySystemKey,
             ViewReading viewReading,
-            ContentInputs contentInputs) {
+            ContentInputs contentInputs,
+            boolean isAnchorOverlayShown) {
 
         return new OwnerMapClusters(
             SystemOccupancy.createCopyOf(ownerBySystemKey, Set.of(), Set.of()),
@@ -365,7 +461,25 @@ final class ClusterLabelStylingSnapshotTests {
                 buildStyling(),
                 viewReading,
                 contentInputs,
+                isAnchorOverlayShown,
                 SystemFillStates.ALL_SOLID));
+    }
+
+    // A tracing snapshot over one owned system under the given picks and overlay, with a scheme no
+    // case reads into.
+    private static ClusterLabelStylingSnapshot buildTracedSnapshot(
+            ContentInputs contentInputs,
+            boolean isAnchorOverlayShown) {
+
+        return ClusterLabelStylingSnapshot.resolveForTracing(
+            Map.of(
+                buildCellKey("corvus"),
+                new SystemOwner(SPOTLIT_OWNER_ID, new ColourPair(Color.BLUE, Color.DARK_GRAY))),
+            buildStyling(),
+            OwnerReadingFake.createAnsweringNothing(),
+            contentInputs,
+            isAnchorOverlayShown,
+            LABEL_FACE);
     }
 
     // A scheme no case reads into: the snapshot carries it whole, so only its identity matters.

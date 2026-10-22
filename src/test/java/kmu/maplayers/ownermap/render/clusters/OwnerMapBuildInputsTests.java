@@ -83,14 +83,35 @@ final class OwnerMapBuildInputsTests {
             assertThat(inputs.getFillStates())
                 .isSameAs(SystemFillStates.ALL_SOLID);
         }
+
+        // A build that never ran sampled no overlay, and a fold is never let into the placeholder,
+        // so the inert answer is the overlay off.
+        @Test
+        void showsNoAnchorOverlay() {
+
+            // ARRANGE
+            var viewMock = mock(OwnerPaintedView.class);
+
+            // ACT
+            var actualIsAnchorOverlayShown = OwnerMapBuildInputs
+                .createEmpty(viewMock)
+                .isAnchorOverlayShown();
+
+            // ASSERT
+            assertThat(actualIsAnchorOverlayShown)
+                .isFalse();
+        }
     }
 
     @Nested
     class Accessors {
 
+        // The overlay is handed in on, so the getter is told from a constant answering false by
+        // the placeholder's case above.
         @Test
         void returnEachConstructorInputInItsMatchingSlot() {
 
+            // ARRANGE
             var styling = MapStyling.createEmpty();
             var viewReading = new ViewReading(
                 mock(OwnerPaintedView.class),
@@ -98,12 +119,16 @@ final class OwnerMapBuildInputsTests {
                 new OwnerSourceFake());
 
             var contentInputs = ContentInputsFixtures.createInertInputs();
+
+            // ACT
             var inputs = new OwnerMapBuildInputs(
                 styling,
                 viewReading,
                 contentInputs,
+                true,
                 FILL_STATES);
 
+            // ASSERT
             // By identity throughout: the scheme and the picks are read back through the paints
             // the inputs hold, and must be the very ones handed in.
             assertThat(inputs.getStyling())
@@ -112,6 +137,8 @@ final class OwnerMapBuildInputsTests {
                 .isSameAs(viewReading);
             assertThat(inputs.getContentInputs())
                 .isSameAs(contentInputs);
+            assertThat(inputs.isAnchorOverlayShown())
+                .isTrue();
             assertThat(inputs.getFillStates())
                 .isSameAs(FILL_STATES);
         }
@@ -197,6 +224,7 @@ final class OwnerMapBuildInputsTests {
                 OwnerMapClusterFixtures.NEUTRAL_PALETTE),
             new ViewReading(mock(OwnerPaintedView.class), reading, new OwnerSourceFake()),
             contentInputs,
+            false,
             SystemFillStates.ALL_SOLID);
     }
 }

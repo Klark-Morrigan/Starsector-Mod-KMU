@@ -62,7 +62,12 @@ final class ClusterLabelStyling {
     // is the very one the fills were painted from, remembered per owner by the paints: under a
     // filter it recedes every non-spotlit owner and leaves the spotlit one full, so a receded name
     // matches its receded fill and a spotlit name stays full, the drift a filter opens.
-    static ClusterLabelResolvers createLabelResolvers(ClusterLabelStylingSnapshot labelStyling) {
+    //
+    // The names are measured in the face the fit hands over rather than the snapshot's own: that is
+    // the face the fit records beside its placements, so the measurement and the record cannot part.
+    static ClusterLabelResolvers createLabelResolvers(
+            ClusterLabelStylingSnapshot labelStyling,
+            FontAtlas labelFace) {
 
         var paints = labelStyling.paints();
         var styling = paints.getStyling();
@@ -76,7 +81,7 @@ final class ClusterLabelStyling {
             newNameEstimatorResolver(
                 paints.getReading(),
                 paints.getContentInputs(),
-                labelStyling.labelFace()));
+                labelFace));
     }
 
     // The colour a cluster's name (and its debug dot) draws in: the colour choice of the name

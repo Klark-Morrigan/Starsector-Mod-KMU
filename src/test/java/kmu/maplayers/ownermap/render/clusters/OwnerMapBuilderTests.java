@@ -223,6 +223,24 @@ final class OwnerMapBuilderTests {
                 .isSameAs(STYLING);
         }
 
+        // A batch folding into the build later fits its names under what the build was baked under,
+        // so the overlay the rebuild sampled has to ride onto the build's inputs.
+        @Test
+        void retainsTheSampledAnchorOverlay() {
+
+            // ARRANGE
+            var viewReading = buildReadingOver(new OwnerSourceFake());
+
+            // ACT
+            var actualIsAnchorOverlayShown = buildClustersOver(viewReading, ResolvedOwners.createEmpty())
+                .getBuildInputs()
+                .isAnchorOverlayShown();
+
+            // ASSERT
+            assertThat(actualIsAnchorOverlayShown)
+                .isTrue();
+        }
+
         @Test
         void countsTheCellsItShaped() {
             // The number the shaping stage's duration is read against. Nothing is shaped over an
@@ -240,14 +258,16 @@ final class OwnerMapBuilderTests {
                 .isEqualTo("styled=0 owners=0");
         }
 
-        // A build over no geometry under the shared picks and styling, differing per case in the
-        // reading and the owners alone.
+        // A build over no geometry under the shared picks, overlay and styling, differing per case in
+        // the reading and the owners alone. The overlay is sampled on, so a build dropping it reads
+        // as the placeholder's off.
         private static OwnerMapClusters buildClustersOver(ViewReading viewReading, ResolvedOwners owners) {
 
             return OwnerMapBuilder.buildClusters(
                 new CellGeometryCache(),
                 viewReading,
                 UNFILTERED_INPUTS,
+                true,
                 owners,
                 STYLING);
         }

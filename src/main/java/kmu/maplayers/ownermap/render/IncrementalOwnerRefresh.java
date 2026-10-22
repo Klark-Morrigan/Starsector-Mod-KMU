@@ -225,13 +225,13 @@ public final class IncrementalOwnerRefresh {
         // costs is settled by the matching inside the rebuild, not here: a cluster the flip
         // re-partitioned no longer matches any standing placement and is searched again,
         // while every cluster it left alone is carried over - which is why naming the
-        // affected owners would buy nothing this does not already get. A no-op while both
-        // consumers are off. The name labels then rebuild from the placements so a renamed or
-        // relocated cluster's name follows.
+        // affected owners would buy nothing this does not already get. The name labels then rebuild
+        // from the placements so a renamed or relocated cluster's name follows.
         //
         // Named off the build's own owner reading rather than a fresh one, and measured in the face the
         // standing names were fitted in, so the names this batch re-fits read exactly as the ones it
-        // carries over.
+        // carries over. Whether a fit is wanted comes off the same build, so this batch fits only
+        // where the standing build was baked with the names or the anchor overlay on.
         var standingAnchors = standingMap.standingAnchors();
         var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,

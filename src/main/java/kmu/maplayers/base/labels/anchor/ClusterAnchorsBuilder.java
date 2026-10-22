@@ -22,18 +22,18 @@ import java.util.Map;
  * search, and reports what the fit cost - then keeps the caller's placements current in place.
  *
  * <p>Any layer with clusters runs a fit this same way, so the drive sits below every layer and asks
- * a layer for one value only, {@link ClusterAnchorFitInputs}: its keys, its face, which consumers
- * want the fit, and the resolver pair that names and shades a cluster. What a key means stays the
- * layer's; everything from the resolved shade and name onward is the same for every layer.
+ * a layer for one value only, {@link ClusterAnchorFitInputs}: its keys, its face, whether it wants a
+ * fit, and the resolver pair that names and shades a cluster. What a key means stays the layer's;
+ * everything from the resolved shade and name onward is the same for every layer.
  *
  * <p>Kept apart from whatever builds a layer's fills, because the placements are an independent
  * overlay rather than part of the production draw lists: they draw over the normal render and over
  * a debug view alike, so they cannot live inside either view's build.
  *
- * <p>Both entry points take the caller's {@link StandingClusterAnchors} and leave their own pass in
- * it, rather than reading a list and answering an {@link AnchorFitFingerprint} for it. The pair is
- * the caller's and not kept here, because a fingerprint parked in a static would describe
- * whichever path ran last - exactly the disagreement a second entry point can cause.
+ * <p>The rebuild takes the caller's {@link StandingClusterAnchors} and leaves its own pass in it,
+ * rather than reading a list and answering an {@link AnchorFitFingerprint} for it. The pair is the
+ * caller's and not kept here, because a fingerprint parked in a static would describe whichever
+ * caller's fit ran last.
  *
  * <p>That pair is what makes a rebuild partial. The standing pair is this rebuild's only record
  * of the previous pass, so it is indexed by the cluster each placement names before this pass
@@ -63,10 +63,9 @@ public final class ClusterAnchorsBuilder {
     /**
      * Rebuilds the cluster-name placements in place, replacing the standing pair with this pass's.
      *
-     * <p>The placements feed the drawn names and the debug anchor overlay, so they are fitted
-     * whenever either is on - one search both share - and each consumer draws under its own
-     * toggle. The search's tuning is read here rather than by the callers, so every path fits
-     * under one reading of it and a settings change re-fits on the rebuild it triggers.
+     * <p>The search runs only when the layer wants a fit; one that wants none still has its list
+     * emptied and labelled. The search's tuning is read here rather than by the callers, so every
+     * path fits under one reading of it and a settings change re-fits on the rebuild it triggers.
      *
      * <p>The standing pair that came in lets placements whose clusters still stand carry over
      * rather than be searched again, and the pair left behind states the rules this fit ran under,
@@ -77,8 +76,8 @@ public final class ClusterAnchorsBuilder {
      * @param cellGeometry    the cells the fit clips and trims against, carrying the revision that
      *                        names them, so no path can fit against one reading of the geometry
      *                        and label its placements with another
-     * @param fitInputs       the layer's half of the fit: its keys, its face, which consumers want
-     *                        the fit, and how a cluster is named and shaded
+     * @param fitInputs       the layer's half of the fit: its keys, its face, whether it wants a
+     *                        fit, and how a cluster is named and shaded
      * @return which names this pass moved: the list left behind says where every name ended up
      *         and nothing about which are new, and this is the only point where both lists exist
      *         at once. Reported by the gated-off path too, where every standing name vanishing is
@@ -104,7 +103,7 @@ public final class ClusterAnchorsBuilder {
         // this pass's own output as what stood before it.
         var standingNames = List.copyOf(standingAnchors.getAnchors());
 
-        if (!fitInputs.areNamesDrawn() && !fitInputs.isAnchorOverlayShown()) {
+        if (!fitInputs.isFitWanted()) {
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
 
             return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
@@ -121,39 +120,6 @@ public final class ClusterAnchorsBuilder {
         standingAnchors.replaceAnchors(fittedAnchors, fitFingerprint);
 
         return ClusterNameDisturbance.compareFittedNames(standingNames, fittedAnchors);
-    }
-
-    /**
-     * The rebuild for a debug view that builds no production draw lists, gated behind the anchor
-     * overlay alone so the fit only runs while someone is actually looking at the anchors.
-     *
-     * <p>Leaves the caller's pair labelled with what produced it exactly as the shared path does, so
-     * the caller holds one fact about its placements whichever view built them. What the shared
-     * rebuild reports about the names it moved is dropped rather than passed on: such a view
-     * replaces the production draw lists outright, so there is nothing laid around the names for a
-     * moved one to oblige.
-     *
-     * @param standingAnchors the caller's placements and what they were fitted under, replaced
-     *                        here with this pass's
-     * @param cellGeometry    the cells the fit clips and trims against, carrying their revision
-     * @param fitInputs       the debug view's half of the fit
-     */
-    public static void rebuildDiagnosticClusterAnchors(
-            StandingClusterAnchors standingAnchors,
-            RevisedCellGeometry cellGeometry,
-            ClusterAnchorFitInputs fitInputs) {
-
-        if (!fitInputs.isAnchorOverlayShown()) {
-            // The fit is what the toggle is guarding, so it is skipped - but the list it leaves
-            // empty still has to say what produced it, which costs a settings read and no fit at
-            // all. Emptying it and labelling it is the one write the pair takes, so this path's
-            // skip cannot leave the two disagreeing.
-            standingAnchors.replaceAnchors(
-                List.of(),
-                readFitFingerprint(cellGeometry.revision(), fitInputs));
-            return;
-        }
-        rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
     }
 
     // The sweep itself, measured as its own row: past the gate the skipped path never reaches, and
@@ -177,7 +143,7 @@ public final class ClusterAnchorsBuilder {
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
                 partition,
                 spec,
-                fitInputs.labelResolversSource().get(),
+                fitInputs.labelResolversByFace().apply(fitFingerprint.labelFace()),
                 reusableAnchors);
 
             reportFitCosts(fitScope, spec, partition, fit);
@@ -190,6 +156,10 @@ public final class ClusterAnchorsBuilder {
     // system each draws as and that system's key, so whatever the layer keys a cluster by is what
     // the names trace: a layer that cuts one owner's systems into two keys gets two clusters, each
     // fitted inside its own border exactly as its fills are drawn.
+    //
+    // The grouping is composed here from the keys handed over, not asked of a layer's build: the
+    // drive sits below every layer and knows no build to ask. The keys are the layer's own reading
+    // of its build, handed over with the rest of the inputs, which is what keeps the two agreeing.
     //
     // The clusters and the cells travel on as one value: the sweep reads all of it against itself
     // per cluster, so a partition assembled from two passes would fit a name inside a border traced

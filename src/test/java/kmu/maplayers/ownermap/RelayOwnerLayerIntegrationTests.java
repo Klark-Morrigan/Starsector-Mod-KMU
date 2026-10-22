@@ -51,7 +51,6 @@ import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.settings.KmuMapLabelSettings;
-import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -141,7 +140,6 @@ final class RelayOwnerLayerIntegrationTests {
 
     private MockedStatic<KmuMapLabelSettings> labelSettingsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
-    private MockedStatic<KmuOwnerMapDiagnosticsSettings> diagnosticsSettingsMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
     private MockedStatic<LazyFontCache> fontsMock;
 
@@ -173,7 +171,6 @@ final class RelayOwnerLayerIntegrationTests {
             .when(RenderStyleReader::readGlobalStyle)
             .thenReturn(ThemeFixtures.createInertGlobalStyle());
 
-        diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
         specificationMock
             .when(LabelAnchorSpecification::readFromLunaSettings)
@@ -213,7 +210,6 @@ final class RelayOwnerLayerIntegrationTests {
 
         fontsMock.close();
         specificationMock.close();
-        diagnosticsSettingsMock.close();
         styleReaderMock.close();
         labelSettingsMock.close();
     }
@@ -441,6 +437,7 @@ final class RelayOwnerLayerIntegrationTests {
             geometryCacheMock,
             viewReading,
             contentInputs,
+            false,
             owners,
             MapStyling.readFromLunaSettings(
                 viewMock.resolveCategories(),
