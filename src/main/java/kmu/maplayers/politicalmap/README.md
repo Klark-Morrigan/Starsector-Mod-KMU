@@ -164,16 +164,8 @@ flowchart TD
     B --> MAP([Coloured map])
 ```
 
-The bands come after the names rather than before them because they are laid *around* them:
-a name is fitted inside the border its cluster's cells trace,
-so it has no place until the cells are shaped,
-and a band baked before that would run under a word.
-Baked last,
-each band carves the names' boxes out of its cell's ring and lays its runs along what is left -
-or carves nothing,
-where the player would rather have the whole band and let the name draw across it.
-Either way the pass runs last,
-so the ordering is what makes the choice available rather than what settles it.
+The bands come after the names because they are laid around them;
+why is [the band bake](../ownermap/render/ribbon/README.md#why-the-bands-bake-last)'s.
 
 What changes between views is only those four inputs;
 from the seam on,

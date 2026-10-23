@@ -14,6 +14,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 ## Index
 
 - [The classes that bake one](#the-classes-that-bake-one)
+- [Why the bands bake last](#why-the-bands-bake-last)
 - [Which cells band](#which-cells-band)
 - [Which cells a bake covers](#which-cells-a-bake-covers)
 - [Where the rings are kept](#where-the-rings-are-kept)
@@ -32,11 +33,34 @@ see the [mod README](../../../../../../../../README.md) for project context.
 | `RibbonBakeSurface` | the pass | the drawn map bands go on: the inhabitation gate, where each band starts, the room it keeps clear of, the rings already traced |
 | `RibbonBakeSettings` | the pass | every band knob, read once by the bake's caller and handed to `CellRibbonsBaker` |
 
+`CellRibbonSource` is a source rather than a builder
+because the per-cell work is `base.ribbon`'s `CellRibbonBuilder`;
+what it adds is the pass that work is done under -
+the planner the owner source answered,
+the player's sizes,
+and the drawn map those bands go on,
+each sampled once so no two cells of one pass are settled differently.
+The planner is the source's answer (`OwnerSource.resolveRibbonPlanner`),
+and so is who stands together in a contest it judges,
+so nothing here names what supplies either.
+
+## Why the bands bake last
+
 `CellRibbonsBaker` runs as its own **stage**,
 after the rest of a rebuild,
 because a band needs two things no single cell knows:
 the shape it runs inside,
 and where every cluster name on the map ended up.
+A name is fitted inside the border its cluster's cells trace,
+so it has no place until the cells are shaped,
+and a band baked as its cell was shaped would run under a word.
+Baked last,
+each band carves the names' boxes out of its cell's ring and lays its runs along what is left -
+or carves nothing,
+where the player would rather keep the whole band and let the name draw across it.
+The stage runs last either way,
+so the ordering is what makes that choice available rather than what settles it.
+
 It reads the shapes back off the clusters rather than off a shaping pass,
 so the incremental refresh re-bakes the cells it disturbed through the very same call the full rebuild bakes all of them through.
 
@@ -51,17 +75,6 @@ whenever a cluster name may have moved -
 takes the batch's walk rather than reporting the sector as it stood some flips ago.
 Either way the planner is asked of the owner source the build's owners came from,
 or a band would plan against owners no cell was drawn for.
-
-`CellRibbonSource` is a source rather than a builder
-because the per-cell work is `base.ribbon`'s `CellRibbonBuilder`;
-what it adds is the pass that work is done under -
-the planner the owner source answered,
-the player's sizes,
-and the drawn map those bands go on,
-each sampled once so no two cells of one pass are settled differently.
-The planner is the source's answer (`OwnerSource.resolveRibbonPlanner`),
-and so is who stands together in a contest it judges,
-so nothing here names what supplies either.
 
 ## Which cells band
 
@@ -134,10 +147,9 @@ The name fit in `base.labels` reports it -
 it already indexes the standing placements to decide which clusters it may carry over,
 so which names moved is that same index read from the other side.
 `ClusterNameDisturbance` turns the boxes that appeared,
-vanished and moved into the cells they reach,
-against each cell's **bounding box** rather than its outline:
-over-inclusion costs a re-bake that changes nothing,
-while under-inclusion leaves a band drawn under a word until something unrelated rebuilds the map.
+vanished and moved into the cells they reach.
+It tests each cell's bounding box rather than its outline;
+[`base.labels`](../../../base/labels/README.md#which-names-a-re-fit-moved) says why that errs the safe way.
 
 A batch that flipped nothing re-fits nothing,
 so the third reason cannot arise on it and only the marked systems' bands are re-baked.
@@ -175,10 +187,9 @@ so no stage of a bake reads a setting of its own.
 It holds:
 
 - whether the bands draw at all;
-- the `RibbonStyle` from the player's Visuals tab:
-  the width,
-  the clearance from the border,
-  and whether a cell short of room draws a band anyway (**Always draw a planned band**, on by default);
+- the [`RibbonStyle`](../../../base/ribbon/README.md#sizes-and-drawing) from the player's Visuals tab,
+  **Always draw a planned band** among it,
+  on by default;
 - the `RibbonPlanRules`:
   the two run lengths,
   and whether an uncontested cell's runs are shortened;

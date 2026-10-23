@@ -99,11 +99,9 @@ is traced under one reading of the trace's knobs.
   where an owner resolving its own would regroup the whole map per owner.
 
 No presence band is laid here.
-A band is baked *around* the cluster names,
-and the names are fitted after this build -
-each inside the border these very cells trace -
-so the bands are a stage of their own afterwards,
-over the shapes this one recorded and through the same reading of the sector this one was handed.
+The bands are a stage of their own afterwards,
+over the shapes this build recorded and through the same reading of the sector this one was handed;
+why they wait for the names is [the band bake](../ribbon/README.md#why-the-bands-bake-last)'s.
 `CellRibbonsBaker`
 (in [`render.ribbon`](../ribbon/CellRibbonsBaker.java)) drives it,
 and both the full rebuild and the incremental refresh reach it through the same call,
@@ -319,9 +317,8 @@ The highlight reads the same shapes through `render/hover`'s adapter,
 so the cursor and the halo cannot disagree about what was drawn.
 
 The band is written by its own pass rather than beside the ring,
-because it is settled from more than the cell it sits in:
-it keeps clear of the cluster names (a default the player can switch off),
-and those are placed only once every cell has been shaped.
+because it waits for the cluster names
+([the band bake](../ribbon/README.md#why-the-bands-bake-last) says why).
 So the ring goes in first and `CellRibbonsBaker` reads it back off the store rather than being handed one -
 the fill polygons and the band store being the only things that pass is given,
 since nothing it does per cell asks the build anything else.

@@ -23,12 +23,9 @@ import java.util.Map;
  * it. Holding each inset's path as walked lets the overlay read the very rings the band pass walked
  * rather than walking them a second time.
  *
- * <p>Held with no key and no revision of its own, which is the whole of why it is safe. A key is a
- * rule someone has to keep true; a cache living inside the object whose lifetime it must match is
- * true by construction - a rebuild mints fresh clusters and every path traced against the old
- * shapes goes with them, and a size moved on the sliders bumps the settings revision, which
- * rebuilds them. Within one build, the write that replaces a cell's shape drops that cell's paths
- * at the same time.
+ * <p>Held with no key and no revision of its own: the write that replaces a cell's shape drops that
+ * cell's paths, and a rebuild mints a fresh cache. Why that is the whole of what keeps it safe is
+ * <a href="README.md#a-ring-that-outlives-the-bake-that-walked-it">the band register</a>'s.
  *
  * <p>What is kept includes the paths that came back with nothing to lay a band on. A cell too
  * narrow for the band is an answer the trace worked for, so it is worth keeping for exactly the

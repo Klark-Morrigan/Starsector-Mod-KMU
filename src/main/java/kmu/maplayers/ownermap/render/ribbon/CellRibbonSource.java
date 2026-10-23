@@ -24,43 +24,27 @@ import java.util.Map;
  * One bake's band source: everything a cell's band is settled from, sampled once, so asking
  * for a cell's band is a call rather than a fresh set of reads.
  *
- * <p>What it holds is what must not vary across a pass: the planner the owner source counts by, so
- * no cell is counted by a different mechanic; the pass's one read of the player's proportions
- * ({@link RibbonBakeSettings}), so a slider moved mid-pass cannot leave two cells drawn to
- * different designs; and the map those bands go on ({@link RibbonBakeSurface}). Sampling them here mirrors how the rest of a rebuild is driven - one
- * snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a band
- * identical to the one the full rebuild would have.
+ * <p>What it holds is what must not vary across a pass: the planner the owner source counts by, the
+ * sizes the pass was sampled under, and the drawn map the bands go on ({@link RibbonBakeSurface}).
+ * Sampled once, no two cells of one pass are counted by different mechanics or drawn to different
+ * designs, and the incremental re-shape bakes a band identical to the one the full rebuild would.
  *
- * <p>The planner is the source's answer ({@link OwnerSource#resolveRibbonPlanner}) - which mechanic
- * counts a cell, and who stands together in a contest it judges - so nothing here names what
- * supplies either. It is asked of the source the build's owners came from, which is what keeps a
- * band counted under the same sampling of the layer's live inputs the fill was painted under.
+ * <p>The planner is the source's answer ({@link OwnerSource#resolveRibbonPlanner}), so nothing here
+ * names what supplies it. It is asked of the source the build's owners came from, which is what
+ * keeps a band counted under the same sampling of the layer's live inputs the fill was painted
+ * under. The walk the counts are made off arrives rather than being opened here, because how current
+ * it has to be is the caller's question.
  *
- * <p>The walk the counts are made off arrives rather than being opened here, because how current it
- * has to be is the caller's question and not this one's: a bake in the same frame as the build
- * before it counts off that build's walk of each system, while one on its own cadence opens a fresh
- * walk rather than report a sector as it stood some flips ago.
- *
- * <p>The surface gates on inhabitation rather than on this layer's holding, because that is the
- * question a band is actually about: a system splits whether or not the mechanic painting the map
- * gives it to anybody, and a layer's holding can leave a settled system unaccounted for.
- * That gate is also what keeps a bake affordable, most of the sector being empty space and every
- * ask walking what a system holds - for some mechanics settling a whole contest over it. What
- * its looser reading costs is weighed in this package's README.
- *
- * <p>Which cells are offered a band at all is settled here: a cell nothing lives in or with nowhere
- * to start from, and a system the sector no longer lists, are refused before anything is counted.
- * Every other cell is counted, and its plan handed to {@link CellRibbonBuilder#layCellRibbon}, which
- * answers a plan with nothing in it before any ring is walked.
+ * <p>Which cells are offered a band, and why the gate is inhabitation rather than the layer's
+ * holding, is <a href="README.md#which-cells-band">the bake register</a>'s. Every cell past the gate
+ * is counted, and its plan handed to {@link CellRibbonBuilder#layCellRibbon}.
  *
  * <p>The diagnostic overlay's paths are traced through the same pass, from the same sizes, the same
  * gate and the same kept rings, for the reason the overlay exists at all: it is worth looking at
  * only while it is the cells' own paths it is drawing.
  *
- * <p>Named a source rather than a builder because the per-cell work is
- * {@link CellRibbonBuilder}'s: what this adds is the pass the work is done under, which is the
- * same split a mechanic's own ribbon source makes one
- * level up between a mechanic's answer and the rule that shapes it.
+ * <p>Named a source rather than a builder because the per-cell work is {@link CellRibbonBuilder}'s:
+ * what this adds is the pass the work is done under.
  */
 public final class CellRibbonSource {
 

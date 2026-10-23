@@ -14,39 +14,14 @@ import java.util.Optional;
  * Lays an owner-painted cell's band: every owner present in the cell in the order it was ranked,
  * each contributing a segment per stake it has and an interjection between two of its own.
  *
- * <p>What the band says is how a system splits - how many stakes, whose, and in what
- * proportion - with no glyph and no label. One shade carries every parting in it. Stakes of
- * one owner are parted by an interjection in that owner's dark shade, so a long run reads as
- * several stakes rather than as one large one; and where another owner's run follows, that
- * same dark shade closes the outgoing run, so a handover is punctuated as well as recoloured.
- * The divider belongs to the owner going out rather than to the one coming in, which is what
- * makes it read as that owner's stakes ending rather than as an unowned gap between two
- * rivals. The band's last run is left open, a divider having nothing to part it from.
- *
- * <p>A cell draws a ribbon when anything is present in it at all. What contest adds is the length
- * its runs are laid at: a contested cell keeps the player's authored lengths, and an uncontested
- * one takes whatever {@link RibbonPlanRules#getUncontestedLengths()} answers. Contest is one question - does the
- * band say something its own fill does not - asked of the two kinds of fill a cell can have.
- *
- * <p>With a painter, that is any other owner holding something and not standing with the painter.
- * A cell painted for an owner that holds nothing in the system still draws the one owner present,
- * alone, because the fill names the painter and the band names somebody else. With no painter - a
- * cell no owner's fill covers - there is nobody to be a rival of, so
- * the reading falls to how many sides are in it: one side alone is a footprint nothing contradicts,
- * and two are a contest.
- *
- * <p>Sides rather than owners, because two allies jointly holding a system are not fighting over it,
- * and a band laid at contested length there would say they were. Who stands with whom is the
- * {@link OwnerAffiliation} the caller hands over and never the fold the presences were counted
- * under: allies keep their own runs in their own colours, and all that changes is the length those
- * runs are laid at. Where nothing groups owners the affiliation stands nobody together, and every
- * cell is judged owner by owner.
+ * <p>What the band says is how a system splits - how many stakes, whose, and in what proportion -
+ * with no glyph and no label, so one shade carries every parting in it. The grammar, and why a
+ * divider belongs to the owner going out, is <a href="README.md#laying-the-runs">the runs register</a>'s.
  *
  * <p>Contest decides the lengths and never whether there is a band, which is what keeps the one
  * band a map must not be able to lose - the one saying a system is contested - out of reach of
- * every knob. A cell with a rival in it bands because the fill cannot report a contest; a cell with
- * a lone owner bands because the fill says whose the system is and not how much is in it. A cell
- * nothing is present in draws under neither reading: there is no footprint to report.
+ * every knob. What contested means with a painter and without one, and why two allies are one side,
+ * is <a href="README.md#which-cells-band-and-how-loudly">the same register</a>'s.
  *
  * <p>The painting owner draws in the ribbon like any other present owner. Its own segments are
  * what give the rivals beside them a scale: a lone rival segment against a long run of the

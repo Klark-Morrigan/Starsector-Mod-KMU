@@ -22,9 +22,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 
 ## Laying the runs
 
-The output is `base.ribbon`'s `RibbonPlan`:
-an ordered list of `RibbonSegment`,
-each a colour and a length in band widths.
+The output is [`base.ribbon`](../../base/ribbon/README.md#what-a-band-is)'s `RibbonPlan`.
 `OwnerRibbonRuns.planCellRibbon` is the rule that produces one,
 over a ranked list of `OwnerPresence` -
 an owner,
@@ -53,9 +51,7 @@ so a pass's shortening can never be put over another pass's lengths.
 Both are this tier's rather than the band's:
 the band is handed runs that already carry their lengths.
 
-Lengths are counts of widths,
-never world sizes,
-which is what keeps this whole package pure data.
+A plan's lengths being counts of widths is what keeps this whole package pure data.
 
 ## The port it reads through
 

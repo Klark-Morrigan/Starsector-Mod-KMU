@@ -23,22 +23,20 @@ import java.util.List;
  *
  * <p>The one entry point a layer lays a cell's band through. A layer settles which cells are offered
  * a band and plans each by its own rule; everything from the plan onwards is the same for every
- * layer, so it is stated here once rather than by each layer's bake: the empty plan answered before
- * any ring is walked, the ring reached for through the cells' kept rings, and the carve and stroke.
+ * layer, so it is stated here once rather than by each layer's bake. The steps it takes are
+ * <a href="README.md#laying-a-band-inside-a-ring">the band register</a>'s.
  *
- * <p>The ring is reached for rather than traced afresh, because a path outlives the bake that
- * traced it - a ring moves when its cell is re-shaped, while a bake runs whenever a cluster name may
- * have moved. What is left to do per bake is the part that genuinely differs: the names have moved,
- * so the carve and everything after it is done again.
+ * <p>The ring is reached for through the kept rings rather than traced afresh, because a bake runs
+ * whenever a cluster name may have moved while a ring moves only when its cell is re-shaped.
  *
  * <p>Pure geometry past that ring - no sector, no settings read, no GL - so a corner split, a
  * compressed band, a name lying across the ring, a ring narrowed to a neck in one place, and a cell
  * too small to hold a band at all are each settled by the path, the plan and the names' boxes alone.
  * The pass's scope is marked and never read, so what it records cannot change the band.
  *
- * <p>Three of a bake's four phases are marked here, and separately: what a cell spends reaching for
- * its ring, carving the names off it and stroking the result grow on different axes, so a bake that
- * slowed down is answered here rather than guessed at. The fourth, planning, is the layer's.
+ * <p>The trace, carve and stroke phases are marked here and the plan phase is the layer's;
+ * <a href="README.md#what-a-bake-spends-its-time-on">the band register</a> says why a bake is split
+ * four ways.
  */
 public final class CellRibbonBuilder {
 

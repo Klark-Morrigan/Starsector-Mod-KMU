@@ -27,42 +27,27 @@ import java.util.Optional;
 /**
  * Bakes the presence bands over cells that have already been shaped and named.
  *
- * <p>Its own pass, run after the rest of a rebuild rather than inside the cell loop, because a
- * band needs two things settled that no single cell knows about: the shape it runs inside, and
- * where every cluster name on the map ended up. The names are fitted after the cells are shaped -
- * a name is placed inside the border its cluster's cells trace - so a band baked as its cell was
- * shaped would be laid before any name had a place, and the name would then be drawn across it.
- * Baking last is what lets the band keep out of the names' way instead - which is the shipped
- * answer rather than the only one, a player being free to hand the room back to the band and have
- * the name draw across it after all.
+ * <p>Its own pass, run after the rest of a rebuild rather than inside the cell loop, because a band
+ * keeps clear of the cluster names and a name has no place until every cell is shaped. The whole
+ * reason is <a href="README.md#why-the-bands-bake-last">the bake register</a>'s.
  *
  * <p>The bands are read out of the cells' own recorded shapes rather than off a shaping pass, so
  * the incremental refresh re-bakes the cells it disturbed through the very same call the full
  * rebuild bakes all of them through - which is what keeps an incrementally-updated band identical
- * to the one a full rebuild would lay.
- *
- * <p>The rings those bands run along are read back from the cells too, and for the reason the pass
- * runs as often as it does: a bake happens whenever a name may have moved, while a ring moves only
- * when its cell is re-shaped. So the cells' own band store is where the bands are written, and its
- * kept rings are what the source lays them along, walking a ring only where none stands.
+ * to the one a full rebuild would lay. The cells' own band store is also where the bands are
+ * written, and its kept rings are what they are laid along.
  *
  * <p>Everything a pass is settled by arrives as one {@link RibbonBakeSettings} its caller read.
- * With the bands switched off, the pass builds no band source at all: no mechanic is resolved, no
- * sizes are laid out, no name room is measured, and every cell is answered "no band". That takes
- * the counting off the rebuild as well as the bands off the map, which is the half of the switch a
- * player cannot see and the half that costs.
+ * With the bands switched off, the pass builds no band source at all and every cell is answered
+ * "no band". That takes the counting off the rebuild as well as the bands off the map, which is the
+ * half of the switch a player cannot see and the half that costs.
  *
- * <p>The diagnostic overlay's paths are traced in the same loop. Beside the bands rather than as a
- * pass of its own
- * because a path is traced inside the very shape the band beside it was laid in, and two passes
- * over the same cells could only ever agree about that by both being run.
+ * <p>The diagnostic overlay's paths are traced in the same loop rather than in a pass of their own,
+ * because a path is traced inside the very shape the band beside it was laid in, and two passes over
+ * the same cells could only ever agree about that by both being run.
  *
- * <p>What a pass spent is reported per cell and split four ways, since a bake does four separable
- * things - counts, traces, carves and strokes - that grow on different axes. See
- * {@link RibbonBakePhases}: the pass opens one scope over the whole loop and marks each phase as
- * the cell in hand finishes it, so the readout states what a cell costs rather than what a bake
- * does. What became of the cells rides on the call as a {@link RibbonBakeTally}, since a cell
- * drawing no band looks the same on the map whatever the reason.
+ * <p>The pass opens the {@link RibbonBakePhases} scope over the whole loop, a turn per cell, and
+ * counts what became of the cells on a {@link RibbonBakeTally} riding on the call.
  *
  * <p>Sampled once per pass and then asked, like the band source it holds: what a pass bakes from -
  * the cells, their geometry, and the room the names took - must not vary between the cells of one
