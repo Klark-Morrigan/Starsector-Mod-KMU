@@ -194,13 +194,13 @@ public final class CellRibbonBuilder {
         // partly eaten, and a run's length is the readout - a run drawn two thirds as long as the
         // plan laid it says something false about the cell. Carved off the path, what a name
         // costs is room, which the clamp below already knows how to answer.
-        var clearArcs = path.findClearArcs(nameBoxes);
+        var clearStretches = path.findClearStretches(nameBoxes);
 
         // A ring wholly under the names is the one case where keeping the band clear of them and
         // drawing it at all cannot both be honoured, so one of the two gives way and the style
         // says which. By default the clearance does: a cell reporting nothing and a cell
         // refused the room to report look identical to a reader, and only one of them is true.
-        if (clearArcs.isEmpty() && !style.isBandAlwaysDrawn()) {
+        if (clearStretches.isEmpty() && !style.isBandAlwaysDrawn()) {
             return null;
         }
 
@@ -220,9 +220,9 @@ public final class CellRibbonBuilder {
         // start, and picking between those two judges the cell on whichever half happened to be
         // bigger.
         return RingStretch.selectLongest(path.fuseStretchAcrossStart(
-            clearArcs.isEmpty()
+            clearStretches.isEmpty()
                 ? path.findStretchesHoldingItsInset()
-                : clearArcs));
+                : clearStretches));
     }
 
     // How much of the stretch one width is worth and where along it the band sits, or nothing

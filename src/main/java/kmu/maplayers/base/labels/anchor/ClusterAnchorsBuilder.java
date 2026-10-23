@@ -101,26 +101,29 @@ public final class ClusterAnchorsBuilder {
         // unlabelled one is indistinguishable from one fitted under rules that still hold.
         var fitFingerprint = readFitFingerprint(cellGeometry.revision(), fitInputs);
 
-        // Indexed before this pass replaces the pair, since that is where the previous one
-        // survives - the two move together, so there is no window where the list is emptied
-        // ahead of the fit that fills it.
-        var reusableAnchors = indexReusableAnchors(standingAnchors, fitFingerprint);
-        var reuseVerdict = describeAnchorReuse(standingAnchors.getFitFingerprint(), fitFingerprint);
+        // The standing placements filed under the cluster each names, once for both questions this
+        // rebuild asks of them: which may carry over, and which names this pass moved. Filed before
+        // this pass replaces the pair, since that is where the previous one survives - the two move
+        // together, so there is no window where the list is emptied ahead of the fit that fills it.
+        var standingByIdentity = ClusterAnchor.mapAnchorsByIdentity(standingAnchors.getAnchors());
+        var standingFingerprint = standingAnchors.getFitFingerprint();
 
-        // Copied for the same reason, and copied rather than held: the caller's list is a live
-        // view of the placements this pass is about to replace, so a reference to it would report
-        // this pass's own output as what stood before it.
-        var standingNames = List.copyOf(standingAnchors.getAnchors());
+        var reusableAnchors = selectReusableAnchors(
+            standingByIdentity,
+            standingFingerprint,
+            fitFingerprint);
+
+        var reuseVerdict = describeAnchorReuse(standingFingerprint, fitFingerprint);
 
         if (!fitInputs.isFitWanted()) {
 
             // A pass that fits nothing opens no fit row, so this line is what tells a skipped fit
             // from one that never ran.
-            LOG.debug("Cluster name fit not wanted; droppedNames=" + standingNames.size());
+            LOG.debug("Cluster name fit not wanted; droppedNames=" + standingByIdentity.size());
 
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
 
-            return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
+            return ClusterNameDisturbance.compareFittedNames(standingByIdentity, List.of());
         }
         // The tuning and the face come back off the fingerprint rather than from second reads, so
         // what the fit ran under and what it reports having run under are one value and cannot
@@ -134,7 +137,7 @@ public final class ClusterAnchorsBuilder {
 
         standingAnchors.replaceAnchors(fittedAnchors, fitFingerprint);
 
-        return ClusterNameDisturbance.compareFittedNames(standingNames, fittedAnchors);
+        return ClusterNameDisturbance.compareFittedNames(standingByIdentity, fittedAnchors);
     }
 
     // The sweep itself, measured as its own row: past the gate the skipped path never reaches, and
@@ -203,12 +206,13 @@ public final class ClusterAnchorsBuilder {
     // instead of any cluster being asked to notice a change it cannot see. That is also what
     // keeps a rebuild the caller has no record for - the first of a session, or one after a
     // discard - total, since a null fingerprint matches nothing.
-    private static Map<ClusterIdentity, ClusterAnchor> indexReusableAnchors(
-            StandingClusterAnchors standingAnchors,
+    private static Map<ClusterIdentity, ClusterAnchor> selectReusableAnchors(
+            Map<ClusterIdentity, ClusterAnchor> standingByIdentity,
+            AnchorFitFingerprint standingFingerprint,
             AnchorFitFingerprint fitFingerprint) {
 
-        return fitFingerprint.equals(standingAnchors.getFitFingerprint())
-            ? ClusterAnchor.mapAnchorsByIdentity(standingAnchors.getAnchors())
+        return fitFingerprint.equals(standingFingerprint)
+            ? standingByIdentity
             : Map.of();
     }
 

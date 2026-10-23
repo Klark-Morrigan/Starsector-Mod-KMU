@@ -16,18 +16,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- **With a faction spotlit, the political map follows a colony changing hands**, rather than showing the old owner until you move the spotlight.
+- **With a faction spotlit, the political map follows a colony changing hands**, rather than showing the old owner until the player moves the spotlight.
 - **The spotlight list follows a colony changing hands too**, so its numbers match the map.
 - **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
-- **The Market Condition Manager no longer opens on a colony you have already left.**
+- **The Market Condition Manager no longer opens on a colony the player has already left.**
 - **The Chinese zip shows the Market Condition Manager in Chinese.**
 - **The Chinese zip's console text carries a Chinese translation beside the English**: the help shows the Chinese above the English, and the Market Condition Manager command prints its English, ready for when the Chinese version of Console Commands draws Chinese. Until then the Chinese shows as `?`, a [known issue on its Fossic thread](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524) that players reported on [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560), [2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) and [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213).
 - **[KMLib]** **An update checker opens the Chinese zip's changelog in Chinese.**
 
 ### Changed
 
-- **Minor optimisations**. The political map does less repeated work when it redraws: faction colours, each owner's paint and the border settings are read once per redraw rather than once per system or cell. The hover box reads the system under the cursor once while the cursor rests there, rather than on every frame, and reads it again when the map is redrawn or you move back onto the system.
+- **Minor optimisations**. The political map does less repeated work:
+  - Faction colours, each owner's paint and the border settings are read once per redraw rather than once per system or cell.
+  - The hover box reads the system under the cursor once while the cursor rests there, rather than on every frame, and reads it again when the map is redrawn or the player moves back onto the system.
+  - The faction names draw without making a new colour for each name on every frame.
+  - A colony change re-lays the nearby bands without re-measuring every name on the map first.
 
 ### For developers
 
@@ -67,6 +71,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`base.ribbon.CellRibbonStore`**: a build's bands, their overlay paths and the rings they were traced along, dropped together when a cell is re-shaped.
 - **`base.ribbon.RibbonPathInset`**: the two insets a band's path is traced at, padded and unpadded.
 - **`base.ribbon.RibbonBakeTally`**: what one bake did with the cells a layer offered a band, written on the `mapLayer.bakeRibbons` call as `banded`, `traced`, `reused`, `unplanned` and `refusedForRoom`.
+- **`base.labels.anchor.ClusterAnchorRuns`**: the debug anchor overlay packed once per pass, per verdict one run each of band fills, outlines with lane rules, and centrelines, plus one run of dots per shade, with the two opacity knobs it was packed at. `packAnchorRuns(List)` packs a pass's placements.
+- **`StandingClusterAnchors.computeLineBoxesIfAbsent(Supplier)`**: the room the standing names' drawn lines take, measured once per pass and dropped with it. `LabelLineBoxes.listLineBoxes` reads through it.
+- **`Label.applyFade(float)`**: recolours the string only when the map's alpha moved.
 - **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views.
 
 #### Fixed
@@ -218,6 +225,10 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `KmuConditionPickerEntry`'s constructors | `KmuConditionPickerEntry.Builder(String, String, KmuConditionPickerEntryState)`, a method per optional part, then `build()` |
 | `KmuConditionPickerLocation(String, String, KmuPickerFaction, String, String, String, String)` | `KmuConditionPickerLocation.Builder()`, or `createUnknownLocation()` for a location nothing is known of |
 | `StarsectorEditableMarket.getMarket()`, reached by a cast | `KmuEditableMarket.findStarsectorMarket()` and `findCondition(String)`, which every implementation of the port provides |
+| `ClusterAnchorRenderer.renderOnMap(List, MapFrame)`, reading the two opacity knobs each frame | `renderOnMap(ClusterAnchorRuns, MapFrame)`, over the runs a pass was packed into. The overlay draws each verdict's fills, then its outlines and rules, as one run apiece |
+| `ClusterNameDisturbance.compareFittedNames(List, List)` | `compareFittedNames(Map, List)`, over the standing placements as `ClusterAnchor.mapAnchorsByIdentity` files them, the same filing the fit's carry-over is offered from. It only reads it |
+| `Label`, a record with `text()`, `baseColour()`, `hangX()`, `hangY()` and `slantDegrees()` | A final class with `getText()`, `getHangX()`, `getHangY()` and `getSlantDegrees()`. The base colour is the label's own |
+| `StandingClusterAnchors.getAnchors()`, one read-only view over a list edited in place | A new immutable list with every pass, so work derived from one pass can tell by identity whether its pass still stands |
 
 ##### Moved to KMLib
 

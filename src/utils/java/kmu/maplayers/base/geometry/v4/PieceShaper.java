@@ -59,9 +59,6 @@ public final class PieceShaper {
     // folded over and its holes beside it.
     private static final RingRegion NOTHING_LEFT_TO_DRAW = new RingRegion(List.of(), List.of());
 
-    // What the fold splicer takes to compare every pair of edges rather than a window.
-    private static final int EVERY_PAIR_OF_EDGES = 0;
-
     // How far apart along the ring the two sides of a corner's fold can be, in edges: the
     // corner's own two, its bevel, and the few short edges a shore's corner leaves beside a
     // junction. Wide enough for those, and a fraction of any piece's ring.
@@ -103,11 +100,13 @@ public final class PieceShaper {
         if (outline.isEmpty()) {
             return NOTHING_LEFT_TO_DRAW;
         }
+
         var holes = new ArrayList<List<double[]>>(piece.holes().size());
 
         for (var hole : piece.holes()) {
             holes.add(shapeRing(hole, edgeInset, miterSpikeLimit));
         }
+
         return new RingRegion(outline, List.copyOf(holes));
     }
 
@@ -132,12 +131,15 @@ public final class PieceShaper {
             double miterSpikeLimit) {
 
         var outline = PolygonOffsets.removeReversedLoops(
-            shapeRing(piece.outline(), edgeInset, miterSpikeLimit), true, NEARBY_EDGES);
+            shapeRing(piece.outline(), edgeInset, miterSpikeLimit),
+            true,
+            NEARBY_EDGES);
 
         if (!PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)) {
             return outline;
         }
-        outline = PolygonOffsets.removeReversedLoops(outline, true, EVERY_PAIR_OF_EDGES);
+
+        outline = PolygonOffsets.removeReversedLoops(outline, true, PolygonOffsets.COMPARE_EVERY_EDGE_PAIR);
 
         return PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)
             ? List.of()
@@ -157,6 +159,7 @@ public final class PieceShaper {
         for (var edge = 0; edge < labels.length; edge++) {
             depths[edge] = edgeInset.resolveInsetOf(isAgainstSomething(labels[edge]));
         }
+
         return PolygonOffsets.insetPolygonByMiter(ring.vertices(), depths, miterSpikeLimit);
     }
 

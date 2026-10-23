@@ -1,6 +1,5 @@
 package kmu.maplayers.base.labels;
 
-import kmlib.colour.Colours;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
@@ -57,9 +56,8 @@ public final class LabelRenderer {
     }
 
     // Scales the modelview by the map factor once, then draws each label at its raw world
-    // coordinates so the glyphs scale with the cluster. Each label's colour is refaded to
-    // the map's alpha first (no buffer rebuild, since there is no per-substring colour), so
-    // the names fade with the fills at the edges of the map's zoom range.
+    // coordinates so the glyphs scale with the cluster. Each label is refaded to the map's alpha
+    // first, so the names fade with the fills at the edges of the map's zoom range.
     //
     // The matrix is popped in a finally block: a label that throws mid-draw would otherwise leave
     // the map's own transform scaled for the rest of the frame, and the matrix stack one deep.
@@ -68,10 +66,9 @@ public final class LabelRenderer {
         try {
             GL11.glScalef(mapFrame.factor(), mapFrame.factor(), 1f);
             for (var label : labels) {
-                // Refade the label to the frame's alpha so it dims in step with the cluster
-                // it sits on; scaleAlpha keeps a copy, so the cached base colour is untouched.
-                label.text().setBaseColor(Colours.scaleAlpha(label.baseColour(), mapFrame.alphaMult()));
-                label.text().drawAtAngle(label.hangX(), label.hangY(), label.slantDegrees());
+
+                label.applyFade(mapFrame.alphaMult());
+                label.getText().drawAtAngle(label.getHangX(), label.getHangY(), label.getSlantDegrees());
             }
         } finally {
             GL11.glPopMatrix();

@@ -601,7 +601,7 @@ kmu_map_dev_labelAnchors_iconClearance,,,,锚点图标避让,,Double,100,,,,"每
 [默认值：100]",,,0,1000,地图 - 开发
 kmu_map_dev_labelAnchors_bandOpacity,,,,锚点带不透明度,,Double,0.35,,,,"调试用带状四边形的填充不透明度，即拟合后标签所占的框，绘制在锚线之上。保持较低，使国界能透过带状区域显示，溢出可见；带状区域的全部意义就在于看它是否擦到或避开边界。
 [默认值：0.35]",,,0,1,地图 - 开发
-kmu_map_dev_labelAnchors_bandLineOpacity,,,,锚点带线条不透明度,,Double,0.9,,,,"调试带状框描边的不透明度，包括其轮廓、行数分隔线、中线和锚点。它与填充分开设置，使轮廓可以比其下方淡淡的带状覆色更醒目。
+kmu_map_dev_labelAnchors_bandLineOpacity,,,,锚点带线条不透明度,,Double,0.9,,,,"调试带状框描边的不透明度，包括其轮廓、行间分隔线、中线和锚点。它与填充分开设置，使轮廓可以比其下方淡淡的带状覆色更醒目。
 [默认值：0.9]",,,0,1,地图 - 开发
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_diagnostics_header,,,,诊断,,Header,诊断,,,,,,,,,地图 - 开发

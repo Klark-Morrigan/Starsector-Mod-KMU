@@ -148,7 +148,7 @@ public final class LabelsBuilder {
     // plugin to call on cleanup as well as the rebuild here.
     public static void disposeAll(List<Label> labels) {
         for (var label : labels) {
-            label.text().dispose();
+            label.getText().dispose();
         }
     }
 

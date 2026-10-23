@@ -479,8 +479,10 @@ So a word of one axis never stands in for another:
 | carry over (a fit keeping a standing name rather than searching again) | 沿用 | the plain word for carrying something on, as settings and saves carry over |
 | carve (taking the names and a cell's narrow places off a band's ring) | 裁切 | the plain word for cutting something away |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
+| centreline (the line an anchor overlay's band is drawn along) | 中线 | 中, the middle, with 线, a line: the line down the middle of the band |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
 | debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
+| draw run (vertices drawn in one GL call) | 绘制批次 | 绘制, to draw, with 批次, a batch |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
@@ -488,6 +490,7 @@ So a word of one axis never stands in for another:
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
+| lane rule (a line dividing an anchor overlay's band between a name's lines) | 行间分隔线 | 行间, between lines of text, with 分隔线, a dividing line; kept apart from 行数, a count of lines, which the rule does not show |
 | mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
@@ -516,6 +519,7 @@ So a word of one axis never stands in for another:
 | take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
 | trace (finding a cell's ring at an inset) | 描绘 | to draw a line along an outline, the word border tracing already takes |
+| verdict (whether the anchor overlay shows a line as accepted, rejected or unbiased) | 判定 | the plain word for a ruling on something |
 | walk (going round a cell's ring once) | 遍历 | the usual computing word for visiting every part of something; kept apart from 扫描, a sweep of the sector |
 
 ### Terms borrowed from HOI4

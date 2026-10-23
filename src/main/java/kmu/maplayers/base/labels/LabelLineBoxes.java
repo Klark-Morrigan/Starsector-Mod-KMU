@@ -39,22 +39,17 @@ public final class LabelLineBoxes {
     /**
      * The boxes the standing placements' drawn lines occupy, measured in the face they were fitted in.
      *
+     * <p>Measured once per pass and kept with the placements. Every bake asks, and the bakes between
+     * two fits lay their bands against the same names, so measuring per ask would re-plan and
+     * re-measure every name on the map to re-lay a handful of cells.
+     *
      * @param standingAnchors the placements to read, with the record of the face they were fitted in
      * @return one closed ring of {x, y} corners per drawn line. Empty where nothing was fitted, and where
      *         the face will not load, which is also when no name draws at all - a line nothing renders
      *         is a line nothing has to keep clear of
      */
     public static List<List<double[]>> listLineBoxes(StandingClusterAnchors standingAnchors) {
-
-        var fitFingerprint = standingAnchors.getFitFingerprint();
-        if (fitFingerprint == null) {
-            return List.of();
-        }
-        var resolvedFont = LazyFontCache.loadByFace(fitFingerprint.labelFace());
-
-        return resolvedFont == null
-            ? List.of()
-            : measureLineBoxes(standingAnchors.getAnchors(), new LazyFontMeasurer(resolvedFont));
+        return standingAnchors.computeLineBoxesIfAbsent(() -> measureStandingLineBoxes(standingAnchors));
     }
 
     // The same boxes over an injected measurement, so the geometry - centre, slant, length, girth
@@ -68,11 +63,11 @@ public final class LabelLineBoxes {
         for (var line : LabelsBuilder.planLabels(anchors)) {
 
             var corners = computeLineBox(line, measurer);
-
             if (!corners.isEmpty()) {
                 boxes.add(corners);
             }
         }
+
         return boxes;
     }
 
@@ -93,5 +88,19 @@ public final class LabelLineBoxes {
                 Math.toRadians(line.slantDegrees()),
                 lineLength)
             .computeBandCorners(line.fontHeight());
+    }
+
+    // The measurement itself, which the standing placements run once per pass.
+    private static List<List<double[]>> measureStandingLineBoxes(StandingClusterAnchors standingAnchors) {
+
+        var fitFingerprint = standingAnchors.getFitFingerprint();
+        if (fitFingerprint == null) {
+            return List.of();
+        }
+
+        var resolvedFont = LazyFontCache.loadByFace(fitFingerprint.labelFace());
+        return resolvedFont == null
+            ? List.of()
+            : measureLineBoxes(standingAnchors.getAnchors(), new LazyFontMeasurer(resolvedFont));
     }
 }

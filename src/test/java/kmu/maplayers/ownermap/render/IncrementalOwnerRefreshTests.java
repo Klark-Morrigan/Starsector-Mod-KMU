@@ -722,7 +722,7 @@ public final class IncrementalOwnerRefreshTests {
                     any(),
                     any()))
                 .thenReturn(ClusterNameDisturbance.compareFittedNames(
-                    List.of(),
+                    Map.of(),
                     List.of(buildNameOverTheDistantCell())));
 
             assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));

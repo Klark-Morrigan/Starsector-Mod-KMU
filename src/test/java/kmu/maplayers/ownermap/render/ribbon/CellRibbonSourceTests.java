@@ -254,9 +254,6 @@ final class CellRibbonSourceTests {
                     .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope, bakeTally))
                 .isEqualTo(CellRibbon.NONE);
         }
-
-
-
     }
 
     @Nested

@@ -55,7 +55,7 @@ final class ClusterNameDisturbanceTests {
         void reportsNothingWhenEveryNameStoodStill() {
             // The carried-over fit: every cluster still names the same members and kept the
             // placement it had, so nothing laid around those names has to be laid again.
-            var standing = List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN));
+            var standing = fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN));
 
             assertThat(ClusterNameDisturbance
                     .compareFittedNames(standing, List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)))
@@ -68,7 +68,7 @@ final class ClusterNameDisturbanceTests {
             // The room given up and the room taken, since a cell under either one is now laid out
             // against a name that is not where it was.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
-                List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
+                fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
                 List.of(buildNameOf(HEGEMONY, NAME_ACROSS_THE_SECTOR)));
 
             assertThat(disturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
@@ -80,7 +80,7 @@ final class ClusterNameDisturbanceTests {
             // A cluster the previous fit did not name at all: an owner's first cluster, or two
             // clusters a change bridged into one.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
-                List.of(),
+                Map.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_ACROSS_THE_SECTOR)));
 
             assertThat(disturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
@@ -92,7 +92,7 @@ final class ClusterNameDisturbanceTests {
             // The last member of a cluster goes: nothing is drawn there any more, so whatever was
             // keeping clear of the word may have the ring back.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
-                List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
+                fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
                 List.of());
 
             assertThat(disturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
@@ -105,7 +105,7 @@ final class ClusterNameDisturbanceTests {
             // exists, so the fit's own placement is a new one and the old one vanished. Both boxes
             // count, which is what a change severing one cluster into two produces.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
-                List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
+                fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
                 List.of(new ClusterAnchor(
                     new ClusterIdentity(HEGEMONY, Set.of(buildCellKey(HEGEMONY), buildCellKey(TRITACHYON))),
                     0f,
@@ -133,10 +133,27 @@ final class ClusterNameDisturbanceTests {
 
             assertThat(ClusterNameDisturbance
                     .compareFittedNames(
-                        List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
+                        fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
                         List.of(restyled))
                     .isDisturbingNothing())
                 .isFalse();
+        }
+
+        // The filing it is handed is the one the fit was offered its carry-over from, so a
+        // comparison that consumed it would empty the carry-over of whatever ran after it.
+        @Test
+        void leavesTheStandingFilingAsItWas() {
+
+            // ARRANGE
+            var vanishedName = buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN);
+            var standingByIdentity = fileByIdentity(vanishedName);
+
+            // ACT
+            ClusterNameDisturbance.compareFittedNames(standingByIdentity, List.of());
+
+            // ASSERT
+            assertThat(standingByIdentity)
+                .containsOnlyKeys(vanishedName.identity());
         }
 
         @Test
@@ -144,7 +161,7 @@ final class ClusterNameDisturbanceTests {
             // The collapsed fit: no line was accepted, so the placement is a dot on the debug
             // overlay and nothing at all on the map - it neither took room nor gave any up.
             assertThat(ClusterNameDisturbance
-                    .compareFittedNames(List.of(), List.of(buildNameOf(HEGEMONY, null)))
+                    .compareFittedNames(Map.of(), List.of(buildNameOf(HEGEMONY, null)))
                     .isDisturbingNothing())
                 .isTrue();
         }
@@ -155,8 +172,9 @@ final class ClusterNameDisturbanceTests {
 
         @Test
         void leavesOutACellNoMovedNameReaches() {
+
             var disturbance = ClusterNameDisturbance.compareFittedNames(
-                List.of(),
+                Map.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)));
 
             assertThat(disturbance.selectDisturbedCellKeys(
@@ -170,7 +188,7 @@ final class ClusterNameDisturbanceTests {
             // fill. Named outright because it is the deliberate error: cheap to make, and it costs
             // only work, where the opposite error costs a wrong map.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
-                List.of(),
+                Map.of(),
                 List.of(buildNameOf(HEGEMONY, new Segment(80, 90, 90, 90))));
 
             assertThat(disturbance.selectDisturbedCellKeys(Map.of(
@@ -187,7 +205,7 @@ final class ClusterNameDisturbanceTests {
             // A cell recorded without a shape encloses nothing, so no name can reach into it -
             // and it has nothing laid on it to be disturbed anyway.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
-                List.of(),
+                Map.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)));
 
             assertThat(disturbance.selectDisturbedCellKeys(Map.of(CELL_AT_THE_ORIGIN, List.of())))
@@ -196,6 +214,7 @@ final class ClusterNameDisturbanceTests {
 
         @Test
         void reportsNoCellWhenNothingWasDisturbed() {
+
             assertThat(ClusterNameDisturbance.NONE.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
                 .isEmpty();
         }
@@ -217,6 +236,11 @@ final class ClusterNameDisturbanceTests {
             null,
             NAME_THICKNESS,
             1);
+    }
+
+    // The standing placements filed the way the fit drive files them before it compares.
+    private static Map<ClusterIdentity, ClusterAnchor> fileByIdentity(ClusterAnchor... anchors) {
+        return ClusterAnchor.mapAnchorsByIdentity(List.of(anchors));
     }
 
     // A square cell of the given size with its lower-left corner where it is placed.

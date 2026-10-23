@@ -258,7 +258,7 @@ a reader cannot tell one run interrupted by a word from two runs of one colour -
 so the split loses the very readout the carve protects and litters the cell for it.
 The cost is that a ring cut into two near-equal halves spends one of them.
 
-The stretch running through the path's own start arrives from `RingPath.findClearArcs` as two `RingStretch`es,
+The stretch running through the path's own start arrives from `RingPath.findClearStretches` as two `RingStretch`es,
 one at each end,
 since that carve deliberately does not wrap.
 `RingPath.fuseStretchAcrossStart` reads them as the one stretch they are before the longest is chosen -

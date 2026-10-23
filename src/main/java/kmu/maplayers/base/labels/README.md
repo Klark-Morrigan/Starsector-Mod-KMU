@@ -139,6 +139,9 @@ fits what was not carried through `ClusterAnchorPlacement`,
 reports what the fit cost under `mapLayer.fitClusterAnchors`,
 and leaves its pass in the caller's `StandingClusterAnchors`.
 It answers which names moved as a `ClusterNameDisturbance`.
+The standing placements are filed under the cluster each names once per rebuild,
+and that one filing answers both the carry-over and the comparison,
+so the two agree on what "the same cluster" means.
 The cost tag ends with how many names were carried over,
 and whether reuse was offered or which part of the fingerprint dropped it,
 since a refit that searched every cluster reads the same on the clock whatever moved.
@@ -199,6 +202,12 @@ and anything laying a shape into what is left ends up in the gap between two wor
 A collapsed fit contributes to neither reading,
 having nothing drawn to be in the way of.
 
+The words are measured once per pass and kept on `StandingClusterAnchors`,
+which drops them when the next pass replaces the placements.
+Every bake asks for them,
+and an incremental one re-lays a handful of cells against names that did not move,
+so measuring per bake would re-plan and re-measure every name on the map each time.
+
 The boxes are the whole map's,
 never one cluster's:
 a name sits wherever its own cluster is roomiest,
@@ -254,6 +263,22 @@ so the builder disposes the standing list whenever it rebuilds -
 which is why this overlay's text is minted here rather than fetched from KMLib's shared glyph cache,
 whose runs are never disposed.
 When a rebuild happens at all is [the caching notes](../../../../../../../docs/dev/caching.md).
+
+Both draws are paid every frame they are on,
+so neither walks or allocates per frame for something only a rebuild can move:
+
+- A `Label` recolours its string only on a frame the map's alpha moved,
+  since the faded colour is a new object and the alpha holds on nearly every frame.
+- The anchor overlay is packed into [`ClusterAnchorRuns`](anchor/ClusterAnchorRuns.java) once per pass:
+  per verdict,
+  one run of band fills,
+  one of outlines and lane rules,
+  and one of centrelines,
+  plus one run of dots per shade.
+  Its two opacity knobs are sampled with the packing.
+  Moving either is a settings change, which rebuilds the map and so starts a new pass.
+  Whoever draws it keeps the runs while the standing list is the same object,
+  which `StandingClusterAnchors` makes a new one on every pass.
 
 ## What is not here
 

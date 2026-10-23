@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
@@ -55,6 +56,91 @@ final class StandingClusterAnchorsTests {
             assertThatThrownBy(() -> standingAnchors.getAnchors().add(buildAnchorFor("hegemony")))
                 .isInstanceOf(UnsupportedOperationException.class);
         }
+
+        // What lets work packed from one pass, such as the anchor overlay's runs, tell by identity
+        // whether its pass still stands. A pass with the same placements as the last is still a
+        // new pass, since what it was fitted under may have moved.
+        @Test
+        void handsBackADifferentListAfterEveryPass() {
+
+            // ARRANGE
+            var standingAnchors = new StandingClusterAnchors();
+
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
+
+            var earlierAnchors = standingAnchors.getAnchors();
+
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), LATER_FIT);
+
+            // ACT
+            var actualAnchors = standingAnchors.getAnchors();
+
+            // ASSERT
+            assertThat(actualAnchors)
+                .isNotSameAs(earlierAnchors);
+        }
+    }
+
+    @Nested
+    class ComputeLineBoxesIfAbsent {
+
+        // Every bake asks, and the bakes between two passes keep clear of the same names.
+        @Test
+        void measuresOncePerPass() {
+
+            // ARRANGE
+            var standingAnchors = new StandingClusterAnchors();
+            var measurementCount = new AtomicInteger();
+
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
+
+            // ACT
+            standingAnchors.computeLineBoxesIfAbsent(() -> measureCounted(measurementCount));
+            standingAnchors.computeLineBoxesIfAbsent(() -> measureCounted(measurementCount));
+
+            // ASSERT
+            assertThat(measurementCount)
+                .hasValue(1);
+        }
+
+        // The boxes were measured off the placements a pass replaced, so they go with them.
+        @Test
+        void measuresAgainAfterAPassReplacesThePlacements() {
+
+            // ARRANGE
+            var standingAnchors = new StandingClusterAnchors();
+            var measurementCount = new AtomicInteger();
+
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
+            standingAnchors.computeLineBoxesIfAbsent(() -> measureCounted(measurementCount));
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("tritachyon")), LATER_FIT);
+
+            // ACT
+            standingAnchors.computeLineBoxesIfAbsent(() -> measureCounted(measurementCount));
+
+            // ASSERT
+            assertThat(measurementCount)
+                .hasValue(2);
+        }
+
+        @Test
+        void measuresAgainAfterADiscard() {
+
+            // ARRANGE
+            var standingAnchors = new StandingClusterAnchors();
+            var measurementCount = new AtomicInteger();
+
+            standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
+            standingAnchors.computeLineBoxesIfAbsent(() -> measureCounted(measurementCount));
+            standingAnchors.discardAnchors();
+
+            // ACT
+            standingAnchors.computeLineBoxesIfAbsent(() -> measureCounted(measurementCount));
+
+            // ASSERT
+            assertThat(measurementCount)
+                .hasValue(2);
+        }
     }
 
     @Nested
@@ -95,12 +181,10 @@ final class StandingClusterAnchorsTests {
             // reference would let whatever produced it keep editing what the map draws, and
             // under a label that stopped describing it at the moment of the edit.
             var standingAnchors = new StandingClusterAnchors();
-
             var fittedAnchors = new ArrayList<ClusterAnchor>();
+
             fittedAnchors.add(buildAnchorFor("hegemony"));
-
             standingAnchors.replaceAnchors(fittedAnchors, EARLIER_FIT);
-
             fittedAnchors.add(buildAnchorFor("tritachyon"));
 
             assertThat(standingAnchors.getAnchors())
@@ -117,6 +201,7 @@ final class StandingClusterAnchorsTests {
             // would let the next sector's first rebuild match this one's fingerprint and carry
             // over placements fitted inside a partition that no longer exists.
             var standingAnchors = new StandingClusterAnchors();
+
             standingAnchors.replaceAnchors(List.of(buildAnchorFor("hegemony")), EARLIER_FIT);
             standingAnchors.discardAnchors();
 
@@ -130,6 +215,7 @@ final class StandingClusterAnchorsTests {
     // One placement for the given owner. Nothing here reads a placement's geometry, so every
     // fitted component is inert and only the identity distinguishes one from another.
     private static ClusterAnchor buildAnchorFor(String ownerKey) {
+
         return new ClusterAnchor(
             new ClusterIdentity(ownerKey, Set.of(buildCellKey(ownerKey))),
             0f,
@@ -142,6 +228,13 @@ final class StandingClusterAnchorsTests {
             null,
             0f,
             0);
+    }
+
+    // A measurement that counts how often it ran and measures no room at all.
+    private static List<List<double[]>> measureCounted(AtomicInteger measurementCount) {
+
+        measurementCount.incrementAndGet();
+        return List.of();
     }
 
     // A fingerprint separated from its neighbours by the geometry revision alone: neither the tuning

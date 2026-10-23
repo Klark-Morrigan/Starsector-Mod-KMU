@@ -15,18 +15,22 @@
 
 ### 修复
 
-- **聚焦某个势力时，政治地图会跟随殖民地易手**，而不再显示旧的所有者，直到你移动聚焦。
+- **聚焦某个势力时，政治地图会跟随殖民地易手**，而不再显示旧的所有者，直到玩家移动聚焦。
 - **聚焦选择器也会跟随殖民地易手**，因此其中的数字与地图一致。
 - **两个势力权重相同的星系在其中一方取得它时会重绘**，而不必等到下一次完整重绘。
 - **Nexerelin 联盟改名后，联盟视图会显示新名称**，而不再保留旧名称，直到其他变化重绘地图。
-- **市场条件管理器 (MCM) 不再在你已离开的殖民地上打开。**
+- **市场条件管理器 (MCM) 不再在玩家已离开的殖民地上打开。**
 - **中文压缩包中的市场条件管理器 (MCM) 显示为中文。**
 - **中文压缩包的控制台文字在英文旁附有中文译文**：帮助在英文之上显示中文，市场条件管理器的指令则显示其英文，待 Console Commands 的中文版能够显示中文时即可阅读。在此之前，中文会显示为 `?`，这是其 [Fossic 帖子中列出的已知问题](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524)，玩家曾于 [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560)、[2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) 和 [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213) 反馈过。
 - **[KMLib]** **更新检查器会以中文打开中文压缩包的更新日志。**
 
 ### 变更
 
-- **小幅优化**。政治地图重绘时减少了重复工作：势力配色、每个所有者的绘制方式和边界设置在每次重绘时只读取一次，而不再按星系或单元逐一读取。光标停留期间，悬停框只读取一次光标下的星系，而不再每帧读取；地图重绘或你重新移到该星系上时，它会再次读取。
+- **小幅优化**。政治地图减少了重复工作：
+  - 势力配色、每个所有者的绘制方式和边界设置在每次重绘时只读取一次，而不再按星系或单元逐一读取。
+  - 光标停留期间，悬停框只读取一次光标下的星系，而不再每帧读取；地图重绘或玩家重新移到该星系上时，它会再次读取。
+  - 势力名称在绘制时不再每帧为每个名称生成新的颜色。
+  - 殖民地变化后重新排布附近的色带时，不再先把地图上的每个名称重新测量一遍。
 
 ### 面向开发者
 
@@ -66,6 +70,9 @@
 - **`base.ribbon.CellRibbonStore`**：一次构建的色带、色带路径和色带所沿的环线；单元形状改变时三者一起丢弃。
 - **`base.ribbon.RibbonPathInset`**：描绘色带路径的两种位置，保留内缩或放弃内缩。
 - **`base.ribbon.RibbonBakeTally`**：一次烘焙如何处理图层提供色带的各单元，以 `banded`、`traced`、`reused`、`unplanned` 和 `refusedForRoom` 写在 `mapLayer.bakeRibbons` 的调用标签上。
+- **`base.labels.anchor.ClusterAnchorRuns`**：每次拟合打包一次的锚点叠加层。每种判定各有一个带状框填充、一个轮廓与行间分隔线、一个中线的绘制批次，另按配色各有一个锚点绘制批次，并带有打包时的两项不透明度设置。`packAnchorRuns(List)` 打包一次拟合的落点。
+- **`StandingClusterAnchors.computeLineBoxesIfAbsent(Supplier)`**：现有名称的绘制文字所占的空间，每次拟合测量一次，并随该次拟合一起丢弃。`LabelLineBoxes.listLineBoxes` 通过它读取。
+- **`Label.applyFade(float)`**：只在地图的不透明度变化时为文字重新着色。
 - **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。
 
 #### 修复
@@ -217,6 +224,10 @@
 | `KmuConditionPickerEntry` 的构造函数 | `KmuConditionPickerEntry.Builder(String, String, KmuConditionPickerEntryState)`，每个可选部分一个方法，最后调用 `build()` |
 | `KmuConditionPickerLocation(String, String, KmuPickerFaction, String, String, String, String)` | `KmuConditionPickerLocation.Builder()`，对一无所知的位置则用 `createUnknownLocation()` |
 | 需经类型转换才能取得的 `StarsectorEditableMarket.getMarket()` | `KmuEditableMarket.findStarsectorMarket()` 和 `findCondition(String)`，该端口的每个实现都须提供 |
+| 每帧读取两项不透明度设置的 `ClusterAnchorRenderer.renderOnMap(List, MapFrame)` | `renderOnMap(ClusterAnchorRuns, MapFrame)`，绘制一次拟合打包出的绘制批次。叠加层把每种判定的填充以及轮廓与分隔线各作为一个绘制批次绘制 |
+| `ClusterNameDisturbance.compareFittedNames(List, List)` | `compareFittedNames(Map, List)`，接受按 `ClusterAnchor.mapAnchorsByIdentity` 建立的现有落点索引，即拟合沿用时所用的同一个索引。它只读取该索引 |
+| 带有 `text()`、`baseColour()`、`hangX()`、`hangY()` 和 `slantDegrees()` 的记录 `Label` | 带有 `getText()`、`getHangX()`、`getHangY()` 和 `getSlantDegrees()` 的 final 类。基础颜色归标签自身所有 |
+| `StandingClusterAnchors.getAnchors()`，对一个原地修改的列表的只读视图 | 每次拟合都给出一个新的不可变列表，因此由某次拟合派生的工作可以按对象身份判断该次拟合是否仍然有效 |
 
 ##### 移至 KMLib
 

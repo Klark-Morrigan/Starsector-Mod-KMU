@@ -556,6 +556,9 @@ A mismatch discards the carry-over whole and the rebuild searches every cluster.
 What this cache holds is therefore one [`StandingClusterAnchors`](../../src/main/java/kmu/maplayers/base/labels/anchor/StandingClusterAnchors.java)
 and not a list beside a fingerprint -
 it goes into a rebuild whole and comes back the same value.
+What is read off one pass rides with it the same way:
+the room the drawn words take is measured once per pass and dropped with it,
+and the anchor overlay is packed into its draw runs once per pass rather than walked every frame.
 
 The mechanics -
 what is re-resolved on a carried placement,

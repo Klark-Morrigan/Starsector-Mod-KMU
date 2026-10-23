@@ -4,7 +4,7 @@ import kmlib.math.geometry.Bounds;
 import kmlib.starsector.systems.SystemKey;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -46,33 +46,42 @@ public final class ClusterNameDisturbance {
     /**
      * Reads what changed between two fits' placements.
      *
-     * @param standingAnchors the placements that were standing before this fit, in any order
-     * @param fittedAnchors   the placements this fit produced, in any order
+     * @param standingByIdentity the placements that were standing before this fit, filed under the
+     *                           cluster each names - the filing the fit's carry-over was offered
+     *                           from, so the two questions agree on what "the same cluster" means.
+     *                           Only read
+     * @param fittedAnchors      the placements this fit produced, in any order
      * @return the room the fit disturbed, {@link #NONE} where it disturbed none
      */
     public static ClusterNameDisturbance compareFittedNames(
-            List<ClusterAnchor> standingAnchors,
+            Map<ClusterIdentity, ClusterAnchor> standingByIdentity,
             List<ClusterAnchor> fittedAnchors) {
 
-        // Copied into a map this walk may consume, since what is left in it once every fitted
-        // placement has been matched off is exactly the clusters this fit no longer names - the
-        // vanished half, with no second walk to find it.
-        var unmatchedStanding = new HashMap<>(ClusterAnchor.mapAnchorsByIdentity(standingAnchors));
+        // The clusters this fit still names, gathered on the walk that matches them, so the
+        // vanished half is whatever stood under an identity not among them.
+        var fittedIdentities = new HashSet<ClusterIdentity>();
         var disturbedBounds = new ArrayList<Bounds>();
 
         for (var fitted : fittedAnchors) {
 
-            var standing = unmatchedStanding.remove(fitted.identity());
+            fittedIdentities.add(fitted.identity());
 
+            var standing = standingByIdentity.get(fitted.identity());
             if (fitted.equals(standing)) {
                 continue;
             }
+
             addNameBounds(disturbedBounds, standing);
             addNameBounds(disturbedBounds, fitted);
         }
-        for (var vanished : unmatchedStanding.values()) {
-            addNameBounds(disturbedBounds, vanished);
+
+        for (var standing : standingByIdentity.entrySet()) {
+
+            if (!fittedIdentities.contains(standing.getKey())) {
+                addNameBounds(disturbedBounds, standing.getValue());
+            }
         }
+
         return disturbedBounds.isEmpty()
             ? NONE
             : new ClusterNameDisturbance(disturbedBounds);
@@ -100,6 +109,7 @@ public final class ClusterNameDisturbance {
         if (disturbedBounds.isEmpty()) {
             return List.of();
         }
+
         var disturbedCellKeys = new ArrayList<SystemKey>();
 
         for (var cell : ringByCellKey.entrySet()) {
@@ -107,9 +117,11 @@ public final class ClusterNameDisturbance {
             // A cell with no outline encloses nothing, so no name can reach into it.
             if (!cell.getValue().isEmpty()
                     && isDisturbing(Bounds.computeEnclosingBounds(cell.getValue()))) {
+
                 disturbedCellKeys.add(cell.getKey());
             }
         }
+
         return disturbedCellKeys;
     }
 
@@ -117,10 +129,12 @@ public final class ClusterNameDisturbance {
     private boolean isDisturbing(Bounds cellBounds) {
 
         for (var nameBounds : disturbedBounds) {
+
             if (cellBounds.overlaps(nameBounds)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -132,8 +146,8 @@ public final class ClusterNameDisturbance {
         if (anchor == null) {
             return;
         }
-        var box = ClusterNameBoxes.computeNameBox(anchor);
 
+        var box = ClusterNameBoxes.computeNameBox(anchor);
         if (!box.isEmpty()) {
             disturbedBounds.add(Bounds.computeEnclosingBounds(box));
         }
