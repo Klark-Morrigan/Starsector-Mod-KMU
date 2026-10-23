@@ -72,6 +72,7 @@
 - **`base.ribbon.RibbonBakeTally`**：一次烘焙如何处理图层提供色带的各单元，以 `banded`、`traced`、`reused`、`unplanned` 和 `refusedForRoom` 写在 `mapLayer.bakeRibbons` 的调用标签上。
 - **`base.labels.anchor.ClusterAnchorRuns`**：每次拟合打包一次的锚点叠加层。每种判定各有一个带状框填充、一个轮廓与行间分隔线、一个中线的绘制批次，另按配色各有一个锚点绘制批次，并带有打包时的两项不透明度设置。`packAnchorRuns(List)` 打包一次拟合的落点。
 - **`StandingClusterAnchors.computeLineBoxesIfAbsent(Supplier)`**：现有名称的绘制文字所占的空间，每次拟合测量一次，并随该次拟合一起丢弃。`LabelLineBoxes.listLineBoxes` 通过它读取。
+- **`ClusterAnchor.computeFittedBox()`**：落点的拟合框，即名称拟合时预留的框，是名称拟合范围的唯一表述。
 - **`Label.applyFade(float)`**：只在地图的不透明度变化时为文字重新着色。
 - **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。
 
@@ -111,6 +112,7 @@
 | `ownermap.ribbon` 中的 `RibbonPlan`、`RibbonSegment` 和 `SystemRibbonPlanner`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonBuilder`、`RibbonPathTracer`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle` 和 `RibbonBakePhases` | `base.ribbon`：色带是沿单元的环线排布的色段，与色段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
 | `ownermap.render.ribbon` 中的 `CellRibbonPath`、`RibbonPathVerdict` 和 `CellRibbonPathRenderer` | `base.ribbon.overlay`：色带路径叠加层，与色带本身分开。构建禁止它导入 `base.ribbon` 的其余部分 |
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`：任何有区域的图层都以同样方式拟合名称 |
+| `base.labels.anchor` 中的 `ClusterNameBoxes` 和 `base.labels` 中的 `LabelLineBoxes` | `base.labels.extent`：名称所占空间的两种读法。构建禁止 `base.labels.anchor` 导入 `base.labels` 的其余部分 |
 | `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，不再实现 `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`，与读取它的悬停框放在一起 |
 | `politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner` | `politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner`，与它所组合的两种机制并列。构建禁止 `politicalmap.dominance` 与 `politicalmap.claims` 相互导入 |
@@ -173,7 +175,6 @@
 | 各自读取所需设置的 `CellRibbonsBaker.createForPass(OwnerMapClusters, CellGeometryCache, SectorWalk, StandingClusterAnchors)`、`CellRibbonSource.createForPass(SectorWalk, OwnerSource, RibbonBakeSurface)` 和 `RibbonBakeSurface.createForPass(OwnerMapClusters, CellGeometryCache, StandingClusterAnchors)` | `CellRibbonsBaker.createForPass(OwnerMapClusters, CellGeometryCache, SectorWalk, StandingClusterAnchors, RibbonBakeSettings)`，接收调用方读取的设置。`CellRibbonSource.createForPass` 还接收 `RibbonStyle` 和 `RibbonPlanRules`，`RibbonBakeSurface.createForPass` 还接收色带是否避让区域名称以及 `RibbonNameClearanceChoice`。关闭色带时，本次烘焙两者都不创建 |
 | 由图层依次调用的各个步骤 `CellRibbonBuilder.buildCellRibbon(RingPath, RibbonPlan, RibbonStyle, List, IterationScope)` 和 `RibbonPathTracer.traceLaidRibbonPath(List, double[], RibbonStyle)` | `CellRibbonBuilder.layCellRibbon(SystemKey, List, double[], RibbonPlan, RibbonStyle, List, CellRingPathCache, IterationScope, RibbonBakeTally)`：一次调用排布一个单元的色带。计划为空时，在遍历任何环线之前就给出结果；环线通过已保存的环线取得。它自行标记描绘、裁切和描边三个环节，因此 `RibbonBakePhases` 留给图层的只有 `BAKE_SECTION` 和 `PLAN_PHASE`；它还把该单元计入其烘焙调用的计数 |
 | `CellRibbonSource.buildCellRibbon(SystemKey, SystemKey, List, IterationScope)` | 还接收其烘焙调用所计入的 `RibbonBakeTally`。在计划之前就被拒绝的单元不计入 |
-| `ClusterAnchorPlacement.ClusterAnchorFit(List, int, int)` | `ClusterAnchorFit(List, int, int, int)`：未经搜索而沿用的名称位置数排在两项开销计数之前 |
 | `RibbonPathTracer.traceInspectedRibbonPath(List, double[], RibbonStyle)` 和 `CellRibbonSource.traceCellRibbonPath(SystemKey, List)` | `traceInspectedRibbonPath(SystemKey, List, double[], RibbonStyle, CellRingPathCache)` 和 `traceCellRibbonPath(SystemKey, SystemKey, List)`，单元的键在前：叠加层读取色带烘焙已遍历的环线 |
 | `CellRingPathCache` 的 `findRingPathOf(SystemKey)`、`putRingPath(SystemKey, RingPath)` 和 `dropRingPathOf(SystemKey)` | `findRingPathOf(SystemKey, RibbonPathInset)`：单元为每种描绘位置各保存一条环线。写入归色带自身所有 |
 | `PaintedCellStore` 的 `getRibbonByCellKey()`、`getRibbonPathByCellKey()`、`getRingPathCache()`、`putCellRibbon(SystemKey, CellRibbon)` 和 `putCellRibbonPath(SystemKey, CellRibbonPath)` | 移到 `PaintedCellStore.getRibbonStore()` 给出的 `base.ribbon.CellRibbonStore` 上，其 `dropRingFittedWorkOf(SystemKey)` 一并清除单元的色带、色带路径和环线 |
@@ -225,7 +226,8 @@
 | `KmuConditionPickerLocation(String, String, KmuPickerFaction, String, String, String, String)` | `KmuConditionPickerLocation.Builder()`，对一无所知的位置则用 `createUnknownLocation()` |
 | 需经类型转换才能取得的 `StarsectorEditableMarket.getMarket()` | `KmuEditableMarket.findStarsectorMarket()` 和 `findCondition(String)`，该端口的每个实现都须提供 |
 | 每帧读取两项不透明度设置的 `ClusterAnchorRenderer.renderOnMap(List, MapFrame)` | `renderOnMap(ClusterAnchorRuns, MapFrame)`，绘制一次拟合打包出的绘制批次。叠加层把每种判定的填充以及轮廓与分隔线各作为一个绘制批次绘制 |
-| `ClusterNameDisturbance.compareFittedNames(List, List)` | `compareFittedNames(Map, List)`，接受按 `ClusterAnchor.mapAnchorsByIdentity` 建立的现有落点索引，即拟合沿用时所用的同一个索引。它只读取该索引 |
+| 公开的 `ClusterNameDisturbance.compareFittedNames(List, List)` 和 `isDisturbingNothing()` | 改为包私有的 `compareFittedNames(Map, List)`：只在拟合中比较，所用的正是提供沿用时的同一个落点索引。`isDisturbingNothing()` 已移除：没有发现任何名称移动的比较返回 `ClusterNameDisturbance.NONE`，读取方改为读取 `selectDisturbedCellKeys(Map)` |
+| 公开的 `ClusterAnchorPlacement`、`ClusterPartition`、`FontToleranceAnnouncement`、`LabelSlantPreference` 和 `ClusterLabelSubject`，以及 `ClusterLabelResolvers.resolveLabelSubjectFor(ClusterIdentity)`、`ClusterAnchor.copyWithColour(Color)` 和 `ClusterAnchor.mapAnchorsByIdentity(List)` | 改为包私有：图层只能通过 `ClusterAnchorsBuilder.rebuildClusterAnchors` 拟合名称 |
 | 带有 `text()`、`baseColour()`、`hangX()`、`hangY()` 和 `slantDegrees()` 的记录 `Label` | 带有 `getText()`、`getHangX()`、`getHangY()` 和 `getSlantDegrees()` 的 final 类。基础颜色归标签自身所有 |
 | `StandingClusterAnchors.getAnchors()`，对一个原地修改的列表的只读视图 | 每次拟合都给出一个新的不可变列表，因此由某次拟合派生的工作可以按对象身份判断该次拟合是否仍然有效 |
 

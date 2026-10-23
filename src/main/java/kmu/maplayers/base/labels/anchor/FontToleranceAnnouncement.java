@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
  * fit that consumes it rather than by any one layer's fit: held per layer, two layers fitting names
  * would each restate the same knob, and the line would stop meaning "this just moved".
  */
-public final class FontToleranceAnnouncement {
+final class FontToleranceAnnouncement {
 
     private static final Logger LOG = Global.getLogger(FontToleranceAnnouncement.class);
 
@@ -39,7 +39,7 @@ public final class FontToleranceAnnouncement {
      *
      * @param spec the tuning a fit is about to run under
      */
-    public static void announceIfMoved(LabelAnchorSpecification spec) {
+    static void announceIfMoved(LabelAnchorSpecification spec) {
 
         var tolerance = spec.bandFit().fontHeightTolerance();
 

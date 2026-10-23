@@ -40,7 +40,7 @@ import java.util.Set;
  * no settings, ownership, or filter state, names nothing on the map, and needs nothing beyond the
  * clusters it is handed.
  */
-public final class ClusterAnchorPlacement {
+final class ClusterAnchorPlacement {
 
     // The two directions every fan carries beyond its configured width: the cluster's own
     // principal axis and the preferred slant. Fixed, so a fan's configured width and the
@@ -73,7 +73,7 @@ public final class ClusterAnchorPlacement {
      * @param directionCount the configured fan width
      * @return the directions a cluster's sweep actually visits
      */
-    public static int countCandidateDirections(int directionCount) {
+    static int countCandidateDirections(int directionCount) {
         return directionCount + FIXED_EXTRA_DIRECTIONS;
     }
 
@@ -111,7 +111,7 @@ public final class ClusterAnchorPlacement {
      * @return one anchor per cluster with a site to fit, in cluster order, with what the
      *         sweep cost to produce them
      */
-    public static ClusterAnchorFit computeClusterAnchors(
+    static ClusterAnchorFit computeClusterAnchors(
             ClusterPartition partition,
             LabelAnchorSpecification spec,
             ClusterLabelResolvers labelResolvers,
@@ -124,10 +124,12 @@ public final class ClusterAnchorPlacement {
         var bandFitCount = 0;
 
         for (var memberSystemKeys : clusters) {
+
             var sites = collectClusterSites(memberSystemKeys, partition.siteBySystemKey());
             if (sites.isEmpty()) {
                 continue;
             }
+
             var owner = partition
                 .grouping()
                 .ownerBySystemKey()
@@ -141,12 +143,15 @@ public final class ClusterAnchorPlacement {
 
             var carried = carryOverAnchor(reusableAnchors.get(subject.identity()), subject);
             if (carried != null) {
+
                 // A carried placement is the saving itself, so it contributes to neither cost
                 // count: no candidate was generated for it and no band was fitted.
                 anchors.add(carried);
                 carriedCount++;
+
                 continue;
             }
+
             var axis = resolveClusterAxis(memberSystemKeys, partition.edgesByCellKey(), sites);
             var rings = spec.search().borderTrace().traceRings(
                 memberSystemKeys,
@@ -164,9 +169,11 @@ public final class ClusterAnchorPlacement {
             // out of early contributes the nothing it cost rather than its share of a
             // product taken over every cluster.
             anchors.add(search.anchor());
+
             candidateCount += search.candidateCount();
             bandFitCount += search.bandFitCount();
         }
+
         return new ClusterAnchorFit(anchors, carriedCount, candidateCount, bandFitCount);
     }
 
@@ -188,9 +195,10 @@ public final class ClusterAnchorPlacement {
             ClusterAnchor standing,
             ClusterLabelSubject subject) {
 
-        if (standing == null || standing.lineCount() == 0) {
+        if (standing == null || standing.lineCount() == NO_FITTED_LINES) {
             return null;
         }
+
         var nameEstimator = subject.nameEstimator();
 
         // Asked first because an empty wrap is ambiguous on its own: it is what a stand-in
@@ -203,8 +211,10 @@ public final class ClusterAnchorPlacement {
         // own line count fillable by winning it.
         if (!Double.isFinite(
                 nameEstimator.requiredLengthFor(standing.fontHeight(), standing.lineCount()))) {
+
             return null;
         }
+
         if (!standing.nameLines().equals(nameEstimator.wrapIntoLines(standing.lineCount()))) {
             return null;
         }
@@ -236,6 +246,7 @@ public final class ClusterAnchorPlacement {
         var centroidY = (float) axis.centroidY();
 
         if (rings.isEmpty()) {
+
             // No traceable border leaves nothing to prove a candidate interior - the
             // one dead end the search cannot work around, so only the dot can show. No
             // candidate was tried and no band was fitted, so both tallies are zero.
@@ -244,10 +255,12 @@ public final class ClusterAnchorPlacement {
                 0,
                 0);
         }
+
         var fitter = newBoxFitter(spec, subject.nameEstimator());
         var sweep = sweepCandidateLines(rings, siteBySystemKey.values(), axis, spec, fitter);
 
         if (sweep.bestAccepted() == null) {
+
             // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
             // near-miss span rides along only when the rejected toggle asked for it.
             return new ClusterSearch(
@@ -285,10 +298,13 @@ public final class ClusterAnchorPlacement {
         RejectedSpan bestRejected = null;
 
         for (var direction : directions) {
+
             var extent = Points.projectCombinedExtentOnto(rings, -direction[1], direction[0]);
+
             for (var offsetIndex = 1; offsetIndex <= spec.search().offsetCount(); offsetIndex++) {
 
                 candidateCount++;
+
                 var through = offsetThroughPoint(
                     axis,
                     direction,
@@ -303,6 +319,7 @@ public final class ClusterAnchorPlacement {
 
                 var box = fitter.fitLargestBox(chord);
                 if (box != null) {
+
                     // Selection docks the fitted font height for lines that stray from the
                     // cluster's preferred slant - a sizing-blind choice, so it lives here,
                     // not in the fitter; the unbiased pick keeps the raw-height winner for
@@ -313,15 +330,18 @@ public final class ClusterAnchorPlacement {
                         spec.scoring().verticalPenaltyExponent());
 
                     if (bestAccepted == null || score > bestScore) {
+
                         bestAccepted = box;
                         bestScore = score;
                     }
+
                     longestAccepted = Picks.pickHigher(
                         longestAccepted,
                         box,
                         LabelBoxFitter.BoxFit::fontHeight);
 
                 } else if (spec.diagnostics().showRejectedAxis()) {
+
                     bestRejected = Picks.pickHigher(
                         bestRejected,
                         findRejectedSpan(fitter, chord, spec.nameFit().minFontHeight()),
@@ -329,6 +349,7 @@ public final class ClusterAnchorPlacement {
                 }
             }
         }
+
         return new CandidateSweep(bestAccepted, longestAccepted, bestRejected, candidateCount);
     }
 
@@ -345,11 +366,12 @@ public final class ClusterAnchorPlacement {
             Segment unbiasedAxis) {
 
         var accepted = box.segment();
+        var acceptedCentre = accepted.computeCentre();
 
         return new ClusterAnchor(
             subject.identity(),
-            (float) ((accepted.startX() + accepted.endX()) / 2.0),
-            (float) ((accepted.startY() + accepted.endY()) / 2.0),
+            (float) acceptedCentre[0],
+            (float) acceptedCentre[1],
             subject.colour(),
             subject.nameEstimator().wrapIntoLines(box.lineCount()),
             (float) box.fontHeight(),
@@ -411,12 +433,17 @@ public final class ClusterAnchorPlacement {
             int directionCount) {
 
         var directions = new ArrayList<double[]>(directionCount + 2);
+
         for (var i = 0; i < directionCount; i++) {
+
             var angle = Math.PI * i / directionCount;
+
             directions.add(new double[] {Math.cos(angle), Math.sin(angle)});
         }
+
         directions.add(new double[] {axis.axisX(), axis.axisY()});
         directions.add(slant.toDirection());
+
         return directions;
     }
 
@@ -458,7 +485,10 @@ public final class ClusterAnchorPlacement {
         // The red diagnostic's line: the furthest-along candidate discarded before the accepted
         // line collapsed, or nothing where the toggle never asked the sweep to keep one.
         private Segment resolveRejectedAxis() {
-            return bestRejected == null ? NO_REJECTED_AXIS : bestRejected.segment();
+
+            return bestRejected == null
+                ? NO_REJECTED_AXIS
+                : bestRejected.segment();
         }
 
         // The yellow diagnostic's line: the pure longest accepted box, shown only where the toggle
@@ -470,8 +500,8 @@ public final class ClusterAnchorPlacement {
             if (!spec.diagnostics().showUnbiasedAxis() || longestAccepted == null) {
                 return NO_UNBIASED_AXIS;
             }
-            var unbiasedSegment = longestAccepted.segment();
 
+            var unbiasedSegment = longestAccepted.segment();
             return unbiasedSegment.equals(bestAccepted.segment())
                 ? NO_UNBIASED_AXIS
                 : unbiasedSegment;
@@ -520,14 +550,17 @@ public final class ClusterAnchorPlacement {
         if (siteAxis.length() >= Limits.MIN_EDGE_LENGTH) {
             return siteAxis;
         }
+
         var cellVertices = collectClusterCellVertices(memberSystemKeys, edgesByCellKey);
         if (cellVertices.size() < 2) {
             return siteAxis;
         }
+
         var vertexAxis = PrincipalAxis.fitTo(cellVertices);
         if (vertexAxis.length() < Limits.MIN_EDGE_LENGTH) {
             return siteAxis;
         }
+
         // The vertex cloud supplies the direction, so it also supplies the minor extent -
         // the slant gate reads the elongation of whichever cloud gave the axis, not the
         // site cloud's (which had no usable spread here).
@@ -548,16 +581,21 @@ public final class ClusterAnchorPlacement {
             Map<SystemKey, List<CellEdge>> edgesByCellKey) {
 
         var vertices = new ArrayList<double[]>();
+
         for (var systemKey : memberSystemKeys) {
+
             var edges = edgesByCellKey.get(systemKey);
             if (edges == null) {
                 continue;
             }
+
             for (var edge : edges) {
+
                 vertices.add(new double[] {edge.x1(), edge.y1()});
                 vertices.add(new double[] {edge.x2(), edge.y2()});
             }
         }
+
         return vertices;
     }
 
@@ -576,7 +614,7 @@ public final class ClusterAnchorPlacement {
      * @param candidateCount the candidate chords the sweep generated across every cluster
      * @param bandFitCount   the band fits those candidates spent across every cluster
      */
-    public record ClusterAnchorFit(
+    record ClusterAnchorFit(
         List<ClusterAnchor> anchors,
         int carriedCount,
         int candidateCount,
@@ -599,12 +637,15 @@ public final class ClusterAnchorPlacement {
             Map<SystemKey, double[]> siteBySystemKey) {
 
         var sites = new ArrayList<double[]>(memberSystemKeys.size());
+
         for (var systemKey : memberSystemKeys) {
+
             var site = siteBySystemKey.get(systemKey);
             if (site != null) {
                 sites.add(site);
             }
         }
+
         return sites;
     }
 }

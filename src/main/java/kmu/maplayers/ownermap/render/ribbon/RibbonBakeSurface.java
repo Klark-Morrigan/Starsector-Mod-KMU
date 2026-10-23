@@ -3,9 +3,9 @@ package kmu.maplayers.ownermap.render.ribbon;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.labels.LabelLineBoxes;
-import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
+import kmu.maplayers.base.labels.extent.ClusterNameBoxes;
+import kmu.maplayers.base.labels.extent.LabelLineBoxes;
 import kmu.maplayers.base.ribbon.CellRingPathCache;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;

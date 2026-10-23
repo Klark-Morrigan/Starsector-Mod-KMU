@@ -87,6 +87,23 @@ public record ClusterAnchor(
     int lineCount) {
 
     /**
+     * The box this placement's fit reserved: the accepted line at the block's fitted girth.
+     *
+     * <p>The one statement of what a name's fitted extent is. Whatever keeps clear of the names
+     * reads it for the whole map, and the comparison of two fits reads it one placement at a time,
+     * so the rule lives on the placement rather than in either of them, where the two could drift.
+     *
+     * @return a closed ring of {x, y} corners, or an empty list where the placement occupies no
+     *         room at all - a fit that accepted no line, or one whose block has no girth
+     */
+    public List<double[]> computeFittedBox() {
+
+        return acceptedAxis == null
+            ? List.of()
+            : acceptedAxis.computeBandCorners(thickness);
+    }
+
+    /**
      * This placement in a different shade, every fitted component left exactly as it was.
      *
      * <p>The shade is resolved afresh each pass and is no input to the fit - the search
@@ -97,7 +114,7 @@ public record ClusterAnchor(
      * @param restyledColour the shade the name and its debug dot should draw in now
      * @return a copy carrying that shade in place of this one's
      */
-    public ClusterAnchor copyWithColour(Color restyledColour) {
+    ClusterAnchor copyWithColour(Color restyledColour) {
         return new ClusterAnchor(
             identity,
             anchorX,
@@ -124,7 +141,7 @@ public record ClusterAnchor(
      * @param anchors the placements to file, in any order
      * @return each cluster's placement, filed under its identity
      */
-    public static Map<ClusterIdentity, ClusterAnchor> mapAnchorsByIdentity(
+    static Map<ClusterIdentity, ClusterAnchor> mapAnchorsByIdentity(
             List<ClusterAnchor> anchors) {
 
         var anchorByIdentity = new HashMap<ClusterIdentity, ClusterAnchor>();

@@ -32,7 +32,8 @@ public record ClusterLabelResolvers(
      * @param identity the cluster whose owner both answers are looked up under
      * @return the cluster with its shade and its name measurement attached
      */
-    public ClusterLabelSubject resolveLabelSubjectFor(ClusterIdentity identity) {
+    ClusterLabelSubject resolveLabelSubjectFor(ClusterIdentity identity) {
+
         return new ClusterLabelSubject(
             identity,
             labelColourByOwner.apply(identity.ownerKey()),

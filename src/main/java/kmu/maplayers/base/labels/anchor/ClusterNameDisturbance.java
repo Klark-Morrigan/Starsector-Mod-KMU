@@ -28,68 +28,25 @@ import java.util.Map;
  *
  * <p>What is recorded per moved name is the box its fit reserved, at both its old and its new
  * place: the room it gave up matters exactly as much as the room it took, since what is laid
- * around a name is free to reclaim the ring it left. The fitted box is the looser of the two
- * readings and encloses the drawn words, so it is conservative whichever reading the consumer
- * keeps clear of - see {@link ClusterNameBoxes} and {@link kmu.maplayers.base.labels.LabelLineBoxes}.
+ * around a name is free to reclaim the ring it left. The fitted box
+ * ({@link ClusterAnchor#computeFittedBox()}) is the looser of the two readings and encloses the
+ * drawn words, so it is conservative whichever reading the consumer keeps clear of.
+ *
+ * <p>Made only by the fit drive beside it, the one point where the standing and the fitted
+ * placements exist at once; a consumer reads which cells it reaches.
  */
 public final class ClusterNameDisturbance {
 
-    /** A fit that moved no name at all, and so obliges nobody to re-lay anything. */
+    /**
+     * A fit that moved no name at all, and so obliges nobody to re-lay anything. Every comparison
+     * that finds no name moved answers this one value.
+     */
     public static final ClusterNameDisturbance NONE = new ClusterNameDisturbance(List.of());
 
     private final List<Bounds> disturbedBounds;
 
     private ClusterNameDisturbance(List<Bounds> disturbedBounds) {
         this.disturbedBounds = disturbedBounds;
-    }
-
-    /**
-     * Reads what changed between two fits' placements.
-     *
-     * @param standingByIdentity the placements that were standing before this fit, filed under the
-     *                           cluster each names - the filing the fit's carry-over was offered
-     *                           from, so the two questions agree on what "the same cluster" means.
-     *                           Only read
-     * @param fittedAnchors      the placements this fit produced, in any order
-     * @return the room the fit disturbed, {@link #NONE} where it disturbed none
-     */
-    public static ClusterNameDisturbance compareFittedNames(
-            Map<ClusterIdentity, ClusterAnchor> standingByIdentity,
-            List<ClusterAnchor> fittedAnchors) {
-
-        // The clusters this fit still names, gathered on the walk that matches them, so the
-        // vanished half is whatever stood under an identity not among them.
-        var fittedIdentities = new HashSet<ClusterIdentity>();
-        var disturbedBounds = new ArrayList<Bounds>();
-
-        for (var fitted : fittedAnchors) {
-
-            fittedIdentities.add(fitted.identity());
-
-            var standing = standingByIdentity.get(fitted.identity());
-            if (fitted.equals(standing)) {
-                continue;
-            }
-
-            addNameBounds(disturbedBounds, standing);
-            addNameBounds(disturbedBounds, fitted);
-        }
-
-        for (var standing : standingByIdentity.entrySet()) {
-
-            if (!fittedIdentities.contains(standing.getKey())) {
-                addNameBounds(disturbedBounds, standing.getValue());
-            }
-        }
-
-        return disturbedBounds.isEmpty()
-            ? NONE
-            : new ClusterNameDisturbance(disturbedBounds);
-    }
-
-    /** @return whether this fit left every name where it was, so nothing has to be re-laid */
-    public boolean isDisturbingNothing() {
-        return disturbedBounds.isEmpty();
     }
 
     /**
@@ -125,6 +82,50 @@ public final class ClusterNameDisturbance {
         return disturbedCellKeys;
     }
 
+    /**
+     * Reads what changed between two fits' placements.
+     *
+     * @param standingByIdentity the placements that were standing before this fit, filed under the
+     *                           cluster each names - the filing the fit's carry-over was offered
+     *                           from, so the two questions agree on what "the same cluster" means.
+     *                           Only read
+     * @param fittedAnchors      the placements this fit produced, in any order
+     * @return the room the fit disturbed, {@link #NONE} where it disturbed none
+     */
+    static ClusterNameDisturbance compareFittedNames(
+            Map<ClusterIdentity, ClusterAnchor> standingByIdentity,
+            List<ClusterAnchor> fittedAnchors) {
+
+        // The clusters this fit still names, gathered on the walk that matches them, so the
+        // vanished half is whatever stood under an identity not among them.
+        var fittedIdentities = new HashSet<ClusterIdentity>();
+        var disturbedBounds = new ArrayList<Bounds>();
+
+        for (var fitted : fittedAnchors) {
+
+            fittedIdentities.add(fitted.identity());
+
+            var standing = standingByIdentity.get(fitted.identity());
+            if (fitted.equals(standing)) {
+                continue;
+            }
+
+            addNameBounds(disturbedBounds, standing);
+            addNameBounds(disturbedBounds, fitted);
+        }
+
+        for (var standing : standingByIdentity.entrySet()) {
+
+            if (!fittedIdentities.contains(standing.getKey())) {
+                addNameBounds(disturbedBounds, standing.getValue());
+            }
+        }
+
+        return disturbedBounds.isEmpty()
+            ? NONE
+            : new ClusterNameDisturbance(disturbedBounds);
+    }
+
     // Whether any of the moved names reaches the given extent.
     private boolean isDisturbing(Bounds cellBounds) {
 
@@ -147,7 +148,7 @@ public final class ClusterNameDisturbance {
             return;
         }
 
-        var box = ClusterNameBoxes.computeNameBox(anchor);
+        var box = anchor.computeFittedBox();
         if (!box.isEmpty()) {
             disturbedBounds.add(Bounds.computeEnclosingBounds(box));
         }

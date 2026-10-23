@@ -20,7 +20,7 @@ import kmlib.math.geometry.PrincipalAxis;
  * and the box fit are unchanged - so the search still decides on measured lengths, just
  * measured against a per-cluster slant instead of the screen horizontal.
  */
-public record LabelSlantPreference(double preferredAngle) {
+record LabelSlantPreference(double preferredAngle) {
 
     /**
      * Resolves the slant a cluster's label prefers from the cluster's principal axis:
@@ -32,10 +32,12 @@ public record LabelSlantPreference(double preferredAngle) {
      * @param maxSlantDegrees the ceiling on the lean, in degrees; 0 forces level labels
      * @return the resolved slant preference
      */
-    public static LabelSlantPreference resolveFrom(PrincipalAxis axis, double maxSlantDegrees) {
+    static LabelSlantPreference resolveFrom(PrincipalAxis axis, double maxSlantDegrees) {
+
         var axisAngle = Angles.foldToHalfTurn(Math.atan2(axis.axisY(), axis.axisX()));
         var maxSlant = Math.toRadians(maxSlantDegrees);
         var capped = Math.max(-maxSlant, Math.min(maxSlant, axisAngle));
+
         return new LabelSlantPreference(capped * axis.computeElongation());
     }
 
@@ -51,9 +53,11 @@ public record LabelSlantPreference(double preferredAngle) {
      * @param exponent  how sharply the penalty concentrates toward the perpendicular
      * @return the multiplier in {@code [1 - strength, 1]}
      */
-    public double computePenaltyMultiplier(double[] direction, double strength, double exponent) {
+    double computePenaltyMultiplier(double[] direction, double strength, double exponent) {
+
         var lineAngle = Angles.foldToHalfTurn(Math.atan2(direction[1], direction[0]));
         var deviation = Angles.measureUndirectedGap(lineAngle, preferredAngle);
+
         return 1.0 - strength * Math.pow(deviation / Angles.QUARTER_TURN, exponent);
     }
 
@@ -63,7 +67,7 @@ public record LabelSlantPreference(double preferredAngle) {
      *
      * @return the unit direction {@code {cos, sin}} of the preferred angle
      */
-    public double[] toDirection() {
+    double[] toDirection() {
         return new double[] {Math.cos(preferredAngle), Math.sin(preferredAngle)};
     }
 }

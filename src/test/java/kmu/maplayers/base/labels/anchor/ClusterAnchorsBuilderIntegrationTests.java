@@ -516,8 +516,8 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .isNotSameAs(loneAxis);
             assertThat(standingAnchors.getAnchors().get(1).colour())
                 .isEqualTo(Color.ORANGE);
-            assertThat(disturbance.isDisturbingNothing())
-                .isFalse();
+            assertThat(disturbance)
+                .isNotSameAs(ClusterNameDisturbance.NONE);
         }
 
         @Test
@@ -558,11 +558,13 @@ final class ClusterAnchorsBuilderIntegrationTests {
                 .isEqualTo(FITTED_UNDER);
         }
 
+        // The rebuild that changes nothing, which is most of them: every cluster still names the
+        // same members and keeps the placement it had, so anything laid around those names may
+        // stand.
         @Test
         void reportsNothingDisturbedWhenEveryPlacementCarriedOver() {
-            // The rebuild that changes nothing, which is most of them: every cluster still names the
-            // same members and keeps the placement it had, so anything laid around those names may
-            // stand.
+
+            // ARRANGE
             var fitInputs = buildInputsWantingAFit(PAIR_AND_LONE_KEYS);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs);
@@ -572,28 +574,37 @@ final class ClusterAnchorsBuilderIntegrationTests {
             assertThat(standingAnchors.getAnchors())
                 .isNotEmpty();
 
-            assertThat(ClusterAnchorsBuilder
-                    .rebuildClusterAnchors(standingAnchors, cellGeometry, fitInputs)
-                    .isDisturbingNothing())
-                .isTrue();
+            // ACT
+            var actualDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
+                cellGeometry,
+                fitInputs);
+
+            // ASSERT
+            assertThat(actualDisturbance)
+                .isSameAs(ClusterNameDisturbance.NONE);
         }
 
+        // Switching the names off empties the standing list, which is as much a change to what a
+        // map has room for as a re-fit is: the ring those words covered is free now, and whatever
+        // kept clear of them has to be told.
         @Test
         void reportsTheRoomGivenUpByTheFitItSkipped() {
-            // Switching the names off empties the standing list, which is as much a change to what
-            // a map has room for as a re-fit is: the ring those words covered is free now, and
-            // whatever kept clear of them has to be told.
+
+            // ARRANGE
             standingAnchors.replaceAnchors(
                 List.of(buildStandingAnchorOccupyingRoom()),
                 FITTED_UNDER_MOVED_RULES);
 
-            assertThat(ClusterAnchorsBuilder
-                    .rebuildClusterAnchors(
-                        standingAnchors,
-                        cellGeometry,
-                        buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH)))
-                    .isDisturbingNothing())
-                .isFalse();
+            // ACT
+            var actualDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
+                cellGeometry,
+                buildInputsWantingNoFit(Map.of(PAIRED_SYSTEM, NORTH)));
+
+            // ASSERT
+            assertThat(actualDisturbance)
+                .isNotSameAs(ClusterNameDisturbance.NONE);
         }
     }
 

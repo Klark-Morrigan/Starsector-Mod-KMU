@@ -51,16 +51,21 @@ final class ClusterNameDisturbanceTests {
     @Nested
     class CompareFittedNames {
 
+        // The carried-over fit: every cluster still names the same members and kept the placement
+        // it had, so nothing laid around those names has to be laid again.
         @Test
         void reportsNothingWhenEveryNameStoodStill() {
-            // The carried-over fit: every cluster still names the same members and kept the
-            // placement it had, so nothing laid around those names has to be laid again.
-            var standing = fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN));
 
-            assertThat(ClusterNameDisturbance
-                    .compareFittedNames(standing, List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)))
-                    .isDisturbingNothing())
-                .isTrue();
+            // ARRANGE
+            var standingByIdentity = fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN));
+            var fittedAnchors = List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN));
+
+            // ACT
+            var actualDisturbance = ClusterNameDisturbance.compareFittedNames(standingByIdentity, fittedAnchors);
+
+            // ASSERT
+            assertThat(actualDisturbance)
+                .isSameAs(ClusterNameDisturbance.NONE);
         }
 
         @Test
@@ -123,20 +128,25 @@ final class ClusterNameDisturbanceTests {
                 .containsExactlyInAnyOrder(CELL_AT_THE_ORIGIN, CELL_ACROSS_THE_SECTOR);
         }
 
+        // Only the shade changed, and the room is identical - but a placement is compared whole,
+        // because what a name occupies has more than one reading and they are read off different
+        // components of it. The cost is a re-lay that changes nothing, which is the safe direction
+        // for this comparison to be wrong in.
         @Test
         void reportsARestyledNameAsMoved() {
-            // Only the shade changed, and the room is identical - but a placement is compared
-            // whole, because what a name occupies has more than one reading and they are read off
-            // different components of it. The cost is a re-lay that changes nothing, which is the
-            // safe direction for this comparison to be wrong in.
+
+            // ARRANGE
+            var standingByIdentity = fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN));
             var restyled = buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN).copyWithColour(Color.RED);
 
-            assertThat(ClusterNameDisturbance
-                    .compareFittedNames(
-                        fileByIdentity(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
-                        List.of(restyled))
-                    .isDisturbingNothing())
-                .isFalse();
+            // ACT
+            var actualDisturbance = ClusterNameDisturbance.compareFittedNames(
+                standingByIdentity,
+                List.of(restyled));
+
+            // ASSERT
+            assertThat(actualDisturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
+                .containsExactly(CELL_AT_THE_ORIGIN);
         }
 
         // The filing it is handed is the one the fit was offered its carry-over from, so a
@@ -156,14 +166,20 @@ final class ClusterNameDisturbanceTests {
                 .containsOnlyKeys(vanishedName.identity());
         }
 
+        // The collapsed fit: no line was accepted, so the placement is a dot on the debug overlay
+        // and nothing at all on the map - it neither took room nor gave any up.
         @Test
         void reportsNothingForAPlacementThatOccupiesNoRoom() {
-            // The collapsed fit: no line was accepted, so the placement is a dot on the debug
-            // overlay and nothing at all on the map - it neither took room nor gave any up.
-            assertThat(ClusterNameDisturbance
-                    .compareFittedNames(Map.of(), List.of(buildNameOf(HEGEMONY, null)))
-                    .isDisturbingNothing())
-                .isTrue();
+
+            // ARRANGE
+            var fittedAnchors = List.of(buildNameOf(HEGEMONY, null));
+
+            // ACT
+            var actualDisturbance = ClusterNameDisturbance.compareFittedNames(Map.of(), fittedAnchors);
+
+            // ASSERT
+            assertThat(actualDisturbance)
+                .isSameAs(ClusterNameDisturbance.NONE);
         }
     }
 

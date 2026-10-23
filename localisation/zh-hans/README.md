@@ -486,6 +486,7 @@ So a word of one axis never stands in for another:
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
+| fitted box (the box a name's fit reserved) | 拟合框 | 拟合, a fit, with 框, a box |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
@@ -494,9 +495,11 @@ So a word of one axis never stands in for another:
 | mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
+| package-private (reachable only from inside its own package) | 包私有 | the usual Java word, 包, a package, with 私有, private |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
 | phase (one part of a profiled loop's turn) | 环节 | a link in a process; kept apart from 阶段, a smoothing stage |
+| placement (where a fit put one cluster's name) | 落点 | 落, to land, with 点, a point: where the name came down |
 | plan (a band's runs, before they are laid round its ring) | 计划 | the plain word for a plan |
 | plan rules (the lengths a band's runs are laid at) | 计划规则 | 计划, a band's plan, with 规则, rules |
 | planner (what answers a system's band plan) | 计划器 | 计划, a band's plan, with 器, the usual suffix for a thing that does a job |
@@ -505,6 +508,7 @@ So a word of one axis never stands in for another:
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
 | rank (a bloc's place in a mechanic's order) | 排名 | the plain word for a place in a ranking |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
+| reading (one way of taking the room a name takes: its fitted box or its drawn words) | 读法 | 读, to read, with 法, a way; kept apart from 读取, the act of reading something off |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |

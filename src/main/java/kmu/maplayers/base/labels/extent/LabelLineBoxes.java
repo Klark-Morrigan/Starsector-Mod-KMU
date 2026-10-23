@@ -1,10 +1,11 @@
-package kmu.maplayers.base.labels;
+package kmu.maplayers.base.labels.extent;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.font.measure.LazyFontMeasurer;
 import kmlib.starsector.ui.font.measure.LineWidthMeasurer;
 
+import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 
@@ -15,11 +16,11 @@ import java.util.List;
  * The room the drawn cluster names take up read line by line: one world-space box per line of
  * words, sized to what that line measures at the size it renders at.
  *
- * <p>The tighter of the two readings of a name's extent. The other one - a placement's accepted
- * line at its fitted girth - is the chord the search worked with, and a chord is accepted as soon
- * as it is at least as long as the widest wrapped line, so it reaches past the words at both ends
- * by however much it beat them. Read per line instead, what is kept clear of is what is drawn, by
- * construction: the same argument the fitted reading makes, taken one level finer.
+ * <p>The tighter of the two readings of a name's extent. The other one, {@link ClusterNameBoxes},
+ * is the chord the search worked with, and a chord is accepted as soon as it is at least as long
+ * as the widest wrapped line, so it reaches past the words at both ends by however much it beat
+ * them. Read per line instead, what is kept clear of is what is drawn, by construction: the same
+ * argument the fitted reading makes, taken one level finer.
  *
  * <p>Per glyph would be the level below and is the wrong one - it cuts a ring into a comb of short
  * arcs between letters, and anything laying one shape into the room left would end up in the gap

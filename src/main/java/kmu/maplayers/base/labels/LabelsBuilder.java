@@ -203,11 +203,6 @@ public final class LabelsBuilder {
     // reads as its reverse and a name never renders upside down. The remaining lean (bounded
     // by the anchor's max-slant cap) is kept as every line's slant.
     private static float computeSlantDegrees(Segment axis) {
-
-        var bearing = Math.atan2(
-            axis.endY() - axis.startY(),
-            axis.endX() - axis.startX());
-
-        return (float) Math.toDegrees(Angles.foldToHalfTurn(bearing));
+        return (float) Math.toDegrees(Angles.foldToHalfTurn(axis.computeDirectionRadians()));
     }
 }

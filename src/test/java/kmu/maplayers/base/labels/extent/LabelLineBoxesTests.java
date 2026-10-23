@@ -1,4 +1,4 @@
-package kmu.maplayers.base.labels;
+package kmu.maplayers.base.labels.extent;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.ui.font.measure.LineWidthMeasurer;

@@ -1,6 +1,9 @@
-package kmu.maplayers.base.labels.anchor;
+package kmu.maplayers.base.labels.extent;
 
 import kmlib.math.geometry.Segment;
+
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -73,32 +76,6 @@ final class ClusterNameBoxesTests {
             // nothing has to be kept clear of it.
             assertThat(ClusterNameBoxes.listNameBoxes(List.of(
                     buildAnchor("hegemony", EASTWARD_NAME, 0f))))
-                .isEmpty();
-        }
-    }
-
-    @Nested
-    class ComputeNameBox {
-
-        @Test
-        void turnsOnePlacementIntoTheBoxItsWordsFill() {
-            // The single-placement reading, so a reader asking whether one name's room moved gets
-            // the same answer the whole-map list would have given for it.
-            assertThat(ClusterNameBoxes.computeNameBox(
-                    buildAnchor("hegemony", EASTWARD_NAME, NAME_THICKNESS)))
-                .containsExactly(
-                    new double[] {0, 12},
-                    new double[] {20, 12},
-                    new double[] {20, 8},
-                    new double[] {0, 8});
-        }
-
-        @Test
-        void reportsNoRoomForAPlacementThatAcceptedNoLine() {
-            // Empty rather than absent: a collapsed fit occupies nothing, and a caller asking
-            // about one placement has no list for it to be left out of.
-            assertThat(ClusterNameBoxes.computeNameBox(
-                    buildAnchor("hegemony", null, NAME_THICKNESS)))
                 .isEmpty();
         }
     }

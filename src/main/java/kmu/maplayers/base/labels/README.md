@@ -36,20 +36,30 @@ see the [mod README](../../../../../../../README.md) for project context.
   `Label`,
   `LabelsBuilder`,
   `LabelRenderer`,
-  the shared `LabelFonts`,
-  which settles the face the names ask for against the text they draw,
-  and `LabelLineBoxes`,
-  which reads the room the drawn lines take.
+  and the shared `LabelFonts`,
+  which settles the face the names ask for against the text they draw.
 - `base.labels.anchor` -
   the placement subsystem that decides where each name sits,
   the drive that runs a whole fit,
+  which names a re-fit moved,
   and the debug overlay,
   painted in the grades of the render surface's `DiagnosticPalette`.
+  A layer reaches the search only through the drive,
+  so the partition,
+  the search and its lean are package-private.
 - `base.labels.anchor.specifications` -
   the search's tuning surface,
   read once per rebuild:
   `LabelAnchorSpecification` and its component records
   (`AnchorSearch`, `LeanScoring`, `AnchorDiagnostics`, and KMLib's `NameFitSpecification`).
+- `base.labels.extent` -
+  the two readings of the room a name takes,
+  for whatever keeps clear of the names.
+
+Placements are what everything else here is made from,
+so the build closes `anchor` to the rest of `base.labels`:
+the drawn words and the readings depend on the placements,
+never the other way round.
 
 ## Placement: where a name sits
 
@@ -138,7 +148,8 @@ cuts the cells into a `ClusterPartition` by the layer's keys,
 fits what was not carried through `ClusterAnchorPlacement`,
 reports what the fit cost under `mapLayer.fitClusterAnchors`,
 and leaves its pass in the caller's `StandingClusterAnchors`.
-It answers which names moved as a `ClusterNameDisturbance`.
+It answers which names moved as a `ClusterNameDisturbance`,
+which nothing else makes.
 The standing placements are filed under the cluster each names once per rebuild,
 and that one filing answers both the carry-over and the comparison,
 so the two agree on what "the same cluster" means.
@@ -182,11 +193,14 @@ so a consumer takes one list either way:
 
 | Reading | Class | A name occupies |
 | --- | --- | --- |
-| the fitted box | [`ClusterNameBoxes`](anchor/ClusterNameBoxes.java) | the accepted line at the block's fitted girth - one box per name |
-| the words | [`LabelLineBoxes`](LabelLineBoxes.java) | each drawn line's measured length by one line height - one box per line |
+| the fitted box | [`ClusterNameBoxes`](extent/ClusterNameBoxes.java) | the accepted line at the block's fitted girth - one box per name |
+| the words | [`LabelLineBoxes`](extent/LabelLineBoxes.java) | each drawn line's measured length by one line height - one box per line |
 
 The fitted box is what the search reserved and what the diagnostic overlay draws,
 so what is shown and what is kept clear of are one reading of the placement.
+The placement states it once,
+as `ClusterAnchor.computeFittedBox()`,
+which the comparison below reads too.
 It is also the looser of the two:
 the fit accepts a chord as soon as it is at least as long as the widest wrapped line,
 and the block is then drawn centred on that chord,
