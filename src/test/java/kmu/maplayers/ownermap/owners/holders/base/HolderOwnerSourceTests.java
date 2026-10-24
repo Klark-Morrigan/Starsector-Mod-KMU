@@ -101,8 +101,8 @@ final class HolderOwnerSourceTests {
                 UNFILLED_SYSTEM,
                 FillState.UNFILLED))));
 
-    private final SystemHolderResolveSourceFake holderResolveSourceFake =
-        new SystemHolderResolveSourceFake();
+    private final SystemHolderResolverSourceFake holderResolverSourceFake =
+        new SystemHolderResolverSourceFake();
 
     private MockedStatic<HolderInhabitation> inhabitationMock;
 
@@ -320,19 +320,19 @@ final class HolderOwnerSourceTests {
     }
 
     @Nested
-    class OpenSystemResolve {
+    class OpenSystemResolver {
 
         @Test
-        void opensTheLayersResolveOverThePassTheWholeSectorAnswerUsed() {
-            // One walk, one pass: a resolve asked after the whole-sector answer over the same walk
+        void opensTheLayersResolverOverThePassTheWholeSectorAnswerUsed() {
+            // One walk, one pass: a resolver asked after the whole-sector answer over the same walk
             // re-derives off the very pass that answer read.
             var source = buildSourceUnder(HolderGrouping.identity());
             var walk = buildWalkUnder(MapVisibilityRules.BASE);
 
             source.resolveOwners(walk, null);
-            source.openSystemResolve(walk, null);
+            source.openSystemResolver(walk, null);
 
-            assertThat(holderResolveSourceFake.readPassesOpenedOver())
+            assertThat(holderResolverSourceFake.readPassesOpenedOver())
                 .singleElement()
                 .isSameAs(readFirstResolvedPass());
         }
@@ -345,9 +345,9 @@ final class HolderOwnerSourceTests {
             var batchWalk = buildWalkUnder(MapVisibilityRules.BASE);
 
             source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
-            source.openSystemResolve(batchWalk, null);
+            source.openSystemResolver(batchWalk, null);
 
-            assertThat(holderResolveSourceFake.readPassesOpenedOver())
+            assertThat(holderResolverSourceFake.readPassesOpenedOver())
                 .singleElement()
                 .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::sectorIndex)
@@ -362,9 +362,9 @@ final class HolderOwnerSourceTests {
             var otherGrouping = HolderGroupingFixture.buildGroupOf(HEGEMONY, PERSEAN);
 
             buildSourceUnder(HolderGrouping.identity()).resolveOwners(walk, null);
-            buildSourceUnder(otherGrouping).openSystemResolve(walk, null);
+            buildSourceUnder(otherGrouping).openSystemResolver(walk, null);
 
-            assertThat(holderResolveSourceFake.readPassesOpenedOver())
+            assertThat(holderResolverSourceFake.readPassesOpenedOver())
                 .singleElement()
                 .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::grouping)
@@ -372,28 +372,28 @@ final class HolderOwnerSourceTests {
         }
 
         @Test
-        void resolvesTheOwnerThroughTheLayersOwnResolve() {
+        void resolvesTheOwnerThroughTheLayersOwnResolver() {
 
-            holderResolveSourceFake.recordHolderOf("corvus", HEGEMONY_OWNER);
+            holderResolverSourceFake.recordHolderOf("corvus", HEGEMONY_OWNER);
 
-            var resolve = buildSourceUnder(HolderGrouping.identity())
-                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), null);
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), null);
 
-            assertThat(resolve.resolveOwnerOf(buildSystem("corvus")))
+            assertThat(resolver.resolveOwnerOf(buildSystem("corvus")))
                 .isEqualTo(ResolvedSystemOwner.createSolidlyFilledBy(HEGEMONY_OWNER));
         }
 
         // The batch re-derives a marked system as the standing build painted it, so the spotlight
         // that build was painted under reaches the layer's own per-system rule.
         @Test
-        void opensTheLayersResolveUnderTheSpotlitOwnerItWasOpenedUnder() {
+        void opensTheLayersResolverUnderTheSpotlitOwnerItWasOpenedUnder() {
 
             // ACT
             buildSourceUnder(HolderGrouping.identity())
-                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
             // ASSERT
-            assertThat(holderResolveSourceFake.readSpotlitBlocIdsOpenedUnder())
+            assertThat(holderResolverSourceFake.readSpotlitBlocIdsOpenedUnder())
                 .containsExactly(HEGEMONY);
         }
 
@@ -406,13 +406,13 @@ final class HolderOwnerSourceTests {
                 .when(() -> HolderInhabitation.isSystemInhabited(any(), same(system)))
                 .thenReturn(true);
 
-            var resolve = buildSourceUnder(HolderGrouping.identity())
-                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), null);
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), null);
 
-            assertThat(resolve.isSystemInhabited(system))
+            assertThat(resolver.isSystemInhabited(system))
                 .isTrue();
             inhabitationMock.verify(() -> HolderInhabitation.isSystemInhabited(
-                same(holderResolveSourceFake.readPassesOpenedOver().get(0)),
+                same(holderResolverSourceFake.readPassesOpenedOver().get(0)),
                 same(system)));
         }
 
@@ -425,10 +425,10 @@ final class HolderOwnerSourceTests {
                 .when(() -> HolderInhabitation.isBlocPresentIn(any(), eq(HEGEMONY), same(system)))
                 .thenReturn(true);
 
-            var resolve = buildSourceUnder(HolderGrouping.identity())
-                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
-            assertThat(resolve.isSpotlitOwnerPresentIn(system))
+            assertThat(resolver.isSpotlitOwnerPresentIn(system))
                 .isTrue();
         }
     }
@@ -527,8 +527,8 @@ final class HolderOwnerSourceTests {
             .thenReturn(affiliation);
         when(viewMock.resolveHolderProvider())
             .thenReturn(holderProviderFake);
-        when(viewMock.resolveSystemHolderResolveSource())
-            .thenReturn(holderResolveSourceFake);
+        when(viewMock.resolveSystemHolderResolverSource())
+            .thenReturn(holderResolverSourceFake);
         when(viewMock.resolveRibbonPlanner(any()))
             .thenAnswer(invocation -> plannerSource.apply(invocation.getArgument(0)));
 

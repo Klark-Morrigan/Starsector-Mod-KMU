@@ -717,7 +717,7 @@ A bloc's owner and its two shades are read once per pass.
 `SectorBlocPalettes` remembers each bloc's owner on first ask,
 a bloc whose colour faction has gone included,
 and the `HolderPass` holds the one instance every reader of that pass shares:
-the holder resolves,
+the holder resolvers,
 the spotlight,
 the claim resolves
 and the band bake.

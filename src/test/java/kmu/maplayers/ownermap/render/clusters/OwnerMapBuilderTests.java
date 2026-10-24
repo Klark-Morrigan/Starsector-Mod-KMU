@@ -24,7 +24,7 @@ import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
@@ -309,7 +309,7 @@ final class OwnerMapBuilderTests {
         }
 
         @Override
-        public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+        public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
             throw new UnsupportedOperationException("no case here re-derives a system");
         }
 

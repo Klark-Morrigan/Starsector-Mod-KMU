@@ -31,10 +31,10 @@ import static org.mockito.Mockito.mockStatic;
 /**
  * Pins the Claims view's per-system holder read: the reader it asks is opened over the batch's own
  * pass, and the answer is the single-system spotlit claim resolve's, under the spotlight the batch
- * was opened under, filled solid. The resolve owns the fold, the colouring and the rekey, and has its
+ * was opened under, filled solid. The resolver owns the fold, the colouring and the rekey, and has its
  * own suite.
  */
-final class ClaimSystemHolderResolveTests {
+final class ClaimSystemHolderResolverTests {
 
     private static final String SPOTLIT_BLOC_ID = "hegemony";
 
@@ -47,12 +47,12 @@ final class ClaimSystemHolderResolveTests {
             var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
             var openedOver = new ArrayList<SectorPassIndex>();
 
-            ClaimSystemHolderResolve
+            ClaimSystemHolderResolver
                 .createSourceReadingThrough((visibility, colonies) -> {
                     openedOver.add(colonies);
                     return mock(ClaimReader.class);
                 })
-                .openResolveOver(pass, null);
+                .openResolverOver(pass, null);
 
             assertThat(openedOver)
                 .containsExactly(pass.sectorIndex());
@@ -73,9 +73,9 @@ final class ClaimSystemHolderResolveTests {
             var systemMock = mock(StarSystemAPI.class);
             var claimant = new SystemOwner(SPOTLIT_BLOC_ID, new ColourPair(Color.RED, Color.BLUE));
 
-            var resolve = ClaimSystemHolderResolve
+            var resolver = ClaimSystemHolderResolver
                 .createSourceReadingThrough((visibility, colonies) -> claimReaderMock)
-                .openResolveOver(pass, SPOTLIT_BLOC_ID);
+                .openResolverOver(pass, SPOTLIT_BLOC_ID);
 
             try (var filteredClaimsMock = mockStatic(FilteredClaims.class)) {
 
@@ -88,7 +88,7 @@ final class ClaimSystemHolderResolveTests {
                     .thenReturn(claimant);
 
                 // ACT
-                var actualResolved = resolve.resolveHolderIn(systemMock);
+                var actualResolved = resolver.resolveHolderIn(systemMock);
 
                 // ASSERT
                 assertThat(actualResolved)

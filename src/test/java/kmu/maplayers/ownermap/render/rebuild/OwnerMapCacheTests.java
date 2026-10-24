@@ -268,7 +268,7 @@ final class OwnerMapCacheTests {
                 eq(Set.of(MARKED_CELL)));
         }
 
-        // A spotlight no longer keeps a batch from the strategy: the per-system resolve answers a
+        // A spotlight no longer keeps a batch from the strategy: the per-system resolver answers a
         // marked system as the spotlit build painted it, so the strategy decides like any other.
         @Test
         void handsAFilteredMapsMarkedSystemToTheLayersStrategy() {

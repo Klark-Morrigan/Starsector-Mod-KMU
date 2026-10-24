@@ -36,7 +36,7 @@ import static org.mockito.Mockito.mockStatic;
  * and the presence-aware one under the spotlight the batch was opened under, resolved once for the
  * batch. Both contests have suites of their own and are stood in for at their static seams.
  */
-final class DominanceSystemHolderResolveTests {
+final class DominanceSystemHolderResolverTests {
 
     private static final String SPOTLIT_BLOC_ID = "hegemony";
     private static final SystemOwner HEGEMONY = new SystemOwner("hegemony", new ColourPair(Color.RED, Color.BLUE));
@@ -85,8 +85,8 @@ final class DominanceSystemHolderResolveTests {
                 .thenReturn(HEGEMONY);
 
             // ACT
-            var actualResolved = DominanceSystemHolderResolve
-                .openResolveOver(pass, null)
+            var actualResolved = DominanceSystemHolderResolver
+                .openResolverOver(pass, null)
                 .resolveHolderIn(systemMock);
 
             // ASSERT
@@ -117,8 +117,8 @@ final class DominanceSystemHolderResolveTests {
                 .thenReturn(expectedResolved);
 
             // ACT
-            var actualResolved = DominanceSystemHolderResolve
-                .openResolveOver(pass, SPOTLIT_BLOC_ID)
+            var actualResolved = DominanceSystemHolderResolver
+                .openResolverOver(pass, SPOTLIT_BLOC_ID)
                 .resolveHolderIn(systemMock);
 
             // ASSERT
@@ -141,11 +141,11 @@ final class DominanceSystemHolderResolveTests {
                 .when(() -> FilteredPolitics.resolveFilteredHolderIn(any(), any(), any()))
                 .thenReturn(ResolvedSystemOwner.UNOWNED);
 
-            var resolve = DominanceSystemHolderResolve.openResolveOver(pass, SPOTLIT_BLOC_ID);
+            var resolver = DominanceSystemHolderResolver.openResolverOver(pass, SPOTLIT_BLOC_ID);
 
             // ACT
-            resolve.resolveHolderIn(systemMock);
-            resolve.resolveHolderIn(mock(StarSystemAPI.class));
+            resolver.resolveHolderIn(systemMock);
+            resolver.resolveHolderIn(mock(StarSystemAPI.class));
 
             // ASSERT
             spotlitContestMock.verify(

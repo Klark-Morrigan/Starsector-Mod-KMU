@@ -519,7 +519,7 @@ public final class IncrementalOwnerRefreshTests {
         }
 
         @Test
-        void opensOneResolveHoweverManySystemsAreMarked() {
+        void opensOneResolverHoweverManySystemsAreMarked() {
             // The whole batch is answered off one reading of the sector: a resolve per marked
             // system would pay a settings read and a walk of that system for each of the
             // questions asked about it, which is what this path exists to avoid.
@@ -536,7 +536,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(NEIGHBOUR_SYSTEM);
             applyTo(clusters);
 
-            assertThat(ownerSourceFake.readSystemResolveWalks())
+            assertThat(ownerSourceFake.readSystemResolverWalks())
                 .hasSize(1);
         }
 
@@ -553,7 +553,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(ownerSourceFake.readSystemResolveWalks())
+            assertThat(ownerSourceFake.readSystemResolverWalks())
                 .singleElement()
                 .isSameAs(handedWalk);
         }
@@ -575,7 +575,7 @@ public final class IncrementalOwnerRefreshTests {
 
             assertThat(ownerSourceFake.readRibbonPlannerWalks())
                 .singleElement()
-                .isSameAs(ownerSourceFake.readSystemResolveWalks().get(0));
+                .isSameAs(ownerSourceFake.readSystemResolverWalks().get(0));
         }
 
         @Test

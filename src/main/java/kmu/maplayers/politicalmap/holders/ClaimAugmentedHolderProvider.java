@@ -85,7 +85,7 @@ public final class ClaimAugmentedHolderProvider
     /**
      * One system's held answer extended by its claim: the rule both halves of this view fold claims
      * by, the whole-sector one here and the per-system one in
-     * {@link ClaimAugmentedSystemHolderResolve}.
+     * {@link ClaimAugmentedSystemHolderResolver}.
      *
      * <p>A held system keeps its held holder and fill: the held signal is the stronger one. A claimed
      * system the held resolve left unowned joins its claimant - so held and claimed cells of one bloc

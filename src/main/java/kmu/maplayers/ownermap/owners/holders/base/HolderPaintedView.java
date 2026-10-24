@@ -59,9 +59,9 @@ public interface HolderPaintedView
      * land the holder {@link #resolveHolderProvider} would, or a refreshed cell parts from the
      * rebuild around it.
      *
-     * @return the source a batch opens its holder resolve from
+     * @return the source a batch opens its holder resolver from
      */
-    SystemHolderResolveSource resolveSystemHolderResolveSource();
+    SystemHolderResolverSource resolveSystemHolderResolverSource();
 
     /**
      * The mechanic this view's cells are counted by for their presence bands.

@@ -170,8 +170,8 @@ public final class HolderPaintedViewFake
     }
 
     @Override
-    public SystemHolderResolveSource resolveSystemHolderResolveSource() {
-        return new SystemHolderResolveSourceFake();
+    public SystemHolderResolverSource resolveSystemHolderResolverSource() {
+        return new SystemHolderResolverSourceFake();
     }
 
     @Override

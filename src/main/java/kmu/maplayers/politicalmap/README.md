@@ -333,13 +333,13 @@ the one the view's bands and hover box read through too;
 see [one reader per pass](claims/README.md#one-reader-per-pass).
 
 An incremental refresh re-derives one system at a time,
-through a per-system resolve each view states,
+through a per-system resolver each view states,
 also in `holders`.
-The two dominance views state `DominanceSystemHolderResolve`:
+The two dominance views state `DominanceSystemHolderResolver`:
 the market contest asked of one system over the batch's own pass,
 under one weighting rule sampled per batch,
 so a single-system refresh lands the bloc the bulk pass would have.
-The Claims view states `ClaimSystemHolderResolve`:
+The Claims view states `ClaimSystemHolderResolver`:
 the claimant of one system,
 read through the same claim reader and folded and coloured by the same rule
 `SectorClaims` applies to the whole sector,
@@ -369,7 +369,7 @@ The build closes `dominance` and `claims` to each other.
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
 | `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), and the contest-painted views' (`DominancePaintedView`) |
-| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
+| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolvers, `DominanceSystemHolderResolver` and `ClaimSystemHolderResolver` |
 | [`ribbon`](ribbon/README.md) | the band planner of the views that fold claims onto held dominance (`HeldOrClaimedSystemRibbonPlanner`) |
 | [`dominance`](dominance/README.md) | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`), stated in [the market contest](dominance/README.md#what-a-colony-weighs) |

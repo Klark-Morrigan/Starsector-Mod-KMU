@@ -12,7 +12,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
  * incremental refresh re-derives only the handful of systems a change marked, and asking the
  * whole-sector resolve for each of them would pay for the sector once per marked system.
  *
- * <p>All three questions travel on one resolve because the incremental path spends all three:
+ * <p>All three questions travel on one resolver because the incremental path spends all three:
  * who owns a marked system is settled by whatever rule the layer paints by, while whether anybody
  * lives there and whether the spotlit owner is among them are questions the layer answers off the
  * same reading. Handed apart, a caller could answer them off different readings of one sector and
@@ -21,7 +21,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
  * <p>Opened per batch rather than held, since it stands on one reading of the sector and a
  * reading outlives nothing: the batch that opened it is the batch entitled to it.
  */
-public interface SystemOwnerResolve {
+public interface SystemOwnerResolver {
 
     /**
      * Who paints one star system, and how its fill draws, under whatever rule the layer paints by.
@@ -47,7 +47,7 @@ public interface SystemOwnerResolve {
     boolean isSystemInhabited(StarSystemAPI system);
 
     /**
-     * Whether the spotlit owner this resolve was opened under lives in one star system.
+     * Whether the spotlit owner this resolver was opened under lives in one star system.
      *
      * <p>Asked only of systems the batch found nobody owns, since presence is what spares an
      * unowned cell the recede: a system somebody owns already draws in that owner's cluster, so

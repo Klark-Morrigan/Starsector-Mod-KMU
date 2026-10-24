@@ -31,7 +31,7 @@ flowchart LR
     V -->|resolveViewReading| S[OwnerSource]
     W --> S
     S -->|whole sector| O[ResolvedOwners]
-    S -->|one batch| P[SystemOwnerResolve]
+    S -->|one batch| P[SystemOwnerResolver]
     S -->|one bake| B[SystemRibbonPlanner]
 ```
 
@@ -72,7 +72,7 @@ instead of asking the source again.
 
 An incremental refresh re-derives only the systems a change marked.
 Asking the whole-sector answer once per marked system would cost more than the rebuild it replaces,
-so the source opens a `SystemOwnerResolve` over the batch's own walk.
+so the source opens a `SystemOwnerResolver` over the batch's own walk.
 It answers three questions of one system:
 who owns it and how its fill draws,
 whether anything stands in it,

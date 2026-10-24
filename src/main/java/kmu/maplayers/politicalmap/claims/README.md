@@ -151,7 +151,7 @@ Who the picker lists is `ClaimsView`'s to state.
   which explains a claim from the same read.
 - **`holders`** -
   `ClaimsHolderProvider`,
-  `ClaimAugmentedHolderProvider` and `ClaimSystemHolderResolve`,
+  `ClaimAugmentedHolderProvider` and `ClaimSystemHolderResolver`,
   which state this mechanic to the tier's holder source;
   see [the ownership sources](../README.md#the-ownership-sources).
 - **[The market contest](../dominance/README.md)** -

@@ -7,8 +7,8 @@ import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolver;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 
@@ -25,37 +25,37 @@ import kmu.maplayers.politicalmap.claims.PassClaimReaders;
  * keeps its held holder whatever is claimed there. The claim reader is opened over the batch's own
  * pass, so it reads the colonies the held resolve read rather than walking them again.
  */
-public final class ClaimAugmentedSystemHolderResolve
-        implements SystemHolderResolve {
+public final class ClaimAugmentedSystemHolderResolver
+        implements SystemHolderResolver {
 
-    private final SystemHolderResolve heldResolve;
+    private final SystemHolderResolver heldResolver;
     private final HolderPass pass;
     private final ClaimReader claimReader;
     private final String spotlitBlocId;
 
-    private ClaimAugmentedSystemHolderResolve(
-            SystemHolderResolve heldResolve,
+    private ClaimAugmentedSystemHolderResolver(
+            SystemHolderResolver heldResolver,
             HolderPass pass,
             ClaimReader claimReader,
             String spotlitBlocId) {
 
-        this.heldResolve = heldResolve;
+        this.heldResolver = heldResolver;
         this.pass = pass;
         this.claimReader = claimReader;
         this.spotlitBlocId = spotlitBlocId;
     }
 
     /**
-     * Where a batch opens the held-dominance resolve extended with the claims a view reads.
+     * Where a batch opens the held-dominance resolver extended with the claims a view reads.
      *
      * @param claimReaderSource the source the view reads every claim through - the same one its
      *                          whole-sector resolve reads claims through
-     * @return the source a batch opens its resolve from
+     * @return the source a batch opens its resolver from
      */
-    public static SystemHolderResolveSource createSourceReadingThrough(ClaimReaderSource claimReaderSource) {
+    public static SystemHolderResolverSource createSourceReadingThrough(ClaimReaderSource claimReaderSource) {
 
-        return (pass, spotlitBlocId) -> new ClaimAugmentedSystemHolderResolve(
-            DominanceSystemHolderResolve.openResolveOver(pass, spotlitBlocId),
+        return (pass, spotlitBlocId) -> new ClaimAugmentedSystemHolderResolver(
+            DominanceSystemHolderResolver.openResolverOver(pass, spotlitBlocId),
             pass,
             PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
             spotlitBlocId);
@@ -64,7 +64,7 @@ public final class ClaimAugmentedSystemHolderResolve
     @Override
     public ResolvedSystemOwner resolveHolderIn(StarSystemAPI system) {
 
-        var held = heldResolve.resolveHolderIn(system);
+        var held = heldResolver.resolveHolderIn(system);
         if (held.owner() != null) {
             return held;
         }

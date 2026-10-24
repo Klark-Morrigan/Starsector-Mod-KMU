@@ -41,7 +41,7 @@ import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -649,8 +649,8 @@ final class RelayOwnerLayerIntegrationTests {
         }
 
         @Override
-        public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
-            return new RelaySystemResolveFake();
+        public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
+            return new RelaySystemResolverFake();
         }
 
         // The one rule both answers read: a relay or not.
@@ -662,8 +662,8 @@ final class RelayOwnerLayerIntegrationTests {
         }
 
         /** The per-system answers by the same rule: every listed system is somebody's, and lived in. */
-        private final class RelaySystemResolveFake
-                implements SystemOwnerResolve {
+        private final class RelaySystemResolverFake
+                implements SystemOwnerResolver {
 
             @Override
             public ResolvedSystemOwner resolveOwnerOf(StarSystemAPI system) {
@@ -712,7 +712,7 @@ final class RelayOwnerLayerIntegrationTests {
         }
 
         @Override
-        public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+        public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
 
             throw new UnsupportedOperationException("no case here re-derives a system of this layer");
         }

@@ -11,7 +11,7 @@ import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolver;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
 
 import org.junit.jupiter.api.AfterEach;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mockStatic;
  * <p>The contest and the claim read are each stood in for at their static seams, both having suites
  * of their own; what belongs here is how their two answers compose.
  */
-final class ClaimAugmentedSystemHolderResolveTests {
+final class ClaimAugmentedSystemHolderResolverTests {
 
     private static final String SPOTLIT_BLOC_ID = "hegemony";
 
@@ -58,13 +58,13 @@ final class ClaimAugmentedSystemHolderResolveTests {
     private final ClaimReader claimReaderMock = mock(ClaimReader.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 
-    private MockedStatic<DominanceSystemHolderResolve> contestMock;
+    private MockedStatic<DominanceSystemHolderResolver> contestMock;
     private MockedStatic<FilteredClaims> claimsMock;
 
     @BeforeEach
     void openTheSeams() {
 
-        contestMock = mockStatic(DominanceSystemHolderResolve.class);
+        contestMock = mockStatic(DominanceSystemHolderResolver.class);
         claimsMock = mockStatic(FilteredClaims.class);
     }
 
@@ -131,23 +131,23 @@ final class ClaimAugmentedSystemHolderResolveTests {
         }
     }
 
-    // The resolve a batch opens under the spotlight, through a claim reader opened over its pass.
-    private SystemHolderResolve openUnderTheSpotlight() {
+    // The resolver a batch opens under the spotlight, through a claim reader opened over its pass.
+    private SystemHolderResolver openUnderTheSpotlight() {
 
-        return ClaimAugmentedSystemHolderResolve
+        return ClaimAugmentedSystemHolderResolver
             .createSourceReadingThrough((knownColonyReader, sectorIndex) -> claimReaderMock)
-            .openResolveOver(pass, SPOTLIT_BLOC_ID);
+            .openResolverOver(pass, SPOTLIT_BLOC_ID);
     }
 
     // What the contest answers for the system, opened over the batch's pass under the spotlight -
     // any other opening answers nothing.
     private void stateTheContest(ResolvedSystemOwner held) {
 
-        SystemHolderResolve heldResolve = system -> held;
+        SystemHolderResolver heldResolver = system -> held;
 
         contestMock
-            .when(() -> DominanceSystemHolderResolve.openResolveOver(same(pass), eq(SPOTLIT_BLOC_ID)))
-            .thenReturn(heldResolve);
+            .when(() -> DominanceSystemHolderResolver.openResolverOver(same(pass), eq(SPOTLIT_BLOC_ID)))
+            .thenReturn(heldResolver);
     }
 
     // What the spotlit claim read answers for the system, asked through the batch's reader under the

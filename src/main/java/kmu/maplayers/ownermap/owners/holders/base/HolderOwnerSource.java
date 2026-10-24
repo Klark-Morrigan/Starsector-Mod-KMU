@@ -13,7 +13,7 @@ import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 
 import java.util.Map;
@@ -60,7 +60,7 @@ public final class HolderOwnerSource
     private final HolderGrouping grouping;
     private final OwnerAffiliation contestAffiliation;
     private final HolderProvider holderProvider;
-    private final SystemHolderResolveSource holderResolveSource;
+    private final SystemHolderResolverSource holderResolverSource;
     private final HolderPaintedView view;
 
     /**
@@ -79,9 +79,9 @@ public final class HolderOwnerSource
             "contestAffiliation");
 
         this.holderProvider = Objects.requireNonNull(view.resolveHolderProvider(), "holderProvider");
-        this.holderResolveSource = Objects.requireNonNull(
-            view.resolveSystemHolderResolveSource(),
-            "holderResolveSource");
+        this.holderResolverSource = Objects.requireNonNull(
+            view.resolveSystemHolderResolverSource(),
+            "holderResolverSource");
     }
 
     /**
@@ -111,13 +111,13 @@ public final class HolderOwnerSource
     }
 
     @Override
-    public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+    public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
 
         var pass = openPassOver(walk);
 
-        return new HolderSystemOwnerResolve(
+        return new HolderSystemOwnerResolver(
             pass,
-            holderResolveSource.openResolveOver(pass, spotlitOwnerId),
+            holderResolverSource.openResolverOver(pass, spotlitOwnerId),
             spotlitOwnerId);
     }
 

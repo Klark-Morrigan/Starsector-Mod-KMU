@@ -13,7 +13,7 @@ import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
@@ -22,7 +22,7 @@ import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
-import kmu.maplayers.politicalmap.holders.ClaimAugmentedSystemHolderResolve;
+import kmu.maplayers.politicalmap.holders.ClaimAugmentedSystemHolderResolver;
 import kmu.maplayers.politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -100,24 +100,24 @@ final class DominancePaintedViewTests {
     }
 
     @Nested
-    class ResolveSystemHolderResolveSource {
+    class ResolveSystemHolderResolverSource {
 
         @Test
         void reDerivesAMarkedSystemByTheContestExtendedWithTheClaimsTheViewReads() {
             // The per-system half of the claim-extended holding, read through the view's own source,
             // so a refreshed cell lands the bloc and fill state the whole-sector resolve would.
-            var sourceMock = mock(SystemHolderResolveSource.class);
+            var sourceMock = mock(SystemHolderResolverSource.class);
 
             doReturn(claimReaderSource)
                 .when(viewMock).resolveClaimReaderSource();
 
-            try (var sourceFactoryMock = mockStatic(ClaimAugmentedSystemHolderResolve.class)) {
+            try (var sourceFactoryMock = mockStatic(ClaimAugmentedSystemHolderResolver.class)) {
 
                 sourceFactoryMock
-                    .when(() -> ClaimAugmentedSystemHolderResolve.createSourceReadingThrough(same(claimReaderSource)))
+                    .when(() -> ClaimAugmentedSystemHolderResolver.createSourceReadingThrough(same(claimReaderSource)))
                     .thenReturn(sourceMock);
 
-                assertThat(viewMock.resolveSystemHolderResolveSource())
+                assertThat(viewMock.resolveSystemHolderResolverSource())
                     .isSameAs(sourceMock);
             }
         }

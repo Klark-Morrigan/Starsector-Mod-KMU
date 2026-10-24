@@ -73,7 +73,7 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | The tier asks | Through |
 | --- | --- |
 | who owns each system, which owned systems draw hatched or unfilled, what stands where and where the spotlit owner lives, for a whole rebuild | an `OwnerSource`, resolved with the reading through `OwnerPaintedView.resolveViewReading` and handed the rebuild's `SectorWalk` |
-| who owns one marked system and how its fill draws, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolve` that same source opens over the batch's own walk, under the spotlight the standing build was painted under |
+| who owns one marked system and how its fill draws, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolver` that same source opens over the batch's own walk, under the spotlight the standing build was painted under |
 | what a frame owing no rebuild does with the systems marked since | an `OwnerMapRefreshStrategy`, handed to `OwnerMapLayerRenderer.createForLiveScreen`: `FULL_REBUILD` to rebuild, `INCREMENTAL` to fold - see [the rebuild is a slot](#the-rebuild-is-a-slot) |
 | how a cell's presence band is counted | the same source's band planner |
 | each owner's shades, name, crest, recede and category, the shade an unowned cell paints in and the pair a receded one sinks toward | the `OwnerReading` resolved beside the source |
@@ -263,7 +263,7 @@ since that is what a player's stored setting is keyed by.
 | Package | What is in it |
 | --- | --- |
 | *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewReading`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
-| [`owners`](owners/README.md) | the seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolve`, the walk it is handed and the `ResolvedOwners` it answers), how each looks (`OwnerReading`) and who stands together in a contest (`OwnerAffiliation`) - beside the owner of a system (`SystemOwner`) and the spotlight's own key (`SpotlitOwners`) |
+| [`owners`](owners/README.md) | the seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolver`, the walk it is handed and the `ResolvedOwners` it answers), how each looks (`OwnerReading`) and who stands together in a contest (`OwnerAffiliation`) - beside the owner of a system (`SystemOwner`) and the spotlight's own key (`SpotlitOwners`) |
 | [`owners/holders`](owners/holders/README.md) | the answers of the layers painting holders, outside the core: what every holder shares (`base`, with its picker in `base.picker`), one holder as one owner (`factions`), and a group of holders as one owner (`alliances`) |
 | `picker` | the owner picker model: its rows (`SelectableOwner`, `RankedOwner`), the metrics they carry, the sort modes ranking them, and the presence index a preview lights |
 | `preferences` | the per-save body choices - name format, uninhabited outline, recede - and `OwnerMapBodyPreferences`, the set a layer builds over keys of its own |

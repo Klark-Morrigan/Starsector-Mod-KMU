@@ -206,6 +206,6 @@ and the owner map's `OwnerStatsRead` carries them with the systems each bloc liv
   the peer mechanic,
   and what the Factions and Alliances views fold onto the held map.
 - **`holders`** -
-  `DominanceHolderProvider` and `DominanceSystemHolderResolve`,
+  `DominanceHolderProvider` and `DominanceSystemHolderResolver`,
   which state this contest to the tier's holder source;
   see [the ownership sources](../README.md#the-ownership-sources).

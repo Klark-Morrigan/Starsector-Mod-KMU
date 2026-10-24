@@ -123,7 +123,7 @@ public final class IncrementalOwnerRefresh {
         var markedSystemKeys = selectDrawnSystemKeys(staleSystemKeys);
 
         var buildInputs = clusters.getBuildInputs();
-        var ownerResolve = buildInputs.getViewReading().source().openSystemResolve(
+        var ownerResolver = buildInputs.getViewReading().source().openSystemResolver(
             walk,
             buildInputs.getContentInputs().selectedOwnerId());
 
@@ -131,7 +131,7 @@ public final class IncrementalOwnerRefresh {
             clusters,
             geometryCache,
             walk,
-            ownerResolve,
+            ownerResolver,
             markedSystemKeys);
 
         redrawDisturbedCells(markedSystemKeys, disturbance);

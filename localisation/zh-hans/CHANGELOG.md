@@ -80,7 +80,7 @@
 - **`ResolvedSystemOwner`**：单个星系的所有者及其填充状态，即所有者来源和持有规则逐星系给出的结果。
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及其中当前记录的每个星系的填充状态。
 - **`FilteredPolitics.createSpotlight(DominancePass, String)`**、**`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, Spotlight)`** 和 **`FilteredClaims.resolveFilteredClaimIn(StarSystemAPI, HolderPass, ClaimReader, String)`**：逐星系给出聚焦下的争夺与宣称，所依规则与整个星域的解析相同。
-- **`ClaimAugmentedSystemHolderResolve`**：`ClaimAugmentedHolderProvider` 的逐星系部分，使争夺未让任何集团持有的已标记星系按其宣称重新解析。
+- **`ClaimAugmentedSystemHolderResolver`**：`ClaimAugmentedHolderProvider` 的逐星系部分，使争夺未让任何集团持有的已标记星系按其宣称重新解析。
 - **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。
 
 #### 修复
@@ -149,6 +149,7 @@
 | `MapPalettes.pickHolderPaletteColour(ElementPaintSelection, SystemOwner, Color)` | `pickOwnerPaletteColour(ElementPaintSelection, SystemOwner, Color)` |
 | `OwnerPresence` 的 `marketCount`，连同 `marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`、`stakeCount()`、`hasStakes()` 和 `stakeLengthUnits()`。所有者地图的核心不再使用 *holder* 和 *market* 二词，构建会确保这一点 |
 | `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`：它为集团排名 |
+| `SystemOwnerResolve`、`SystemHolderResolve`、`SystemHolderResolveSource`、`DominanceSystemHolderResolve` 和 `ClaimSystemHolderResolve`，以及 `OwnerSource.openSystemResolve(SectorWalk, String)`、`openResolveOver` 和 `HolderPaintedView.resolveSystemHolderResolveSource()` | 各名称中的 `Resolve` 换为 `Resolver`：每一个都是批次解析其已标记星系所用的对象 |
 
 ##### 接缝
 
@@ -189,8 +190,8 @@
 | `OwnerMapBuildInputs`，基于绘制方案、视图读取、选择和两个填充集合的记录类型 | 改为不可继承的类，基于绘制方案、视图读取、选择和锚点叠加层是否显示，持有构建的 `MapPaints`，只与自身相等。读取方法为 `getStyling()`、`getViewReading()`、`getContentInputs()`、`isAnchorOverlayShown()` 和 `getPaints()`。填充状态归 `SystemOccupancy`，由批次逐星系并入 |
 | `SystemOccupancy.createCopyOf(Map, Set, Set)` 和 `recordOwnerOf(SystemKey, SystemOwner)` | `createCopyOf(ResolvedOwners)` 和 `recordOwnerOf(SystemKey, ResolvedSystemOwner)`：每个星系的填充状态与其所有者一同记录 |
 | 给出 `SystemOwner` 的 `SystemOwnerResolve.resolveOwnerOf(StarSystemAPI)` 和 `SystemHolderResolve.resolveHolderIn(StarSystemAPI)` | 改为给出 `ResolvedSystemOwner`，使已标记星系在重建会以斜线或不填充绘制的地方同样如此绘制 |
-| `SystemHolderResolveSource.openResolveOver(HolderPass)` 和 `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `openResolveOver(HolderPass, String)`，在现有构建所聚焦的集团下打开：聚焦中的地图会并入已标记星系，而不再需要一次重建 |
-| 只按争夺给出结果的 `DominancePaintedView.resolveSystemHolderResolveSource()` | `ClaimAugmentedSystemHolderResolve.createSourceReadingThrough(ClaimReaderSource)`，基于视图自身的宣称读取器 |
+| `SystemHolderResolveSource.openResolveOver(HolderPass)` 和 `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `openResolverOver(HolderPass, String)`，在现有构建所聚焦的集团下打开：聚焦中的地图会并入已标记星系，而不再需要一次重建 |
+| 只按争夺给出结果的 `DominancePaintedView.resolveSystemHolderResolveSource()` | `ClaimAugmentedSystemHolderResolver.createSourceReadingThrough(ClaimReaderSource)`，基于视图自身的宣称读取器 |
 | `OwnerMapCache(SectorMapMachinery, OwnerMapBodyPreferences, CellSeedRule)` 和 `OwnerMapLayerRenderer.createForLiveScreen(SectorMapMachinery, String, MapLayerViewRegistry, OwnerMapBodyPreferences, OwnerMapPreviewHighlight, MapLayerHoverGates, Supplier, CellSeedRule)` | 各自另需一个 `OwnerMapRefreshStrategy` |
 | `HolderResolution` 与 `ResolvedOwners` 的 `contestedSystemKeys` 和 `unfilledSystemKeys`，以及 `FillSplit.splitMembersByFillState(CellGrouping, List, Set, Set)` 和 `FillSplit.classifyFillState(SystemKey, Set, Set)` | 合为一个 `SystemFillStates fillStates`，因此不会有星系同时以斜线和不填充绘制。拆分改为接受它：`splitMembersByFillState(CellGrouping, List, SystemFillStates)`；单个星系的状态由 `resolveFillStateOf(SystemKey)` 给出 |
 | `ClusterLabelStylingSnapshot(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)` | `ClusterLabelStylingSnapshot(Map, MapPaints, FontAtlas, boolean)`：正式构建的快照携带构建自身的绘制方式，因此名称按其填充所依据的同一样式决定着色。最后一个组件为是否需要拟合，`resolveFrom` 依据构建的名称与锚点叠加层给出 |

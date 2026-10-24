@@ -339,7 +339,7 @@ the `ContentInputs` it sampled,
 and the `SystemFillStates` the source decided -
 which systems hatch and which paint no fill.
 The source rides there for the incremental refresh alone,
-which reopens a per-system resolve under the sampling it patches;
+which reopens a per-system resolver under the sampling it patches;
 nothing styles or names by it.
 
 They are one value because they are fixed together:

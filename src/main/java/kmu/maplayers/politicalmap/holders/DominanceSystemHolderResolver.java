@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolver;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
@@ -14,13 +14,13 @@ import kmu.maplayers.politicalmap.dominance.SectorPolitics;
  * under a spotlight, the presence-aware contest that keeps the spotlit bloc drawn wherever it lives.
  *
  * <p>The per-system half of {@link DominanceHolderProvider}. The weighting rule is sampled once
- * when the batch's resolve is opened, so every marked system in that batch is re-derived under the
+ * when the batch's resolver is opened, so every marked system in that batch is re-derived under the
  * same rule - and over the batch's own pass, so under the same grouping and the same walk the
  * holder source answers the batch's other questions from. That is what makes a single-system
  * refresh land the winning bloc, and the hatching, the bulk pass would have.
  */
-public final class DominanceSystemHolderResolve
-        implements SystemHolderResolve {
+public final class DominanceSystemHolderResolver
+        implements SystemHolderResolver {
 
     private final DominancePass pass;
 
@@ -28,26 +28,26 @@ public final class DominanceSystemHolderResolve
     // batch, as the bulk pass resolves it once per walk.
     private final FilteredPolitics.Spotlight spotlight;
 
-    private DominanceSystemHolderResolve(DominancePass pass, FilteredPolitics.Spotlight spotlight) {
+    private DominanceSystemHolderResolver(DominancePass pass, FilteredPolitics.Spotlight spotlight) {
 
         this.pass = pass;
         this.spotlight = spotlight;
     }
 
     /**
-     * Opens one batch's dominance pass over the batch's reading of the sector, and the resolve
+     * Opens one batch's dominance pass over the batch's reading of the sector, and the resolver
      * above it.
      *
      * @param pass          the batch's reading of the sector, under the grouping the standing
      *                      build was folded by
      * @param spotlitBlocId the bloc the standing build was spotlighting, or null off filter
-     * @return the batch's resolve
+     * @return the batch's resolver
      */
-    public static SystemHolderResolve openResolveOver(HolderPass pass, String spotlitBlocId) {
+    public static SystemHolderResolver openResolverOver(HolderPass pass, String spotlitBlocId) {
 
         var dominancePass = DominancePass.readRulesFromLunaSettings(pass);
 
-        return new DominanceSystemHolderResolve(
+        return new DominanceSystemHolderResolver(
             dominancePass,
             spotlitBlocId == null
                 ? null

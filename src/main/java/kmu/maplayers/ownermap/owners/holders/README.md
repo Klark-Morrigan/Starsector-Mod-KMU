@@ -119,7 +119,7 @@ and states six parts:
 - the grouping that folds factions into blocs;
 - who stands together in a contest a band judges, an `OwnerAffiliation`;
 - its whole-sector holding rule, a `HolderProvider`;
-- where its per-system rule is opened from, a `SystemHolderResolveSource`;
+- where its per-system rule is opened from, a `SystemHolderResolverSource`;
 - how a band is counted, a `SystemRibbonPlanner` over one bake's inputs;
 - how a bloc looks, an `OwnerReading` over a grouping.
 
@@ -238,16 +238,16 @@ while the source itself holds nothing from one walk to the next.
 
 A batch's walk is a later reading of the sector,
 so the source opens a fresh pass for it
-and opens the layer's `SystemHolderResolve` over that pass,
+and opens the layer's `SystemHolderResolver` over that pass,
 under the bloc the standing build was spotlighting.
-The resolve answers who holds a marked system and how its fill draws.
+The resolver answers who holds a marked system and how its fill draws.
 Whether anybody lives there and whether the spotlit bloc does are answered off the same pass,
 by the same projections the whole-sector scans used,
 so a re-derived system cannot leave the map the rebuild put it on.
 
 The holding rule is the layer's to keep in step with its whole-sector rule,
 spotlight and fill states included:
-a resolve that lands a different bloc,
+a resolver that lands a different bloc,
 or the same bloc hatched where the provider fills it solid,
 parts the refreshed cell from the rebuild around it.
 
@@ -323,7 +323,7 @@ and pays nothing for the split.
 ## What is not here
 
 - The *rules* -
-  the providers and resolves a layer's views state,
+  the providers and resolvers a layer's views state,
   and the mechanics behind them -
   are that layer's own.
   This subtree holds the assembly and the answers every holder layer shares, never a mechanic.

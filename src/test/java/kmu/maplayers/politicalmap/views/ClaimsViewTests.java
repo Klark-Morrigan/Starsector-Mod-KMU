@@ -30,7 +30,7 @@ import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
+import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolver;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuPoliticalMapStringKeys;
@@ -136,7 +136,7 @@ final class ClaimsViewTests {
     }
 
     @Nested
-    class ResolveSystemHolderResolveSource {
+    class ResolveSystemHolderResolverSource {
 
         @Test
         void reDerivesAMarkedSystemByClaimantThroughTheViewsReader() {
@@ -151,12 +151,12 @@ final class ClaimsViewTests {
                 return mock(ClaimBreakdownReader.class);
             });
 
-            var resolve = view
-                .resolveSystemHolderResolveSource()
-                .openResolveOver(pass, null);
+            var resolver = view
+                .resolveSystemHolderResolverSource()
+                .openResolverOver(pass, null);
 
-            assertThat(resolve)
-                .isInstanceOf(ClaimSystemHolderResolve.class);
+            assertThat(resolver)
+                .isInstanceOf(ClaimSystemHolderResolver.class);
             assertThat(openedOver)
                 .containsExactly(pass.sectorIndex());
         }

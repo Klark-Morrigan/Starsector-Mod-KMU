@@ -12,7 +12,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.politicalmap.claims.ClaimSortModes;
@@ -21,7 +21,7 @@ import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
-import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
+import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolver;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
 import kmu.util.KmuPoliticalMapStringKeys;
 
@@ -113,11 +113,11 @@ public final class ClaimsView
     }
 
     @Override
-    public SystemHolderResolveSource resolveSystemHolderResolveSource() {
+    public SystemHolderResolverSource resolveSystemHolderResolverSource() {
         // A marked system is re-derived to its claimant, through the claim reader this view reads
         // every claim through - the market contest the other two views re-derive by would hand a
         // claimed system to whoever holds it, which is not what this view painted.
-        return ClaimSystemHolderResolve.createSourceReadingThrough(claimReaderSource);
+        return ClaimSystemHolderResolver.createSourceReadingThrough(claimReaderSource);
     }
 
     @Override

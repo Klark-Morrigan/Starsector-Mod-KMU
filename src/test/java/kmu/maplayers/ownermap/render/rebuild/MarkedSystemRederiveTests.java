@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * until something unrelated rebuilds it, and a redraw recorded without the fold behind it spends a
  * frame arriving at the cell it already had.
  *
- * <p>A unit test, so the three reads are answered by the batch's resolve as a case states them -
+ * <p>A unit test, so the three reads are answered by the batch's resolver as a case states them -
  * who owns a system, whether anything stands in it, and whether the spotlit owner lives there. What
  * a layer answers them by is its own; what belongs here is which of them is asked about what, and
  * what is done with the answers.
@@ -297,7 +297,7 @@ final class MarkedSystemRederiveTests {
                 .isEmpty();
         }
 
-        // Runs the re-derive over the two-cell geometry every case shares, through one resolve the
+        // Runs the re-derive over the two-cell geometry every case shares, through one resolver the
         // source opens over the batch's walk under the clusters' own spotlight.
         private StaleOwnerMapDisturbance rederive(
                 OwnerMapClusters clusters,
@@ -307,7 +307,7 @@ final class MarkedSystemRederiveTests {
                 clusters,
                 cellGeometry,
                 walk,
-                ownerSourceFake.openSystemResolve(
+                ownerSourceFake.openSystemResolver(
                     walk,
                     clusters.getBuildInputs().getContentInputs().selectedOwnerId()),
                 Set.copyOf(buildCellKeys(markedSystemIds)));
@@ -323,7 +323,7 @@ final class MarkedSystemRederiveTests {
                 buildOwnersOf(ownerIdBySystemId));
         }
 
-        // What the resolve answers for one system's owner this batch. Every case states the
+        // What the resolver answers for one system's owner this batch. Every case states the
         // systems it marks; an unstated one comes back null, which reads as a system that lost its
         // owner rather than as a missing statement.
         private void assertResolvesTo(String systemId, SystemOwner owner) {
@@ -331,14 +331,14 @@ final class MarkedSystemRederiveTests {
             ownerSourceFake.recordOwnerOf(systemId, owner);
         }
 
-        // What the resolve answers for one system's inhabitation, against the "still settled"
+        // What the resolver answers for one system's inhabitation, against the "still settled"
         // default.
         private void assertSettledIs(String systemId, boolean isInhabited) {
 
             ownerSourceFake.recordInhabitationOf(systemId, isInhabited);
         }
 
-        // Where the resolve finds the pick living. The rule behind it is the layer's; what a case
+        // Where the resolver finds the pick living. The rule behind it is the layer's; what a case
         // here states is the answer the batch folds.
         private void assertPickLivesIn(String systemId) {
 

@@ -7,8 +7,8 @@ import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolver;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
@@ -25,14 +25,14 @@ import kmu.maplayers.politicalmap.claims.SectorClaims;
  * <p>Every claim fills solid, as the provider's do: a system has one claimant, so there is no
  * contested state to hatch.
  */
-public final class ClaimSystemHolderResolve
-        implements SystemHolderResolve {
+public final class ClaimSystemHolderResolver
+        implements SystemHolderResolver {
 
     private final HolderPass pass;
     private final ClaimReader claimReader;
     private final String spotlitBlocId;
 
-    private ClaimSystemHolderResolve(
+    private ClaimSystemHolderResolver(
             HolderPass pass,
             ClaimReader claimReader,
             String spotlitBlocId) {
@@ -47,12 +47,12 @@ public final class ClaimSystemHolderResolve
      *
      * @param claimReaderSource the means of opening a reader over one pass - the same one the
      *                          view's whole-sector resolve reads claims through
-     * @return the source a batch opens its resolve from
+     * @return the source a batch opens its resolver from
      */
-    public static SystemHolderResolveSource createSourceReadingThrough(
+    public static SystemHolderResolverSource createSourceReadingThrough(
             ClaimReaderSource claimReaderSource) {
 
-        return (pass, spotlitBlocId) -> new ClaimSystemHolderResolve(
+        return (pass, spotlitBlocId) -> new ClaimSystemHolderResolver(
             pass,
             PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
             spotlitBlocId);

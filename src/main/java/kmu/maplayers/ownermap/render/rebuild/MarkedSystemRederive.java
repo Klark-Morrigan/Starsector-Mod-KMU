@@ -7,7 +7,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 
 import java.util.LinkedHashSet;
@@ -27,7 +27,7 @@ import java.util.Set;
  * moving anywhere - a settled system the layer's rule gives nobody, say - and a full rebuild is
  * otherwise the only cure for that.
  *
- * <p>Every one of them is answered by the batch's one resolve, which the layer's source opened over
+ * <p>Every one of them is answered by the batch's one resolver, which the layer's source opened over
  * the batch's single walk, so a marked system is walked once however many questions are asked about
  * it, and all three are answered about one reading of the sector. Written through the occupancy's
  * folds rather than into collections of its own, so a fact cannot be brought up to date without the
@@ -50,9 +50,9 @@ final class MarkedSystemRederive {
     private final CellGeometryCache geometryCache;
 
     // The batch's walk, which resolves a marked key to the system standing behind it, and the
-    // resolve the layer's source opened over that walk, which answers every question about one.
+    // resolver the layer's source opened over that walk, which answers every question about one.
     private final SectorWalk walk;
-    private final SystemOwnerResolve ownerResolve;
+    private final SystemOwnerResolver ownerResolver;
 
     // What this batch has disturbed so far. Accumulated as one value rather than sets filled side
     // by side: every flip owes both a re-shape and a cluster group rebuild, so recording one without
@@ -63,12 +63,12 @@ final class MarkedSystemRederive {
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
             SectorWalk walk,
-            SystemOwnerResolve ownerResolve) {
+            SystemOwnerResolver ownerResolver) {
 
         this.clusters = clusters;
         this.geometryCache = geometryCache;
         this.walk = walk;
-        this.ownerResolve = ownerResolve;
+        this.ownerResolver = ownerResolver;
     }
 
     /**
@@ -81,7 +81,7 @@ final class MarkedSystemRederive {
      * @param clusters         the built map whose occupancy is folded
      * @param geometryCache    the cells, read for a flipped system's neighbours
      * @param walk             the batch's walk of the sector, which names the system behind each key
-     * @param ownerResolve     the batch's resolve, opened over that walk and shared by all three
+     * @param ownerResolver     the batch's resolver, opened over that walk and shared by all three
      *                         reads
      * @param markedSystemKeys the systems to re-derive, each of which draws a cell
      * @return what the batch disturbed: the cells to redraw, and the owners to rebuild
@@ -90,10 +90,10 @@ final class MarkedSystemRederive {
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
             SectorWalk walk,
-            SystemOwnerResolve ownerResolve,
+            SystemOwnerResolver ownerResolver,
             Set<SystemKey> markedSystemKeys) {
 
-        return new MarkedSystemRederive(clusters, geometryCache, walk, ownerResolve)
+        return new MarkedSystemRederive(clusters, geometryCache, walk, ownerResolver)
             .rederiveEachMarkedSystem(markedSystemKeys);
     }
 
@@ -128,10 +128,10 @@ final class MarkedSystemRederive {
     // another fill state is a refill: that owner's group re-traces its fill, and nothing else moved.
     private void rederiveSystemOwner(MarkedSystem marked) {
 
-        // Re-derived through the resolve this batch opened, which stands on the snapshot the full
+        // Re-derived through the resolver this batch opened, which stands on the snapshot the full
         // build resolved this system's owner under, so a single-system refresh lands the same owner
         // and fill state the bulk pass would.
-        var resolved = ownerResolve.resolveOwnerOf(marked.system());
+        var resolved = ownerResolver.resolveOwnerOf(marked.system());
         var standing = clusters.getOccupancy().readResolvedOwnerOf(marked.systemKey());
 
         // Both are records, so equality covers the owner, its palette and its fill state: a resize
@@ -164,7 +164,7 @@ final class MarkedSystemRederive {
     // system, its cell is the only surface that reports the change at all.
     private void rederiveSystemInhabitation(MarkedSystem marked) {
 
-        var isInhabited = ownerResolve.isSystemInhabited(marked.system());
+        var isInhabited = ownerResolver.isSystemInhabited(marked.system());
 
         if (clusters.getOccupancy().foldInhabitationOf(marked.systemKey(), isInhabited)) {
             disturbance.recordRestyle(marked.systemKey());
@@ -188,7 +188,7 @@ final class MarkedSystemRederive {
         for (var systemKey : markedSystemKeys) {
 
             var isPresent = unownedSystemKeys.contains(systemKey)
-                && ownerResolve.isSpotlitOwnerPresentIn(systemByKey.get(systemKey));
+                && ownerResolver.isSpotlitOwnerPresentIn(systemByKey.get(systemKey));
 
             if (occupancy.foldSpotlitPresenceOf(systemKey, isPresent)) {
                 disturbance.recordRestyle(systemKey);

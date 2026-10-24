@@ -16,13 +16,13 @@ import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
  * <p>The holder and its fill state are the layer's to answer here, as the provider answers both
  * for the whole sector. Whether anybody lives in a marked system and whether the spotlit bloc is
  * among them are questions no holding rule takes part in, so the holder source answers them off the
- * pass it opened this resolve over, and the layer states the one thing that is its own.
+ * pass it opened this resolver over, and the layer states the one thing that is its own.
  *
  * <p>Opened per batch rather than held, since it stands on one reading of the sector and a reading
  * outlives nothing: the batch that opened it is the batch entitled to it.
  */
 @FunctionalInterface
-public interface SystemHolderResolve {
+public interface SystemHolderResolver {
 
     /**
      * Who paints one star system, and how its fill draws, under whatever rule the layer paints by -

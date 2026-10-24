@@ -11,7 +11,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
@@ -20,7 +20,7 @@ import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
-import kmu.maplayers.politicalmap.holders.ClaimAugmentedSystemHolderResolve;
+import kmu.maplayers.politicalmap.holders.ClaimAugmentedSystemHolderResolver;
 import kmu.maplayers.politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import java.util.function.Predicate;
@@ -76,11 +76,11 @@ public interface DominancePaintedView
      * market contest under one weighting rule sampled per batch, and extended by its claim where
      * the contest leaves it unheld - so it lands the holder and fill state a rebuild would draw.
      *
-     * @return the source a batch opens its resolve from
+     * @return the source a batch opens its resolver from
      */
     @Override
-    default SystemHolderResolveSource resolveSystemHolderResolveSource() {
-        return ClaimAugmentedSystemHolderResolve.createSourceReadingThrough(resolveClaimReaderSource());
+    default SystemHolderResolverSource resolveSystemHolderResolverSource() {
+        return ClaimAugmentedSystemHolderResolver.createSourceReadingThrough(resolveClaimReaderSource());
     }
 
     /**
