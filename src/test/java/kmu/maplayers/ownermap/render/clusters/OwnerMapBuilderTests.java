@@ -21,6 +21,7 @@ import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
@@ -174,7 +175,7 @@ final class OwnerMapBuilderTests {
 
             var clusters = buildClustersOver(buildReadingOver(new OwnerSourceFake()), owners);
 
-            clusters.getOccupancy().recordOwnerOf(HELD_SYSTEM, null);
+            clusters.getOccupancy().recordOwnerOf(HELD_SYSTEM, ResolvedSystemOwner.UNOWNED);
 
             assertThat(owners.ownerBySystemKey())
                 .containsKey(HELD_SYSTEM);
@@ -182,8 +183,9 @@ final class OwnerMapBuilderTests {
 
         @Test
         void carriesTheFillStatesTheOwnersStated() {
-            // The fill states the source co-produced with its owner map ride onto the build's inputs
-            // whole, which the fill split reads them off.
+            // The fill states the source co-produced with its owner map ride into the build's
+            // occupancy beside the owners, which a batch folds them in and the fill split reads them
+            // off.
             var expectedFillStates = SystemFillStates.createOf(Map.of(
                 buildCellKey("askonia"),
                 FillState.HATCHED,
@@ -192,10 +194,14 @@ final class OwnerMapBuilderTests {
 
             var clusters = buildClustersOver(
                 buildReadingOver(new OwnerSourceFake()),
-                new ResolvedOwners(Map.of(), expectedFillStates, Set.of(), Set.of()));
+                new ResolvedOwners(
+                    Map.of(buildCellKey("askonia"), HELD_BY, buildCellKey("eos"), HELD_BY),
+                    expectedFillStates,
+                    Set.of(),
+                    Set.of()));
 
-            assertThat(clusters.getBuildInputs().getFillStates())
-                .isSameAs(expectedFillStates);
+            assertThat(clusters.getOccupancy().snapshotFillStates())
+                .isEqualTo(expectedFillStates);
         }
 
         @Test

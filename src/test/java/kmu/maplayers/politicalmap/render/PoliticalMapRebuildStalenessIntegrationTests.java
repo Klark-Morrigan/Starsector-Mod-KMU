@@ -17,7 +17,8 @@ import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
-import kmu.maplayers.ownermap.render.OwnerMapCache;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.politicalmap.views.FactionsView;
 
 import org.junit.jupiter.api.AfterEach;
@@ -113,7 +114,8 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
                 preferences.nameFormat(),
                 outlinePreferenceMock,
                 preferences.filterRecede()),
-            CellSeedRule.SEED_DRAWN_SYSTEMS);
+            CellSeedRule.SEED_DRAWN_SYSTEMS,
+            OwnerMapRefreshStrategy.INCREMENTAL);
         cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
     }
 

@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import kmlib.starsector.systems.SystemKey;
 
@@ -140,12 +140,6 @@ final class OwnerMapRebuildDecider {
         // Sampled under the screen the frame handed over, which is the screen it also took the view
         // off, so the picks a rebuild bakes and the view it builds under name one panel.
         var contentInputs = ContentInputs.sampleForView(view, bodyPreferences, memoryScope);
-
-        // TODO: when only geometry changed (isCellCutStale), reshape just the cells
-        // CellGeometryCache rebuilt - the system that gained or lost access and every cell
-        // it touches - rather than the full clusters rebuild the cache runs. Have
-        // updateFromSector report its affected-cell set and drive a targeted reshape from it, the
-        // geometry-side analogue of the marked-system fold.
 
         // Read once and folded into both revisions below, so the two cannot be taken over two
         // readings of the settings or the view's live inputs.

@@ -2,7 +2,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
 
 /**
@@ -37,7 +37,7 @@ final class HolderSystemOwnerResolve implements SystemOwnerResolve {
     }
 
     @Override
-    public SystemOwner resolveOwnerOf(StarSystemAPI system) {
+    public ResolvedSystemOwner resolveOwnerOf(StarSystemAPI system) {
 
         return holderResolve.resolveHolderIn(system);
     }

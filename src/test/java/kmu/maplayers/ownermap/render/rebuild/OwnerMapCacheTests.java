@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -38,6 +38,7 @@ import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 import kmu.settings.KmuOwnerMapGeometrySettings;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -59,20 +60,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins the cache's guarantees that hold outside a running game: a rebuild that throws leaves
  * something safe to draw, releasing the cache drops everything it built for its sector, the debug
- * toggle picks which of the two views a rebuild builds, a frame owing no rebuild either folds
- * the systems marked since into the standing map or drops them and owes the next frame a rebuild, and a
- * rebuild owed only to a style pick keeps the owners the last one resolved while a marked system or
- * the debug overlay makes the next one resolve them again.
+ * toggle picks which of the two views a rebuild builds, a frame owing no rebuild hands the systems
+ * marked since to the layer's strategy and owes the next frame a rebuild where it folds nothing, and
+ * a rebuild owed only to a style pick keeps the owners the last one resolved while a marked system
+ * or the debug overlay makes the next one resolve them again.
  *
- * <p>The last two are the dispatch this class owns, so every builder either view is made by and
- * the fold itself are stood in for at their static seams: what each of them produces is pinned by
- * its own suite, and what belongs here is which of them a frame reaches. The rebuilds against a
- * live sector, where those builders run for real, are the integration tests'.
+ * <p>The last two are the dispatch this class and the full rebuild behind it own, so every builder
+ * either view is made by is stood in for at its static seam and the strategy is a mock: what each of
+ * them produces is pinned by its own suite, and what belongs here is which of them a frame reaches.
+ * The rebuilds against a live sector, where those builders run for real, are the integration tests'.
  */
 final class OwnerMapCacheTests {
 
@@ -85,7 +88,7 @@ final class OwnerMapCacheTests {
     private static final OwnerPaintedView VIEW =
         new OwnerPaintedViewFake(new OwnerSourceFake());
 
-    // The owner a filtered map is spotlighting, for the case about what a filter defers.
+    // The owner a filtered map is spotlighting, for the case that a filter defers nothing.
     private static final String HEGEMONY_ID = "hegemony";
 
     // The system a change marked stale between two frames.
@@ -114,11 +117,22 @@ final class OwnerMapCacheTests {
     // none of its own, so closing it then does nothing.
     private final StaticSeams seams = new StaticSeams();
 
+    // The layer's strategy for what a frame owing no rebuild does with a marked system: a mock, since
+    // which outcome a strategy reaches is its own suite's, and what belongs here is when the cache
+    // asks and what it does with the answer. Folds by default, as the incremental filler does.
+    private final OwnerMapRefreshStrategy refreshStrategyMock = mock(OwnerMapRefreshStrategy.class);
+
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> debugToggleMock;
     private MockedStatic<DebugBorderTracingBuilder> debugBuilderMock;
     private MockedStatic<OwnerMapBuilder> productionBuilderMock;
-    private MockedStatic<IncrementalOwnerRefresh> incrementalRefreshMock;
     private MockedStatic<LabelFonts> labelFontsMock;
+
+    @BeforeEach
+    void foldEveryBatch() {
+
+        when(refreshStrategyMock.refreshMarkedSystems(any(), any(), any()))
+            .thenReturn(MarkedSystemsOutcome.FOLDED);
+    }
 
     @AfterEach
     void closeSeams() {
@@ -236,10 +250,10 @@ final class OwnerMapCacheTests {
         }
 
         @Test
-        void foldsAMarkedSystemIntoTheStandingMapOnAFrameOwingNoRebuild() {
+        void handsAMarkedSystemToTheLayersStrategyOnAFrameOwingNoRebuild() {
             // The marked change's path: nothing a decision reads moved, so no rebuild is owed, and
-            // the one system marked since is handed to the fold rather than left for a rebuild
-            // nothing is going to run.
+            // the one system marked since is handed to the layer's strategy over a walk of this
+            // cache's own sector rather than left for a rebuild nothing is going to run.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
             var cache = buildCacheOver(emptySectorMachinery);
@@ -248,10 +262,33 @@ final class OwnerMapCacheTests {
             emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
             cache.refreshDrawLists(VIEW, SCREEN);
 
-            incrementalRefreshMock.verify(() -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(
+            verify(refreshStrategyMock).refreshMarkedSystems(
                 argThat(walk -> walk.sector() == emptySectorMock),
                 any(),
-                eq(Set.of(MARKED_CELL))));
+                eq(Set.of(MARKED_CELL)));
+        }
+
+        // A spotlight no longer keeps a batch from the strategy: the per-system resolve answers a
+        // marked system as the spotlit build painted it, so the strategy decides like any other.
+        @Test
+        void handsAFilteredMapsMarkedSystemToTheLayersStrategy() {
+
+            // ARRANGE
+            openEverySeamARebuildReaches(createSpotlitClusters());
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+
+            // ACT
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ASSERT
+            verify(refreshStrategyMock).refreshMarkedSystems(
+                any(),
+                any(),
+                eq(Set.of(MARKED_CELL)));
         }
 
         @Test
@@ -300,9 +337,9 @@ final class OwnerMapCacheTests {
         }
 
         @Test
-        void foldsNothingOnAFrameWithNoSystemMarked() {
+        void asksTheStrategyNothingOnAFrameWithNoSystemMarked() {
             // The frame the map spends nearly all of its life on: nothing to rebuild and nothing
-            // marked, so the fold is not so much as asked.
+            // marked, so the strategy is not so much as asked.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
             var cache = buildCacheOver(emptySectorMachinery);
@@ -310,16 +347,15 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
             cache.refreshDrawLists(VIEW, SCREEN);
 
-            incrementalRefreshMock
-                .verifyNoInteractions();
+            verifyNoInteractions(refreshStrategyMock);
         }
 
         @Test
-        void dropsAMarkedSystemRatherThanFoldingItWhileTheMapIsFiltered() {
-            // The fold re-derives owners through the unfiltered resolve, which would overwrite the
-            // spotlight's synthetic keys - so a filtered map drops the mark rather than folding it,
-            // and leaves nothing on the board for the next frame to find either.
-            openEverySeamARebuildReaches(createSpotlitClusters());
+        void leavesNothingOnTheBoardForABatchTheStrategyOwedARebuild() {
+            // The batch is drained before the strategy is asked, so a strategy that folds nothing
+            // leaves no mark for the next frame to find: the owed rebuild is the only record.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            oweARebuildForEveryBatch();
 
             var cache = buildCacheOver(emptySectorMachinery);
 
@@ -327,20 +363,17 @@ final class OwnerMapCacheTests {
             emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
             cache.refreshDrawLists(VIEW, SCREEN);
 
-            incrementalRefreshMock.verify(
-                () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any()),
-                never());
-
             assertThat(emptySectorMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
         @Test
-        void rebuildsAFilteredMapOnTheFrameAfterItDroppedAMarkedSystem() {
-            // The dropped mark is the only record that a system changed hands, so the frame after
-            // it rebuilds and reads the owners afresh - or the spotlit map shows the old owner until
-            // the spotlight moves.
-            openEverySeamARebuildReaches(createSpotlitClusters());
+        void rebuildsOnTheFrameAfterTheStrategyOwedARebuild() {
+            // The owed rebuild is the only record that a system changed hands, so the frame after it
+            // rebuilds and reads the owners afresh - or the map shows the old owner until something
+            // unrelated moves.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            oweARebuildForEveryBatch();
 
             var cache = buildCacheOver(emptySectorMachinery);
 
@@ -358,9 +391,26 @@ final class OwnerMapCacheTests {
         }
 
         @Test
+        void announcesNothingForABatchTheStrategyOwedARebuild() {
+            // Nothing on screen moved, so the hover box keeps its reading until the rebuild lands.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            oweARebuildForEveryBatch();
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(readDrawListsRevision())
+                .isEqualTo(1);
+        }
+
+        @Test
         void owesNothingMoreOnceTheOwedRebuildHasRun() {
             // The rebuild pays the debt, so the frames after it go back to owing nothing.
-            openEverySeamARebuildReaches(createSpotlitClusters());
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            oweARebuildForEveryBatch();
 
             var cache = buildCacheOver(emptySectorMachinery);
 
@@ -376,9 +426,9 @@ final class OwnerMapCacheTests {
         }
 
         @Test
-        void rebuildsTheBorderTracingOverlayOnTheFrameAfterItDroppedAMarkedSystem() {
-            // The overlay builds no draw lists for a fold to patch, so the mark is dropped and the
-            // next frame rebuilds the overlay to show the change.
+        void rebuildsTheBorderTracingOverlayOnTheFrameAfterAMarkedSystemWithoutAskingTheStrategy() {
+            // The overlay builds no draw lists for a fold to patch, so the mark owes the rebuild
+            // whatever the layer's strategy, and the next frame rebuilds the overlay to show it.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
             traceBordersForDebug();
 
@@ -389,9 +439,7 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
             cache.refreshDrawLists(VIEW, SCREEN);
 
-            incrementalRefreshMock.verify(
-                () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any()),
-                never());
+            verifyNoInteractions(refreshStrategyMock);
             debugBuilderMock.verify(
                 () -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()),
                 times(2));
@@ -559,18 +607,19 @@ final class OwnerMapCacheTests {
         }
     }
 
-    // A cache over the given machinery, drawing under the layer's test keys and seeding a cell for
-    // every system the map draws.
-    private static OwnerMapCache buildCacheOver(SectorMapMachinery cacheMachinery) {
+    // A cache over the given machinery, drawing under the layer's test keys, seeding a cell for every
+    // system the map draws and taking marked systems by the stood-in strategy.
+    private OwnerMapCache buildCacheOver(SectorMapMachinery cacheMachinery) {
 
         return new OwnerMapCache(
             cacheMachinery,
             OwnerMapBodyPreferencesFixtures.createUnderTestKeys(),
-            CellSeedRule.SEED_DRAWN_SYSTEMS);
+            CellSeedRule.SEED_DRAWN_SYSTEMS,
+            refreshStrategyMock);
     }
 
-    // Draw lists built under a spotlight, which is what makes a later frame drop a mark rather than
-    // fold it.
+    // Draw lists built under a spotlight, for the case that a spotlight no longer keeps a batch from
+    // the strategy.
     private static OwnerMapClusters createSpotlitClusters() {
 
         return OwnerMapClusterFixtures.createClustersSpotlighting(
@@ -594,7 +643,15 @@ final class OwnerMapCacheTests {
                 nameFormatMock,
                 preferences.uninhabitedOutline(),
                 preferences.filterRecede()),
-            CellSeedRule.SEED_DRAWN_SYSTEMS);
+            CellSeedRule.SEED_DRAWN_SYSTEMS,
+            refreshStrategyMock);
+    }
+
+    // Makes the stood-in strategy fold nothing, as the full-rebuild filler does.
+    private void oweARebuildForEveryBatch() {
+
+        when(refreshStrategyMock.refreshMarkedSystems(any(), any(), any()))
+            .thenReturn(MarkedSystemsOutcome.REBUILD_OWED);
     }
 
     // How many times the cache over the empty sector announced a rebuild of what it draws.
@@ -639,7 +696,6 @@ final class OwnerMapCacheTests {
         labelFontsMock = seams.openSeam(LabelFonts.class);
 
         debugToggleMock = seams.openSeam(KmuOwnerMapDiagnosticsSettings.class);
-        incrementalRefreshMock = seams.openSeam(IncrementalOwnerRefresh.class);
 
         debugBuilderMock = seams.openSeam(DebugBorderTracingBuilder.class);
         debugBuilderMock

@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -24,11 +24,13 @@ import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.extent.ClusterNameBoxes;
 import kmu.maplayers.base.labels.extent.LabelLineBoxes;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
@@ -62,17 +64,17 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
 import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
 import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.CELL_LESS_SYSTEM;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.DISTANT_SYSTEM;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.SMALL_CELL_SIDE;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnerOf;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnersOf;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjacentCells;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.CELL_LESS_SYSTEM;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.DISTANT_SYSTEM;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.SMALL_CELL_SIDE;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnerOf;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnersOf;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildSectorWithSystems;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildTwoAdjacentCells;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -677,6 +679,52 @@ public final class IncrementalOwnerRefreshTests {
                 .buildClusterGroup(argThat(owner -> owner.ownerId().equals(HEGEMONY)), anyList());
             verify(readGroupBuilder())
                 .buildClusterGroup(argThat(owner -> owner.ownerId().equals(TRITACHYON)), anyList());
+        }
+
+        // A fill state moving under the same owner re-splits that owner's fill: its group is traced
+        // again, by a builder stood up after the fold so it fills by the state just recorded.
+        @Test
+        void retracesTheOwnersClusterGroupWhenOnlyTheFillStateMoved() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
+
+            ownerSourceFake.recordResolvedOwnerOf(
+                FLIPPED_SYSTEM,
+                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            verify(readGroupBuilder())
+                .buildClusterGroup(argThat(owner -> owner.ownerId().equals(HEGEMONY)), anyList());
+        }
+
+        // The border did not move, so neither the cells nor the names are owed anything: a refill
+        // that re-shaped the ring or re-fitted every name would spend a flip's frame on a fill.
+        @Test
+        void reshapesNoCellAndRefitsNoNameWhenOnlyTheFillStateMoved() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
+
+            ownerSourceFake.recordResolvedOwnerOf(
+                FLIPPED_SYSTEM,
+                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            verifyNoCellBaked();
+
+            anchorsMock
+                .verifyNoInteractions();
         }
 
         @Test

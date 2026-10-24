@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;

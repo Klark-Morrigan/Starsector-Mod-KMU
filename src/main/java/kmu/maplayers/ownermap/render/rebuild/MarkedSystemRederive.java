@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
@@ -19,9 +19,10 @@ import java.util.Set;
  * Brings the systems a change marked back into step with the sector, and reports what that
  * obliges the map to redraw.
  *
- * <p>Three facts settle how a marked system's cell draws, and all three are re-derived here: who
- * owns it, whether anything stands in it, and - while an owner is spotlighted - whether the pick is
- * one of the things standing in it. They move independently, so each is read on its own account: a
+ * <p>Three facts settle how a marked system draws, and all three are re-derived here: who owns it
+ * and how its fill draws inside that owner's border, whether anything stands in it, and - while an
+ * owner is spotlighted - whether the pick is one of the things standing in it. They move
+ * independently, so each is read on its own account: a
  * system this layer's owners never accounted for can be settled or emptied with no owner
  * moving anywhere - a settled system the layer's rule gives nobody, say - and a full rebuild is
  * otherwise the only cure for that.
@@ -33,8 +34,8 @@ import java.util.Set;
  * redraw it owes being recorded beside it.
  *
  * <p>Nothing here draws. What each change costs is the caller's, and differs by which fact moved -
- * a flip re-shapes a ring of cells and rebuilds two clusters, where the other two are cell-local
- * - so what this reports is the disturbance rather than the work.
+ * a flip re-shapes a ring of cells and rebuilds two clusters, a refill rebuilds one cluster, and
+ * the other two are cell-local - so what this reports is the disturbance rather than the work.
  *
  * <p>One of these is made per batch and holds what the batch reads and writes throughout, so each
  * read below names only the system it is about. What it accumulates travels with it for the same
@@ -120,29 +121,38 @@ final class MarkedSystemRederive {
         return disturbance;
     }
 
-    // Re-derives one system's owner and, when it actually changed, records the flip against
-    // what this batch disturbed: the cells to re-shape (the system and its neighbours, whose
-    // edge against it flips between a same-owner seam and a cluster border) and the owners
-    // whose cluster group must rebuild (the old and the new).
+    // Re-derives one system's owner and fill state and, when either actually changed, records what
+    // that owes against this batch. A new owner is a flip: the cells to re-shape (the system and
+    // its neighbours, whose edge against it flips between a same-owner seam and a cluster border)
+    // and the owners whose cluster group must rebuild (the old and the new). The same owner in
+    // another fill state is a refill: that owner's group re-traces its fill, and nothing else moved.
     private void rederiveSystemOwner(MarkedSystem marked) {
 
         // Re-derived through the resolve this batch opened, which stands on the snapshot the full
         // build resolved this system's owner under, so a single-system refresh lands the same owner
-        // the bulk pass would.
-        var newOwner = ownerResolve.resolveOwnerOf(marked.system());
-        var oldOwner = clusters.getOccupancy().readOwnerOf(marked.systemKey());
+        // and fill state the bulk pass would.
+        var resolved = ownerResolve.resolveOwnerOf(marked.system());
+        var standing = clusters.getOccupancy().readResolvedOwnerOf(marked.systemKey());
 
-        // SystemOwner is a record, so equality covers the owner and its palette: a resize that
-        // leaves the same winner leaves the drawing identical.
-        if (Objects.equals(oldOwner, newOwner)) {
+        // Both are records, so equality covers the owner, its palette and its fill state: a resize
+        // that leaves the same winner in the same state leaves the drawing identical.
+        if (resolved.equals(standing)) {
             return;
         }
-        clusters.getOccupancy().recordOwnerOf(marked.systemKey(), newOwner);
+
+        clusters.getOccupancy().recordOwnerOf(marked.systemKey(), resolved);
+
+        if (Objects.equals(standing.owner(), resolved.owner())) {
+
+            disturbance.recordRefill(resolved.owner());
+            return;
+        }
+
         disturbance.recordFlip(
             marked.systemKey(),
             neighbourSystemKeysOf(marked.systemKey()),
-            oldOwner,
-            newOwner);
+            standing.owner(),
+            resolved.owner());
     }
 
     // Re-derives whether anything still stands in one marked system and folds the answer into the

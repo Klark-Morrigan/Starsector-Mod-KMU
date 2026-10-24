@@ -191,18 +191,19 @@ public final class OwnerMapClusters
     }
 
     /**
-     * The cluster-group builder this build's owners are traced by, over the paints and fill states
-     * it was baked under and the cells it groups.
+     * The cluster-group builder this build's owners are traced by, over the paints it was baked
+     * under, the fill states its occupancy now holds and the cells it groups.
      *
      * <p>The one place the pipeline states the builder's inputs, for the reason
      * {@link #createPaintedCellBuilder()} is. The grouping and edges arrive because a batch groups
-     * the cells afresh once its flips have folded, while the paints and fill states stand for the
-     * life of the build.
+     * the cells afresh once its flips have folded, and the fill states are read off the occupancy
+     * for the same reason: a batch folds them per marked system. The paints stand for the life of
+     * the build.
      *
      * @param cellGrouping       how the drawn cells group under the current owners, as
      *                           {@link #resolveCellGroupingOver} answers it
      * @param cellEdgesByCellKey the raw cells the borders are traced from
-     * @return a builder over this build's paints and fill states and the given cells
+     * @return a builder over this build's paints, its current fill states and the given cells
      */
     public ClusterGroupBuilder createClusterGroupBuilder(
             CellGrouping cellGrouping,
@@ -212,7 +213,7 @@ public final class OwnerMapClusters
             buildInputs.getPaints(),
             cellGrouping,
             cellEdgesByCellKey,
-            buildInputs.getFillStates());
+            occupancy.snapshotFillStates());
     }
 
     /**
@@ -321,8 +322,8 @@ public final class OwnerMapClusters
     }
 
     /**
-     * @return what this build was baked under - the paint scheme, the view and its reading, the
-     *         sampled picks and the fill states - as the one reading every stage of it sampled.
+     * @return what this build was baked under - the paint scheme, the view and its reading, and the
+     *         sampled picks - as the one reading every stage of it sampled.
      *         What a pass that runs after the build reads rather than asking the source again: a
      *         label re-fit or a band re-bake taken off a second reading would spell the names one
      *         way and have been sized for another

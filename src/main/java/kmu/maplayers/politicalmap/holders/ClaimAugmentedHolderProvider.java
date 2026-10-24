@@ -5,6 +5,7 @@ import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.SystemFillStates;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
@@ -81,11 +82,30 @@ public final class ClaimAugmentedHolderProvider
         return foldClaimsIntoHeld(held, claimingHolderBySystemKey);
     }
 
-    // Adds each claimed system the held resolve left unowned to the holder map - so held and claimed
-    // cells of one bloc fuse into a single territory - and records it unfilled, so the fill split
-    // leaves it empty inside that shared border. A system already held keeps its held holder and
-    // solid fill: the held signal is the stronger one. Pure over its inputs; the claims arrive
-    // already keyed for whatever spotlight is active, so the fold reads no filter of its own.
+    /**
+     * One system's held answer extended by its claim: the rule both halves of this view fold claims
+     * by, the whole-sector one here and the per-system one in
+     * {@link ClaimAugmentedSystemHolderResolve}.
+     *
+     * <p>A held system keeps its held holder and fill: the held signal is the stronger one. A claimed
+     * system the held resolve left unowned joins its claimant - so held and claimed cells of one bloc
+     * fuse into a single territory - unfilled, so the fill split leaves it empty inside that shared
+     * border. Pure over its inputs; the claim arrives already keyed for whatever spotlight is active,
+     * so the fold reads no filter of its own.
+     *
+     * @param held           the system's held holder and fill state
+     * @param claimingHolder the system's claimant, or null where nobody claims it
+     * @return what the system draws as
+     */
+    static ResolvedSystemOwner extendHeldByClaim(ResolvedSystemOwner held, SystemOwner claimingHolder) {
+
+        if (held.owner() != null || claimingHolder == null) {
+            return held;
+        }
+        return new ResolvedSystemOwner(claimingHolder, FillState.UNFILLED);
+    }
+
+    // Extends every system the held resolve answered by its claim, under the one rule above.
     private static HolderResolution foldClaimsIntoHeld(
             HolderResolution held,
             Map<SystemKey, SystemOwner> claimingHolderBySystemKey) {
@@ -95,16 +115,28 @@ public final class ClaimAugmentedHolderProvider
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {
 
-            if (ownerBySystemKey.containsKey(claim.getKey())) {
-                continue;
-            }
+            var systemKey = claim.getKey();
+            var extended = extendHeldByClaim(readHeldAnswerOf(held, systemKey), claim.getValue());
 
-            ownerBySystemKey.put(claim.getKey(), claim.getValue());
-            fillStateBySystemKey.put(claim.getKey(), FillState.UNFILLED);
+            ownerBySystemKey.put(systemKey, extended.owner());
+            fillStateBySystemKey.put(systemKey, extended.fillState());
         }
 
         return new HolderResolution(
             ownerBySystemKey,
             SystemFillStates.createOf(fillStateBySystemKey));
+    }
+
+    // One claimed system's held answer, read back out of the held resolution so the claim is folded
+    // by the per-system rule.
+    private static ResolvedSystemOwner readHeldAnswerOf(HolderResolution held, SystemKey systemKey) {
+
+        var owner = held
+            .ownerBySystemKey()
+            .get(systemKey);
+
+        return owner == null
+            ? ResolvedSystemOwner.UNOWNED
+            : new ResolvedSystemOwner(owner, held.fillStates().resolveFillStateOf(systemKey));
     }
 }

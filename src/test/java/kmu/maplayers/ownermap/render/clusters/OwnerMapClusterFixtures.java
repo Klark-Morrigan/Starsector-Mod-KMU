@@ -23,6 +23,7 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.MapStyling;
@@ -281,10 +282,11 @@ public final class OwnerMapClusterFixtures {
             OwnerSource ownerSource) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createCopyOf(
+            SystemOccupancy.createCopyOf(new ResolvedOwners(
                 ownerBySystemKey,
+                SystemFillStates.ALL_SOLID,
                 inhabitedSystemKeys,
-                spotlitPresenceSystemKeys),
+                spotlitPresenceSystemKeys)),
             new OwnerMapBuildInputs(
                 new MapStyling(
                     null, // No render style.
@@ -298,8 +300,7 @@ public final class OwnerMapClusterFixtures {
                     OwnerReadingFake.createAnsweringNothing(),
                     ownerSource),
                 contentInputs,
-                false, // No anchor overlay.
-                SystemFillStates.ALL_SOLID));
+                false)); // No anchor overlay.
     }
 
     /**
@@ -348,8 +349,7 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE), // Presence palette.
                 new ViewReading(view, reading, new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
-                false, // No anchor overlay.
-                SystemFillStates.ALL_SOLID));
+                false)); // No anchor overlay.
     }
 
     /**

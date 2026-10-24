@@ -13,7 +13,7 @@ import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
@@ -22,7 +22,7 @@ import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
+import kmu.maplayers.politicalmap.holders.ClaimAugmentedSystemHolderResolve;
 import kmu.maplayers.politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -103,24 +103,22 @@ final class DominancePaintedViewTests {
     class ResolveSystemHolderResolveSource {
 
         @Test
-        void reDerivesAMarkedSystemByTheMarketContest() {
-            // The per-system half of the contest, so a refreshed cell lands the bloc the whole-sector
-            // resolve would - opened over the batch's own pass.
-            var holding = new HolderPass(
-                new SectorPassIndex(null),
-                UNDER_THE_FOG,
-                HolderGrouping.identity());
+        void reDerivesAMarkedSystemByTheContestExtendedWithTheClaimsTheViewReads() {
+            // The per-system half of the claim-extended holding, read through the view's own source,
+            // so a refreshed cell lands the bloc and fill state the whole-sector resolve would.
+            var sourceMock = mock(SystemHolderResolveSource.class);
 
-            var resolveMock = mock(SystemHolderResolve.class);
+            doReturn(claimReaderSource)
+                .when(viewMock).resolveClaimReaderSource();
 
-            try (var resolveFactoryMock = mockStatic(DominanceSystemHolderResolve.class)) {
+            try (var sourceFactoryMock = mockStatic(ClaimAugmentedSystemHolderResolve.class)) {
 
-                resolveFactoryMock
-                    .when(() -> DominanceSystemHolderResolve.openResolveOver(holding))
-                    .thenReturn(resolveMock);
+                sourceFactoryMock
+                    .when(() -> ClaimAugmentedSystemHolderResolve.createSourceReadingThrough(same(claimReaderSource)))
+                    .thenReturn(sourceMock);
 
-                assertThat(viewMock.resolveSystemHolderResolveSource().openResolveOver(holding))
-                    .isSameAs(resolveMock);
+                assertThat(viewMock.resolveSystemHolderResolveSource())
+                    .isSameAs(sourceMock);
             }
         }
     }

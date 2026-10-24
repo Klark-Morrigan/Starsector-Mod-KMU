@@ -153,7 +153,7 @@ final class ClaimsViewTests {
 
             var resolve = view
                 .resolveSystemHolderResolveSource()
-                .openResolveOver(pass);
+                .openResolveOver(pass, null);
 
             assertThat(resolve)
                 .isInstanceOf(ClaimSystemHolderResolve.class);

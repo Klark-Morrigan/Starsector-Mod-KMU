@@ -11,6 +11,7 @@ import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlightFake;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.when;
  * registry is what stands a frame down, that the hover box is the active view's own, and that the
  * machinery behind the renderer can be released before it ever drew. The frame itself - when each
  * part is asked and what guards it - is {@code SequencedMapLayerRendererTests}'s; the cache's
- * refresh and the compositor's stack are {@link OwnerMapCacheTests}'s and
+ * refresh and the compositor's stack are {@code OwnerMapCacheTests}'s and
  * {@link OwnerMapOverlayRendererTests}'s.
  */
 final class OwnerMapLayerRendererTests {
@@ -110,6 +111,7 @@ final class OwnerMapLayerRendererTests {
             new OwnerMapPreviewHighlightFake(),
             hoverGates,
             BandLayoutFixtures::buildGeometryBelowAndReadoutsAbove,
-            CellSeedRule.SEED_DRAWN_SYSTEMS);
+            CellSeedRule.SEED_DRAWN_SYSTEMS,
+            OwnerMapRefreshStrategy.FULL_REBUILD);
     }
 }

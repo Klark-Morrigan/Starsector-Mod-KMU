@@ -31,6 +31,7 @@ see the [mod README](../../../../../../README.md) for project context.
 - [What a layer supplies](#what-a-layer-supplies)
 - [What a layer holds](#what-a-layer-holds)
 - [The stages it wires](#the-stages-it-wires)
+- [The rebuild is a slot](#the-rebuild-is-a-slot)
 - [The arrow](#the-arrow)
 - [The words it keeps](#the-words-it-keeps)
 - [Where each part lives](#where-each-part-lives)
@@ -72,7 +73,8 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | The tier asks | Through |
 | --- | --- |
 | who owns each system, which owned systems draw hatched or unfilled, what stands where and where the spotlit owner lives, for a whole rebuild | an `OwnerSource`, resolved with the reading through `OwnerPaintedView.resolveViewReading` and handed the rebuild's `SectorWalk` |
-| who owns one marked system, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolve` that same source opens over the batch's own walk |
+| who owns one marked system and how its fill draws, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolve` that same source opens over the batch's own walk, under the spotlight the standing build was painted under |
+| what a frame owing no rebuild does with the systems marked since | an `OwnerMapRefreshStrategy`, handed to `OwnerMapLayerRenderer.createForLiveScreen`: `FULL_REBUILD` to rebuild, `INCREMENTAL` to fold - see [the rebuild is a slot](#the-rebuild-is-a-slot) |
 | how a cell's presence band is counted | the same source's band planner |
 | each owner's shades, name, crest, recede and category, the shade an unowned cell paints in and the pair a receded one sinks toward | the `OwnerReading` resolved beside the source |
 | which systems seed a cell | a `CellSeedRule`, handed to `OwnerMapLayerRenderer.createForLiveScreen`; `SEED_DRAWN_SYSTEMS` for the systems the map draws |
@@ -143,7 +145,7 @@ so a layer holding the same values gets the same answer without the pipeline:
 | --- | --- |
 | the style resolvers (`MapPaints`) | the `MapStyling`, the `OwnerReading` and the sampled `ContentInputs` |
 | the cell builder (`PaintedCellBuilder`) | the `MapPaints` and the `SystemOccupancy` |
-| the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the `SystemFillStates` |
+| the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the `SystemFillStates` the occupancy holds |
 | the border trace and smoothing | the substrate's `ClusterBorderTrace` and `BorderSmoothing`, over rings and a style |
 | the label fit (the substrate's `ClusterAnchorsBuilder`) | the cells, the standing placements, and the `ClusterAnchorFitInputs` a `ClusterLabelStylingSnapshot` over the build's `MapPaints` creates |
 | the band planner | the source's `SystemRibbonPlanner`, the substrate's port, over a `SectorWalk` and the `RibbonPlanRules` |
@@ -161,6 +163,40 @@ Stating the inputs is what keeps an incremental re-shape identical to a full bui
 The full build and a batch hand a stage the same values,
 through the factories on the built clusters,
 rather than the stage reading them off the model it fills.
+
+## The rebuild is a slot
+
+A change in one system marks that system stale,
+and what a frame owing no rebuild does with it is the layer's choice:
+an `OwnerMapRefreshStrategy` the layer hands over where it composes itself.
+The answer turns on what the layer's owner rule costs.
+A rule cheap to run over the whole sector loses nothing by rebuilding,
+so `FULL_REBUILD` is the default a layer names:
+it folds nothing,
+and the next frame rebuilds.
+A rule dear enough that a colony change should not walk the sector takes `INCREMENTAL`,
+which re-derives only the marked systems and redraws what they disturbed.
+
+The incremental filler is a **stock** filler, not one layer's own.
+It reads nothing of a layer but the owner source the standing build was resolved by,
+and a marked system lands as a rebuild would draw it,
+its fill state included -
+so a layer with any owner rule may take it,
+and KMU's own layers take it because their owner rule weighs every colony of the sector.
+
+A filtered map folds like any other.
+The source re-derives a marked system as the spotlit build painted it,
+so a spotlight no longer owes a rebuild per colony change.
+What still owes one is a standing map that cannot take a fold -
+the debug overlay's,
+or a failed build's placeholder -
+whatever the layer chose.
+
+The other two parts a layer may leave out are slots in the same sense:
+which side of the nebulae each sub-layer paints (`OwnerMapBandLayout`)
+and what the picker's hovered row lights (`OwnerMapPreviewHighlight`).
+None of the three is folded into the tier on the grounds that not every layer has one;
+a layer states each where it composes itself.
 
 ## The arrow
 
@@ -236,7 +272,8 @@ since that is what a player's stored setting is keyed by.
 | `render/labels` | what a cluster's name reads and what shade it draws in, handed to the substrate's fit drive as its `ClusterAnchorFitInputs` |
 | [`render/ribbon`](render/ribbon/README.md) | the bake: which cells band, whose runs each plans, and the player's band settings |
 | [`ribbon`](ribbon/README.md) | how an owner-painted cell's runs are laid from the ranked count a layer hands over: their lengths and their dividers, behind the substrate's `SystemRibbonPlanner` port the count arrives through |
-| `render` | the cache, the compositor stacking the sub-layers in their band order, the incremental refresh, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
+| `render` | the compositor stacking the sub-layers in their band order, the band layout it stacks them by, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
+| `render/rebuild` | what a frame owes (`OwnerMapRebuildDecider`), the cache acting on it (`OwnerMapCache`), the full walk (`FullOwnerMapRebuild`), and the slot for marked systems (`OwnerMapRefreshStrategy`) with its incremental filler |
 | `render/hover` | what the cursor is over on this map, the seam a layer answers the picker preview through, and the tier's shared answers to it and to the substrate's cursor switches |
 | `sidebar` | the body controls a layer built on this tier offers, and the memo behind its picker |
 

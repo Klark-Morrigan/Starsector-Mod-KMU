@@ -9,6 +9,8 @@ import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 
 import java.util.function.Supplier;
 
@@ -59,6 +61,10 @@ public final class OwnerMapLayerRenderer {
      * @param seedRule                  which systems seed the layer's cells -
      *                                  {@link CellSeedRule#SEED_DRAWN_SYSTEMS} for a layer seeding
      *                                  exactly the systems the map draws
+     * @param refreshStrategy           what a frame owing no rebuild does with the systems marked
+     *                                  since - {@link OwnerMapRefreshStrategy#FULL_REBUILD} for a
+     *                                  layer whose owner rule is cheap enough to rebuild on every
+     *                                  change
      * @return a renderer for that machinery, its cache empty until the first frame builds it
      */
     public static SequencedMapLayerRenderer<OwnerPaintedView> createForLiveScreen(
@@ -69,14 +75,16 @@ public final class OwnerMapLayerRenderer {
             OwnerMapPreviewHighlight previewHighlight,
             MapLayerHoverGates hoverGates,
             Supplier<OwnerMapBandLayout> bandLayoutSource,
-            CellSeedRule seedRule) {
+            CellSeedRule seedRule,
+            OwnerMapRefreshStrategy refreshStrategy) {
 
         // The cache and the compositor are made for the same machinery, so the draw lists one builds
         // and the hover the other lights are one sector's.
         var cache = new OwnerMapCache(
             machinery,
             bodyPreferences,
-            seedRule);
+            seedRule,
+            refreshStrategy);
 
         return SequencedMapLayerRenderer.createForLiveScreen(
             machinery,

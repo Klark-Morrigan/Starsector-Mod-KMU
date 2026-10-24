@@ -19,6 +19,7 @@ import kmu.maplayers.base.ribbon.overlay.CellRibbonPathRenderer;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.apache.log4j.Logger;

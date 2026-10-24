@@ -11,7 +11,9 @@ package kmu.maplayers.ownermap.owners.holders.base;
  *
  * <p>The pass is handed in rather than opened here: it carries the grouping the standing build
  * classified its holders under, so a batch re-deriving a system lands the same bloc the bulk pass
- * did. Opened afresh, a batch could fold a system under a grouping the map was not painted with.
+ * did. Opened afresh, a batch could fold a system under a grouping the map was not painted with. The
+ * spotlit bloc is handed in for the same reason: the batch re-derives a marked system as the standing
+ * build painted it, which under a spotlight is the spotlit resolve rather than the plain one.
  */
 @FunctionalInterface
 public interface SystemHolderResolveSource {
@@ -19,9 +21,10 @@ public interface SystemHolderResolveSource {
     /**
      * Opens one batch's holder resolve over the batch's reading of the sector.
      *
-     * @param pass the batch's reading of the sector, under the grouping the standing build was
-     *             folded by
+     * @param pass          the batch's reading of the sector, under the grouping the standing build
+     *                      was folded by
+     * @param spotlitBlocId the bloc the standing build was spotlighting, or null off filter
      * @return the batch's resolve
      */
-    SystemHolderResolve openResolveOver(HolderPass pass);
+    SystemHolderResolve openResolveOver(HolderPass pass, String spotlitBlocId);
 }

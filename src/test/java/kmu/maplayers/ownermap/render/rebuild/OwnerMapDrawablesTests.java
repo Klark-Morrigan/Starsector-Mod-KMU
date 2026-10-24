@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.ui.font.FontAtlas;

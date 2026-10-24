@@ -25,14 +25,15 @@ import java.util.Set;
  * than deriving from a sector.
  *
  * <p>The whole-sector answer is one stated {@link ResolvedOwners}, empty unless a case says
- * otherwise. The per-system answers - who owns a system, whether anything stands in it, whether the
- * spotlit owner lives there - are stated per system ID, an unstated owner answering nobody and an
- * unstated inhabitation answering whatever {@link #answerEverySystemInhabited} last set. The band
- * planner plans nothing unless a case hands one over.
+ * otherwise. The per-system answers - who owns a system and how it fills, whether anything stands in
+ * it, whether the spotlit owner lives there - are stated per system ID, an unstated owner answering
+ * nobody and an unstated inhabitation answering whatever {@link #answerEverySystemInhabited} last
+ * set. The band planner plans nothing unless a case hands one over.
  */
-public final class OwnerSourceFake implements OwnerSource {
+public final class OwnerSourceFake
+        implements OwnerSource {
 
-    private final Map<String, SystemOwner> ownerBySystemId = new LinkedHashMap<>();
+    private final Map<String, ResolvedSystemOwner> ownerBySystemId = new LinkedHashMap<>();
     private final Map<String, Boolean> inhabitationBySystemId = new LinkedHashMap<>();
     private final Set<String> spotlitPresenceSystemIds = new LinkedHashSet<>();
 
@@ -57,19 +58,30 @@ public final class OwnerSourceFake implements OwnerSource {
     public static OwnerSourceFake createAnswering(ResolvedOwners owners) {
 
         var sourceFake = new OwnerSourceFake();
+
         sourceFake.resolvedOwners = owners;
 
         return sourceFake;
     }
 
     /**
-     * States who owns one system, for every per-system resolve this source opens.
+     * States who owns one system, filling it solid, for every per-system resolve this source opens.
      *
      * @param systemId the system's own ID
      * @param owner    the owner to answer with, or null for a system nobody owns
      */
     public void recordOwnerOf(String systemId, SystemOwner owner) {
-        ownerBySystemId.put(systemId, owner);
+        recordResolvedOwnerOf(systemId, ResolvedSystemOwner.createSolidlyFilledBy(owner));
+    }
+
+    /**
+     * States who owns one system and how it fills, for every per-system resolve this source opens.
+     *
+     * @param systemId the system's own ID
+     * @param resolved the owner and fill state to answer with
+     */
+    public void recordResolvedOwnerOf(String systemId, ResolvedSystemOwner resolved) {
+        ownerBySystemId.put(systemId, resolved);
     }
 
     /**
@@ -180,15 +192,16 @@ public final class OwnerSourceFake implements OwnerSource {
     }
 
     /** The per-system answers this source states, read live so a case may state them late. */
-    private final class StatedResolveFake implements SystemOwnerResolve {
+    private final class StatedResolveFake
+            implements SystemOwnerResolve {
 
         @Override
-        public SystemOwner resolveOwnerOf(StarSystemAPI system) {
+        public ResolvedSystemOwner resolveOwnerOf(StarSystemAPI system) {
 
             var systemId = readIdOf(system);
             resolvedSystemIds.add(systemId);
 
-            return ownerBySystemId.get(systemId);
+            return ownerBySystemId.getOrDefault(systemId, ResolvedSystemOwner.UNOWNED);
         }
 
         @Override

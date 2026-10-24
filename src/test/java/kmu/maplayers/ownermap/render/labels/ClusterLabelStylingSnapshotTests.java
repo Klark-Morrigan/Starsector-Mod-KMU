@@ -5,7 +5,6 @@ import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
 
-import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
@@ -18,7 +17,7 @@ import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
+import kmu.maplayers.ownermap.render.clusters.SystemOccupancyFixtures;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 
@@ -456,13 +455,12 @@ final class ClusterLabelStylingSnapshotTests {
             boolean isAnchorOverlayShown) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createCopyOf(ownerBySystemKey, Set.of(), Set.of()),
+            SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(ownerBySystemKey, Set.of(), Set.of()),
             new OwnerMapBuildInputs(
                 buildStyling(),
                 viewReading,
                 contentInputs,
-                isAnchorOverlayShown,
-                SystemFillStates.ALL_SOLID));
+                isAnchorOverlayShown));
     }
 
     // A tracing snapshot over one owned system under the given picks and overlay, with a scheme no

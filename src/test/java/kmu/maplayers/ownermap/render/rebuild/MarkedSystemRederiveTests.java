@@ -1,10 +1,12 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import kmlib.starsector.systems.SectorPassIndex;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
@@ -19,21 +21,21 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.DISTANT_SYSTEM;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnerOf;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnersOf;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjacentCells;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.DISTANT_SYSTEM;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnerOf;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnersOf;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildSectorWithSystems;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildTwoAdjacentCells;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what a drained batch reads back into the built map, and what it records that as having
- * disturbed. Three facts settle how a marked system's cell draws and each moves on its own, so
+ * disturbed. Three facts settle how a marked system draws and each moves on its own, so
  * every case here states one of them moving and reads back both halves: what the occupancy now
  * says, and what the batch thinks it owes for saying it.
  *
@@ -139,6 +141,51 @@ final class MarkedSystemRederiveTests {
 
             var disturbance = rederive(clusters, FLIPPED_SYSTEM);
 
+            assertThat(disturbance.getCellKeysToRedraw())
+                .isEmpty();
+            assertThat(disturbance.hasFlips())
+                .isFalse();
+        }
+
+        // A layer's rule can keep a system's owner and change how it fills - unfilled once nothing
+        // the owner counts stands there - and a fold of the owner alone left it drawn as the rebuild
+        // drew it, where a rebuild now draws it unfilled.
+        @Test
+        void recordsTheFillStateOfASystemWhoseOwnerStayed() {
+
+            // ARRANGE
+            var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            ownerSourceFake.recordResolvedOwnerOf(
+                FLIPPED_SYSTEM,
+                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+
+            // ACT
+            rederive(clusters, FLIPPED_SYSTEM);
+
+            // ASSERT
+            assertThat(clusters.getOccupancy().readResolvedOwnerOf(buildCellKey(FLIPPED_SYSTEM)))
+                .isEqualTo(new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+        }
+
+        // The fill is the owner's group's, inside a border that did not move: the group re-traces,
+        // and no cell or neighbour re-shapes, and no name is owed a re-fit.
+        @Test
+        void disturbsTheOwnersGroupAloneWhenOnlyTheFillStateMoved() {
+
+            // ARRANGE
+            var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            ownerSourceFake.recordResolvedOwnerOf(
+                FLIPPED_SYSTEM,
+                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+
+            // ACT
+            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+
+            // ASSERT
+            assertThat(disturbance.getAffectedOwnerIds())
+                .containsExactly(HEGEMONY);
             assertThat(disturbance.getCellKeysToRedraw())
                 .isEmpty();
             assertThat(disturbance.hasFlips())

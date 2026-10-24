@@ -440,9 +440,9 @@ Binary files are left to git's own detection.
 (and its [.bat](scripts/show-download-counts.bat))
 shows the download counts and badge figures a badge run would publish,
 publishing nothing.
-It hands this repo's root to KMLib's script of the same name,
-so it needs KMLib and Common-Automation as sibling checkouts,
-and `gh` logged in.
+It hands this repo's root to KMLib's script of the same name;
+[KMLib's README](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#reusable-ci--release-actions)
+says what it shows and needs.
 
 ### Developer tooling
 

@@ -18,6 +18,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **With a faction spotlit, the political map follows a colony changing hands**, rather than showing the old owner until the player moves the spotlight.
 - **The spotlight list follows a colony changing hands too**, so its numbers match the map.
+- **On the *Factions* and *Alliances* views, a claimed system whose last colony leaves stays in its claimant's territory, unfilled**, rather than showing as nobody's until the next full redraw.
 - **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
 - **The Market Condition Manager no longer opens on a colony the player has already left.**
@@ -32,6 +33,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - The hover box reads the system under the cursor once while the cursor rests there, rather than on every frame, and reads it again when the map is redrawn or the player moves back onto the system.
   - The faction names draw without making a new colour for each name on every frame.
   - A colony change re-lays the nearby bands without re-measuring every name on the map first.
+  - With a faction spotlit, a colony change redraws the systems around it rather than the whole map.
 
 ### For developers
 
@@ -75,6 +77,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`StandingClusterAnchors.computeLineBoxesIfAbsent(Supplier)`**: the room the standing names' drawn lines take, measured once per pass and dropped with it. `LabelLineBoxes.listLineBoxes` reads through it.
 - **`ClusterAnchor.computeFittedBox()`**: the box a placement's fit reserved, the one statement of a name's fitted extent.
 - **`Label.applyFade(float)`**: recolours the string only when the map's alpha moved.
+- **`OwnerMapRefreshStrategy`**: what a frame owing no rebuild does with the systems marked since, which a layer states. `FULL_REBUILD` leaves them to the next frame's rebuild and `INCREMENTAL` folds them into the map on screen; the answer is a `MarkedSystemsOutcome`.
+- **`ResolvedSystemOwner`**: one system's owner and fill state, the per-system answer an owner source and a holder rule give.
+- **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** and **`snapshotFillStates()`**: one system's owner with its fill state, and every system's fill state as the occupancy now holds them.
+- **`FilteredPolitics.createSpotlight(DominancePass, String)`**, **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, Spotlight)`** and **`FilteredClaims.resolveFilteredClaimIn(StarSystemAPI, HolderPass, ClaimReader, String)`**: the spotlit contest and the spotlit claim one system at a time, by the rule the whole-sector resolves use.
+- **`ClaimAugmentedSystemHolderResolve`**: the per-system half of `ClaimAugmentedHolderProvider`, so a marked system the contest leaves unheld is re-derived to its claim.
 - **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views.
 
 #### Fixed
@@ -120,6 +127,7 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`: it reads no Nexerelin type |
 | `kmu.ui.context` and `kmu.ui.geometry.KmuUiSize` | `kmu.conditions.ui.context` and `kmu.conditions.ui.picker.render.KmuUiSize`, in the one feature they serve. `kmu.ui` is gone |
 | `KmuStringKeys`' string IDs | One key class per reader in `kmu.util`: `KmuMapStringKeys`, `KmuOwnerMapStringKeys`, `KmuPoliticalMapStringKeys` and `KmuMarketConditionStringKeys`. `KmuStringKeys` keeps the category, `get(String)`, `format(String, Object...)` and the LunaLib settings pair |
+| `OwnerMapCache`, `IncrementalOwnerRefresh` and `StandingOwnerMap` in `ownermap.render` | `ownermap.render.rebuild`, beside the decision a frame is taken on and the refresh strategy. `ownermap.render` keeps the compositor, the band layout and `OwnerMapLayerRenderer` |
 
 The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.maplayers` to each other, and `kmu.settings` and `kmu.util` to both features.
 
@@ -179,7 +187,12 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `RibbonPathTracer.traceInspectedRibbonPath(List, double[], RibbonStyle)` and `CellRibbonSource.traceCellRibbonPath(SystemKey, List)` | `traceInspectedRibbonPath(SystemKey, List, double[], RibbonStyle, CellRingPathCache)` and `traceCellRibbonPath(SystemKey, SystemKey, List)`, the cell's key first: the overlay reads the rings the band pass walked |
 | `CellRingPathCache`'s `findRingPathOf(SystemKey)`, `putRingPath(SystemKey, RingPath)` and `dropRingPathOf(SystemKey)` | `findRingPathOf(SystemKey, RibbonPathInset)`: a cell keeps one ring per inset it was traced at. The writes are the band's own |
 | `PaintedCellStore`'s `getRibbonByCellKey()`, `getRibbonPathByCellKey()`, `getRingPathCache()`, `putCellRibbon(SystemKey, CellRibbon)` and `putCellRibbonPath(SystemKey, CellRibbonPath)` | On the `base.ribbon.CellRibbonStore` that `PaintedCellStore.getRibbonStore()` answers, whose `dropRingFittedWorkOf(SystemKey)` clears a cell's band, path and rings together |
-| `OwnerMapBuildInputs`, a record over the scheme, the view reading, the picks and the two fill sets | A final class over the scheme, the view reading, the picks, whether the anchor overlay is shown and a `SystemFillStates`, holding the build's `MapPaints` and comparing by identity. Its reads are `getStyling()`, `getViewReading()`, `getContentInputs()`, `isAnchorOverlayShown()`, `getFillStates()` and `getPaints()` |
+| `OwnerMapBuildInputs`, a record over the scheme, the view reading, the picks and the two fill sets | A final class over the scheme, the view reading, the picks and whether the anchor overlay is shown, holding the build's `MapPaints` and comparing by identity. Its reads are `getStyling()`, `getViewReading()`, `getContentInputs()`, `isAnchorOverlayShown()` and `getPaints()`. The fill states are the `SystemOccupancy`'s, which a batch folds |
+| `SystemOccupancy.createCopyOf(Map, Set, Set)` and `recordOwnerOf(SystemKey, SystemOwner)` | `createCopyOf(ResolvedOwners)` and `recordOwnerOf(SystemKey, ResolvedSystemOwner)`: the occupancy holds each system's fill state beside its owner |
+| `SystemOwnerResolve.resolveOwnerOf(StarSystemAPI)` and `SystemHolderResolve.resolveHolderIn(StarSystemAPI)` answering a `SystemOwner` | Answering a `ResolvedSystemOwner`, so a marked system lands hatched or unfilled where a rebuild draws it so |
+| `SystemHolderResolveSource.openResolveOver(HolderPass)` and `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `openResolveOver(HolderPass, String)`, under the bloc the standing build was spotlighting: a filtered map folds a marked system rather than owing a rebuild |
+| `DominancePaintedView.resolveSystemHolderResolveSource()` answering the contest alone | `ClaimAugmentedSystemHolderResolve.createSourceReadingThrough(ClaimReaderSource)`, over the view's own claim reader |
+| `OwnerMapCache(SectorMapMachinery, OwnerMapBodyPreferences, CellSeedRule)` and `OwnerMapLayerRenderer.createForLiveScreen(SectorMapMachinery, String, MapLayerViewRegistry, OwnerMapBodyPreferences, OwnerMapPreviewHighlight, MapLayerHoverGates, Supplier, CellSeedRule)` | Each also takes an `OwnerMapRefreshStrategy` |
 | `contestedSystemKeys` and `unfilledSystemKeys` on `HolderResolution` and `ResolvedOwners`, `FillSplit.splitMembersByFillState(CellGrouping, List, Set, Set)` and `FillSplit.classifyFillState(SystemKey, Set, Set)` | One `SystemFillStates fillStates`, so no system is both hatched and unfilled. The split takes it as `splitMembersByFillState(CellGrouping, List, SystemFillStates)`, and one system's state is `resolveFillStateOf(SystemKey)` |
 | `ClusterLabelStylingSnapshot(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)` | `ClusterLabelStylingSnapshot(Map, MapPaints, FontAtlas, boolean)`: a production snapshot carries the build's own paints, so a name is coloured off the style decision its fill was painted from. The last component is whether a fit is wanted, which `resolveFrom` answers off the build's names and anchor overlay |
 | `OwnerMapClusters.reindexClusters(Map, Map)` | `reindexClusters(Map, CellGrouping)`, over the grouping the caller has just composed |

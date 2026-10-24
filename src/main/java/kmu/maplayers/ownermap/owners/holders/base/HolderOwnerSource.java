@@ -117,7 +117,7 @@ public final class HolderOwnerSource
 
         return new HolderSystemOwnerResolve(
             pass,
-            holderResolveSource.openResolveOver(pass),
+            holderResolveSource.openResolveOver(pass, spotlitOwnerId),
             spotlitOwnerId);
     }
 

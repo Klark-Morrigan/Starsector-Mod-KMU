@@ -124,10 +124,7 @@ final class OwnerMapBuilderIntegrationTests {
 
             var cellBuilder = new PaintedCellBuilder(
                 new MapPaints(STYLING, READING, CONTENT_INPUTS),
-                SystemOccupancy.createCopyOf(
-                    OWNERS.ownerBySystemKey(),
-                    OWNERS.inhabitedSystemKeys(),
-                    OWNERS.spotlitPresenceSystemKeys()));
+                SystemOccupancy.createCopyOf(OWNERS));
 
             var expectedCellByCellKey = new LinkedHashMap<SystemKey, PaintedCell>();
 

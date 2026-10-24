@@ -74,13 +74,17 @@ An incremental refresh re-derives only the systems a change marked.
 Asking the whole-sector answer once per marked system would cost more than the rebuild it replaces,
 so the source opens a `SystemOwnerResolve` over the batch's own walk.
 It answers three questions of one system:
-who owns it,
+who owns it and how its fill draws,
 whether anything stands in it,
 and whether the spotlit owner is among what does.
+The owner and its fill state come back as one `ResolvedSystemOwner`,
+because a rule decides both at once:
+a batch folding the owner alone would leave a system hatched or unfilled where the rebuild drew it so.
 
 The batch asks the source the standing build was resolved by,
 never the view afresh,
-so a refreshed cell lands the owner a full rebuild of the same moment would.
+and under the spotlight the build was painted under,
+so a refreshed cell lands the owner and fill state a full rebuild of the same moment would.
 
 ## The bands
 

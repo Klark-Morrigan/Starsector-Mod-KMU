@@ -7,7 +7,6 @@ import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.hover.HoverHighlightGeometry;
 import kmu.maplayers.base.hover.MapHoverFixture;
-import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -167,8 +166,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
                     OwnerReadingFake.createAnsweringNothing(),
                     new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
-                false,
-                SystemFillStates.ALL_SOLID));
+                false));
     }
 
     // Every category drawn by its outline alone, over a sector-wide tier carrying the given corner

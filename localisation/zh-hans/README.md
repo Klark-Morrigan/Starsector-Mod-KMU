@@ -473,6 +473,7 @@ So a word of one axis never stands in for another:
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
 | anchor overlay (the dev overlay showing each name's fitted line) | 锚点叠加层 | 锚点, an anchor, the point a name is fixed to, with 叠加层, an overlay |
 | bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
+| batch (the systems marked since a frame, re-derived together) | 批次 | the plain word for a batch, as in 绘制批次 |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
 | call tag (the words a profiled call is written with) | 调用标签 | 调用, a call, with 标签, a tag, KMLib's word for a command's tags |
@@ -481,20 +482,24 @@ So a word of one axis never stands in for another:
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
 | centreline (the line an anchor overlay's band is drawn along) | 中线 | 中, the middle, with 线, a line: the line down the middle of the band |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
+| compositor (what stacks an owner map's sub-layers into one picture) | 合成器 | the usual graphics word for what puts layers together into one picture |
 | debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
 | draw run (vertices drawn in one GL call) | 绘制批次 | 绘制, to draw, with 批次, a batch |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | fitted box (the box a name's fit reserved) | 拟合框 | 拟合, a fit, with 框, a box |
+| fold (bringing a batch into the map on screen in place) | 并入 | 并, together, with 入, into: merged into what already stands |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
+| holding rule (the rule a layer decides who holds a system by) | 持有规则 | 持有, to hold, with 规则, a rule |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | lane rule (a line dividing an anchor overlay's band between a name's lines) | 行间分隔线 | 行间, between lines of text, with 分隔线, a dividing line; kept apart from 行数, a count of lines, which the rule does not show |
 | mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
+| owner source (where a layer's owners come from) | 所有者来源 | 所有者, an owner, with 来源, a source |
 | package-private (reachable only from inside its own package) | 包私有 | the usual Java word, 包, a package, with 私有, private |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
@@ -507,9 +512,11 @@ So a word of one axis never stands in for another:
 | prefix (the part of a profiling row's name before its first dot) | 前缀 | the plain computing word |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
 | rank (a bloc's place in a mechanic's order) | 排名 | the plain word for a place in a ranking |
+| re-derive (working one system's answer out again) | 重新解析 | 重新, again, with 解析, to resolve |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | reading (one way of taking the room a name takes: its fitted box or its drawn words) | 读法 | 读, to read, with 法, a way; kept apart from 读取, the act of reading something off |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
+| refresh strategy (what a frame owing no rebuild does with marked systems) | 刷新策略 | 刷新, to refresh, with 策略, a strategy: a choice of how something is done |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
 | reset hook (a call that empties held state back to its start) | 重置钩子 | 重置, to reset, with 钩子, a hook, the usual computing word for a call others attach to |
@@ -518,6 +525,7 @@ So a word of one axis never stands in for another:
 | seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
+| standing build (the build on screen, which a batch folds into) | 现有构建 | 现有, existing, with 构建, a build |
 | stroke (a band's runs turned into triangles) | 描边 | the usual graphics word for stroking a line |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
 | take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |

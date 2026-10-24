@@ -142,19 +142,14 @@ public final class OwnerMapBuilder {
             var clusters = new OwnerMapClusters(
                 // Copied out of the owners rather than adopted: the incremental refresh folds
                 // into what the clusters hold, and owners handed to a later rebuild have to still
-                // say what they said.
-                SystemOccupancy.createCopyOf(
-                    owners.ownerBySystemKey(),
-                    owners.inhabitedSystemKeys(),
-                    owners.spotlitPresenceSystemKeys()),
+                // say what they said. The fill states go with them - which owned systems hatch,
+                // and which paint no fill - since a batch folds those beside the owners.
+                SystemOccupancy.createCopyOf(owners),
                 new OwnerMapBuildInputs(
                     styling,
                     viewReading,
                     contentInputs,
-                    isAnchorOverlayShown,
-                    // Which owned systems hatch - the spotlit owner's systems it is present in
-                    // without winning - and which paint no fill, owned for border and label alone.
-                    owners.fillStates()));
+                    isAnchorOverlayShown));
 
             shapeAndStyleCells(profiler, clusters, geometryCache);
 

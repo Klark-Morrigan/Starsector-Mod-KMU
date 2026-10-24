@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
@@ -86,6 +86,44 @@ final class StaleOwnerMapDisturbanceTests {
 
             assertThat(disturbance.hasFlips())
                 .isFalse();
+        }
+
+        // A refill names an owner without moving a border, so the owner list being non-empty is
+        // no longer the test for a flip: read it off the owners and a refill would re-fit every name.
+        @Test
+        void isFalseForARefillAlone() {
+
+            // ARRANGE
+            var disturbance = new StaleOwnerMapDisturbance();
+
+            // ACT
+            disturbance.recordRefill(buildOwnerOf(HEGEMONY));
+
+            // ASSERT
+            assertThat(disturbance.hasFlips())
+                .isFalse();
+        }
+    }
+
+    @Nested
+    class RecordRefill {
+
+        // The fill is the owner's cluster group's, split by state inside a border that did not move,
+        // so the group re-traces and no cell or neighbour is owed a re-shape.
+        @Test
+        void rebuildsTheOwnersClusterGroupAndRedrawsNoCell() {
+
+            // ARRANGE
+            var disturbance = new StaleOwnerMapDisturbance();
+
+            // ACT
+            disturbance.recordRefill(buildOwnerOf(HEGEMONY));
+
+            // ASSERT
+            assertThat(disturbance.getAffectedOwnerIds())
+                .containsExactly(HEGEMONY);
+            assertThat(disturbance.getCellKeysToRedraw())
+                .isEmpty();
         }
     }
 

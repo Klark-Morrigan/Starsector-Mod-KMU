@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderInhabitation;
@@ -380,6 +381,119 @@ class FilteredPoliticsIntegrationTests {
                 .containsEntry(buildCellKey("owned-system"), FillState.HATCHED);
             assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
                 .doesNotContainValue(FillState.UNFILLED);
+        }
+    }
+
+    @Nested
+    class ResolveFilteredHolderIn {
+
+        // The single-system arm a batch asks under a spotlight settles a system as the whole-sector
+        // arm does - the spotlit key, hatched where the pick lives without winning - so a re-derived
+        // system lands where a filtered rebuild draws it.
+        @Test
+        void answersAPresentButDominatedSystemAsTheWholeSectorArmDoes() {
+
+            // ARRANGE
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(tritachyon, 3));
+
+            var pass = buildPassOver(sector);
+            var expectedResolution = FilteredPolitics.resolveFilteredHolder(pass, "tritachyon");
+
+            // ACT
+            var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
+                buildOnlySystem(sector),
+                pass,
+                FilteredPolitics.createSpotlight(pass, "tritachyon"));
+
+            // ASSERT
+            assertThat(actualResolved)
+                .isEqualTo(new ResolvedSystemOwner(
+                    expectedResolution.ownerBySystemKey().get(buildCellKey("owned-system")),
+                    FillState.HATCHED));
+        }
+
+        @Test
+        void fillsASystemThePickDominatesSolid() {
+
+            // ARRANGE
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(tritachyon, 3));
+
+            var pass = buildPassOver(sector);
+
+            // ACT
+            var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
+                buildOnlySystem(sector),
+                pass,
+                FilteredPolitics.createSpotlight(pass, "hegemony"));
+
+            // ASSERT
+            assertThat(SpotlitOwners.isSpotlitOwner(actualResolved.owner().ownerId()))
+                .isTrue();
+            assertThat(actualResolved.fillState())
+                .isEqualTo(FillState.SOLID);
+        }
+
+        // An absent pick leaves the real holder, solid, which the style layer recedes by its key.
+        @Test
+        void keepsTheRealHolderSolidWhereThePickIsAbsent() {
+
+            // ARRANGE
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(tritachyon, 3));
+
+            var pass = buildPassOver(sector);
+
+            // ACT
+            var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
+                buildOnlySystem(sector),
+                pass,
+                FilteredPolitics.createSpotlight(pass, "hegemony"));
+
+            // ASSERT
+            assertThat(actualResolved.owner().ownerId())
+                .isEqualTo("tritachyon");
+            assertThat(actualResolved.fillState())
+                .isEqualTo(FillState.SOLID);
+        }
+
+        // A batch hands over a null for a system the sector no longer lists, which nobody owns.
+        @Test
+        void answersNobodyForASystemTheSectorNoLongerLists() {
+
+            // ARRANGE
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony),
+                buildVisibleMarket(hegemony, 5));
+
+            var pass = buildPassOver(sector);
+
+            // ACT
+            var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
+                null,
+                pass,
+                FilteredPolitics.createSpotlight(pass, "hegemony"));
+
+            // ASSERT
+            assertThat(actualResolved)
+                .isSameAs(ResolvedSystemOwner.UNOWNED);
         }
     }
 

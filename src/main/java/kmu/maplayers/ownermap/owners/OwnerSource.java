@@ -42,7 +42,9 @@ public interface OwnerSource {
      * Opens one batch's per-system resolve over the batch's own walk.
      *
      * @param walk           the batch's walk of the sector
-     * @param spotlitOwnerId the spotlit owner the standing build was painted under, or null
+     * @param spotlitOwnerId the spotlit owner the standing build was painted under, or null - a
+     *                       source that spotlights answers each marked system as its spotlit
+     *                       whole-sector answer would
      * @return the batch's resolve, answering the three questions of one marked system
      */
     SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId);

@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.claims;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
@@ -14,6 +15,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -216,6 +218,122 @@ final class FilteredClaimsTests {
                 assertThat(resolved)
                     .isEmpty();
             }
+        }
+    }
+
+    @Nested
+    class ResolveFilteredClaimIn {
+
+        private final SectorAPI sectorMock = mock(SectorAPI.class);
+        private final ClaimReader claimReaderMock = mock(ClaimReader.class);
+        private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
+        private final HolderPass pass =
+            HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
+
+        // Off filter a batch re-derives the plain claimant, exactly as the whole-sector arm hands
+        // the plain resolve back.
+        @Test
+        void answersThePlainClaimantOffFilter() {
+
+            // ARRANGE
+            var claimant = buildTwoClaimantSector().get(HEGEMONY_CLAIMED);
+
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+
+                stubClaimant(sectorClaimsMock, claimant);
+
+                // ACT
+                var actualClaimant = FilteredClaims.resolveFilteredClaimIn(systemMock, pass, claimReaderMock, null);
+
+                // ASSERT
+                assertThat(actualClaimant)
+                    .isSameAs(claimant);
+            }
+        }
+
+        // The single-system arm rekeys by the same rule as the whole-sector one, so a re-derived
+        // claim of the selected bloc joins its spotlit territory as the rebuild drew it.
+        @Test
+        void movesTheSelectedBlocsClaimOntoTheSpotlightHolder() {
+
+            // ARRANGE
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class);
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
+
+                stubClaimant(sectorClaimsMock, buildTwoClaimantSector().get(HEGEMONY_CLAIMED));
+
+                spotlitOwnersMock
+                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
+                    .thenReturn(SPOTLIT_HOLDER);
+
+                // ACT
+                var actualClaimant = FilteredClaims.resolveFilteredClaimIn(
+                    systemMock,
+                    pass,
+                    claimReaderMock,
+                    "hegemony");
+
+                // ASSERT
+                assertThat(actualClaimant)
+                    .isSameAs(SPOTLIT_HOLDER);
+            }
+        }
+
+        @Test
+        void leavesARivalsClaimOnItsOwnKey() {
+
+            // ARRANGE
+            var rivalClaimant = buildTwoClaimantSector().get(RIVAL_CLAIMED);
+
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class);
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
+
+                stubClaimant(sectorClaimsMock, rivalClaimant);
+
+                spotlitOwnersMock
+                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
+                    .thenReturn(SPOTLIT_HOLDER);
+
+                // ACT
+                var actualClaimant = FilteredClaims.resolveFilteredClaimIn(
+                    systemMock,
+                    pass,
+                    claimReaderMock,
+                    "hegemony");
+
+                // ASSERT
+                assertThat(actualClaimant)
+                    .isSameAs(rivalClaimant);
+            }
+        }
+
+        @Test
+        void answersNobodyForAnUnclaimedSystemUnderASpotlight() {
+
+            // ARRANGE
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+
+                stubClaimant(sectorClaimsMock, null);
+
+                // ACT
+                var actualClaimant = FilteredClaims.resolveFilteredClaimIn(
+                    systemMock,
+                    pass,
+                    claimReaderMock,
+                    "hegemony");
+
+                // ASSERT
+                assertThat(actualClaimant)
+                    .isNull();
+            }
+        }
+
+        // What the single-system claim resolve answers for this case's system.
+        private void stubClaimant(MockedStatic<SectorClaims> sectorClaimsMock, SystemOwner claimant) {
+
+            sectorClaimsMock
+                .when(() -> SectorClaims.resolveClaimingHolderIn(systemMock, pass, claimReaderMock))
+                .thenReturn(claimant);
         }
     }
 }

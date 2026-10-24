@@ -9,8 +9,12 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
+import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -21,6 +25,7 @@ import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.ribbon.CellRibbon;
@@ -30,19 +35,23 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.render.IncrementalOwnerRefresh;
-import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTests;
-import kmu.maplayers.ownermap.render.StandingOwnerMap;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
+import kmu.maplayers.ownermap.render.rebuild.IncrementalOwnerRefresh;
+import kmu.maplayers.ownermap.render.rebuild.IncrementalOwnerRefreshTests;
+import kmu.maplayers.ownermap.render.rebuild.StandingOwnerMap;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
@@ -51,6 +60,7 @@ import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.views.DominancePaintedView;
 import kmu.maplayers.politicalmap.views.FactionsView;
 import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
@@ -61,6 +71,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,7 +79,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -177,6 +190,17 @@ final class IncrementalOwnerRefreshIntegrationTests {
         // marked - the refresh is handed the batch rather than draining one of its own.
         private final Set<SystemKey> staleSystemKeys = new LinkedHashSet<>();
 
+        // The claims a claim-reading case states per system, read through the view the rebuild
+        // and the refresh both paint under. Nobody claims anything unless a case says so.
+        private final ClaimBreakdownReaderFake claimReaderFake = new ClaimBreakdownReaderFake();
+
+        // The view both legs paint under: the faction view, reading its claims through the stated
+        // reader rather than inferring them from colonies the fixture does not carry.
+        private final DominancePaintedView viewFake = new ClaimingFactionsViewFake(claimReaderFake);
+
+        // The spotlight pick, which the seam answers as nobody unless a case spotlights a bloc.
+        private MockedStatic<FilterSelection> filterSelectionMock;
+
         private FactionAPI hegemonyMock;
         private FactionAPI tritachyonMock;
         private FactionAPI piratesMock;
@@ -195,9 +219,11 @@ final class IncrementalOwnerRefreshIntegrationTests {
             hegemonyMock = SectorOwnershipFixtures.buildFaction(
                 HEGEMONY,
                 SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT);
+
             tritachyonMock = SectorOwnershipFixtures.buildFaction(
                 TRITACHYON,
                 SectorOwnershipFixtures.TRITACHYON_FACTION_BRIGHT);
+
             piratesMock = SectorOwnershipFixtures.buildFaction(
                 PIRATES,
                 SectorOwnershipFixtures.PERSEAN_FACTION_BRIGHT);
@@ -252,7 +278,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
             // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory
             // state as well.
-            seams.openSeam(FilterSelection.class);
+            filterSelectionMock = seams.openSeam(FilterSelection.class);
         }
 
         @AfterEach
@@ -427,6 +453,103 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 FRONTIER_SYSTEM);
         }
 
+        // A bloc still claiming a system its last colony left keeps it as an unfilled extension of
+        // its territory, so a rebuild draws the claim; a batch that re-derived by the contest alone
+        // drew the system unowned until the next rebuild.
+        @Test
+        void drawsWhatARebuildWouldWhenAClaimedSystemLosesItsLastColony() {
+
+            // ARRANGE
+            claimReaderFake.setBreakdown(DYING_SYSTEM, new SystemClaimBreakdown(null, TRITACHYON, List.of()));
+
+            var standingMap = buildMapByFullRebuild();
+
+            placeColoniesIn(DYING_SYSTEM);
+
+            // ACT, ASSERT
+            assertRefreshDrawsWhatARebuildWould(standingMap, DYING_SYSTEM);
+
+            var actualResolved = readStandingAnswerOf(standingMap, DYING_SYSTEM);
+
+            assertThat(actualResolved.owner().ownerId())
+                .isEqualTo(TRITACHYON);
+            assertThat(actualResolved.fillState())
+                .isEqualTo(FillState.UNFILLED);
+        }
+
+        // Under a spotlight a batch re-derives a marked system as the filtered build painted it: the
+        // pick's spotlit key, hatched where it lives without winning. A batch re-deriving by the
+        // plain contest would overwrite the spotlit key, which is why a filtered map used to owe a
+        // rebuild per change rather than fold one.
+        @Test
+        void drawsWhatARebuildWouldWhenThePickArrivesInASystemUnderASpotlight() {
+
+            // ARRANGE
+            spotlightBloc(TRITACHYON);
+
+            var standingMap = buildMapByFullRebuild();
+
+            placeColoniesIn(
+                CORE_SYSTEM,
+                buildColony(hegemonyMock, CORE_COLONY_SIZE),
+                buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            // ACT, ASSERT
+            assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
+
+            var actualResolved = readStandingAnswerOf(standingMap, CORE_SYSTEM);
+
+            assertThat(SpotlitOwners.isSpotlitOwner(actualResolved.owner().ownerId()))
+                .isTrue();
+            assertThat(actualResolved.fillState())
+                .isEqualTo(FillState.HATCHED);
+        }
+
+        // The same spotlit map carried through the pick's arrival, its win and its departure, so a
+        // fold that half-updates the hatching on one step shows on the next.
+        @Test
+        void drawsWhatARebuildWouldAtEveryStepOfThePicksLifeInASystemUnderASpotlight() {
+
+            spotlightBloc(TRITACHYON);
+
+            var standingMap = buildMapByFullRebuild();
+
+            // Arrived beside a heavier holder: spotlit and hatched.
+            placeColoniesIn(
+                BORDER_SYSTEM,
+                buildColony(hegemonyMock, BORDER_COLONY_SIZE),
+                buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+
+            // Taken outright: spotlit and solid, the hatching gone with the rival.
+            placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+
+            // Gone: back to the real holder nobody, which the spotlight recedes.
+            placeColoniesIn(BORDER_SYSTEM);
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+        }
+
+        // Spotlights one bloc on every view, as the sidebar's pick is read by both legs.
+        private void spotlightBloc(String blocId) {
+
+            filterSelectionMock
+                .when(() -> FilterSelection.getSelectedIdOf(any()))
+                .thenReturn(blocId);
+        }
+
+        // Who the folded map now says owns one system, and how it fills.
+        private static ResolvedSystemOwner readStandingAnswerOf(StandingOwnerMap standingMap, String systemId) {
+
+            return standingMap
+                .clusters()
+                .getOccupancy()
+                .readResolvedOwnerOf(buildCellKey(systemId));
+        }
+
         // Marks the named systems, folds the batch into the standing map, and compares what that
         // leaves against a full rebuild over the very same sector.
         //
@@ -477,14 +600,14 @@ final class IncrementalOwnerRefreshIntegrationTests {
             // The rebuild's one walk of the sector and the view's reading for it, opened here as the
             // plugin's cache opens them and handed to the owners, the build and the bake beneath it.
             var walk = openWalkOverTheSector();
-            var viewReading = FactionsView.INSTANCE.resolveViewReading(sectorMock);
+            var viewReading = viewFake.resolveViewReading(sectorMock);
 
             // The rebuild's one sampling of the sidebar picks, taken here as the plugin's cache
             // takes it and carried through every stage below, so the fills, the fit, the bands and
             // the labels are all baked under one reading of them.
             // The names off, which is what leaves the bands a function of the map alone.
             var contentInputs = ContentInputs.sampleForView(
-                FactionsView.INSTANCE,
+                viewFake,
                 OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 MapLayerScreens.MAP_SCOPE);
 
@@ -545,9 +668,10 @@ final class IncrementalOwnerRefreshIntegrationTests {
     // from it. Copied out of the built map rather than read through it, so the values compared are
     // the ones each leg finished with even though the refresh edits its map in place.
     //
-    // The occupancy's three facts are here beside the cells because a difference in them is the
-    // failure this suite exists to catch, and a difference that has not yet reached a cell is the
-    // one a later change to how a cell is styled would turn into a visible one.
+    // The occupancy's facts are here beside the cells because a difference in them is the failure
+    // this suite exists to catch, and a difference that has not yet reached a cell is the one a later
+    // change to how a cell is styled would turn into a visible one. The fill states are among them,
+    // a batch folding them per marked system as it folds the holder.
     //
     // The blocs' territories are here because a cell does not carry them: an owned cell draws only
     // its interior seams, while the fill, the national border and the hatch belong to the cluster
@@ -555,6 +679,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
     // correctly and never re-indexed the clusters, moves nothing a cell would report.
     private record DrawnMap(
         Map<SystemKey, SystemOwner> holderBySystemKey,
+        Map<SystemKey, FillState> nonSolidFillStateBySystemKey,
         Set<SystemKey> inhabitedSystemKeys,
         Set<SystemKey> spotlitPresenceSystemKeys,
         Map<SystemKey, StyledCell> styledCellByCellKey,
@@ -568,11 +693,57 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
         return new DrawnMap(
             new LinkedHashMap<>(occupancy.getOwnerBySystemKey()),
+            new LinkedHashMap<>(occupancy.snapshotFillStates().getNonSolidFillStateBySystemKey()),
             new LinkedHashSet<>(occupancy.getInhabitedSystemKeys()),
             new LinkedHashSet<>(occupancy.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
             new LinkedHashMap<>(territories.getPaintedCells().getRibbonStore().getRibbonByCellKey()));
+    }
+
+    /**
+     * The faction view reading its claims through a stated reader, so a case can pose a claim the
+     * vanilla mechanic would infer from colonies no fixture carries. Everything else is the faction
+     * view's own.
+     */
+    private static final class ClaimingFactionsViewFake
+            implements DominancePaintedView {
+
+        private final ClaimBreakdownReader claimReader;
+
+        private ClaimingFactionsViewFake(ClaimBreakdownReader claimReader) {
+            this.claimReader = claimReader;
+        }
+
+        @Override
+        public String getId() {
+            return FactionsView.INSTANCE.getId();
+        }
+
+        @Override
+        public String getSegmentLabelKey() {
+            return FactionsView.INSTANCE.getSegmentLabelKey();
+        }
+
+        @Override
+        public HolderGrouping resolveGrouping() {
+            return FactionsView.INSTANCE.resolveGrouping();
+        }
+
+        @Override
+        public Optional<MapHoverTooltip> resolveHoverTooltip() {
+            return FactionsView.INSTANCE.resolveHoverTooltip();
+        }
+
+        @Override
+        public Predicate<String> resolveSelectableBlocGate(HolderGrouping grouping) {
+            return FactionsView.INSTANCE.resolveSelectableBlocGate(grouping);
+        }
+
+        @Override
+        public ClaimBreakdownReaderSource resolveClaimReaderSource() {
+            return (knownColonyReader, sectorIndex) -> claimReader;
+        }
     }
 
     // The systems the fixture sector lists, keyed by ID and in row order.

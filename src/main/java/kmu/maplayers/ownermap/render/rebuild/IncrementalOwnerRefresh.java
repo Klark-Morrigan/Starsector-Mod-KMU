@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import com.fs.starfarer.api.Global;
 
@@ -160,14 +160,15 @@ public final class IncrementalOwnerRefresh {
     }
 
     // Redraws what the batch disturbed: every cell it named re-shaped against the updated owners,
-    // and - only where holding actually moved - the clustering, the two sides' clusters and the
-    // names that follow from it. The bands are laid last, around wherever those names ended up.
+    // every owner it named re-traced, and - only where holding actually moved - the clustering and
+    // the names that follow from it. The bands are laid last, around wherever those names ended up.
     //
     // The cell redraw runs off the cells the batch named rather than off there having been a flip,
     // because the two are not the same question: a system whose last settlement went, or one the
-    // spotlit owner just settled, draws differently with its owner exactly where it was. What the
-    // flips still decide is everything below the cells, all of which is a consequence of an owner
-    // having moved.
+    // spotlit owner just settled, draws differently with its owner exactly where it was. The owners
+    // are re-traced off the owners the batch named for the same reason: a system can go from solid
+    // to unfilled with its owner and its border where they were. What the flips still decide is the
+    // clustering and the names, both of which follow a border having moved.
     private void redrawDisturbedCells(
             Set<SystemKey> markedSystemKeys,
             StaleOwnerMapDisturbance disturbance) {
@@ -185,7 +186,7 @@ public final class IncrementalOwnerRefresh {
 
         var nameDisturbance = disturbance.hasFlips()
             ? rebuildFlippedOwners(cellGrouping, disturbance)
-            : ClusterNameDisturbance.NONE;
+            : rebuildRefilledOwners(cellGrouping, disturbance);
 
         // A marked system's band counts what is in it, and the events that mark a system are
         // exactly the ones that change what stands there - so its band is re-baked whether or not
@@ -253,16 +254,33 @@ public final class IncrementalOwnerRefresh {
         return nameDisturbance;
     }
 
-    // Rebuilds the cluster group of each owner the batch's flips moved. Only the old and new
-    // owners' clusters can have changed shape; every other owner's rings trace unchanged
-    // cells, so they are left as-is. An owner's members are the cells it draws, so they are
-    // grouped from the cells here to match what buildClusterGroup traces.
+    // What a batch with no flip owes its owners: each owner whose system moved fill state re-traces
+    // its group, its border where it was. No border moved, so neither the clustering nor any name
+    // is owed anything, and nothing beyond the marked cells owes a band.
+    private ClusterNameDisturbance rebuildRefilledOwners(
+            CellGrouping cellGrouping,
+            StaleOwnerMapDisturbance disturbance) {
+
+        rebuildAffectedClusterGroups(cellGrouping, disturbance);
+
+        return ClusterNameDisturbance.NONE;
+    }
+
+    // Rebuilds the cluster group of each owner the batch named. Only the owners a flip or a refill
+    // touched can have changed shape or fill; every other owner's rings trace unchanged cells, so
+    // they are left as-is. An owner's members are the cells it draws, so they are grouped from the
+    // cells here to match what buildClusterGroup traces.
     //
-    // The builder is made here rather than with the batch, since only a batch that flipped something
-    // traces an owner at all.
+    // The builder is made here rather than with the batch, since only a batch that flipped or
+    // refilled something traces an owner at all - and made after the folds, so it fills each owner
+    // by the states the batch just recorded.
     private void rebuildAffectedClusterGroups(
             CellGrouping cellGrouping,
             StaleOwnerMapDisturbance disturbance) {
+
+        if (disturbance.getAffectedOwnerIds().isEmpty()) {
+            return;
+        }
 
         var groupBuilder = clusters.createClusterGroupBuilder(
             cellGrouping,

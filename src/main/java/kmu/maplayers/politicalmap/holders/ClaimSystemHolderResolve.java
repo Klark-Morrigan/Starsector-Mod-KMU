@@ -5,10 +5,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
-import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.politicalmap.claims.FilteredClaims;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
 
@@ -17,21 +18,28 @@ import kmu.maplayers.politicalmap.claims.SectorClaims;
  *
  * <p>The per-system half of {@link ClaimsHolderProvider}, so a marked system is re-derived to its
  * claimant exactly as the whole-sector resolve paints it - folded into its bloc and coloured by the
- * one rule {@link SectorClaims} states for both. The claim reader is opened over the batch's own
- * pass, so it reads the colonies the batch's other answers read rather than walking them again.
+ * one rule {@link SectorClaims} states for both, and under a spotlight rekeyed by the one rule
+ * {@link FilteredClaims} states for both. The claim reader is opened over the batch's own pass, so
+ * it reads the colonies the batch's other answers read rather than walking them again.
  *
- * <p>Unfiltered only: the incremental refresh folds nothing while a spotlight is up, so the
- * spotlight's rekeying - the one thing {@link ClaimsHolderProvider} adds under a filter - never
- * reaches a batch.
+ * <p>Every claim fills solid, as the provider's do: a system has one claimant, so there is no
+ * contested state to hatch.
  */
-public final class ClaimSystemHolderResolve implements SystemHolderResolve {
+public final class ClaimSystemHolderResolve
+        implements SystemHolderResolve {
 
     private final HolderPass pass;
     private final ClaimReader claimReader;
+    private final String spotlitBlocId;
 
-    private ClaimSystemHolderResolve(HolderPass pass, ClaimReader claimReader) {
+    private ClaimSystemHolderResolve(
+            HolderPass pass,
+            ClaimReader claimReader,
+            String spotlitBlocId) {
+
         this.pass = pass;
         this.claimReader = claimReader;
+        this.spotlitBlocId = spotlitBlocId;
     }
 
     /**
@@ -44,13 +52,16 @@ public final class ClaimSystemHolderResolve implements SystemHolderResolve {
     public static SystemHolderResolveSource createSourceReadingThrough(
             ClaimReaderSource claimReaderSource) {
 
-        return pass -> new ClaimSystemHolderResolve(
+        return (pass, spotlitBlocId) -> new ClaimSystemHolderResolve(
             pass,
-            PassClaimReaders.openClaimReaderOver(pass, claimReaderSource));
+            PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
+            spotlitBlocId);
     }
 
     @Override
-    public SystemOwner resolveHolderIn(StarSystemAPI system) {
-        return SectorClaims.resolveClaimingHolderIn(system, pass, claimReader);
+    public ResolvedSystemOwner resolveHolderIn(StarSystemAPI system) {
+
+        return ResolvedSystemOwner.createSolidlyFilledBy(
+            FilteredClaims.resolveFilteredClaimIn(system, pass, claimReader, spotlitBlocId));
     }
 }

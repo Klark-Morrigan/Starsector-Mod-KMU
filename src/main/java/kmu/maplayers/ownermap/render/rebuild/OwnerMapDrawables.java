@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import kmlib.starsector.ui.font.FontAtlas;
 
@@ -114,14 +114,13 @@ final class OwnerMapDrawables {
     /**
      * @return whether a per-system owner change can be folded into the standing clusters: the
      *         production view is built - by a build that ran, not the placeholder a failed one
-     *         stands behind - and not under a filter, since the incremental re-shape derives
-     *         owners through the normal resolve, which would overwrite the spotlit keys
+     *         stands behind. A filtered build folds like any other, the batch re-deriving each
+     *         marked system under the spotlight the build was painted under
      */
     public boolean canFoldOwnerChanges() {
 
         return clusters != null
-            && clusters.getBuildInputs().wasBuilt()
-            && !clusters.getBuildInputs().getContentInputs().isFiltering();
+            && clusters.getBuildInputs().wasBuilt();
     }
 
     /**

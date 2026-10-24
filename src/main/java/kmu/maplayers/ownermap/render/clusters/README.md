@@ -448,11 +448,10 @@ is the framework's [`base.render.clusters`](../../../base/render/clusters/README
 which knows nothing of who holds what;
 the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`).
 The *incremental refresh* that redraws what a marked change moved -
-over the marked systems' owner,
+over the marked systems' owner and fill state,
 inhabitation and spotlit presence,
-which `render.MarkedSystemRederive` reads back first -
-is `render.IncrementalOwnerRefresh`,
-at the render root alongside the layer renderer (`OwnerMapLayerRenderer`) and the per-frame cache that drives it -
-the composition root that wires these feature packages together.
+which `render.rebuild.MarkedSystemRederive` reads back first -
+is `render.rebuild.IncrementalOwnerRefresh`,
+beside the per-frame cache that drives it and the full rebuild it stands in for.
 *Which* change triggers a full rebuild here and
 which one only re-shapes a handful of cells is [the caching notes](../../../../../../../../docs/dev/caching.md).

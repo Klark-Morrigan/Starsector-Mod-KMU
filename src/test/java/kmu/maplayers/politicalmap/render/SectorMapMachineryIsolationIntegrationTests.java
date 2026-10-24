@@ -19,8 +19,9 @@ import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.render.OwnerMapCache;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.politicalmap.PoliticalMapInstaller;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.views.FactionsView;
@@ -515,7 +516,8 @@ final class SectorMapMachineryIsolationIntegrationTests {
             cache = new OwnerMapCache(
                 resolveMachineryOf(sector),
                 OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS);
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
+                OwnerMapRefreshStrategy.INCREMENTAL);
         }
 
         // What the cache last drew, without asking it to draw again - for a case claiming a sector

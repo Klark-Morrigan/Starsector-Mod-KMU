@@ -22,6 +22,7 @@ import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellStore;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlightFake;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
 import kmu.settings.KmuMapLabelSettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 

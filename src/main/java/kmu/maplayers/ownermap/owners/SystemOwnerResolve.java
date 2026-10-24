@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 /**
  * One batch's reading of the sector, answering the three questions an incremental refresh asks of
- * a single marked system: who owns it, whether anything stands in it, and whether the spotlit
- * owner is among what does.
+ * a single marked system: who owns it and how its fill draws, whether anything stands in it, and
+ * whether the spotlit owner is among what does.
  *
  * <p>The per-system half of {@link OwnerSource}, and apart from it because the two answer
  * different costs. The source resolves the whole sector at once, which is what a rebuild wants; an
@@ -24,13 +24,17 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 public interface SystemOwnerResolve {
 
     /**
-     * Who paints one star system, under whatever rule the layer paints by.
+     * Who paints one star system, and how its fill draws, under whatever rule the layer paints by.
+     *
+     * <p>The fill state is the one the source's whole-sector answer would give the system, so a
+     * re-derived system lands hatched or unfilled exactly where a rebuild would draw it so.
      *
      * @param system the system to re-derive; null for a system the sector no longer lists, which
      *               nobody owns
-     * @return the owner to record, or null where nobody owns it and the cell draws unowned
+     * @return the owner and fill state to record; {@link ResolvedSystemOwner#UNOWNED} where nobody
+     *         owns it and the cell draws unowned
      */
-    SystemOwner resolveOwnerOf(StarSystemAPI system);
+    ResolvedSystemOwner resolveOwnerOf(StarSystemAPI system);
 
     /**
      * Whether anything stands in one star system, by the same reading the source's whole-sector

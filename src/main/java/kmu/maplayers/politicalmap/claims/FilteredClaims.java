@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.claims;
 
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
@@ -95,20 +97,63 @@ public final class FilteredClaims {
 
         // Resolved once for the whole walk: every system the bloc claims joins the same spotlight
         // territory, so they all carry the identical holder.
-        var spotlitHolder = SpotlitOwners.createSpotlitOwner(pass.palettes().readBlocPalette(selectedBlocId));
+        var spotlitHolder = resolveSpotlitHolder(pass, selectedBlocId);
         var spotlitClaims = new LinkedHashMap<SystemKey, SystemOwner>();
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {
-            var holder = selectedBlocId.equals(claim.getValue().ownerId())
-                ? spotlitHolder
-                : claim.getValue();
 
-            // A null spotlight holder only happens in the degenerate case where the selected bloc's
-            // colour faction vanished mid-session; its claims drop rather than paint colourless.
+            var holder = rekeyClaimUnderSpotlight(claim.getValue(), selectedBlocId, spotlitHolder);
             if (holder != null) {
                 spotlitClaims.put(claim.getKey(), holder);
             }
         }
+
         return spotlitClaims;
+    }
+
+    /**
+     * The claiming holder of one star system with the selected bloc's claim put under its
+     * spotlight - the single-system arm of {@link #resolveFilteredClaims}, for a batch re-deriving a
+     * marked system while a bloc is spotlit.
+     *
+     * @param system         the system to read; null yields null
+     * @param pass           the reading of the sector, whose grouping folds the claimant into its
+     *                       bloc and whose palettes colour that bloc and the spotlight
+     * @param claimReader    the claim source, opened over that same pass
+     * @param selectedBlocId the spotlighted bloc's ID, or null off filter
+     * @return the claiming holder, or null where nobody claims the system, the claimant's colour
+     *         faction does not resolve, or the spotlight's does not
+     */
+    public static SystemOwner resolveFilteredClaimIn(
+            StarSystemAPI system,
+            HolderPass pass,
+            ClaimReader claimReader,
+            String selectedBlocId) {
+
+        var claim = SectorClaims.resolveClaimingHolderIn(system, pass, claimReader);
+        if (claim == null || selectedBlocId == null) {
+            return claim;
+        }
+        return rekeyClaimUnderSpotlight(claim, selectedBlocId, resolveSpotlitHolder(pass, selectedBlocId));
+    }
+
+    // The one holder every claim of the selected bloc draws as, off the pass's own palettes so the
+    // spotlight paints the bloc in the colours its bands take.
+    private static SystemOwner resolveSpotlitHolder(HolderPass pass, String selectedBlocId) {
+        return SpotlitOwners.createSpotlitOwner(pass.palettes().readBlocPalette(selectedBlocId));
+    }
+
+    // One claim under the spotlight: the selected bloc's own claim takes the spotlight holder, a
+    // rival's keeps its own. A null spotlight holder only happens in the degenerate case where the
+    // selected bloc's colour faction vanished mid-session; its claims drop rather than paint
+    // colourless.
+    private static SystemOwner rekeyClaimUnderSpotlight(
+            SystemOwner claim,
+            String selectedBlocId,
+            SystemOwner spotlitHolder) {
+
+        return selectedBlocId.equals(claim.ownerId())
+            ? spotlitHolder
+            : claim;
     }
 }

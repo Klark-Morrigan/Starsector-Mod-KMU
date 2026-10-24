@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.render;
+package kmu.maplayers.ownermap.render.rebuild;
 
 import kmlib.starsector.systems.SystemKey;
 
@@ -13,30 +13,38 @@ import java.util.Set;
  * What a drained batch of stale systems disturbed: the cells that must redraw, and the owners
  * whose clusters must rebuild.
  *
- * <p>Two kinds of change land here. A <em>flip</em> - a system changing hands - writes both sets
+ * <p>Three kinds of change land here. A <em>flip</em> - a system changing hands - writes both sets
  * at once, and they are one fact rather than two filled beside each other: the ring of cells
  * around it redraws because their shared edges changed class, and both sides of the transfer
  * rebuild because their outlines moved, so recording a flip into one and not the other leaves a
  * redraw half done, which shows as a border drawn down one side only or a cluster group still holding
- * the shape it lost. A <em>restyle</em> - what a system is settled from moving without its owner
- * following - writes the cell alone: no seam moved, so no neighbour and no cluster group is owed
- * anything.
+ * the shape it lost. A <em>refill</em> - a system's fill state moving under the owner it already
+ * had - writes the owner alone: the fill is the cluster group's, split by state inside a border
+ * that did not move, so the group re-traces its fill and no cell or neighbour is owed anything. A
+ * <em>restyle</em> - what a system is settled from moving without its owner following - writes the
+ * cell alone: no seam moved, so no neighbour and no cluster group is owed anything.
  *
  * <p>Accumulated over the whole batch rather than per change, because two adjacent systems
  * flipping in one frame disturb overlapping rings and each cell is worth redrawing once.
  */
 final class StaleOwnerMapDisturbance {
 
-    // The owners whose cluster group outlines this batch moved: both sides of every transfer.
-    // Insertion-ordered so the rebuild below runs in a fixed order rather than a hash's.
+    // The owners whose cluster group this batch moved: both sides of every transfer, and the owner
+    // of every refilled system. Insertion-ordered so the rebuild below runs in a fixed order rather
+    // than a hash's.
     private final Set<String> affectedOwnerIds = new LinkedHashSet<>();
+
+    // Whether any system changed hands, which is what moves a border and so what the clustering
+    // and the names follow. Apart from the owners above, since a refill rebuilds an owner's group
+    // and moves no border.
+    private boolean hasFlips;
 
     // The cells this batch obliges to redraw: each flipped system and every neighbour whose
     // shared edge flipped between a same-owner seam and a cluster border, plus each system
     // whose cell draws in a different style than it did.
     private final Set<SystemKey> cellKeysToRedraw = new LinkedHashSet<>();
 
-    /** @return the owners whose cluster group outlines moved, in first-recorded order */
+    /** @return the owners whose cluster group must rebuild, in first-recorded order */
     Set<String> getAffectedOwnerIds() {
 
         return Collections.unmodifiableSet(affectedOwnerIds);
@@ -49,16 +57,14 @@ final class StaleOwnerMapDisturbance {
     }
 
     /**
-     * Whether this batch moved any holding at all. Read off the owners because every flip
-     * names at least one - a system that changed hands either lost an owner, gained one, or
-     * both - so a batch with no owner to rebuild had no flip in it, and the clustering,
-     * cluster group and name work below the cell redraw is skipped.
+     * Whether this batch moved any holding at all. A batch with no flip moved no border, so the
+     * clustering and the name work below the cell redraw is skipped.
      *
      * @return whether any flip was recorded
      */
     boolean hasFlips() {
 
-        return !affectedOwnerIds.isEmpty();
+        return hasFlips;
     }
 
     /**
@@ -86,8 +92,24 @@ final class StaleOwnerMapDisturbance {
             affectedOwnerIds.add(newOwner.ownerId());
         }
 
+        hasFlips = true;
         cellKeysToRedraw.add(systemKey);
         cellKeysToRedraw.addAll(neighbourSystemKeys);
+    }
+
+    /**
+     * Records one system's fill state moving while its owner stayed: it went from solid to
+     * unfilled, say, as the layer's rule kept the owner on for border and label alone.
+     *
+     * <p>The owner's cluster group and nothing more. The fill is split by state inside the group's
+     * one border, so the group re-traces its fill; the border itself did not move, so no cell
+     * re-shapes and no name is owed a re-fit.
+     *
+     * @param owner the owner whose system now fills in another state
+     */
+    void recordRefill(SystemOwner owner) {
+
+        affectedOwnerIds.add(owner.ownerId());
     }
 
     /**

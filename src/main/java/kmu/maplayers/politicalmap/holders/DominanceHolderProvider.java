@@ -16,7 +16,8 @@ import kmu.maplayers.politicalmap.dominance.SectorPolitics;
  * alliance views resolve under {@link ClaimAugmentedHolderProvider}, which layers claims on top of
  * this one; nothing resolves through this one bare.
  */
-public final class DominanceHolderProvider implements HolderProvider {
+public final class DominanceHolderProvider
+        implements HolderProvider {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final DominanceHolderProvider INSTANCE = new DominanceHolderProvider();

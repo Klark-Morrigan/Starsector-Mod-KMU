@@ -5,6 +5,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
@@ -16,6 +17,7 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
@@ -159,8 +161,7 @@ final class OwnerMapClustersTests {
                         OwnerReadingFake.createAnsweringNothing(),
                         new OwnerSourceFake()),
                     ContentInputs.createEmpty(),
-                    false,
-                    SystemFillStates.ALL_SOLID));
+                    false));
 
             clusters.getPaintedCells().putPaintedCell(
                 SYSTEM_CELL,
@@ -351,11 +352,17 @@ final class OwnerMapClustersTests {
     class CreateClusterGroupBuilder {
 
         @Test
-        void standsTheBuilderUpOnTheBuildsPaintsAndFillStatesOverTheGivenCells() {
-            // The paints and fill states are the build's own; the grouping and edges are the
-            // caller's, since a batch groups the cells afresh once its flips have folded.
+        void standsTheBuilderUpOnTheBuildsPaintsAndCurrentFillStatesOverTheGivenCells() {
+            // The paints are the build's own; the fill states are the occupancy's as they stand now,
+            // a batch's folds included; the grouping and edges are the caller's, since a batch
+            // groups the cells afresh once its flips have folded.
             var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
             var clusters = new OwnerMapClusters(SystemOccupancy.createEmpty(), buildInputs);
+
+            clusters
+                .getOccupancy()
+                .recordOwnerOf(buildCellKey("A"), new ResolvedSystemOwner(readOwnerOf("F"), FillState.UNFILLED));
+
             var cellGrouping = clusters.resolveCellGroupingOver(Map.of());
             var cellEdgesByCellKey = Map.<SystemKey, List<CellEdge>>of();
             var actualArguments = new ArrayList<List<?>>();
@@ -378,7 +385,7 @@ final class OwnerMapClustersTests {
                     assertThat(arguments.get(2))
                         .isSameAs(cellEdgesByCellKey);
                     assertThat(arguments.get(3))
-                        .isSameAs(buildInputs.getFillStates());
+                        .isEqualTo(SystemFillStates.createOf(Map.of(buildCellKey("A"), FillState.UNFILLED)));
                 });
         }
     }
@@ -431,7 +438,7 @@ final class OwnerMapClustersTests {
 
             clusters
                 .getOccupancy()
-                .recordOwnerOf(buildCellKey("B"), readOwnerOf("RIVAL"));
+                .recordOwnerOf(buildCellKey("B"), ResolvedSystemOwner.createSolidlyFilledBy(readOwnerOf("RIVAL")));
 
             reindex(clusters, edges);
 
@@ -454,7 +461,7 @@ final class OwnerMapClustersTests {
 
             clusters
                 .getOccupancy()
-                .recordOwnerOf(buildCellKey("B"), readOwnerOf("F"));
+                .recordOwnerOf(buildCellKey("B"), ResolvedSystemOwner.createSolidlyFilledBy(readOwnerOf("F")));
 
             reindex(clusters, edges);
 

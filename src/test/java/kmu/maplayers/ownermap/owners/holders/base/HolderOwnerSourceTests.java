@@ -19,6 +19,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
@@ -379,7 +380,21 @@ final class HolderOwnerSourceTests {
                 .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), null);
 
             assertThat(resolve.resolveOwnerOf(buildSystem("corvus")))
-                .isEqualTo(HEGEMONY_OWNER);
+                .isEqualTo(ResolvedSystemOwner.createSolidlyFilledBy(HEGEMONY_OWNER));
+        }
+
+        // The batch re-derives a marked system as the standing build painted it, so the spotlight
+        // that build was painted under reaches the layer's own per-system rule.
+        @Test
+        void opensTheLayersResolveUnderTheSpotlitOwnerItWasOpenedUnder() {
+
+            // ACT
+            buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+
+            // ASSERT
+            assertThat(holderResolveSourceFake.readSpotlitBlocIdsOpenedUnder())
+                .containsExactly(HEGEMONY);
         }
 
         @Test

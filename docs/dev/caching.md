@@ -321,7 +321,7 @@ rather than leaving the view to resolve whichever sector is running.
 
 ### The overlay cache
 
-[`OwnerMapCache`](../../src/main/java/kmu/maplayers/ownermap/render/OwnerMapCache.java)
+[`OwnerMapCache`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapCache.java)
 is the owner:
 each owner-painted layer's renderer holds one -
 one per layer per sector,
@@ -332,7 +332,7 @@ It holds both halves
 (geometry and built draw lists)
 and rebuilds only the stale half.
 What a frame owes is
-[`OwnerMapRebuildDecider`](../../src/main/java/kmu/maplayers/ownermap/render/OwnerMapRebuildDecider.java)'s
+[`OwnerMapRebuildDecider`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapRebuildDecider.java)'s
 answer,
 asked first and acted on:
 the decider holds what each half was built against and compares this frame's revisions and settings to it,
@@ -353,6 +353,14 @@ a revision naming cells other than the ones in hand reads as permission to reuse
 It **counts cuts** rather than echoing the reachable-set signal,
 since that signal is only one of the four things that recut them -
 see below.
+
+A frame that owes no rebuild may still have drained systems a change marked,
+and what it does with them is the layer's
+[`OwnerMapRefreshStrategy`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapRefreshStrategy.java):
+fold them into the standing map,
+or owe the next frame the full rebuild.
+Why that is a slot rather than one behaviour is
+[the tier's](../../src/main/java/kmu/maplayers/ownermap/README.md#the-rebuild-is-a-slot).
 
 It is also where rebuild faults are contained:
 a failing rebuild is logged once rather than per frame,
@@ -425,7 +433,7 @@ which change *which* systems seed a cell at all.
 Those four -
 the reachable-set revision plus those three settings -
 are one value,
-[`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/CellCutInputs.java),
+[`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/CellCutInputs.java),
 because the question asked of them is the single one they answer together:
 would the cells be cut differently now.
 Only the first raises a framework signal;
@@ -453,7 +461,7 @@ plus the derivation inputs an incremental re-shape needs -
 the styling,
 the view grouping,
 the filter snapshot,
-and who holds each system.
+and who holds each system and how its fill draws.
 
 Each drawn cell's presence band is baked into it too,
 and baked rather than emitted because every size in it is a world quantity:
@@ -488,15 +496,15 @@ and held only while its toggle is on;
 what it traces and how it clears is [the band bake](../../src/main/java/kmu/maplayers/ownermap/render/ribbon/README.md#seeing-the-path-a-cell-did-not-use)'s.
 
 Retaining those inputs is what makes the incremental path *correct* rather than merely cheap:
-[`IncrementalOwnerRefresh`](../../src/main/java/kmu/maplayers/ownermap/render/IncrementalOwnerRefresh.java)
+[`IncrementalOwnerRefresh`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/IncrementalOwnerRefresh.java)
 re-classifies a handful of cells against exactly the ownership and styles the full build used,
 through the same builder primitives,
 so an incrementally-updated map is indistinguishable from a rebuilt one.
-Which is also why the holder map,
+Which is also why the holder map and each system's fill state,
 the inhabited set and the spotlit-presence set are retained *live*,
 as one [`SystemOccupancy`](../../src/main/java/kmu/maplayers/ownermap/render/clusters/SystemOccupancy.java):
-a cell is classified from all three at once,
-so one of them fixed where the rebuild began would have the refresh styling a cell from two different readings of the sector.
+a map is drawn from all of them at once,
+so one of them fixed where the rebuild began would have the refresh drawing a system from two different readings of the sector.
 The type owns its collections and reports what each fold moved,
 which is what the refresh redraws a cell on.
 
@@ -763,17 +771,29 @@ in increasing cost:
    and the standing draw lists are handed to the renderer.
    This is the overwhelmingly common path,
    which is why both staleness questions are settled before any reading is opened.
-2. **Systems marked stale** -
+2. **Systems marked stale**,
+   on a layer whose strategy folds them -
    the stale set is drained and only those systems and their neighbours are re-derived and re-shaped,
    with the two affected owners' cluster groups rebuilt.
-   Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/ownermap/render/MarkedSystemRederive.java)'s
+   A layer taking the full rebuild drains the set and owes path 3 to the next frame instead.
+   So does a map that cannot take a fold:
+   the debug overlay's,
+   or a failed build's placeholder.
+   A spotlight is no such map:
+   the batch re-derives a marked system as the spotlit build painted it.
+   Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/MarkedSystemRederive.java)'s
    and redrawing what that disturbed is the refresh's,
    so what a change costs is decided apart from what changed.
    Three facts are re-derived per marked system,
    over one reading of the sector opened for the whole batch:
-   who holds it,
+   who holds it and how its fill draws,
    whether anything stands in it,
    and whether the spotlit bloc is one of the things standing in it.
+   A fill state moving under the same holder -
+   a claimed system losing its last colony,
+   say -
+   re-traces that holder's cluster group and nothing else,
+   its border being where it was.
    The last two are what a cell that no bloc holds is drawn from,
    and they move without any holder moving -
    a system settled or emptied on a layer

@@ -4,6 +4,10 @@ import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -17,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.render.clusters.SystemOccupancyFixtures.createSolidlyFilledOccupancyOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,6 +50,17 @@ final class SystemOccupancyTests {
     private static final SystemOwner TRITACHYON =
         new SystemOwner("tritachyon", new ColourPair(Color.GRAY, Color.GRAY));
 
+    // The two owners as a resolve answers them for a system each fills solid.
+    private static final ResolvedSystemOwner HELD_BY_HEGEMONY =
+        ResolvedSystemOwner.createSolidlyFilledBy(HEGEMONY);
+
+    private static final ResolvedSystemOwner HELD_BY_TRITACHYON =
+        ResolvedSystemOwner.createSolidlyFilledBy(TRITACHYON);
+
+    // Hegemony keeping a system for border and label alone, drawn with no fill.
+    private static final ResolvedSystemOwner UNFILLED_BY_HEGEMONY =
+        new ResolvedSystemOwner(HEGEMONY, FillState.UNFILLED);
+
     // Two systems the sector answers to one ID for - vanilla's own unnamed deep space - which only
     // their anchors tell apart. The pair every fact here has to be able to hold two answers for.
     private static final SystemKey FIRST_TWIN = new SystemKey("deep space", "", "8b3");
@@ -56,13 +72,17 @@ final class SystemOccupancyTests {
         @Test
         void readsBackEveryFactItWasGiven() {
 
-            var occupancy = SystemOccupancy.createCopyOf(
+            var fillStates = SystemFillStates.createOf(Map.of(HELD_SYSTEM, FillState.UNFILLED));
+            var occupancy = SystemOccupancy.createCopyOf(new ResolvedOwners(
                 Map.of(HELD_SYSTEM, HEGEMONY),
+                fillStates,
                 Set.of(SETTLED_SYSTEM),
-                Set.of(PRESENT_SYSTEM));
+                Set.of(PRESENT_SYSTEM)));
 
             assertThat(occupancy.getOwnerBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, HEGEMONY));
+            assertThat(occupancy.snapshotFillStates())
+                .isEqualTo(fillStates);
             assertThat(occupancy.getInhabitedSystemKeys())
                 .containsExactly(SETTLED_SYSTEM);
             assertThat(occupancy.getSpotlitPresenceSystemKeys())
@@ -75,9 +95,9 @@ final class SystemOccupancyTests {
             // answer with an immutable collection, and the presence read does exactly that off
             // filter. Copying here is what keeps that from becoming a throw at the first system
             // settled - a frame that dies rather than a map that updates.
-            var occupancy = SystemOccupancy.createCopyOf(Map.of(), Set.of(), Set.of());
+            var occupancy = createSolidlyFilledOccupancyOf(Map.of(), Set.of(), Set.of());
 
-            occupancy.recordOwnerOf(HELD_SYSTEM, HEGEMONY);
+            occupancy.recordOwnerOf(HELD_SYSTEM, HELD_BY_HEGEMONY);
 
             assertThat(occupancy.foldInhabitationOf(SETTLED_SYSTEM, true))
                 .isTrue();
@@ -94,10 +114,9 @@ final class SystemOccupancyTests {
             // the map is refreshed.
             var owners = new LinkedHashMap<SystemKey, SystemOwner>();
             var inhabited = new LinkedHashSet<SystemKey>();
+            var occupancy = createSolidlyFilledOccupancyOf(owners, inhabited, Set.of());
 
-            var occupancy = SystemOccupancy.createCopyOf(owners, inhabited, Set.of());
-
-            occupancy.recordOwnerOf(HELD_SYSTEM, HEGEMONY);
+            occupancy.recordOwnerOf(HELD_SYSTEM, HELD_BY_HEGEMONY);
             occupancy.foldInhabitationOf(SETTLED_SYSTEM, true);
 
             assertThat(owners)
@@ -150,7 +169,7 @@ final class SystemOccupancyTests {
             var occupancy = SystemOccupancy.createEmpty();
             var owners = occupancy.getOwnerBySystemKey();
 
-            occupancy.recordOwnerOf(HELD_SYSTEM, HEGEMONY);
+            occupancy.recordOwnerOf(HELD_SYSTEM, HELD_BY_HEGEMONY);
 
             assertThat(owners)
                 .containsExactly(Map.entry(HELD_SYSTEM, HEGEMONY));
@@ -163,7 +182,7 @@ final class SystemOccupancyTests {
         @Test
         void answersTheOwnerOfOneSystem() {
 
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
                 Set.of(),
                 Set.of());
@@ -190,7 +209,7 @@ final class SystemOccupancyTests {
             owners.put(FIRST_TWIN, HEGEMONY);
             owners.put(SECOND_TWIN, TRITACHYON);
 
-            var occupancy = SystemOccupancy.createCopyOf(owners, Set.of(), Set.of());
+            var occupancy = createSolidlyFilledOccupancyOf(owners, Set.of(), Set.of());
 
             assertThat(occupancy.readOwnerOf(FIRST_TWIN))
                 .isSameAs(HEGEMONY);
@@ -204,7 +223,7 @@ final class SystemOccupancyTests {
             // refresh reads what the refresh recorded rather than what the build resolved.
             var occupancy = SystemOccupancy.createEmpty();
 
-            occupancy.recordOwnerOf(HELD_SYSTEM, HEGEMONY);
+            occupancy.recordOwnerOf(HELD_SYSTEM, HELD_BY_HEGEMONY);
 
             assertThat(occupancy.readOwnerOf(HELD_SYSTEM))
                 .isSameAs(HEGEMONY);
@@ -214,7 +233,7 @@ final class SystemOccupancyTests {
         void answersNobodyForACellDrawnAsNoSystem() {
             // A cell with no star of its own names no system, and is answered here rather than by
             // each caller guarding the read before it asks.
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
                 Set.of(),
                 Set.of());
@@ -234,10 +253,11 @@ final class SystemOccupancyTests {
             // Every member of a group is keyed by the owner of the system it draws as, so the first
             // answers for all - here an absorbed cell drawing as the held system's star.
             var absorbedCell = buildCellKey("absorbed");
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
                 Set.of(),
                 Set.of());
+
             var cellGrouping = new CellGrouping(
                 Map.of(absorbedCell, HELD_SYSTEM),
                 Map.of(HELD_SYSTEM, "hegemony"));
@@ -258,7 +278,7 @@ final class SystemOccupancyTests {
             owners.put(FIRST_TWIN, HEGEMONY);
             owners.put(SECOND_TWIN, TRITACHYON);
 
-            var occupancy = SystemOccupancy.createCopyOf(owners, Set.of(), Set.of());
+            var occupancy = createSolidlyFilledOccupancyOf(owners, Set.of(), Set.of());
             var cellGrouping = new CellGrouping(
                 Map.of(
                     FIRST_TWIN,
@@ -310,12 +330,12 @@ final class SystemOccupancyTests {
         @Test
         void replacesTheStandingOwner() {
 
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
                 Set.of(),
                 Set.of());
 
-            occupancy.recordOwnerOf(HELD_SYSTEM, TRITACHYON);
+            occupancy.recordOwnerOf(HELD_SYSTEM, HELD_BY_TRITACHYON);
 
             assertThat(occupancy.getOwnerBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, TRITACHYON));
@@ -325,12 +345,12 @@ final class SystemOccupancyTests {
         void dropsTheEntryWhenNobodyHoldsItNow() {
             // An emptied system: the entry goes rather than being left pointing at the owner
             // that lost it, since every reader takes an absent entry for "nobody owns this".
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
                 Set.of(),
                 Set.of());
 
-            occupancy.recordOwnerOf(HELD_SYSTEM, null);
+            occupancy.recordOwnerOf(HELD_SYSTEM, ResolvedSystemOwner.UNOWNED);
 
             assertThat(occupancy.getOwnerBySystemKey())
                 .isEmpty();
@@ -343,13 +363,114 @@ final class SystemOccupancyTests {
             // the first's colours.
             var occupancy = SystemOccupancy.createEmpty();
 
-            occupancy.recordOwnerOf(FIRST_TWIN, HEGEMONY);
-            occupancy.recordOwnerOf(SECOND_TWIN, TRITACHYON);
+            occupancy.recordOwnerOf(FIRST_TWIN, HELD_BY_HEGEMONY);
+            occupancy.recordOwnerOf(SECOND_TWIN, HELD_BY_TRITACHYON);
 
             assertThat(occupancy.getOwnerBySystemKey())
                 .containsExactly(
                     Map.entry(FIRST_TWIN, HEGEMONY),
                     Map.entry(SECOND_TWIN, TRITACHYON));
+        }
+
+        // The fill state is recorded beside the owner, so a system a batch re-derives from solid to
+        // unfilled draws unfilled - where a fold of the owner alone left it as the rebuild drew it.
+        @Test
+        void recordsTheFillStateBesideTheOwner() {
+
+            // ARRANGE
+            var occupancy = createSolidlyFilledOccupancyOf(Map.of(HELD_SYSTEM, HEGEMONY), Set.of(), Set.of());
+
+            // ACT
+            occupancy.recordOwnerOf(HELD_SYSTEM, UNFILLED_BY_HEGEMONY);
+
+            // ASSERT
+            assertThat(occupancy.snapshotFillStates())
+                .isEqualTo(SystemFillStates.createOf(Map.of(HELD_SYSTEM, FillState.UNFILLED)));
+        }
+
+        // A solid answer clears the state the system held, so a system filled again fills solid.
+        @Test
+        void clearsTheFillStateOfASystemNowFillingSolid() {
+
+            // ARRANGE
+            var occupancy = createSolidlyFilledOccupancyOf(Map.of(), Set.of(), Set.of());
+
+            occupancy.recordOwnerOf(HELD_SYSTEM, UNFILLED_BY_HEGEMONY);
+
+            // ACT
+            occupancy.recordOwnerOf(HELD_SYSTEM, HELD_BY_HEGEMONY);
+
+            // ASSERT
+            assertThat(occupancy.snapshotFillStates())
+                .isEqualTo(SystemFillStates.ALL_SOLID);
+        }
+
+        // An emptied system takes no state with it to whoever holds it next.
+        @Test
+        void clearsTheFillStateOfASystemNobodyHoldsNow() {
+
+            // ARRANGE
+            var occupancy = createSolidlyFilledOccupancyOf(Map.of(), Set.of(), Set.of());
+
+            occupancy.recordOwnerOf(HELD_SYSTEM, UNFILLED_BY_HEGEMONY);
+
+            // ACT
+            occupancy.recordOwnerOf(HELD_SYSTEM, ResolvedSystemOwner.UNOWNED);
+
+            // ASSERT
+            assertThat(occupancy.snapshotFillStates())
+                .isEqualTo(SystemFillStates.ALL_SOLID);
+        }
+    }
+
+    @Nested
+    class ReadResolvedOwnerOf {
+
+        // The answer a re-derive compares its own against, so it carries both halves.
+        @Test
+        void answersTheOwnerAndTheFillStateTogether() {
+
+            // ARRANGE
+            var occupancy = SystemOccupancy.createEmpty();
+
+            occupancy.recordOwnerOf(HELD_SYSTEM, UNFILLED_BY_HEGEMONY);
+
+            // ACT
+            var actualResolved = occupancy.readResolvedOwnerOf(HELD_SYSTEM);
+
+            // ASSERT
+            assertThat(actualResolved)
+                .isEqualTo(new ResolvedSystemOwner(HEGEMONY, FillState.UNFILLED));
+        }
+
+        @Test
+        void answersUnownedForASystemNobodyHolds() {
+
+            var actualResolved = SystemOccupancy.createEmpty().readResolvedOwnerOf(HELD_SYSTEM);
+
+            assertThat(actualResolved)
+                .isSameAs(ResolvedSystemOwner.UNOWNED);
+        }
+    }
+
+    @Nested
+    class SnapshotFillStates {
+
+        // A copy, so a builder traces every owner of its pass against one state of the map even
+        // where a fold lands between two of its owners.
+        @Test
+        void keepsWhatItSawThroughALaterFold() {
+
+            // ARRANGE
+            var occupancy = SystemOccupancy.createEmpty();
+            var snapshot = occupancy.snapshotFillStates();
+
+            // ACT
+            occupancy.recordOwnerOf(HELD_SYSTEM, UNFILLED_BY_HEGEMONY);
+
+            // ASSERT
+            assertThat(snapshot)
+                .isEqualTo(SystemFillStates.ALL_SOLID);
         }
     }
 
@@ -370,7 +491,7 @@ final class SystemOccupancyTests {
         @Test
         void reportsASystemLosingItsLastSettlement() {
 
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(),
                 Set.of(SETTLED_SYSTEM),
                 Set.of());
@@ -385,7 +506,7 @@ final class SystemOccupancyTests {
         void reportsNothingForASystemThatWasAlreadySettled() {
             // The common resize: a settlement grew. Reporting a change here would redraw a cell
             // that draws exactly as it did, on every marked change in the sector.
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(),
                 Set.of(SETTLED_SYSTEM),
                 Set.of());
@@ -421,7 +542,7 @@ final class SystemOccupancyTests {
         @Test
         void reportsThePickLeavingASystem() {
 
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(),
                 Set.of(),
                 Set.of(PRESENT_SYSTEM));
@@ -435,7 +556,7 @@ final class SystemOccupancyTests {
         @Test
         void reportsNothingWhereThePickWasAlreadyLiving() {
 
-            var occupancy = SystemOccupancy.createCopyOf(
+            var occupancy = createSolidlyFilledOccupancyOf(
                 Map.of(),
                 Set.of(),
                 Set.of(PRESENT_SYSTEM));
