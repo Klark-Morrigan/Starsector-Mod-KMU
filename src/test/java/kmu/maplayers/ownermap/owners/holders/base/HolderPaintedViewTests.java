@@ -12,9 +12,6 @@ import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +23,7 @@ import java.util.Map;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.STANDARD_RULES;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -104,7 +102,7 @@ final class HolderPaintedViewTests {
                 .source()
                 .resolveRibbonPlanner(
                     new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE),
-                    new RibbonPlanRules(new RibbonSegmentLengths(3, 1), new UncontestedRibbonRuns(false)));
+                    STANDARD_RULES);
 
             assertThat(viewFake.listPlannerInputs())
                 .singleElement()
@@ -136,7 +134,7 @@ final class HolderPaintedViewTests {
                 .source()
                 .resolveRibbonPlanner(
                     new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE),
-                    new RibbonPlanRules(new RibbonSegmentLengths(3, 1), new UncontestedRibbonRuns(false)));
+                    STANDARD_RULES);
 
             assertThat(planner)
                 .isSameAs(HolderPaintedViewFake.PLANNER);

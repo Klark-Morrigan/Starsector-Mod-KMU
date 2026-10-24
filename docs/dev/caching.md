@@ -403,8 +403,8 @@ a bake on its own cadence -
 a name may have moved,
 long after some rebuild began -
 opens a fresh one rather than report a sector as it stood some flips ago.
-  The shared condition is the grouping:
-  a pass folded by another would plan bands against blocs the fills never drew.
+The shared condition is the grouping:
+a pass folded by another would plan bands against blocs the fills never drew.
 
 ### Cell geometry
 
@@ -463,53 +463,29 @@ and how far each run reaches all resolve at rebuild,
 so a frame draws a triangle list rather than laying one out.
 
 The bands are baked in a stage of their own after the rest of a rebuild,
-because a band keeps clear of the cluster names by default
-and the names are placed only once every cell has been shaped -
-each is fitted inside the border its cluster's cells trace.
-So the cells' shapes go in first and the bands follow,
-over the shapes the clusters already hold.
-A player who would rather keep the whole band can switch that clearance off,
-which leaves the ordering doing nothing rather than making it wrong:
-the stage still runs last,
-and simply carves nothing.
+over the shapes the clusters already hold;
+why they wait for the names is [the band bake](../../src/main/java/kmu/maplayers/ownermap/render/ribbon/README.md#why-the-bands-bake-last)'s.
 Recording a shape drops whatever band that cell was carrying,
 which is what keeps a band from outliving the ring it was laid in;
 the band stage then fills it back in.
 
 The ring a band is laid along is kept beside the shape it was walked inside,
-in a [`CellRingPathCache`](../../src/main/java/kmu/maplayers/ownermap/render/ribbon/CellRingPathCache.java)
-the clusters hold and the bake asks before it walks anything.
+one per inset,
+in a [`CellRingPathCache`](../../src/main/java/kmu/maplayers/base/ribbon/CellRingPathCache.java)
+held in the clusters' `CellRibbonStore`,
+which the bake asks before it walks anything.
 A bake runs whenever a cluster name may have moved,
-while a cell's ring changes only when the cell is cut again,
-so without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just discarded.
-The cells the flip re-shaped walk again either way -
-their paths went with their shapes -
+while a ring moves only when its cell is cut again.
+The cells the flip re-shaped walk again -
+their rings went with their shapes -
 so what the cache saves is every other cell in the bake.
-  It is dropped by the same two writes as the band,
-  which is what lets it carry no key of its own:
-  a cache living inside the object whose lifetime it must match is correct by construction,
-  where a keyed one is a rule someone has to keep true.
-  A slider bumps the settings revision,
-  which rebuilds the clusters,
-  which takes the paths with them.
+It is dropped by the same two writes as the band and carries no key of its own;
+why that is safe is [`base.ribbon`](../../src/main/java/kmu/maplayers/base/ribbon/README.md#a-ring-that-outlives-the-bake-that-walked-it)'s.
 
-That pass also traces each cell's band *path* when the band-path diagnostic is on -
-the ring a band would run along,
-held per cell and dropped by the same writes as the band.
-A cell drawing no band is the sector's ordinary state and also every one of the band's refusals,
-and the two are the same picture without it.
-Held only while the toggle is on:
-the bake hands over nothing per cell while it is off,
-and a settings change rebuilds every cell,
-so switching it off is what clears what an earlier pass left behind.
-That trace walks its own ring rather than reading the cache above,
-deliberately:
-the cells it exists to explain are the ones the bake has no path for.
-
-A frame measures nothing about a band at all:
-every size in one is a world size,
-so how large it lands on screen is the map's own scaling of the triangle list
-and no question the pass has to answer.
+The band-path diagnostic's paths are held per cell beside the bands,
+dropped by the same writes,
+and held only while its toggle is on;
+what it traces and how it clears is [the band bake](../../src/main/java/kmu/maplayers/ownermap/render/ribbon/README.md#seeing-the-path-a-cell-did-not-use)'s.
 
 Retaining those inputs is what makes the incremental path *correct* rather than merely cheap:
 [`IncrementalOwnerRefresh`](../../src/main/java/kmu/maplayers/ownermap/render/IncrementalOwnerRefresh.java)
@@ -553,6 +529,9 @@ A mismatch discards the carry-over whole and the rebuild searches every cluster.
 What this cache holds is therefore one [`StandingClusterAnchors`](../../src/main/java/kmu/maplayers/base/labels/anchor/StandingClusterAnchors.java)
 and not a list beside a fingerprint -
 it goes into a rebuild whole and comes back the same value.
+What is read off one pass rides with it the same way:
+the room the drawn words take is measured once per pass and dropped with it,
+and the anchor overlay is packed into its draw runs once per pass rather than walked every frame.
 
 The mechanics -
 what is re-resolved on a carried placement,

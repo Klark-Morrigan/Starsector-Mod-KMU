@@ -1,7 +1,7 @@
 package kmu.maplayers.ownermap.owners;
 
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 /**
  * Where a layer's owners come from: the seam the tier resolves who paints each system through,

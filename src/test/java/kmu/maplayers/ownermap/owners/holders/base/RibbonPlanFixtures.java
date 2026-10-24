@@ -9,17 +9,27 @@ import kmlib.colour.ColourPair;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures;
 
 import java.awt.Color;
 import java.util.Map;
-import java.util.Optional;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.DIKTAT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.DIKTAT_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.DIKTAT_DARK;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.SHORTENED_UNCONTESTED_RULES;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.STANDARD_RULES;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.TRITACHYON_DARK;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,9 +39,9 @@ import static org.mockito.Mockito.when;
  * own proportions, and the bake's inputs over a stubbed sector.
  *
  * <p>The owners, shades, proportions and affiliation the core's rule suite shares are
- * {@link RibbonPlanRulesFixtures}' own, named again here so a holder suite reads one fixture. Only
- * what a holder adds is stated here: a group bloc, the neutral faction, a vanished bloc and the
- * palettes and sector reads over them.
+ * {@code OwnerRibbonRunsFixtures}' own, and a holder suite imports them from there. Only what a
+ * holder adds is stated here: a group bloc, the neutral faction, a vanished bloc and the palettes
+ * and sector reads over them.
  *
  * <p>Shared because a band is counted by one rule and ranked by each mechanic's own, so the
  * mechanics' suites, the shared rule's, and the planners' all pose the same map and read the same
@@ -45,10 +55,7 @@ import static org.mockito.Mockito.when;
  */
 public final class RibbonPlanFixtures {
 
-    public static final String HEGEMONY = RibbonPlanRulesFixtures.HEGEMONY;
-    public static final String TRITACHYON = RibbonPlanRulesFixtures.TRITACHYON;
     public static final String PERSEAN = "persean";
-    public static final String DIKTAT = RibbonPlanRulesFixtures.DIKTAT;
 
     /**
      * The faction every unowned station falls to, and so the owner of every derelict. Carries
@@ -64,33 +71,9 @@ public final class RibbonPlanFixtures {
      */
     public static final String VANISHED_BLOC = "vanished";
 
-    public static final Color HEGEMONY_BRIGHT = RibbonPlanRulesFixtures.HEGEMONY_BRIGHT;
-    public static final Color HEGEMONY_DARK = RibbonPlanRulesFixtures.HEGEMONY_DARK;
-    public static final Color TRITACHYON_BRIGHT = RibbonPlanRulesFixtures.TRITACHYON_BRIGHT;
-    public static final Color TRITACHYON_DARK = RibbonPlanRulesFixtures.TRITACHYON_DARK;
     public static final Color PERSEAN_BRIGHT = new Color(200, 180, 120);
     public static final Color PERSEAN_DARK = new Color(90, 70, 30);
-    public static final Color DIKTAT_BRIGHT = RibbonPlanRulesFixtures.DIKTAT_BRIGHT;
 
-    /**
-     * The core's own proportions, with the shortening off. See {@link RibbonPlanRulesFixtures#STANDARD_RULES}.
-     */
-    public static final RibbonPlanRules STANDARD_RULES = RibbonPlanRulesFixtures.STANDARD_RULES;
-
-    /**
-     * The core's own proportions, with the shortening on. See
-     * {@link RibbonPlanRulesFixtures#SHORTENED_UNCONTESTED_RULES}.
-     */
-    public static final RibbonPlanRules SHORTENED_UNCONTESTED_RULES =
-        RibbonPlanRulesFixtures.SHORTENED_UNCONTESTED_RULES;
-
-    /**
-     * A cell no bloc's fill covers, which is what a populated system no mechanic paints draws as.
-     * See {@link RibbonPlanRulesFixtures#NO_PAINTER}.
-     */
-    public static final Optional<String> NO_PAINTER = RibbonPlanRulesFixtures.NO_PAINTER;
-
-    private static final Color DIKTAT_DARK = RibbonPlanRulesFixtures.DIKTAT_DARK;
     private static final Color NEUTRAL_BRIGHT = new Color(170, 170, 170);
     private static final Color NEUTRAL_DARK = new Color(70, 70, 70);
 
@@ -112,13 +95,6 @@ public final class RibbonPlanFixtures {
         new ColourPair(DIKTAT_BRIGHT, DIKTAT_DARK),
         NEUTRAL,
         new ColourPair(NEUTRAL_BRIGHT, NEUTRAL_DARK));
-
-    // The Hegemony and Tri-Tachyon standing together, every other bloc outside. Stated as an
-    // affiliation rather than as a grouping, which is the distinction the type exists for: a case
-    // folding the two under a grouping would merge them into one run instead of leaving them their
-    // own.
-    private static final OwnerAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
-        RibbonPlanRulesFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
 
     // The size every colony these fixtures build carries. A band counts holdings rather than
     // weighing them, so a suite about counting or ordering varies nothing by varying this.
@@ -194,8 +170,7 @@ public final class RibbonPlanFixtures {
 
     /**
      * The inputs a case about who counts as a rival takes: blocs painted per faction, under the
-     * identity grouping, judged against
-     * {@link RibbonPlanRulesFixtures#ALLIED_HEGEMONY_AND_TRITACHYON} and laid with the shortening
+     * identity grouping, judged against {@code ALLIED_HEGEMONY_AND_TRITACHYON} and laid with the shortening
      * on - which is the one place the reading a cell fell under can be read back.
      *
      * <p>The fog is the plain one because no such case turns on it. A suite posing what the player

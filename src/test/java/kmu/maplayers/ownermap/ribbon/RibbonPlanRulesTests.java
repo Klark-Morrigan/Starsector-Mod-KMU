@@ -6,51 +6,97 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins that the rules put their own authored lengths through their own shortening.
+ * Pins the two pairs of lengths the rules settle from one authored pair: the contested pair as the
+ * player authored it, and the uncontested pair with only its stake run shortened, and only where
+ * the switch says so.
  *
- * <p>What the shortening does to a pair of lengths is stated beside the shortening itself. What is
- * stated here is the pairing: the shortening says nothing without some authored pair to modify, so
- * the one thing that can go wrong at this level is the two halves being crossed - a band laid at
- * this pass's shortening over lengths that came from somewhere else, which is a cell drawn to
- * proportions nobody set and reads as a knob the player moved to no effect.
+ * <p>Each half fails quietly if it drifts. A shortening that reached the parting as well would leave
+ * a tally whose ticks and gaps are the same length, which reads as one long run rather than as a
+ * count; and a shortening that reached the contested pair would quiet the very cells the design
+ * exists to draw a reader to.
  */
 final class RibbonPlanRulesTests {
 
-    // A stake four widths long parted by two. Neither is the design's own proportion, so a result
-    // that came from anywhere but these rules' own lengths is visible rather than coincidental.
+    // A stake four widths long parted by two. Neither is the design's own proportion, and the two
+    // differ from each other and from one width, so each length a case reads back is told apart by
+    // value rather than by coincidence.
     private static final RibbonSegmentLengths AUTHORED_LENGTHS = new RibbonSegmentLengths(4, 2);
 
+    // The shortening switch's two answers, named so a case reads which one it poses.
+    private static final boolean UNCONTESTED_RUNS_SHORTENED = true;
+    private static final boolean UNCONTESTED_RUNS_AUTHORED = false;
+
     @Nested
-    class ResolveUncontestedLengths {
+    class GetContestedLengths {
 
+        // A contested cell is the readout the design exists for, so its runs keep the player's
+        // lengths whatever the shortening says.
         @Test
-        void shortensTheStakeRunOfItsOwnAuthoredPair() {
+        void answersTheAuthoredLengthsWhereTheUncontestedRunsAreShortened() {
 
-            var lengths = new RibbonPlanRules(AUTHORED_LENGTHS, new UncontestedRibbonRuns(true))
-                .resolveUncontestedLengths();
+            // ARRANGE
+            var rules = RibbonPlanRules.createFromAuthoredLengths(AUTHORED_LENGTHS, UNCONTESTED_RUNS_SHORTENED);
+            var expectedLengths = new RibbonSegmentLengths(4, 2);
 
-            assertThat(lengths)
-                .isEqualTo(new RibbonSegmentLengths(1, 2));
+            // ACT
+            var actualLengths = rules.getContestedLengths();
+
+            // ASSERT
+            assertThat(actualLengths)
+                .isEqualTo(expectedLengths);
+        }
+    }
+
+    @Nested
+    class GetUncontestedLengths {
+
+        // The stake run alone is cut. The parting says the same thing on an uncontested cell as on
+        // any other - one stake ends, the next begins - so the shortening has no business with it.
+        @Test
+        void cutsOnlyTheStakeRunToOneWidthWhereTheRunsAreShortened() {
+
+            // ARRANGE
+            var rules = RibbonPlanRules.createFromAuthoredLengths(AUTHORED_LENGTHS, UNCONTESTED_RUNS_SHORTENED);
+            var expectedLengths = new RibbonSegmentLengths(1, 2);
+
+            // ACT
+            var actualLengths = rules.getUncontestedLengths();
+
+            // ASSERT
+            assertThat(actualLengths)
+                .isEqualTo(expectedLengths);
         }
 
         @Test
-        void answersItsOwnAuthoredPairWhereNothingIsShortened() {
+        void answersTheAuthoredLengthsWhereTheRunsAreNotShortened() {
 
-            var lengths = new RibbonPlanRules(AUTHORED_LENGTHS, new UncontestedRibbonRuns(false))
-                .resolveUncontestedLengths();
+            // ARRANGE
+            var rules = RibbonPlanRules.createFromAuthoredLengths(AUTHORED_LENGTHS, UNCONTESTED_RUNS_AUTHORED);
+            var expectedLengths = new RibbonSegmentLengths(4, 2);
 
-            assertThat(lengths)
-                .isEqualTo(new RibbonSegmentLengths(4, 2));
+            // ACT
+            var actualLengths = rules.getUncontestedLengths();
+
+            // ASSERT
+            assertThat(actualLengths)
+                .isEqualTo(expectedLengths);
         }
 
+        // Asked once per uncontested cell, so the shortened pair is settled once when the rules
+        // are made rather than built again for each cell.
         @Test
-        void answersEveryCellWithTheLengthsSettledWhenTheRulesWereMade() {
-            // Asked once per uncontested cell, so the shortened pair is settled once rather than
-            // built again for each of them.
-            var rules = new RibbonPlanRules(AUTHORED_LENGTHS, new UncontestedRibbonRuns(true));
+        void answersEveryCellWithThePairSettledWhenTheRulesWereMade() {
 
-            assertThat(rules.resolveUncontestedLengths())
-                .isSameAs(rules.resolveUncontestedLengths());
+            // ARRANGE
+            var rules = RibbonPlanRules.createFromAuthoredLengths(AUTHORED_LENGTHS, UNCONTESTED_RUNS_SHORTENED);
+            var firstLengths = rules.getUncontestedLengths();
+
+            // ACT
+            var actualLengths = rules.getUncontestedLengths();
+
+            // ASSERT
+            assertThat(actualLengths)
+                .isSameAs(firstLengths);
         }
     }
 }

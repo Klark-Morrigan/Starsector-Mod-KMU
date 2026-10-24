@@ -7,6 +7,8 @@ import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorFitInputs;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -21,13 +23,15 @@ import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
+import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuMapLabelSettings;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -39,9 +43,12 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what the drawables keeping the built draw lists answer about them: whether anything stands, whether
@@ -156,9 +163,13 @@ final class OwnerMapDrawablesTests {
         // traces and the anchor fit that rides along are each pinned where they live.
         private final StaticSeams seams = new StaticSeams();
 
-        // The stood-in anchor fit, opened by traceBordersThrough, for a case reading what it was
-        // handed.
-        private MockedStatic<ClusterAnchorsBuilder> anchorsBuilderMock;
+        // The anchor fit, stood in for so a case can read what the drawables handed it.
+        private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
+
+        @BeforeEach
+        void openAnchorsSeam() {
+            anchorsMock = seams.openSeam(ClusterAnchorsBuilder.class);
+        }
 
         @AfterEach
         void closeSeams() {
@@ -192,13 +203,15 @@ final class OwnerMapDrawablesTests {
             var owners = ResolvedOwners.createEmpty();
             var sourceFake = OwnerSourceFake.createAnswering(owners);
 
-            var builderMock = traceBordersThrough(drawables, sourceFake);
+            var builderMock = traceBordersThrough(drawables, sourceFake, false);
 
             assertThat(sourceFake.readOwnerWalks())
                 .singleElement()
                 .isSameAs(WALK);
+
             assertThat(sourceFake.readSpotlitOwnerIdsAsked())
                 .containsExactly((String) null);
+
             builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
                 any(),
                 same(owners),
@@ -210,17 +223,69 @@ final class OwnerMapDrawablesTests {
             // One reading of the theme for both halves, so the names over the overlay cannot be
             // styled under knobs its outlines were not traced under.
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
-            var builderMock = traceBordersThrough(drawables, new OwnerSourceFake());
             var stylingCaptor = ArgumentCaptor.forClass(MapStyling.class);
 
-            builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
+            try (var snapshotMock = mockStatic(ClusterLabelStylingSnapshot.class, CALLS_REAL_METHODS)) {
+
+                var builderMock = traceBordersThrough(drawables, new OwnerSourceFake(), false);
+
+                builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
+                    any(),
+                    any(),
+                    stylingCaptor.capture()));
+
+                snapshotMock.verify(() -> ClusterLabelStylingSnapshot.resolveForTracing(
+                    any(),
+                    same(stylingCaptor.getValue()),
+                    any(),
+                    any(),
+                    anyBoolean(),
+                    any()));
+            }
+        }
+
+        // The view is a look at the anchors, so the overlay as the rebuild sampled it is what holds
+        // the fit open, with the names off as they are here.
+        @Test
+        void wantsTheNamesFittedWhileTheSampledOverlayIsShown() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var fitInputsCaptor = ArgumentCaptor.forClass(ClusterAnchorFitInputs.class);
+
+            // ACT
+            traceBordersThrough(drawables, new OwnerSourceFake(), true);
+
+            // ASSERT
+            anchorsMock.verify(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                 any(),
                 any(),
-                stylingCaptor.capture()));
-            anchorsBuilderMock.verify(() -> ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
+                fitInputsCaptor.capture()));
+
+            assertThat(fitInputsCaptor.getValue().isFitWanted())
+                .isTrue();
+        }
+
+        // The other half of the case above: with the sampled overlay off the view fits nothing, so
+        // an overlay handed on as a constant cannot pass both.
+        @Test
+        void wantsNoNamesFittedWhileTheSampledOverlayIsOff() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var fitInputsCaptor = ArgumentCaptor.forClass(ClusterAnchorFitInputs.class);
+
+            // ACT
+            traceBordersThrough(drawables, new OwnerSourceFake(), false);
+
+            // ASSERT
+            anchorsMock.verify(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                 any(),
                 any(),
-                argThat(snapshot -> snapshot.paints().getStyling() == stylingCaptor.getValue())));
+                fitInputsCaptor.capture()));
+
+            assertThat(fitInputsCaptor.getValue().isFitWanted())
+                .isFalse();
         }
 
         @Test
@@ -238,30 +303,29 @@ final class OwnerMapDrawablesTests {
         // Builds the debug view over a stood-in trace and a neutralised anchor fit, which is all
         // the drawables do with either.
         private void traceBordersThrough(OwnerMapDrawables drawables) {
-            traceBordersThrough(drawables, new OwnerSourceFake());
+            traceBordersThrough(drawables, new OwnerSourceFake(), false);
         }
 
-        // The same over a stated source, handing back the stood-in trace for a case reading what it
-        // was asked.
+        // The same over a stated source and sampled overlay, handing back the stood-in trace for a
+        // case reading what it was asked.
         private MockedStatic<DebugBorderTracingBuilder> traceBordersThrough(
                 OwnerMapDrawables drawables,
-                OwnerSource ownerSource) {
+                OwnerSource ownerSource,
+                boolean isAnchorOverlayShown) {
 
             var builderMock = seams.openSeam(DebugBorderTracingBuilder.class);
-
             builderMock
                 .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()))
                 .thenReturn(TRACED_OVERLAY);
 
             openStylingSeams(seams);
 
-            anchorsBuilderMock = seams.openSeam(ClusterAnchorsBuilder.class);
-
             drawables.rebuildBorderTracingOverlay(
                 CELL_GEOMETRY,
                 WALK,
                 new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), ownerSource),
-                ContentInputs.createEmpty());
+                ContentInputs.createEmpty(),
+                isAnchorOverlayShown);
 
             return builderMock;
         }
@@ -293,7 +357,11 @@ final class OwnerMapDrawablesTests {
             // safe exactly while no spotlight has keyed the cells to something else.
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
 
-            buildProductionThrough(drawables, OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
+                false);
 
             assertThat(drawables.canFoldOwnerChanges())
                 .isTrue();
@@ -310,25 +378,44 @@ final class OwnerMapDrawablesTests {
             assertThat(drawables.canFoldOwnerChanges())
                 .isFalse();
         }
+    }
 
-        // Builds the production view over stood-in builders, the one handing back the given clusters.
-        private void buildProductionThrough(OwnerMapDrawables drawables, OwnerMapClusters clusters) {
+    @Nested
+    class RebuildClustersAndBands {
 
-            openStylingSeams(seams);
-            seams.openSeam(OwnerMapBuilder.class)
-                .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
-                .thenReturn(clusters);
-            seams.openSeam(ClusterAnchorsBuilder.class);
-            seams.openSeam(CellRibbonsBaker.class)
-                .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
-                .thenReturn(mock(CellRibbonsBaker.class));
+        // The builders a production rebuild drives, stood in for: what each builds is pinned where
+        // it lives, and all this asks is what the drawables hand them.
+        private final StaticSeams seams = new StaticSeams();
 
-            drawables.rebuildClustersAndBands(
-                CELL_GEOMETRY,
-                WALK,
-                new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
-                ContentInputs.createEmpty(),
-                ResolvedOwners.createEmpty());
+        @AfterEach
+        void closeSeams() {
+            seams.closeEverySeam();
+        }
+
+        // The build keeps the overlay as the rebuild sampled it, so a batch folding into the build
+        // later fits its names under what the build was baked under rather than under a live read.
+        @Test
+        void handsTheBuildTheSampledOverlay() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var clusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
+
+            // ACT
+            var builderMock = buildProductionThrough(
+                seams,
+                drawables,
+                clusters,
+                true);
+
+            // ASSERT
+            builderMock.verify(() -> OwnerMapBuilder.buildClusters(
+                any(),
+                any(),
+                any(),
+                eq(true),
+                any(),
+                any()));
         }
     }
 
@@ -386,15 +473,54 @@ final class OwnerMapDrawablesTests {
         }
     }
 
+    // Builds the production view over stood-in builders, the one handing back the given clusters,
+    // and hands back the build's seam for a case reading what it was asked.
+    private MockedStatic<OwnerMapBuilder> buildProductionThrough(
+            StaticSeams seams,
+            OwnerMapDrawables drawables,
+            OwnerMapClusters clusters,
+            boolean isAnchorOverlayShown) {
+
+        openStylingSeams(seams);
+
+        var builderMock = seams.openSeam(OwnerMapBuilder.class);
+        builderMock
+            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()))
+            .thenReturn(clusters);
+
+        seams.openSeam(ClusterAnchorsBuilder.class);
+
+        // The bake's settings are read live by the drawables, from knobs no test JVM holds; the
+        // bake they are handed to is stood in for, so nothing reads them back.
+        seams
+            .openSeam(RibbonBakeSettings.class);
+        seams
+            .openSeam(CellRibbonsBaker.class)
+            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
+            .thenReturn(mock(CellRibbonsBaker.class));
+
+        drawables.rebuildClustersAndBands(
+            CELL_GEOMETRY,
+            WALK,
+            new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
+            ContentInputs.createEmpty(),
+            isAnchorOverlayShown,
+            ResolvedOwners.createEmpty());
+
+        return builderMock;
+    }
+
     // The live reads behind a rebuild's one styling read, stood in for: the theme and the two
     // border-trace knobs, none of which a test JVM answers. The styling itself runs for real, so a
     // case reading what a builder was handed reads the value the drawables built.
     private static void openStylingSeams(StaticSeams seams) {
 
-        seams.openSeam(RenderStyleReader.class)
+        seams
+            .openSeam(RenderStyleReader.class)
             .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
             .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
                 OwnerMapClusterFixtures.createInertCategoryStyle()));
-        seams.openSeam(KmuMapLabelSettings.class);
+        seams
+            .openSeam(KmuMapLabelSettings.class);
     }
 }

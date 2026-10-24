@@ -1,34 +1,59 @@
 package kmu.maplayers.ownermap.render.labels;
 
 import kmlib.colour.ColourPair;
+import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
+import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
+import kmlib.starsector.ui.label.FontLabelLengthEstimator;
+import kmlib.testfixtures.logging.LogAppenderFake;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.ownermap.ContentInputs;
+import kmu.maplayers.ownermap.ContentInputsFixtures;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.OwnerStyleDecision;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.lazywizard.lazylib.ui.LazyFont;
+import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins what shade a cluster name draws in - the half of a label the owner map decides
  * before the placement search ever sees it. The rule is that a name takes the name style of
  * the category its owner was placed in, resolved against the same palette the fill and border
  * read, so a name can never drift from the space it labels; these tests hold that against each
- * category, each colour choice, and each recede. The name half needs the label font, so it only
- * resolves in-engine and is not covered here.
+ * category, each colour choice, and each recede. The name half needs the label font, so only the
+ * face it is measured in is pinned here, with the font itself stubbed away.
+ *
+ * <p>The resolver pair is pinned last, as the wiring the fit drive below receives: each owner in its
+ * own shade, a receded owner in the pass's desaturation palette, and the snapshot's own face.
  */
 final class ClusterLabelStylingTests {
 
@@ -364,6 +389,281 @@ final class ClusterLabelStylingTests {
 
             assertThat(askedOwnerIds)
                 .containsExactly("F");
+        }
+    }
+
+    @Nested
+    class NewNameEstimatorResolver {
+
+        // The stand-in a name with no measurement is sized against, spelled out here so a case
+        // reads the shape the fit falls back to rather than the class that holds it.
+        private static final AspectLabelLengthEstimator STAND_IN_ESTIMATOR =
+            new AspectLabelLengthEstimator(6.0);
+
+        // One line, so a measured estimator's wrap hands back the whole name it was built over.
+        private static final int ONE_LINE = 1;
+
+        private final LazyFont fontMock = mock(LazyFont.class);
+
+        private MockedStatic<LazyFontCache> fontsMock;
+
+        @BeforeEach
+        void openTheFontSeam() {
+
+            fontsMock = mockStatic(LazyFontCache.class);
+            fontsMock
+                .when(() -> LazyFontCache.loadByFace(any()))
+                .thenReturn(fontMock);
+        }
+
+        @AfterEach
+        void closeTheFontSeam() {
+
+            fontsMock.close();
+        }
+
+        @Test
+        void measuresTheOwnersNameInTheLabelFont() {
+            // A resolved name and a loaded font are the one case the fit sizes a box around the
+            // glyphs that will draw, so the estimator must be built over that name.
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedLines = List.of("Tri-Tachyon");
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isInstanceOf(FontLabelLengthEstimator.class);
+            assertThat(actualEstimator.wrapIntoLines(ONE_LINE))
+                .isEqualTo(expectedLines);
+        }
+
+        @Test
+        void standsInWhenTheLabelFontDoesNotLoad() {
+            // A face that will not load still leaves a cluster to size: the stand-in keeps the debug
+            // band honest, and no name is drawn from it.
+            fontsMock
+                .when(() -> LazyFontCache.loadByFace(any()))
+                .thenReturn(null);
+
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isEqualTo(STAND_IN_ESTIMATOR);
+        }
+
+        @Test
+        void standsInWhenTheOwnerResolvesABlankName() {
+            // A blank name has no glyphs to measure, and a box sized to nothing would let the fit
+            // accept a placement no real name could take.
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "  ")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isEqualTo(STAND_IN_ESTIMATOR);
+        }
+
+        // An unnamed cluster draws nothing and looks like a fit that found no room, so the
+        // blank name is said once per owner, however many clusters ask for it.
+        @Test
+        void writesOneDebugLinePerOwnerResolvingABlankName() {
+
+            // ARRANGE
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "  ")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedLine = "Cluster owner resolves no name, so its clusters draw none;"
+                + " ownerId=F nameFormat=FULL";
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                ClusterLabelStyling.class,
+                () -> {
+
+                    resolver.apply("F");
+                    resolver.apply("F");
+                });
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
+        }
+
+        @Test
+        void spellsTheSelectedOwnersNameUnderTheSpotlightKey() {
+            // Under a filter the spotlit clusters share a synthetic key the reading cannot name, so
+            // the name they carry is the selected owner's.
+            var spotlightKey = SpotlitOwners.createSpotlitOwner(OWNER_F.palette()).ownerId();
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                new ContentInputs(
+                    "F",
+                    ElementStyleAdjustment.NONE,
+                    ElementStyleAdjustment.NONE,
+                    OwnerNameFormatChoice.FULL,
+                    false),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedLines = List.of("Tri-Tachyon");
+            var actualEstimator = resolver.apply(spotlightKey);
+
+            assertThat(actualEstimator.wrapIntoLines(ONE_LINE))
+                .isEqualTo(expectedLines);
+        }
+
+        @Test
+        void measuresEachOwnerOnceAcrossItsClusters() {
+            // An owner holding several clusters asks once per cluster, and its wrap is the same
+            // every time, so the second ask is handed the estimator the first one measured.
+            var resolver = ClusterLabelStyling.newNameEstimatorResolver(
+                OwnerReadingFake.createNaming(Map.of("F", "Tri-Tachyon")),
+                ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            var expectedEstimator = resolver.apply("F");
+            var actualEstimator = resolver.apply("F");
+
+            assertThat(actualEstimator)
+                .isSameAs(expectedEstimator);
+        }
+    }
+
+    @Nested
+    class CreateLabelResolvers {
+
+        // A second owner, so a pair that answered the wrong owner's shade is visible.
+        private static final SystemOwner OWNER_G =
+            new SystemOwner("G", new ColourPair(Color.CYAN, Color.DARK_GRAY));
+
+        // The shades a receded owner recolours to, garish so a name that kept its own colour
+        // through a recede is unmistakable.
+        private static final ColourPair DESATURATION_PALETTE =
+            new ColourPair(Color.GREEN, Color.YELLOW);
+
+        // The face the fit hands over, a settled one rather than the face labels ask for, so a pair
+        // measuring in the asked-for face cannot pass.
+        private static final StarsectorFont SETTLED_LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_25;
+
+        // The face the snapshot itself carries, kept apart from the one the fit hands over, so a pair
+        // measuring in the snapshot's own face cannot pass.
+        private static final StarsectorFont SNAPSHOT_LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_42;
+
+        private final OwnerCategories categoriesMock = mock(OwnerCategories.class);
+
+        private MockedStatic<LazyFontCache> fontsMock;
+
+        @BeforeEach
+        void openTheFontSeam() {
+
+            fontsMock = mockStatic(LazyFontCache.class);
+
+            // No label font resolves outside the game, which is the fallback the pair is designed
+            // to take: the aspect stand-in sizes a box and no name is drawn from it.
+            fontsMock
+                .when(() -> LazyFontCache.loadByFace(any()))
+                .thenReturn(null);
+
+            // Both categories' names on the bright primary shade at full opacity, so a name's
+            // colour reads back as the palette shade its owner resolved to.
+            when(categoriesMock.readNameStyles())
+                .thenReturn(Map.of(
+                    StandInCategoryFake.OWNED,
+                    new ElementStyle(OwnerPaletteSlot.PRIMARY, FULL_OPACITY),
+                    StandInCategoryFake.RECEDED,
+                    new ElementStyle(OwnerPaletteSlot.PRIMARY, FULL_OPACITY)));
+
+            when(categoriesMock.resolveFullStrengthCategory())
+                .thenReturn(StandInCategoryFake.OWNED);
+        }
+
+        @AfterEach
+        void closeTheFontSeam() {
+
+            fontsMock.close();
+        }
+
+        @Test
+        void shadesEachOwnerByItsOwnPalette() {
+            // The pair is the owner tier's whole answer to a name, so it must key off the owner the
+            // fit asks about rather than one shared pick.
+            var resolvers = ClusterLabelStyling.createLabelResolvers(
+                buildSnapshot(ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL)),
+                SETTLED_LABEL_FACE);
+
+            assertThat(resolvers.labelColourByOwner().apply("F"))
+                .isEqualTo(PRIMARY);
+            assertThat(resolvers.labelColourByOwner().apply("G"))
+                .isEqualTo(Color.CYAN);
+        }
+
+        @Test
+        void recedesANonSpotlitOwnerToThePassDesaturationPalette() {
+            // Under a filter every owner but the spotlit one recedes, and its name has to recede with
+            // its fill: the shared palette this pass recoloured that fill to is the one the name
+            // draws in, so the two cannot drift apart while a spotlight is up.
+            var resolvers = ClusterLabelStyling.createLabelResolvers(
+                buildSnapshot(new ContentInputs(
+                    "F",
+                    new ElementStyleAdjustment(FULL_OPACITY, true),
+                    ElementStyleAdjustment.NONE,
+                    OwnerNameFormatChoice.FULL,
+                    false)),
+                SETTLED_LABEL_FACE);
+
+            assertThat(resolvers.labelColourByOwner().apply("G"))
+                .isEqualTo(Color.GREEN);
+        }
+
+        // The face the boxes are sized to is the one the fit records and the mint draws in;
+        // measuring in any other, the snapshot's own included, would size the boxes for glyphs
+        // nothing draws.
+        @Test
+        void measuresTheNamesInTheFaceItIsHanded() {
+
+            // ARRANGE
+            var snapshot = buildSnapshot(ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL));
+
+            // ACT
+            ClusterLabelStyling
+                .createLabelResolvers(snapshot, SETTLED_LABEL_FACE)
+                .nameEstimatorByOwner()
+                .apply("F");
+
+            // ASSERT
+            fontsMock.verify(() -> LazyFontCache.loadByFace(StarsectorFont.VANILLA_INSIGNIA_25));
+        }
+
+        // A snapshot over the two owners, under the given picks, desaturating a receded owner to the
+        // garish palette above.
+        private ClusterLabelStylingSnapshot buildSnapshot(ContentInputs contentInputs) {
+
+            return new ClusterLabelStylingSnapshot(
+                Map.of(buildCellKey("alpha"), OWNER_F, buildCellKey("beta"), OWNER_G),
+                new MapPaints(
+                    new MapStyling(
+                        null,
+                        null,
+                        categoriesMock,
+                        UNUSED_PALETTE,
+                        DESATURATION_PALETTE,
+                        UNUSED_PALETTE),
+                    OwnerReadingFake.createAnsweringNothing(),
+                    contentInputs),
+                SNAPSHOT_LABEL_FACE,
+                true);
         }
     }
 }

@@ -3,9 +3,10 @@
 Where a band's painter and its order come from on the **claims** layer -
 on a cell the mechanic painted,
 and on one it left bare.
-How many colonies each bloc draws is one shared rule's answer for every layer,
-in [`ownermap.ribbon`](../../../ownermap/ribbon/README.md);
-the geometry is [`ownermap.render.ribbon`](../../../ownermap/render/ribbon/README.md)'s.
+How many colonies each bloc draws is one shared count for every layer painting holders,
+[the holders' band count](../../../ownermap/owners/holders/README.md#the-band-count);
+how its runs are laid is [`ownermap.ribbon`](../../../ownermap/ribbon/README.md)'s,
+and the geometry is [`base.ribbon`](../../../base/ribbon/README.md)'s.
 
 Part of [the political map](../../README.md),
 in Klark Morrigan's Utilities (KMU);
@@ -31,7 +32,8 @@ not the top standing:
 read it off the wrong faction and a system where the claimant is the junior standing draws no band,
 or a lone claimant's cell draws one the fill never earned.
 The **ranking** is the contest's own,
-which `ClaimCellRibbons` folds into blocs.
+which `ClaimBlocRanker` folds into blocs.
+The planner hands both to the shared count itself.
 
 The reader is built over the bake's own colony walk,
 so the contest and the count beneath it read one reading of the system rather than two.

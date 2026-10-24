@@ -379,6 +379,12 @@ public final class OwnerMapCache
         // sampling of whatever it reads live, and handed to every stage below.
         var viewReading = view.resolveViewReading(walk.sector());
 
+        // Sampled once beside the sidebar preferences and carried, for the same reason they are:
+        // the overlay decides whether the names are fitted, and a batch folding into this build
+        // after it has to fit under what the build was baked under. Flipping it is a KMU setting
+        // change, so it forces the rebuild that samples it afresh.
+        var isAnchorOverlayShown = KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors();
+
         // Build one view or the other, never both: the debug overlay replaces the normal
         // render, so in debug mode the production draw lists are not built at all, and the
         // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
@@ -389,14 +395,21 @@ public final class OwnerMapCache
                 cellGeometry,
                 walk,
                 viewReading,
-                staleHalves.contentInputs());
+                staleHalves.contentInputs(),
+                isAnchorOverlayShown);
 
             // The overlay read owners for itself and drops what was marked, so nothing standing
             // can be trusted to say who owns what once it has run.
             standingOwners = null;
 
         } else {
-            wereOwnersReused = rebuildProductionView(staleHalves, viewReading, walk, staleSystemKeys);
+
+            wereOwnersReused = rebuildProductionView(
+                staleHalves,
+                viewReading,
+                isAnchorOverlayShown,
+                walk,
+                staleSystemKeys);
         }
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
@@ -413,6 +426,7 @@ public final class OwnerMapCache
     private boolean rebuildProductionView(
             StaleHalves staleHalves,
             ViewReading viewReading,
+            boolean isAnchorOverlayShown,
             SectorWalk walk,
             Set<SystemKey> staleSystemKeys) {
 
@@ -435,6 +449,7 @@ public final class OwnerMapCache
             walk,
             viewReading,
             staleHalves.contentInputs(),
+            isAnchorOverlayShown,
             standingOwners);
 
         return wereOwnersReused;

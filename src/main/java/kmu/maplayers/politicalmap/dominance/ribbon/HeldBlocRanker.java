@@ -1,0 +1,78 @@
+package kmu.maplayers.politicalmap.dominance.ribbon;
+
+import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
+import kmu.maplayers.politicalmap.dominance.standings.StandingRankOrder;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * The order a held cell's band comes out in: the fill's own order, read off the footprints the
+ * system was ranked by.
+ *
+ * <p>The counting is {@link ColonyCellRibbons}'s and is the same on every layer, so what the held
+ * side supplies is the ranking alone - which is all it ever added, the weights being an ordering
+ * key rather than anything a band reports.
+ *
+ * <p>The bloc the cell was painted for leads, whatever settled that - a plain weight lead, or one
+ * of the tie-breaks below the weights - so a reader never finds the leading colour second in a band
+ * on a cell painted in it. Behind the leader the blocs run by descending weight and then by ID, the
+ * same total order the standings box ranks them in, so the band and the box agree about who is
+ * second.
+ *
+ * <p>A bloc the weights never reached - one holding nothing but colonies the economy does not list,
+ * which have no industries, conditions or stability for the arithmetic to read - takes no place in
+ * this ranking. It is present in the system and counted like any other bloc; what it has no claim
+ * to is a rank among the blocs that were weighed.
+ */
+final class HeldBlocRanker {
+
+    private HeldBlocRanker() {
+    }
+
+    /**
+     * Ranks the blocs the weights reached in one held cell, in the band's order.
+     *
+     * @param paintingBlocId    the bloc the cell's fill was painted for - the dominant bloc, which
+     *                          leads the band whatever settled its lead
+     * @param footprintByBlocId each bloc's footprint in the cell's system, as the dominance pass
+     *                          folded them under the view's grouping
+     * @return the bloc IDs, best placed first
+     */
+    static List<String> rankBlocsByWeight(
+            String paintingBlocId,
+            Map<String, MarketFootprint> footprintByBlocId) {
+
+        var ranked = new ArrayList<>(footprintByBlocId.entrySet());
+        ranked.sort(orderByPaintedThenWeight(paintingBlocId));
+
+        var rankedBlocIds = new ArrayList<String>(ranked.size());
+
+        for (var blocFootprint : ranked) {
+            rankedBlocIds.add(blocFootprint.getKey());
+        }
+
+        return rankedBlocIds;
+    }
+
+    // The band's order. The painter sorts ahead of everything because the dominance rule can
+    // hand a system to a bloc that leads on none of the weights - a tie settled by the market
+    // nearest the system centre, or by ID - and a band that re-ranked from the weights alone
+    // would then open on a bloc the cell is not painted for.
+    //
+    // Behind it, the order the standings rank by, so the band cannot disagree with the box about who
+    // stands second in a system.
+    private static Comparator<Map.Entry<String, MarketFootprint>> orderByPaintedThenWeight(
+            String paintingBlocId) {
+
+        return Comparator
+            .comparing((Map.Entry<String, MarketFootprint> bloc) ->
+                !bloc.getKey().equals(paintingBlocId))
+            .thenComparing(StandingRankOrder.createRankOrder(
+                bloc -> bloc.getValue().totalWeight(),
+                Map.Entry::getKey));
+    }
+}

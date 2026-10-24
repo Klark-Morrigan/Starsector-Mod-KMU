@@ -159,6 +159,7 @@ final class OwnerMapClustersTests {
                         OwnerReadingFake.createAnsweringNothing(),
                         new OwnerSourceFake()),
                     ContentInputs.createEmpty(),
+                    false,
                     SystemFillStates.ALL_SOLID));
 
             clusters.getPaintedCells().putPaintedCell(

@@ -7,17 +7,22 @@ import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.MapLayerHoverGatesFake;
 import kmu.maplayers.base.labels.LabelRenderer;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorRuns;
+import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
+import kmu.maplayers.base.ribbon.CellRibbonRenderer;
+import kmu.maplayers.base.ribbon.CellRibbonStore;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellStore;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlightFake;
-import kmu.maplayers.ownermap.render.ribbon.CellPresenceRibbonRenderer;
+import kmu.settings.KmuMapLabelSettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -25,8 +30,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
+import java.awt.Color;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
@@ -96,7 +103,7 @@ final class OwnerMapOverlayRendererTests {
 
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
@@ -158,7 +165,7 @@ final class OwnerMapOverlayRendererTests {
             // cluster group, and a band that says how a system is split fails the same way.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
@@ -170,7 +177,7 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock.verify(() ->
-                    CellPresenceRibbonRenderer.renderOnMap(
+                    CellRibbonRenderer.renderOnMap(
                         any(),
                         any()));
 
@@ -380,7 +387,7 @@ final class OwnerMapOverlayRendererTests {
             // sub-layer rather than the whole band.
             try (var borderStageRendererMock = mockStatic(ClusterBorderStageRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
@@ -484,7 +491,7 @@ final class OwnerMapOverlayRendererTests {
             // routing fault here is one the shipped split would never show.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildLayout(
@@ -499,7 +506,7 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock.verify(() ->
-                    CellPresenceRibbonRenderer.renderOnMap(any(), any()));
+                    CellRibbonRenderer.renderOnMap(any(), any()));
 
                 labelRendererMock.verify(() ->
                     LabelRenderer.renderOnMap(any(), any()));
@@ -605,7 +612,7 @@ final class OwnerMapOverlayRendererTests {
             // the same cell, and the presence bands are translucent.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
-                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellRibbonRenderer.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildLayout(
@@ -709,6 +716,101 @@ final class OwnerMapOverlayRendererTests {
                     ClusterAnchorRenderer.renderOnMap(any(), any()));
             }
         }
+
+        // Drawn every frame it is on, and packing it walks every placement, so the overlay is
+        // packed once per pass and handed over again while that pass stands.
+        @Test
+        void handsTheAnchorOverlayOnePackingWhileThePlacementsStand() {
+
+            // ARRANGE
+            try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var labelSettingsMock = mockStatic(KmuMapLabelSettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
+
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
+
+                var cacheMock = buildCacheMock();
+
+                when(cacheMock.getClusterAnchors())
+                    .thenReturn(List.of(buildAnchorFor("hegemony")));
+
+                var overlayRenderer = buildOverlayRendererOver(cacheMock);
+                var runsCaptor = ArgumentCaptor.forClass(ClusterAnchorRuns.class);
+
+                // ACT
+                overlayRenderer.renderBand(PAINTING_FRAME, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+                overlayRenderer.renderBand(PAINTING_FRAME, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                // ASSERT
+                anchorRendererMock.verify(
+                    () -> ClusterAnchorRenderer.renderOnMap(runsCaptor.capture(), any()),
+                    times(2));
+
+                assertThat(runsCaptor.getAllValues().get(1))
+                    .isSameAs(runsCaptor.getAllValues().get(0));
+            }
+        }
+
+        // A pass hands over a new list, and the packing of the one before it describes names that
+        // may have moved.
+        @Test
+        void packsTheAnchorOverlayAgainForANewPass() {
+
+            // ARRANGE
+            try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var labelSettingsMock = mockStatic(KmuMapLabelSettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
+
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
+
+                var cacheMock = buildCacheMock();
+
+                when(cacheMock.getClusterAnchors())
+                    .thenReturn(List.of(buildAnchorFor("hegemony")))
+                    .thenReturn(List.of(buildAnchorFor("tritachyon")));
+
+                var overlayRenderer = buildOverlayRendererOver(cacheMock);
+                var runsCaptor = ArgumentCaptor.forClass(ClusterAnchorRuns.class);
+
+                // ACT
+                overlayRenderer.renderBand(PAINTING_FRAME, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+                overlayRenderer.renderBand(PAINTING_FRAME, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                // ASSERT
+                anchorRendererMock.verify(
+                    () -> ClusterAnchorRenderer.renderOnMap(runsCaptor.capture(), any()),
+                    times(2));
+
+                assertThat(runsCaptor.getAllValues().get(1))
+                    .isNotSameAs(runsCaptor.getAllValues().get(0));
+            }
+        }
+    }
+
+    // One collapsed placement for the given owner: a dot and nothing else, which is all the
+    // packing needs to have something to pack.
+    private static ClusterAnchor buildAnchorFor(String ownerKey) {
+
+        return new ClusterAnchor(
+            new ClusterIdentity(ownerKey, Set.of(buildCellKey(ownerKey))),
+            0f,
+            0f,
+            Color.WHITE,
+            List.of(),
+            0f,
+            null,
+            null,
+            null,
+            0f,
+            0);
     }
 
     // The two switches that gate sub-layers within a band rather than deciding which band they are
@@ -766,16 +868,13 @@ final class OwnerMapOverlayRendererTests {
         when(clustersMock.getPaintedCells())
             .thenReturn(paintedCellsMock);
 
-        // Stated rather than left to the default a mock would answer with, since the upper band is
-        // asserted to have reached the band pass at all - and a stub that resolves by accident is
-        // one the pass could stop calling without any test noticing. The diagnostic paths beside
-        // them are stated for the same reason: the overlay is gated by its own emptiness rather
-        // than by a settings read, so this read is the only thing standing between an off toggle
-        // and a pass over the map.
-        when(paintedCellsMock.getRibbonByCellKey())
-            .thenReturn(Map.of());
-        when(paintedCellsMock.getRibbonPathByCellKey())
-            .thenReturn(Map.of());
+        // A real band store holding no band and no path rather than the null a mock would answer
+        // with, since the upper band is asserted to have reached the band pass at all. The
+        // diagnostic paths are gated by their own emptiness rather than by a settings read, so
+        // this store's empty paths are the only thing standing between an off toggle and a pass
+        // over the map.
+        when(paintedCellsMock.getRibbonStore())
+            .thenReturn(new CellRibbonStore());
 
         // Read while assembling the hover highlight's arguments, so it has to resolve even though
         // the highlight renderer itself is stood in for.

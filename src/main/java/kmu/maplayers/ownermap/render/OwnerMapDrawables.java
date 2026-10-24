@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -16,9 +17,9 @@ import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.ArrayList;
@@ -186,16 +187,22 @@ final class OwnerMapDrawables {
      * theme serve the overlay and the anchors beside it, so the two cannot disagree about who owns
      * a cell or how it is styled.
      *
-     * @param cellGeometry  the cells to trace, carrying the cut they stand at
-     * @param walk          the rebuild's walk of the sector, which the source reads over
-     * @param viewReading   the view the overlay is traced under, with its reading and source
-     * @param contentInputs the sidebar preferences the rebuild sampled
+     * <p>The names are fitted only while the anchor overlay is shown. What the fit reports about the
+     * names it moved is dropped: this view replaces the production draw lists outright, so nothing
+     * is laid around the names for a moved one to oblige.
+     *
+     * @param cellGeometry         the cells to trace, carrying the cut they stand at
+     * @param walk                 the rebuild's walk of the sector, which the source reads over
+     * @param viewReading          the view the overlay is traced under, with its reading and source
+     * @param contentInputs        the sidebar preferences the rebuild sampled
+     * @param isAnchorOverlayShown whether the anchor overlay is shown, as the rebuild sampled it
      */
     public void rebuildBorderTracingOverlay(
             RevisedCellGeometry cellGeometry,
             SectorWalk walk,
             ViewReading viewReading,
-            ContentInputs contentInputs) {
+            ContentInputs contentInputs,
+            boolean isAnchorOverlayShown) {
 
         // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
         // map has rather than one pick's footprint.
@@ -209,15 +216,18 @@ final class OwnerMapDrawables {
 
         clusters = null;
 
-        ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
+        ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
-            ClusterLabelStylingSnapshot.resolveForTracing(
-                owners.ownerBySystemKey(),
-                styling,
-                viewReading.reading(),
-                contentInputs,
-                labelFaceSource.get()));
+            ClusterLabelStylingSnapshot
+                .resolveForTracing(
+                    owners.ownerBySystemKey(),
+                    styling,
+                    viewReading.reading(),
+                    contentInputs,
+                    isAnchorOverlayShown,
+                    labelFaceSource.get())
+                .createFitInputs());
     }
 
     /**
@@ -229,25 +239,28 @@ final class OwnerMapDrawables {
      * the condition it shares this reading on: a band counted under another sampling of the view's
      * live inputs would plan against owners the fills never drew.
      *
-     * @param cellGeometry  the cells to shape, carrying the cut they stand at
-     * @param walk          the rebuild's one walk of the sector
-     * @param viewReading   the view the clusters are built under, with its reading and source
-     * @param contentInputs the sidebar preferences the rebuild sampled
-     * @param owners        who owns what and who is where, resolved over the walk by this rebuild
-     *                      or kept from the one before it - which of the two is the caller's call,
-     *                      being a question about what moved since
+     * @param cellGeometry         the cells to shape, carrying the cut they stand at
+     * @param walk                 the rebuild's one walk of the sector
+     * @param viewReading          the view the clusters are built under, with its reading and source
+     * @param contentInputs        the sidebar preferences the rebuild sampled
+     * @param isAnchorOverlayShown whether the anchor overlay is shown, as the rebuild sampled it
+     * @param owners               who owns what and who is where, resolved over the walk by this
+     *                             rebuild or kept from the one before it - which of the two is the
+     *                             caller's call, being a question about what moved since
      */
     public void rebuildClustersAndBands(
             RevisedCellGeometry cellGeometry,
             SectorWalk walk,
             ViewReading viewReading,
             ContentInputs contentInputs,
+            boolean isAnchorOverlayShown,
             ResolvedOwners owners) {
 
         clusters = OwnerMapBuilder.buildClusters(
             cellGeometry.cells(),
             viewReading,
             contentInputs,
+            isAnchorOverlayShown,
             owners,
             readStylingOf(viewReading, contentInputs));
 
@@ -260,7 +273,9 @@ final class OwnerMapDrawables {
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
-            ClusterLabelStylingSnapshot.resolveFrom(clusters, labelFaceSource.get()));
+            ClusterLabelStylingSnapshot
+                .resolveFrom(clusters, labelFaceSource.get())
+                .createFitInputs());
 
         // The bands come last, after the names have places, because they are laid around
         // them: a band is cut by the room the names take, so baking one before the fit
@@ -276,13 +291,14 @@ final class OwnerMapDrawables {
                 clusters,
                 cellGeometry.cells(),
                 walk,
-                standingAnchors)
+                standingAnchors,
+                RibbonBakeSettings.readFromLunaSettings())
             .bakeAllCellRibbons();
     }
 
     /**
      * Mints the name labels from the placements just rebuilt, keeping them in step with the fills
-     * and borders and reusing the one placement search both consumers share.
+     * and borders and reusing the one placement search the names and the anchor overlay share.
      *
      * @param areNamesDrawn whether names are showing at all - the rebuild's own sampling of the
      *                      preference, so what is minted matches what was fitted

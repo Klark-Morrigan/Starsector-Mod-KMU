@@ -264,7 +264,7 @@ kmu_map_politics_visuals_presenceRibbons_shouldShortenUncontestedRuns,,,,单势�
 [默认值：开启]",,,,,地图 - 政治 - 外观
 kmu_map_politics_visuals_presenceRibbons_shouldKeepClearOfNames,,,,色带避让区域名称,,Boolean,TRUE,,,,"色带是否避让区域名称：每条色带在名称占据其单元的位置处断开，使文字保持可读。关闭后色带绘制完整的一圈，单元上方的名称直接从其上横穿绘制。两种读数谁该占据共享的空间属于个人偏好，因此不替你决定。
 [默认值：开启]",,,,,地图 - 政治 - 外观
-kmu_map_politics_visuals_presenceRibbons_nameClearance,,,,色带避让范围,,Radio,The words themselves,"The name's fitted box, The words themselves",,,"色带避让区域名称时，认为名称需要多少空间。The words themselves 只让出实际绘制的每一行文字所覆盖的那段圆环。The name's fitted box 让出名称被放入的整个框，它在文字两端都更长：布局接受任何不短于名称的跨度，因此多出的部分是永远不会绘制任何内容的空间。 [色带避让区域名称关闭时忽略此项] 。
+kmu_map_politics_visuals_presenceRibbons_nameClearance,,,,色带避让范围,,Radio,The words themselves,"The name's fitted box, The words themselves",,,"色带避让区域名称时，认为名称需要多少空间。The words themselves 只让出实际绘制的每一行文字所覆盖的那段环线。The name's fitted box 让出名称被放入的整个框，它在文字两端都更长：布局接受任何不短于名称的跨度，因此多出的部分是永远不会绘制任何内容的空间。 [色带避让区域名称关闭时忽略此项] 。
 [默认值：The words themselves]
 
 The name's fitted box：名称所放入的框
@@ -601,7 +601,7 @@ kmu_map_dev_labelAnchors_iconClearance,,,,锚点图标避让,,Double,100,,,,"每
 [默认值：100]",,,0,1000,地图 - 开发
 kmu_map_dev_labelAnchors_bandOpacity,,,,锚点带不透明度,,Double,0.35,,,,"调试用带状四边形的填充不透明度，即拟合后标签所占的框，绘制在锚线之上。保持较低，使国界能透过带状区域显示，溢出可见；带状区域的全部意义就在于看它是否擦到或避开边界。
 [默认值：0.35]",,,0,1,地图 - 开发
-kmu_map_dev_labelAnchors_bandLineOpacity,,,,锚点带线条不透明度,,Double,0.9,,,,"调试带状框描边的不透明度，包括其轮廓、行数分隔线、中线和锚点。它与填充分开设置，使轮廓可以比其下方淡淡的带状覆色更醒目。
+kmu_map_dev_labelAnchors_bandLineOpacity,,,,锚点带线条不透明度,,Double,0.9,,,,"调试带状框描边的不透明度，包括其轮廓、行间分隔线、中线和锚点。它与填充分开设置，使轮廓可以比其下方淡淡的带状覆色更醒目。
 [默认值：0.9]",,,0,1,地图 - 开发
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_diagnostics_header,,,,诊断,,Header,诊断,,,,,,,,,地图 - 开发
@@ -611,7 +611,7 @@ kmu_map_dev_diagnostics_labels_boxes_areRejectedShown,,,,显示被拒绝的区�
 [默认值：关闭]",,,,,地图 - 开发
 kmu_map_dev_diagnostics_labels_boxes_areUnbiasedShown,,,,显示无偏区域轴线,,Boolean,FALSE,,,,"同时以黄色绘制每个区域在不施加水平偏好时拟合会接受的标签线，通过对比显示锚点偏好参数的效果。当无偏方向与被接受的线一致时（偏好为 1，或轴线本来就水平）则跳过，因为绿线本身就是无偏的那条。绘制在绿线之下。 [仅在显示区域标签锚点开启时有意义] 。
 [默认值：关闭]",,,,,地图 - 开发
-kmu_map_dev_diagnostics_cells_ribbons_arePathsShown,,,,显示存在色带路径,,Boolean,FALSE,,,,"绘制每个单元的存在色带将要沿着的圆环，并在色带起点处画一个点（单元顶部中央，顺时针延伸）。按单元自身空间所允许的情况着色：绿色表示预设的内缩得以保留，黄色表示为了放下色带不得不放弃内缩，红色表示不绘制色带（要么内缩必须放弃而始终绘制计划中的色带已关闭，要么单元比色带还窄）。无论是没有任何存在，还是圆环没有空间，不绘制色带的单元看起来都一样，此项正是用来区分两者的。它绘制在色带之上，便于对照色带所依托的路径来读。 [存在色带关闭时不显示任何内容] 。
+kmu_map_dev_diagnostics_cells_ribbons_arePathsShown,,,,显示存在色带路径,,Boolean,FALSE,,,,"绘制每个单元的存在色带将要沿着的环线，并在色带起点处画一个点（单元顶部中央，顺时针延伸）。按单元自身空间所允许的情况着色：绿色表示预设的内缩得以保留，黄色表示为了放下色带不得不放弃内缩，红色表示不绘制色带（要么内缩必须放弃而始终绘制计划中的色带已关闭，要么单元比色带还窄）。无论是没有任何存在，还是环线没有空间，不绘制色带的单元看起来都一样，此项正是用来区分两者的。它绘制在色带之上，便于对照色带所依托的路径来读。 [存在色带关闭时不显示任何内容] 。
 [默认值：关闭]",,,,,地图 - 开发
 kmu_map_dev_diagnostics_cells_borders_isDebugTracingShown,,,,调试边界描绘,,Boolean,FALSE,,,,"用边界描绘诊断替换正常的政治地图渲染，分层显示平滑流程的各个阶段，以便查看每一步处理的效果。从下到上依次为：红色的基础描绘边界、黄色的去尖刺边界、绿色的圆角边界。遵循两个平滑开关：只有在对应处理运行时该阶段才会绘制，因此关闭打磨时没有黄色，关闭圆角时没有绿色。
 [默认值：关闭]",,,,,地图 - 开发

@@ -17,7 +17,7 @@ import java.util.function.Function;
  * metrics taken from a different owner than its shade.
  *
  * <p>Functions rather than a source interface because a layer supplies these by composing
- * whatever it already holds - a resolved holder map, a palette, a view's own naming - and
+ * whatever it already holds - a resolved owner map, a palette, a view's own naming - and
  * has no state of its own to hang an implementation on.
  */
 public record ClusterLabelResolvers(
@@ -32,7 +32,8 @@ public record ClusterLabelResolvers(
      * @param identity the cluster whose owner both answers are looked up under
      * @return the cluster with its shade and its name measurement attached
      */
-    public ClusterLabelSubject resolveLabelSubjectFor(ClusterIdentity identity) {
+    ClusterLabelSubject resolveLabelSubjectFor(ClusterIdentity identity) {
+
         return new ClusterLabelSubject(
             identity,
             labelColourByOwner.apply(identity.ownerKey()),

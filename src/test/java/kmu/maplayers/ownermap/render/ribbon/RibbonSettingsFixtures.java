@@ -1,5 +1,8 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
+import kmu.maplayers.base.ribbon.RibbonStyle;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
+import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;
 
@@ -7,12 +10,14 @@ import org.mockito.MockedStatic;
 
 /**
  * Stands in for the player's band knobs wherever a suite has to bake a band but is not about the
- * sizes it is baked at.
+ * sizes it is baked at: as stubbings, for a suite driving a caller that reads the knobs itself, and
+ * as the settings value those stubbings read back to, for a suite handing a bake its settings.
  *
  * <p>Needed at all because reading a knob for real reaches LunaLib, which no test JVM has a game
  * to load; and shared because the alternative is the same handful of stubbings written out in each
  * suite that happens to run the bake, where one of them drifting would show as a band mysteriously
- * absent from that suite alone.
+ * absent from that suite alone. The value and the stubbings share one set of answers, so a suite
+ * handed the value bakes what a suite reading the stubbings would.
  */
 public final class RibbonSettingsFixtures {
 
@@ -51,8 +56,43 @@ public final class RibbonSettingsFixtures {
     private static final RibbonNameClearanceChoice NAME_CLEARANCE =
         RibbonNameClearanceChoice.FITTED_BOX;
 
-    // Stubs only; never instantiated.
+    // The authored mitre limit, which no knob reaches; restated here for the value the stubbings
+    // read back to, since the reader keeps its own copy private.
+    private static final double MITER_SPIKE_LIMIT = 2.0;
+
+    // The band switch and the path overlay's two answers, named so each value below reads which it
+    // poses.
+    private static final boolean BANDS_DRAWN = true;
+    private static final boolean BANDS_SWITCHED_OFF = false;
+    private static final boolean PATHS_SHOWN = true;
+    private static final boolean PATHS_HIDDEN = false;
+
+    // Stubs and values only; never instantiated.
     private RibbonSettingsFixtures() {
+    }
+
+    /**
+     * @return the settings the stubbings below read back to, with the path overlay off: the bands
+     *         on, at sizes a band draws at
+     */
+    public static RibbonBakeSettings createSettingsDrawingBands() {
+        return createSettings(BANDS_DRAWN, PATHS_HIDDEN);
+    }
+
+    /**
+     * @return the same settings with the path overlay on, so a bake traces every considered cell's
+     *         path beside its band
+     */
+    public static RibbonBakeSettings createSettingsTracingPaths() {
+        return createSettings(BANDS_DRAWN, PATHS_SHOWN);
+    }
+
+    /**
+     * @return the same settings with the bands switched off and the path overlay on: a bake handed
+     *         these must lay no band and trace no path, the overlay notwithstanding
+     */
+    public static RibbonBakeSettings createSettingsWithBandsOff() {
+        return createSettings(BANDS_SWITCHED_OFF, PATHS_SHOWN);
     }
 
     /**
@@ -91,5 +131,30 @@ public final class RibbonSettingsFixtures {
         settingsMock
             .when(KmuOwnerMapRibbonSettings::shouldAlwaysDrawOwnerMapRibbons)
             .thenReturn(BANDS_ALWAYS_DRAWN);
+    }
+
+    private static RibbonBakeSettings createSettings(
+            boolean areRibbonsDrawn,
+            boolean isRibbonPathShown) {
+
+        var ribbonStyle = new RibbonStyle(
+            BAND_WIDTH_WORLD,
+            BAND_INSET_PAD_WORLD,
+            MITER_SPIKE_LIMIT,
+            BANDS_ALWAYS_DRAWN);
+
+        var planRules = RibbonPlanRules.createFromAuthoredLengths(
+            new RibbonSegmentLengths(
+                SEGMENT_LENGTH_UNITS,
+                INTERJECTION_LENGTH_UNITS),
+            UNCONTESTED_RUNS_SHORTENED);
+
+        return new RibbonBakeSettings(
+            areRibbonsDrawn,
+            ribbonStyle,
+            planRules,
+            BANDS_KEPT_CLEAR_OF_NAMES,
+            NAME_CLEARANCE,
+            isRibbonPathShown);
     }
 }

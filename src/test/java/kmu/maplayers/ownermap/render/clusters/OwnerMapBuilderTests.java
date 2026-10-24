@@ -11,6 +11,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.SystemFillStates;
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
@@ -26,7 +27,6 @@ import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -223,6 +223,24 @@ final class OwnerMapBuilderTests {
                 .isSameAs(STYLING);
         }
 
+        // A batch folding into the build later fits its names under what the build was baked under,
+        // so the overlay the rebuild sampled has to ride onto the build's inputs.
+        @Test
+        void retainsTheSampledAnchorOverlay() {
+
+            // ARRANGE
+            var viewReading = buildReadingOver(new OwnerSourceFake());
+
+            // ACT
+            var actualIsAnchorOverlayShown = buildClustersOver(viewReading, ResolvedOwners.createEmpty())
+                .getBuildInputs()
+                .isAnchorOverlayShown();
+
+            // ASSERT
+            assertThat(actualIsAnchorOverlayShown)
+                .isTrue();
+        }
+
         @Test
         void countsTheCellsItShaped() {
             // The number the shaping stage's duration is read against. Nothing is shaped over an
@@ -240,14 +258,16 @@ final class OwnerMapBuilderTests {
                 .isEqualTo("styled=0 owners=0");
         }
 
-        // A build over no geometry under the shared picks and styling, differing per case in the
-        // reading and the owners alone.
+        // A build over no geometry under the shared picks, overlay and styling, differing per case in
+        // the reading and the owners alone. The overlay is sampled on, so a build dropping it reads
+        // as the placeholder's off.
         private static OwnerMapClusters buildClustersOver(ViewReading viewReading, ResolvedOwners owners) {
 
             return OwnerMapBuilder.buildClusters(
                 new CellGeometryCache(),
                 viewReading,
                 UNFILTERED_INPUTS,
+                true,
                 owners,
                 STYLING);
         }

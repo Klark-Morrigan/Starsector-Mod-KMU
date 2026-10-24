@@ -236,6 +236,7 @@ final class OwnerMapBuilderIntegrationTests {
             geometryCache,
             new ViewReading(new OwnerPaintedViewFake(sourceFake), READING, sourceFake),
             CONTENT_INPUTS,
+            false,
             OWNERS,
             STYLING);
     }

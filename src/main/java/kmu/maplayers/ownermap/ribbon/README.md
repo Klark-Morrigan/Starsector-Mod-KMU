@@ -1,12 +1,13 @@
-# Presence band vocabulary (`ownermap.ribbon`)
+# Presence band runs (`ownermap.ribbon`)
 
-What a cell's presence band is made of,
-stated as pure data ahead of any geometry:
+How an owner-painted cell's presence band is laid:
 a run of colour per stake,
 whose runs,
 and in what order.
-Nothing here traces a ring or emits a triangle;
-that is [`ownermap.render.ribbon`](../render/ribbon/README.md).
+The plan it produces,
+and everything that turns a plan into triangles,
+is [`base.ribbon`](../../base/ribbon/README.md);
+the bake over a whole map is [`ownermap.render.ribbon`](../render/ribbon/README.md).
 
 Part of [the owner-map tier](../README.md),
 in Klark Morrigan's Utilities (KMU);
@@ -14,21 +15,21 @@ see the [mod README](../../../../../../../README.md) for project context.
 
 ## Index
 
-- [The plan](#the-plan)
+- [Laying the runs](#laying-the-runs)
 - [The port it reads through](#the-port-it-reads-through)
 - [Which cells band, and how loudly](#which-cells-band-and-how-loudly)
 - [What is not here](#what-is-not-here)
 
-## The plan
+## Laying the runs
 
-`RibbonPlan` is the whole output:
-an ordered list of `RibbonSegment`,
-each a colour and a length in band widths.
-`RibbonPlan.planCellRibbon` is the rule that produces one,
+The output is [`base.ribbon`](../../base/ribbon/README.md#what-a-band-is)'s `RibbonPlan`.
+`OwnerRibbonRuns.planCellRibbon` is the rule that produces one,
 over a ranked list of `OwnerPresence` -
 an owner,
 its palette,
 and how many stakes it has in the cell.
+It lays the runs one at a time through `base.ribbon`'s `RibbonPlanBuilder`,
+so each banded cell's runs are held once.
 
 The grammar it lays down:
 
@@ -41,16 +42,20 @@ The grammar it lays down:
   so a divider never ends a band.
 
 `RibbonSegmentLengths` pairs the two proportions the grammar is stated in,
-and `RibbonPlanRules` pairs those with the shortening below.
+so the proportion that makes a run read as several stakes is one authored decision.
+`RibbonPlanRules` settles from that pair,
+and the shortening below,
+the lengths a contested and an uncontested cell are laid at -
+one factory over one authored pair,
+so a pass's shortening can never be put over another pass's lengths.
+Both are this tier's rather than the band's:
+the band is handed runs that already carry their lengths.
 
-Lengths are counts of widths,
-never world sizes:
-how large a width is in the world is the render side's question,
-which is what keeps this whole package pure data.
+A plan's lengths being counts of widths is what keeps this whole package pure data.
 
 ## The port it reads through
 
-`SystemRibbonPlanner` is the counting itself:
+[`base.ribbon`](../../base/ribbon/README.md)'s `SystemRibbonPlanner` is the counting itself:
 one system in,
 one plan out.
 A layer's owner source answers it once per bake,
@@ -65,7 +70,7 @@ Contest decides only the length its runs are laid at:
 1. A **contested** cell draws at the player's authored lengths -
    this is the readout the bands exist for,
    and the fill cannot report it.
-2. An **uncontested** one draws at whatever `UncontestedRibbonRuns` answers,
+2. An **uncontested** one draws at whatever `RibbonPlanRules.getUncontestedLengths()` answers,
    which is a single width a stake unless the player turns the shortening off.
    Its fill has already said whose the system is,
    so the band is a tally,
@@ -116,6 +121,9 @@ KMU's own layers count every cell by one rule,
 described beside their answers,
 which [the owner seams](../owners/README.md) link to.
 
-**Every size in the world**,
+**What a plan is**,
+every size in the world,
 and every triangle -
+[`base.ribbon`](../../base/ribbon/README.md).
+**The bake over a whole map** -
 [`ownermap.render.ribbon`](../render/ribbon/README.md).

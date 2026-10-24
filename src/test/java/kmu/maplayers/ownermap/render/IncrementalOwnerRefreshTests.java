@@ -15,14 +15,17 @@ import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
 import kmu.maplayers.base.labels.Label;
-import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
-import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
+import kmu.maplayers.base.labels.extent.ClusterNameBoxes;
+import kmu.maplayers.base.labels.extent.LabelLineBoxes;
+import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
@@ -33,10 +36,7 @@ import kmu.maplayers.ownermap.render.clusters.ClusterGroupBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;
@@ -61,6 +61,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
 import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
+import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.CELL_LESS_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.DISTANT_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
@@ -79,6 +80,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -297,7 +299,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             // The band starts above the cell's own site, so the marked system needs one; the
             // shared geometry fixture records none, every other case being about shapes.
@@ -311,7 +313,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             // Nothing else moved: a re-bake is not a re-shape.
@@ -335,7 +337,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -349,7 +351,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -367,7 +369,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -396,7 +398,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             fittedBoxesMock.verifyNoInteractions();
@@ -412,7 +414,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -426,7 +428,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
@@ -444,7 +446,7 @@ public final class IncrementalOwnerRefreshTests {
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -462,7 +464,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
@@ -510,7 +512,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(DISTANT_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -697,16 +699,18 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .doesNotContainKey(buildCellKey(DISTANT_SYSTEM));
         }
 
+        // A re-fitted name is placed wherever its new cluster is roomiest, which can be a cell the
+        // flip never went near, and a band laid around where that name stood is not laid around it
+        // any more. The fit says which cells its moved names reach, so that cell is named rather
+        // than reached by re-baking every band in the sector.
         @Test
         void rebakesTheBandOfACellAMovedNameReaches() {
-            // A re-fitted name is placed wherever its new cluster is roomiest, which can be a cell
-            // the flip never went near, and a band laid around where that name stood is not laid
-            // around it any more. The fit says which names it moved, so that cell is named rather
-            // than reached by re-baking every band in the sector.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
@@ -715,21 +719,27 @@ public final class IncrementalOwnerRefreshTests {
 
             seedDrawnDistantCell(clusters);
 
+            var nameDisturbanceMock = mock(ClusterNameDisturbance.class);
+
+            when(nameDisturbanceMock.selectDisturbedCellKeys(any()))
+                .thenReturn(List.of(buildCellKey(DISTANT_SYSTEM)));
+
             anchorsMock
                 .when(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     any(),
                     any(),
                     any()))
-                .thenReturn(ClusterNameDisturbance.compareFittedNames(
-                    List.of(),
-                    List.of(buildNameOverTheDistantCell())));
+                .thenReturn(nameDisturbanceMock);
 
             assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            // ASSERT
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -755,7 +765,7 @@ public final class IncrementalOwnerRefreshTests {
             markStale(DISTANT_SYSTEM);
             applyTo(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonByCellKey())
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -777,7 +787,10 @@ public final class IncrementalOwnerRefreshTests {
         // actually cut, so a case reading a band back off a redrawn cell needs the edges to cut a
         // ring a band fits in - and reads back a band this batch laid rather than one it was given.
         private void seedBandSizedDistantCell(OwnerMapClusters clusters) {
-            seedDistantCellGeometry(clusters, buildSquareCell(10000, 10000, BAND_SIZED_CELL_SIDE));
+
+            seedDistantCellGeometry(
+                clusters,
+                buildSquareCell(10000, 10000, BAND_SIZED_CELL_SIDE));
         }
 
         // What both distant-cell arrangements share: the distant cell added to the two adjacent
@@ -881,7 +894,7 @@ public final class IncrementalOwnerRefreshTests {
                 () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     any(),
                     any(),
-                    argThat(styling -> styling.labelFace() == STANDING_LABEL_FACE)));
+                    argThat(fitInputs -> fitInputs.labelFace() == STANDING_LABEL_FACE)));
         }
 
         @Test
@@ -1005,25 +1018,7 @@ public final class IncrementalOwnerRefreshTests {
             new double[] {-10000.0, -9000.0});
     }
 
-    // A placement whose name lies over the distant cell and nowhere near the flip: what a re-fit
-    // that moved a name onto an untouched cell leaves behind.
-    private static ClusterAnchor buildNameOverTheDistantCell() {
-
-        return new ClusterAnchor(
-            new ClusterIdentity(HEGEMONY, Set.of(buildCellKey(DISTANT_SYSTEM))),
-            0f,
-            0f,
-            Color.WHITE,
-            List.of(),
-            0f,
-            new Segment(10500.0, 12000.0, 13500.0, 12000.0),
-            null,
-            null,
-            200f,
-            1);
-    }
-
-    // The distant cell's own ring: the band-sized square above, moved clear of every other
+    // The distant cell's own ring: the band-sized SQUARE_CELL, moved clear of every other
     // fixture so nothing can reach it by accident.
     private static List<double[]> buildDistantBandSizedCell() {
 
@@ -1032,17 +1027,6 @@ public final class IncrementalOwnerRefreshTests {
             new double[] {14000.0, 10000.0},
             new double[] {14000.0, 14000.0},
             new double[] {10000.0, 14000.0});
-    }
-
-    // A cell large enough to hold the authored band clear of its own border, so a re-bake that
-    // ran comes back with runs rather than with the empty band a collapsed inset would give.
-    private static List<double[]> buildBandSizedCell() {
-
-        return List.of(
-            new double[] {0.0, 0.0},
-            new double[] {4000.0, 0.0},
-            new double[] {4000.0, 4000.0},
-            new double[] {0.0, 4000.0});
     }
 
     // A clusters holding the given systems, every one of which it also counts settled - the only

@@ -1,8 +1,7 @@
 package kmu.maplayers.base.labels.anchor;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * The cluster-label placements a map layer currently stands at, together with the
@@ -20,24 +19,34 @@ import java.util.List;
  * hands the standing pair in, reads the previous pass off it, and leaves its own in the same
  * object. That ordering is why the previous pass is safe to read after a rebuild has started -
  * nothing empties the list ahead of the fit that replaces it.
+ *
+ * <p>The room the placements' drawn lines take up is kept here too, once measured. It is a reading
+ * of one pass, so it goes when the pass is replaced, and holding it beside the pass is what makes
+ * that happen without any caller remembering to drop it.
  */
 public final class StandingClusterAnchors {
 
-    // The placements themselves, in the cluster order the fit produced them in. Held rather
-    // than handed back and forth because the renderer reads this same list every frame.
-    private final List<ClusterAnchor> anchors = new ArrayList<>();
-
-    // What readers are given in place of the list above, so the pair can only move through
-    // replaceAnchors and cannot drift by someone editing the list a getter handed them.
-    private final List<ClusterAnchor> readableAnchors = Collections.unmodifiableList(anchors);
+    // The placements themselves, in the cluster order the fit produced them in. A fresh immutable
+    // list per pass rather than one list edited in place, so the pair can only move through
+    // replaceAnchors, and a reader holding work derived from one pass can tell by identity whether
+    // that pass still stands.
+    private List<ClusterAnchor> anchors = List.of();
 
     // The rules the placements above were fitted under. Null only before the first fit of a
     // session and after a discard, which is the reading that offers nothing for reuse.
     private AnchorFitFingerprint fitFingerprint;
 
-    /** @return the standing placements in cluster order, read-only */
+    // The room the placements' drawn lines take up, measured on the first ask after a pass. Null
+    // until then: every bake asks for it, and an incremental one re-lays a handful of cells against
+    // names that did not move, so measuring it per bake re-measures every name on the map.
+    private List<List<double[]>> lineBoxes;
+
+    /**
+     * @return the standing placements in cluster order, read-only, and a different list after
+     *         every pass
+     */
     public List<ClusterAnchor> getAnchors() {
-        return readableAnchors;
+        return anchors;
     }
 
     /** @return what the standing placements were fitted under, or null when none were */
@@ -46,13 +55,36 @@ public final class StandingClusterAnchors {
     }
 
     /**
+     * The room the standing names' drawn lines take up, measured on the first ask after a pass and
+     * kept until the next pass replaces the placements it was measured off.
+     *
+     * <p>The measurement is handed in because it sits above this package: it reads the label plan
+     * and the face's metrics, and the placements are what both of those are built from.
+     *
+     * @param lineBoxMeasurement measures the drawn lines of the placements standing now; asked only
+     *                           when nothing has been measured since the last pass
+     * @return one closed ring of {x, y} corners per drawn line
+     */
+    public List<List<double[]>> computeLineBoxesIfAbsent(
+            Supplier<List<List<double[]>>> lineBoxMeasurement) {
+
+        if (lineBoxes == null) {
+            lineBoxes = lineBoxMeasurement.get();
+        }
+
+        return lineBoxes;
+    }
+
+    /**
      * Drops the placements and what they were fitted under, returning this to the never-fitted
      * state a session starts in. Called when the sector behind the placements is gone: a record
      * of what the previous sector's labels were fitted under must not outlive the labels.
      */
     public void discardAnchors() {
-        anchors.clear();
+
+        anchors = List.of();
         fitFingerprint = null;
+        lineBoxes = null;
     }
 
     /**
@@ -68,8 +100,8 @@ public final class StandingClusterAnchors {
             List<ClusterAnchor> fittedAnchors,
             AnchorFitFingerprint fittedUnder) {
 
-        anchors.clear();
-        anchors.addAll(fittedAnchors);
+        anchors = List.copyOf(fittedAnchors);
         fitFingerprint = fittedUnder;
+        lineBoxes = null;
     }
 }

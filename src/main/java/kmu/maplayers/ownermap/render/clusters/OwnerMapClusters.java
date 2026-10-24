@@ -159,10 +159,13 @@ public final class OwnerMapClusters
      * How the drawn cells group under this build's holding: which system each cell draws as,
      * paired with the owner holding that system.
      *
-     * <p>The one composition of the cut's draws-as map with this build's holding. Every stage that
-     * shapes, traces, clusters or names a cell groups by it, and each composing it for itself is
-     * how two stages of one pass come to disagree about which cells fuse - so it is asked of the
-     * build that owns the owner half rather than assembled at each of them.
+     * <p>The one composition of the cut's draws-as map with this build's holding. The stages of an
+     * owner build that shape, trace or cluster its cells must agree about which cells fuse, and each
+     * composing the grouping for itself is how two of them come to disagree - so they ask the build
+     * that owns the owner half rather than each assembling one.
+     *
+     * <p>The substrate's name fit is not one of those stages. It sits below every layer and groups
+     * by the keys it was handed, which the label snapshot reads off this same holding.
      *
      * @param systemKeyByCellKey the system each cell draws as, off the geometry cache
      * @return the cells grouped by the owner holding the system each draws as

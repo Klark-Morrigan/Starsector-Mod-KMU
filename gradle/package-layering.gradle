@@ -68,6 +68,18 @@ enforcePackageLayering {
                       'kmu.maplayers.base.sidebar',
                       'kmu.maplayers.base.tooltip']
 
+    // The placement and its fit sit at the bottom of the names: the drawn words and the readings of
+    // the room a name takes are made from placements, so the fit never reaches back up into either.
+    forbidImport under: 'kmu.maplayers.base.labels.anchor',
+                 of: [under: 'kmu.maplayers.base.labels',
+                      except: 'kmu.maplayers.base.labels.anchor']
+
+    // The band's path overlay draws what the band pass hands it and knows nothing of the band
+    // itself, so the diagnostic never grows back into the production package it was split from.
+    forbidImport under: 'kmu.maplayers.base.ribbon.overlay',
+                 of: [under: 'kmu.maplayers.base.ribbon',
+                      except: 'kmu.maplayers.base.ribbon.overlay']
+
     forbidImport under: 'kmu.maplayers.ownermap',
                  of: ['kmu.maplayers.politicalmap',
                       'kmu.mods']
@@ -144,10 +156,13 @@ enforcePackageLayering {
                       'kmu.maplayers.base.visibility.structures',
                       'kmu.maplayers.base.visibility.systems']
 
-    // The held layers band a claimed system through the claim contest, so the claim contest may not
-    // reach back into them.
+    // The two mechanics are peers. What composes them - the views, the holder sources, the band
+    // planner - sits beside both, so neither names the other.
     forbidImport under: 'kmu.maplayers.politicalmap.claims',
                  of: 'kmu.maplayers.politicalmap.dominance'
+
+    forbidImport under: 'kmu.maplayers.politicalmap.dominance',
+                 of: 'kmu.maplayers.politicalmap.claims'
 
     // The contest weighs colonies through weighting, so weighting may not reach back into it.
     forbidImport under: 'kmu.maplayers.politicalmap.dominance.weighting',

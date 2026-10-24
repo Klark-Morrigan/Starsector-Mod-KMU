@@ -98,7 +98,7 @@ The tree is three tiers deep and every import runs down it:
 
 | Tier | What it is | What it may import |
 | --- | --- | --- |
-| `kmu.maplayers.base` | the substrate under every layer: geometry, clusters, labels, theme, hover, the hover box, the sidebar host, the render seam and the frame sequence over it | neither tier below |
+| `kmu.maplayers.base` | the substrate under every layer: geometry, clusters, labels and their fit, cell bands, theme, hover, the hover box, the sidebar host, the render seam and the frame sequence over it | neither tier below |
 | `kmu.maplayers.ownermap` | one assembly of those primitives - cells keyed by an owner, fused, bordered, labelled and banded | `base` |
 | `kmu.maplayers.politicalmap` | a layer: what its owner key means, and the views that pick one | both above it |
 
@@ -408,9 +408,17 @@ and a player who ordered their bar once does not order it again per save.
   and clusters any painting layer is shaped out of,
   partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** -
-  where a name is placed across a cluster and how it is drawn.
+  where a name is placed across a cluster,
+  the drive that runs a whole fit and carries over what a change left alone,
+  and how a name is drawn.
   What the name reads and what shade it takes arrive from the layer as functions of an owner,
   so the overlay names nothing itself.
+- **[Cell bands](base/ribbon/README.md)** -
+  a stroke of coloured runs laid inside a cell's ring,
+  kept clear of the names,
+  and its draw.
+  Which runs a cell has is the layer's rule,
+  so the band says nothing about why.
 - **[The theme records](base/theme/README.md)** -
   the player's appearance choices as inert value types,
   read once per rebuild,

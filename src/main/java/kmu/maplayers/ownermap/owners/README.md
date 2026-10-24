@@ -113,7 +113,7 @@ would paint owners the source never made.
 `OwnerAffiliation` answers whether two owners are on one side of a contest,
 so two allies sharing a system do not band as rivals.
 No tier seam asks for it:
-a layer's band planner hands it to `RibbonPlan`.
+a layer's band planner hands it to `OwnerRibbonRuns`.
 
 It is a question apart from which owner a cell is painted for:
 a layer can paint two owners apart and still have them stand together.

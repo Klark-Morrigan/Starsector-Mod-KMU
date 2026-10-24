@@ -1,5 +1,6 @@
 package kmu.maplayers.base.labels;
 
+import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Segment;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
@@ -147,7 +148,7 @@ public final class LabelsBuilder {
     // plugin to call on cleanup as well as the rebuild here.
     public static void disposeAll(List<Label> labels) {
         for (var label : labels) {
-            label.text().dispose();
+            label.getText().dispose();
         }
     }
 
@@ -198,16 +199,10 @@ public final class LabelsBuilder {
     }
 
     // The slope of the accepted line in degrees, folded upright so the name reads
-    // left-to-right: a line pointing into the left half-plane is reversed first, so a
-    // name never renders upside down. The remaining lean (bounded by the anchor's
-    // max-slant cap) is kept as every line's slant.
+    // left-to-right: the line is read undirected, so one pointing into the left half-plane
+    // reads as its reverse and a name never renders upside down. The remaining lean (bounded
+    // by the anchor's max-slant cap) is kept as every line's slant.
     private static float computeSlantDegrees(Segment axis) {
-        var deltaX = axis.endX() - axis.startX();
-        var deltaY = axis.endY() - axis.startY();
-        if (deltaX < 0.0) {
-            deltaX = -deltaX;
-            deltaY = -deltaY;
-        }
-        return (float) Math.toDegrees(Math.atan2(deltaY, deltaX));
+        return (float) Math.toDegrees(Angles.foldToHalfTurn(axis.computeDirectionRadians()));
     }
 }

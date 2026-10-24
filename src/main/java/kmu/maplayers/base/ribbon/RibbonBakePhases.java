@@ -1,0 +1,66 @@
+package kmu.maplayers.base.ribbon;
+
+import kmlib.profiling.PhasedSection;
+import kmlib.profiling.ProfilePhase;
+
+import kmu.maplayers.base.profiling.RebuildStepTerms;
+
+/**
+ * The section a bake of the cell bands is measured under, and the four separable things a bake
+ * does to each cell: planning the cell's runs, tracing the ring its band runs along, carving the
+ * names and the cell's own narrow places off that ring, and stroking what is left into triangles.
+ *
+ * <p>Four rather than one because they grow on different axes - the trace with the cells whose ring
+ * had to be walked, the carve with the cells times the names, the plan with whatever the layer's rule
+ * reads per cell - so one total could say a bake got slower without saying which of them did. Which
+ * axis each grows on, and why, is the package README's.
+ *
+ * <p>Phases of one scope rather than sections of their own, so what the readout reports is what one
+ * cell costs in each of them: a bake is one call and a cell is one turn of its loop, and it is the
+ * turn a rebuild's cost scales with.
+ *
+ * <p>Only the section and the plan phase are a layer's to reach for. The layer opens the scope and
+ * plans each cell by its own rule; the other three phases are marked by the band's own laying, so a
+ * layer cannot mark one where the work it names was not done.
+ */
+public final class RibbonBakePhases {
+
+    private static final String BAKE_SECTION_NAME = "mapLayer.bakeRibbons";
+
+    // One spelling per phase, since each is named twice - once declaring the loop's steps and once
+    // resolving the constant a caller marks with - and two spellings would be two steps.
+    private static final String PLAN_PHASE_NAME = "plan";
+    private static final String TRACE_PHASE_NAME = "trace";
+    private static final String CARVE_PHASE_NAME = "carve";
+    private static final String STROKE_PHASE_NAME = "stroke";
+
+    /**
+     * The section a whole bake is measured under, whose loop runs one turn per cell.
+     *
+     * <p>Writes its line on every call - once per bake rather than once per cell, a bake being
+     * the pass a rebuild pays for - so a reader following a rebuild through the log finds the
+     * bands beside the shaping and the fit.
+     */
+    public static final PhasedSection BAKE_SECTION = PhasedSection.registerPhasedSection(
+        BAKE_SECTION_NAME,
+        RebuildStepTerms.LOGGED_EVERY_CALL,
+        PLAN_PHASE_NAME,
+        TRACE_PHASE_NAME,
+        CARVE_PHASE_NAME,
+        STROKE_PHASE_NAME);
+
+    /** Planning the cell's runs by the layer's rule, which may walk everything the cell holds. */
+    public static final ProfilePhase PLAN_PHASE = BAKE_SECTION.resolvePhase(PLAN_PHASE_NAME);
+
+    /** Reaching for the ring the band runs along, and walking it where none stands. */
+    static final ProfilePhase TRACE_PHASE = BAKE_SECTION.resolvePhase(TRACE_PHASE_NAME);
+
+    /** Taking the names and the pinches off that ring and placing the band on what is left. */
+    static final ProfilePhase CARVE_PHASE = BAKE_SECTION.resolvePhase(CARVE_PHASE_NAME);
+
+    /** Laying the planned runs end to end and stroking them into triangles. */
+    static final ProfilePhase STROKE_PHASE = BAKE_SECTION.resolvePhase(STROKE_PHASE_NAME);
+
+    private RibbonBakePhases() {
+    }
+}

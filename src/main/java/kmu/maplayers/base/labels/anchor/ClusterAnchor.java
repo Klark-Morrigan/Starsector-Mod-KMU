@@ -13,9 +13,8 @@ import java.util.Map;
  * input the cluster-name renderer draws from - {@code nameLines}, {@code fontHeight},
  * {@code (anchorX, anchorY)}, {@code colour}, and {@code acceptedAxis}'s slant - and the
  * debug marker the "show cluster anchors" overlay draws as a dot plus up to three
- * lines. The placement search runs whenever either the names or the anchor overlay is
- * on, so the two consumers share one computation; each then draws only under its own
- * toggle.
+ * lines. The placement search runs once whenever the layer wants either of them, so the two
+ * consumers share one computation; each then draws only under its own toggle.
  *
  * <p>{@code identity} names the cluster the fit was made for - the owner its name and shade
  * were resolved from, and the exact members whose cells the search ran inside. It rides on
@@ -88,6 +87,23 @@ public record ClusterAnchor(
     int lineCount) {
 
     /**
+     * The box this placement's fit reserved: the accepted line at the block's fitted girth.
+     *
+     * <p>The one statement of what a name's fitted extent is. Whatever keeps clear of the names
+     * reads it for the whole map, and the comparison of two fits reads it one placement at a time,
+     * so the rule lives on the placement rather than in either of them, where the two could drift.
+     *
+     * @return a closed ring of {x, y} corners, or an empty list where the placement occupies no
+     *         room at all - a fit that accepted no line, or one whose block has no girth
+     */
+    public List<double[]> computeFittedBox() {
+
+        return acceptedAxis == null
+            ? List.of()
+            : acceptedAxis.computeBandCorners(thickness);
+    }
+
+    /**
      * This placement in a different shade, every fitted component left exactly as it was.
      *
      * <p>The shade is resolved afresh each pass and is no input to the fit - the search
@@ -98,7 +114,7 @@ public record ClusterAnchor(
      * @param restyledColour the shade the name and its debug dot should draw in now
      * @return a copy carrying that shade in place of this one's
      */
-    public ClusterAnchor copyWithColour(Color restyledColour) {
+    ClusterAnchor copyWithColour(Color restyledColour) {
         return new ClusterAnchor(
             identity,
             anchorX,
@@ -125,7 +141,7 @@ public record ClusterAnchor(
      * @param anchors the placements to file, in any order
      * @return each cluster's placement, filed under its identity
      */
-    public static Map<ClusterIdentity, ClusterAnchor> mapAnchorsByIdentity(
+    static Map<ClusterIdentity, ClusterAnchor> mapAnchorsByIdentity(
             List<ClusterAnchor> anchors) {
 
         var anchorByIdentity = new HashMap<ClusterIdentity, ClusterAnchor>();

@@ -1,14 +1,13 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonPath;
-import kmu.maplayers.ownermap.render.ribbon.RibbonBand;
-import kmu.maplayers.ownermap.render.ribbon.RibbonPathVerdict;
+import kmu.maplayers.base.ribbon.CellRibbon;
+import kmu.maplayers.base.ribbon.RibbonBand;
+import kmu.maplayers.base.ribbon.overlay.CellRibbonPath;
+import kmu.maplayers.base.ribbon.overlay.RibbonPathVerdict;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,11 +25,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * wrong cell: everything a cell carries is written and dropped together with the ring it was
  * fitted to.
  *
- * <p>A band, its diagnostic path and the traced ring behind it are each cut to one particular ring,
- * so a cell re-shaped or dropped while keeping any of them would draw the last shape's work inside
- * this shape's cell. Each of the three gets its own case over each of the two writes, since one
- * shared step drops them: a case per store is what says so for the store it names rather than for
- * whichever one that step happens to reach.
+ * <p>A band and its diagnostic path are each cut to one particular ring, so a cell re-shaped or
+ * dropped while keeping either would draw the last shape's work inside this shape's cell. Each gets
+ * its own case over each of the two writes, which is what says both writes reach the band store's
+ * one drop. That the drop takes the traced rings too is the band store's own suite's to pin.
  */
 final class PaintedCellStoreTests {
 
@@ -95,10 +93,10 @@ final class PaintedCellStoreTests {
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
-            store.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
+            store.getRibbonStore().putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
 
-            assertThat(store.getRibbonByCellKey())
+            assertThat(store.getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -110,27 +108,11 @@ final class PaintedCellStoreTests {
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
-            store.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
+            store.getRibbonStore().putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
 
-            assertThat(store.getRibbonPathByCellKey())
+            assertThat(store.getRibbonStore().getRibbonPathByCellKey())
                 .isEmpty();
-        }
-
-        @Test
-        void dropsTheRingTracedInsideTheShapeItReplaces() {
-            // The whole of what makes the traced ring safe to keep. It is held under no key and no
-            // revision, so a cell served a ring traced inside the shape it used to have would lay
-            // its band round a cell that is no longer there - and this write is what rules that
-            // out, by construction rather than by the band pass remembering to ask.
-            var store = new PaintedCellStore();
-
-            store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
-            store.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
-            store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
-
-            assertThat(store.getRingPathCache().findRingPathOf(SYSTEM_CELL))
-                .isNull();
         }
     }
 
@@ -174,10 +156,10 @@ final class PaintedCellStoreTests {
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
-            store.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
+            store.getRibbonStore().putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
             store.removePaintedCell(SYSTEM_CELL);
 
-            assertThat(store.getRibbonByCellKey())
+            assertThat(store.getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -188,25 +170,11 @@ final class PaintedCellStoreTests {
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
-            store.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
+            store.getRibbonStore().putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
             store.removePaintedCell(SYSTEM_CELL);
 
-            assertThat(store.getRibbonPathByCellKey())
+            assertThat(store.getRibbonStore().getRibbonPathByCellKey())
                 .isEmpty();
-        }
-
-        @Test
-        void dropsTheTracedRingWithTheCell() {
-            // A cell that stops drawing has no shape for a ring to have been traced inside, so the
-            // ring goes with it - a cell drawn again later is cut afresh and is owed a fresh walk.
-            var store = new PaintedCellStore();
-
-            store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
-            store.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
-            store.removePaintedCell(SYSTEM_CELL);
-
-            assertThat(store.getRingPathCache().findRingPathOf(SYSTEM_CELL))
-                .isNull();
         }
     }
 
@@ -309,83 +277,6 @@ final class PaintedCellStoreTests {
 
             assertThat(store.getLoneCells())
                 .containsExactly(LONE_CELL_RECORD);
-        }
-    }
-
-    @Nested
-    class PutCellRibbon {
-
-        @Test
-        void recordsABandUnderTheCellThatDrawsIt() {
-
-            var store = new PaintedCellStore();
-            var ribbon = buildAnyRibbon();
-
-            store.putCellRibbon(SYSTEM_CELL, ribbon);
-
-            assertThat(store.getRibbonByCellKey())
-                .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(store.getRibbonByCellKey().get(SYSTEM_CELL))
-                .isSameAs(ribbon);
-        }
-
-        @Test
-        void keepsABandlessCellOutOfTheBandMap() {
-            // Most of the sector draws no band, so the map is kept sparse rather than parallel to
-            // the cells: the render pass walks the cells that draw one and no others.
-            var store = new PaintedCellStore();
-
-            store.putCellRibbon(SYSTEM_CELL, CellRibbon.NONE);
-
-            assertThat(store.getRibbonByCellKey())
-                .isEmpty();
-        }
-
-        @Test
-        void clearsAStandingBandWhenTheCellStopsDrawingOne() {
-            // The re-bake that finds nothing left to report - a rival's last settlement in the
-            // system has gone. Without the clear, the cell would keep drawing the band it no
-            // longer earns.
-            var store = new PaintedCellStore();
-
-            store.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
-            store.putCellRibbon(SYSTEM_CELL, CellRibbon.NONE);
-
-            assertThat(store.getRibbonByCellKey())
-                .isEmpty();
-        }
-    }
-
-    @Nested
-    class PutCellRibbonPath {
-
-        @Test
-        void recordsAPathUnderTheCellItWasTracedIn() {
-
-            var store = new PaintedCellStore();
-            var ribbonPath = buildAnyRibbonPath();
-
-            store.putCellRibbonPath(SYSTEM_CELL, ribbonPath);
-
-            assertThat(store.getRibbonPathByCellKey())
-                .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(store.getRibbonPathByCellKey().get(SYSTEM_CELL))
-                .isSameAs(ribbonPath);
-        }
-
-        @Test
-        void clearsAStandingPathWhenTheOverlayIsSwitchedOff() {
-            // The bake hands over nothing for every cell while the overlay is off, and that is
-            // the whole of how it is switched off: nothing else clears what an earlier pass laid,
-            // so a path surviving here would leave the map ringed with a diagnostic the player
-            // has turned off.
-            var store = new PaintedCellStore();
-
-            store.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
-            store.putCellRibbonPath(SYSTEM_CELL, CellRibbonPath.NONE);
-
-            assertThat(store.getRibbonPathByCellKey())
-                .isEmpty();
         }
     }
 

@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins which face the map labels ask for and what they ask it to hold: the largest insignia cut, held
- * to faction names alone, since a label draws a name and nothing else.
+ * to the one probed kind of text a label draws, since a label draws a name and nothing else.
  */
 final class LabelFontsTests {
 

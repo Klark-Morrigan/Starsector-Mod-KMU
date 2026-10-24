@@ -18,10 +18,12 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.ribbon.CellRibbon;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -40,10 +42,9 @@ import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTests;
 import kmu.maplayers.ownermap.render.StandingOwnerMap;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
@@ -492,6 +493,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 cellsMock,
                 viewReading,
                 contentInputs,
+                false,
                 OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs),
                 MapStyling.readFromLunaSettings(
                     viewReading.view().resolveCategories(),
@@ -505,14 +507,17 @@ final class IncrementalOwnerRefreshIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ClusterLabelStylingSnapshot.resolveFrom(territories, StarsectorFont.VANILLA_INSIGNIA_42));
+                ClusterLabelStylingSnapshot
+                    .resolveFrom(territories, StarsectorFont.VANILLA_INSIGNIA_42)
+                    .createFitInputs());
 
             CellRibbonsBaker
                 .createForPass(
                     territories,
                     cellsMock,
                     walk,
-                    standingAnchors)
+                    standingAnchors,
+                    RibbonBakeSettings.readFromLunaSettings())
                 .bakeAllCellRibbons();
 
             LabelsBuilder.rebuildLabels(
@@ -567,7 +572,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
             new LinkedHashSet<>(occupancy.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
-            new LinkedHashMap<>(territories.getPaintedCells().getRibbonByCellKey()));
+            new LinkedHashMap<>(territories.getPaintedCells().getRibbonStore().getRibbonByCellKey()));
     }
 
     // The systems the fixture sector lists, keyed by ID and in row order.

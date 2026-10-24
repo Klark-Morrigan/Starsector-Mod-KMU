@@ -6,9 +6,7 @@ import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonPath;
-import kmu.maplayers.ownermap.render.ribbon.CellRingPathCache;
+import kmu.maplayers.base.ribbon.CellRibbonStore;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,20 +15,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Everything one build holds per drawn cell: the draw record, the ring it was painted on, the
- * presence band laid inside that ring, the band's path for the diagnostic overlay, and the traced
- * ring the band was laid along.
+ * Everything one build holds per drawn cell: the draw record, the ring it was painted on, and the
+ * presence bands laid inside those rings.
  *
- * <p>Five stores rather than one map of a five-field record, because they are written by different
- * passes and most cells are in only two of them: a band reports what is held in a system and most
- * of the sector is cells nobody lives in, and a path exists only while the player has the overlay
- * on. A record per cell would make every cell pay for all five.
+ * <p>The bands sit in a {@link CellRibbonStore} of their own because a different pass writes them and
+ * most cells carry none: a band reports what is held in a system, and most of the sector is cells
+ * nobody lives in.
  *
- * <p>What makes them one type is that they are dropped together. Everything after the draw record
- * is fitted to one particular ring, so a cell re-shaped and left holding any of it would draw the
- * last shape's band inside this shape's cell. Owning the five here means a re-shape clears them by
- * construction, rather than by two call sites on a larger model each remembering the same five
- * fields.
+ * <p>That store is held here because it is dropped with the rings. Everything in it is fitted to one
+ * particular ring, so a cell re-shaped and left holding any of it would draw the last shape's band
+ * inside this shape's cell. Owning it here means a re-shape clears it by construction, rather than
+ * by two call sites on a larger model each remembering to.
  *
  * <p>Live and mutable throughout: a full rebuild fills it, and the incremental refresh replaces
  * just the cells an owner change touched. The maps it hands back are the live ones, since the
@@ -45,8 +40,6 @@ public final class PaintedCellStore {
 
     private final Map<SystemKey, StyledCell> styledCellByCellKey = new LinkedHashMap<>();
     private final Map<SystemKey, List<double[]>> fillPolygonByCellKey = new LinkedHashMap<>();
-    private final Map<SystemKey, CellRibbon> ribbonByCellKey = new LinkedHashMap<>();
-    private final Map<SystemKey, CellRibbonPath> ribbonPathByCellKey = new LinkedHashMap<>();
 
     // The draw records as callers read them. Read-only, because every write has to go through the
     // put and remove below: those are what mark the parted lists stale, and a write made straight
@@ -54,7 +47,7 @@ public final class PaintedCellStore {
     private final Map<SystemKey, StyledCell> styledCellView =
         Collections.unmodifiableMap(styledCellByCellKey);
 
-    private final CellRingPathCache ringPathCache = new CellRingPathCache();
+    private final CellRibbonStore ribbonStore = new CellRibbonStore();
 
     // The draw records parted by form, in the map's own order, and whether a write has landed since
     // they were parted.
@@ -98,28 +91,12 @@ public final class PaintedCellStore {
     }
 
     /**
-     * @return each cell that draws a presence band, keyed by cell key; a cell drawing none is
-     *         absent rather than present with an empty band
+     * @return the presence bands laid inside the drawn cells, with their overlay paths and the rings
+     *         they were traced along; live, since the band pass writes into it and the emission walks
+     *         it per frame
      */
-    public Map<SystemKey, CellRibbon> getRibbonByCellKey() {
-        return ribbonByCellKey;
-    }
-
-    /**
-     * @return each cell the diagnostic overlay has a band path for, keyed by cell key; empty while
-     *         the player has the overlay off
-     */
-    public Map<SystemKey, CellRibbonPath> getRibbonPathByCellKey() {
-        return ribbonPathByCellKey;
-    }
-
-    /**
-     * @return the rings this build's bands are laid along, the cache the band pass asks before it
-     *         traces a cell and writes whatever it does trace into; live rather than a copy, since
-     *         a pass reading a snapshot of it would trace every cell afresh
-     */
-    public CellRingPathCache getRingPathCache() {
-        return ringPathCache;
+    public CellRibbonStore getRibbonStore() {
+        return ribbonStore;
     }
 
     /** @return whether no cell draws at all, so the renderer can skip the GL state push */
@@ -150,55 +127,8 @@ public final class PaintedCellStore {
         fillPolygonByCellKey.put(cellKey, paintedCell.paintedExtent());
 
         areCellFormsStale = true;
-        dropRingFittedWork(cellKey);
-    }
 
-    /**
-     * Records one cell's presence band, baked inside the ring that cell already holds.
-     *
-     * <p>Written on its own pass rather than beside the ring, because a band is settled from more
-     * than the cell it sits in: it keeps clear of the cluster names, and those are placed only once
-     * every cell has been shaped. So the ring goes in first and the band follows, and the band pass
-     * reads the ring back off this store rather than being handed one - which is what keeps the two
-     * describing the same ring without either caller having to remember the other.
-     *
-     * @param cellKey the cell this band is for
-     * @param ribbon  the baked band, or {@link CellRibbon#NONE} where the cell draws none
-     */
-    public void putCellRibbon(SystemKey cellKey, CellRibbon ribbon) {
-
-        // A bandless cell is left out of the map rather than holding an empty value, so the render
-        // pass walks only the cells that draw one - which is a small share of them.
-        if (ribbon.isEmpty()) {
-            ribbonByCellKey.remove(cellKey);
-
-        } else {
-            ribbonByCellKey.put(cellKey, ribbon);
-        }
-    }
-
-    /**
-     * Records one cell's band path for the diagnostic overlay, traced inside the ring that cell
-     * already holds.
-     *
-     * <p>Written by the band pass beside the band itself, so a cell can never show a path the band
-     * it carries was not laid on. A pass with the overlay switched off hands over nothing for every
-     * cell, which is what clears the paths a pass taken while it was on left behind.
-     *
-     * @param cellKey    the cell this path is for
-     * @param ribbonPath the traced path, or {@link CellRibbonPath#NONE} where none was traced
-     */
-    public void putCellRibbonPath(SystemKey cellKey, CellRibbonPath ribbonPath) {
-
-        // Left out of the map rather than held as an empty value, exactly as a bandless cell is:
-        // the overlay walks only the cells with a path to draw, which is none of them while the
-        // player has it off.
-        if (ribbonPath.isEmpty()) {
-            ribbonPathByCellKey.remove(cellKey);
-
-        } else {
-            ribbonPathByCellKey.put(cellKey, ribbonPath);
-        }
+        ribbonStore.dropRingFittedWorkOf(cellKey);
     }
 
     /**
@@ -213,7 +143,8 @@ public final class PaintedCellStore {
         fillPolygonByCellKey.remove(cellKey);
 
         areCellFormsStale = true;
-        dropRingFittedWork(cellKey);
+
+        ribbonStore.dropRingFittedWorkOf(cellKey);
     }
 
     // Parts the draw records by form where a write has landed since they were last parted. A write
@@ -241,17 +172,5 @@ public final class PaintedCellStore {
         loneCells = List.copyOf(partedLoneCells);
 
         areCellFormsStale = false;
-    }
-
-    // Everything laid inside one cell's ring: its band, that band's diagnostic path, and the traced
-    // ring itself. Dropped whenever the ring is replaced or the cell stops drawing, since each was
-    // fitted to the ring that is going - a band left behind would draw the last shape's stripe
-    // inside this shape's cell, and a ring left behind would have the next bake lay one there.
-    private void dropRingFittedWork(SystemKey cellKey) {
-
-        ribbonByCellKey.remove(cellKey);
-        ribbonPathByCellKey.remove(cellKey);
-
-        ringPathCache.dropRingPathOf(cellKey);
     }
 }

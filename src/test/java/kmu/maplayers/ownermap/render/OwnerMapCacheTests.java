@@ -9,6 +9,7 @@ import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -28,9 +29,8 @@ import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
-import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapLabelSettings;
@@ -50,6 +50,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -210,6 +211,30 @@ final class OwnerMapCacheTests {
                 .verify(() -> LabelFonts.settleMapLabelFace(not(same(ownFaces))), never());
         }
 
+        // The overlay is sampled with the rebuild and handed to the build, so a batch folding into
+        // that build later fits under what it was baked under rather than reading the setting live.
+        @Test
+        void handsTheBuildTheAnchorOverlayItSampled() {
+
+            // ARRANGE
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            showClusterAnchors();
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            // ACT
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ASSERT
+            productionBuilderMock.verify(() -> OwnerMapBuilder.buildClusters(
+                any(),
+                any(),
+                any(),
+                eq(true),
+                any(),
+                any()));
+        }
+
         @Test
         void foldsAMarkedSystemIntoTheStandingMapOnAFrameOwingNoRebuild() {
             // The marked change's path: nothing a decision reads moved, so no rebuild is owed, and
@@ -325,7 +350,7 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
 
             productionBuilderMock.verify(
-                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()),
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
                 times(2));
             productionBuilderMock.verify(
                 () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
@@ -346,7 +371,7 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
 
             productionBuilderMock.verify(
-                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()),
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
                 times(2));
         }
 
@@ -385,7 +410,7 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
 
             productionBuilderMock.verify(
-                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()),
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
                 times(2));
             productionBuilderMock.verify(
                 () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
@@ -596,8 +621,10 @@ final class OwnerMapCacheTests {
 
         seams.openSeam(FilterSelection.class);
         seams.openSeam(ClusterAnchorsBuilder.class);
-        seams.openSeam(ClusterLabelStylingSnapshot.class);
         seams.openSeam(LabelsBuilder.class);
+
+        // The label styling snapshot is left real: it is a value read off the stood-in build, and
+        // the fit it is handed to is stood in for, so nothing past it resolves a font or a name.
 
         // Either view's styling reads its theme and its border trace off settings no test JVM
         // holds; the styling itself runs for real over what these answer.
@@ -621,7 +648,7 @@ final class OwnerMapCacheTests {
 
         productionBuilderMock = seams.openSeam(OwnerMapBuilder.class);
         productionBuilderMock
-            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
+            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()))
             .thenReturn(builtClusters);
 
         // A holding rather than the seam's null, since a null is what the cache reads as nothing
@@ -630,13 +657,17 @@ final class OwnerMapCacheTests {
             .when(() -> OwnerMapBuilder.resolveOwners(any(), any(), any()))
             .thenReturn(ResolvedOwners.createEmpty());
 
+        // The bake's settings are read live on every production rebuild, from knobs no test JVM
+        // holds; the bake they are handed to is stood in for below, so nothing reads them back.
+        seams.openSeam(RibbonBakeSettings.class);
+
         // The bake is asked for by the production view on every rebuild, so it has to hand back
         // something to bake on rather than the seam's null.
         var ribbonsBakerMock = mock(CellRibbonsBaker.class);
         var ribbonsBakerSeamMock = seams.openSeam(CellRibbonsBaker.class);
 
         ribbonsBakerSeamMock
-            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
+            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
             .thenReturn(ribbonsBakerMock);
     }
 
@@ -645,6 +676,14 @@ final class OwnerMapCacheTests {
 
         debugToggleMock
             .when(KmuOwnerMapDiagnosticsSettings::shouldTraceBordersForDebug)
+            .thenReturn(true);
+    }
+
+    // Switches the anchor overlay on, which a rebuild samples beside the picks.
+    private void showClusterAnchors() {
+
+        debugToggleMock
+            .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
             .thenReturn(true);
     }
 

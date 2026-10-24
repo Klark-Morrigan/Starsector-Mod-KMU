@@ -13,17 +13,15 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.SystemFillStates;
+import kmu.maplayers.base.ribbon.RibbonPlan;
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
-import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +37,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.STANDARD_RULES;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -87,9 +86,7 @@ final class HolderOwnerSourceTests {
     private static final String FIND_INHABITED_SECTION = "ownerMap.findInhabited";
     private static final String FIND_SPOTLIT_PRESENCE_SECTION = "ownerMap.findSpotlitPresence";
 
-    private static final RibbonPlanRules RULES = new RibbonPlanRules(
-        new RibbonSegmentLengths(3, 1),
-        new UncontestedRibbonRuns(false));
+    private static final RibbonPlanRules RULES = STANDARD_RULES;
 
     private MockedStatic<DecivilisedColonyHabitation> habitationSettingMock;
 

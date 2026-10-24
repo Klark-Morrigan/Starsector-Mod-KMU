@@ -117,13 +117,16 @@ public final class OwnerMapBuilder {
     // resolved again here could name and colour a fold the owners were never resolved under. The
     // sidebar preferences arrive for a like reason: the rebuild sampled them once when it decided it
     // was owed, so reading them again here could paint the map under a pick the decision never saw.
-    // The owners arrive for a third: they may be the answer a previous rebuild got, kept because
-    // nothing they read has moved since. The styling arrives for a fourth: the rebuild reads it once
-    // for everything it builds, the names fitted after these cells included.
+    // The anchor overlay's toggle arrives with them, sampled by the same rebuild, and is retained so
+    // a later batch re-fits the names under it. The owners arrive for a third reason: they may be the
+    // answer a previous rebuild got, kept because nothing they read has moved since. The styling
+    // arrives for a fourth: the rebuild reads it once for everything it builds, the names fitted
+    // after these cells included.
     public static OwnerMapClusters buildClusters(
             CellGeometryCache geometryCache,
             ViewReading viewReading,
             ContentInputs contentInputs,
+            boolean isAnchorOverlayShown,
             ResolvedOwners owners,
             MapStyling styling) {
 
@@ -148,6 +151,7 @@ public final class OwnerMapBuilder {
                     styling,
                     viewReading,
                     contentInputs,
+                    isAnchorOverlayShown,
                     // Which owned systems hatch - the spotlit owner's systems it is present in
                     // without winning - and which paint no fill, owned for border and label alone.
                     owners.fillStates()));

@@ -23,7 +23,7 @@ import java.awt.Color;
  * @param colour        the shade the cluster's name and its debug dot draw in
  * @param nameEstimator the name measurement the cluster's label boxes are sized against
  */
-public record ClusterLabelSubject(
+record ClusterLabelSubject(
     ClusterIdentity identity,
     Color colour,
     LabelLengthEstimator nameEstimator) {

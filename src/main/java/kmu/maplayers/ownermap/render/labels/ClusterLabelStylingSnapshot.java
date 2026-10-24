@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.labels;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.FontAtlas;
 
+import kmu.maplayers.base.labels.anchor.ClusterAnchorFitInputs;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -15,7 +16,8 @@ import java.util.Map;
 /**
  * Everything one label rebuild resolves a cluster's colour and name from: who owns each system, the
  * paints the build beneath the names was painted in - its scheme, the painting layer's reading of
- * its owners, and the picks it was baked under - and the face every name is measured in.
+ * its owners, and the picks it was baked under - the face every name is measured in, and whether a
+ * fit is wanted at all.
  *
  * <p>Held as one value because the parts have to describe the same moment. A rebuild that named
  * owners under this pass's reading while receding them by the last pass's filter would produce
@@ -28,8 +30,8 @@ import java.util.Map;
  *
  * <p>The two paths that produce one differ in where the owners come from - the production
  * build hands over the clusters it just built, the border-tracing diagnostic hands over the owners
- * the active view's source resolved with nothing spotlit - and agree on everything downstream, which is
- * the point of them meeting in one type.
+ * the active view's source resolved with nothing spotlit - and in what wants the fit. They agree on
+ * everything downstream, which is the point of them meeting in one type.
  *
  * @param ownerBySystemKey the owner of each drawn system, keyed by {@link SystemKey}
  * @param paints           the paints the build beneath the names was painted in: each owner's
@@ -39,15 +41,22 @@ import java.util.Map;
  *                         they are spelled and fitted in
  * @param labelFace        the face the sector settled its labels on, which the fit measures every
  *                         name in and records beside its placements for the mint to draw in
+ * @param isFitWanted      whether anything drawn reads the placements, as the path that made this
+ *                         snapshot answers it from the rebuild's own sampling
  */
 public record ClusterLabelStylingSnapshot(
     Map<SystemKey, SystemOwner> ownerBySystemKey,
     MapPaints paints,
-    FontAtlas labelFace) {
+    FontAtlas labelFace,
+    boolean isFitWanted) {
 
     /**
      * The snapshot a production rebuild styles by: the clusters' own retained state, read off
      * the one build whose fills and borders the labels must match.
+     *
+     * <p>A production fit is wanted while the names are drawn or the anchor overlay is shown, each
+     * as the build sampled it. The incremental refresh styles by this too, so a batch fits under
+     * what the standing build was baked under rather than under a live read of either.
      *
      * @param clusters  the clusters built this pass
      * @param labelFace the face the sector settled its labels on
@@ -55,12 +64,34 @@ public record ClusterLabelStylingSnapshot(
      */
     public static ClusterLabelStylingSnapshot resolveFrom(OwnerMapClusters clusters, FontAtlas labelFace) {
 
+        var buildInputs = clusters.getBuildInputs();
+
         // The owners off the live occupancy, which the refresh folds, and the paints off the inputs
         // the build was baked under, which stand until the next rebuild.
         return new ClusterLabelStylingSnapshot(
             clusters.getOccupancy().getOwnerBySystemKey(),
-            clusters.getBuildInputs().getPaints(),
-            labelFace);
+            buildInputs.getPaints(),
+            labelFace,
+            buildInputs.getContentInputs().nameFormat().areNamesDrawn()
+                || buildInputs.isAnchorOverlayShown());
+    }
+
+    /**
+     * The owner tier's half of a name fit: the owners as the keys the clusters are cut by, the face,
+     * whether a fit is wanted, and the resolver pair this snapshot names and shades by.
+     *
+     * <p>The clusters are cut by owner ID. Under a filter that is a synthetic spotlight key, so the
+     * solid and contested clusters trace as their own clusters exactly as the fills do.
+     *
+     * @return the inputs the fit drive stands on
+     */
+    public ClusterAnchorFitInputs createFitInputs() {
+
+        return new ClusterAnchorFitInputs(
+            SystemOwner.mapOwnerIdBySystemKey(ownerBySystemKey),
+            labelFace,
+            isFitWanted,
+            fitFace -> ClusterLabelStyling.createLabelResolvers(this, fitFace));
     }
 
     /**
@@ -72,13 +103,17 @@ public record ClusterLabelStylingSnapshot(
      * replaced, since the names are still drawn in the format the player asked for. The view paints
      * no fills, so its paints are resolved here for its names alone.
      *
-     * @param ownerBySystemKey the owners the view traced, so its names and its borders name one
-     *                         owner per cell
-     * @param mapStyling       the scheme the overlay was traced under, so its names and its
-     *                         outlines are styled from one reading of the knobs
-     * @param reading          the active view's reading of its owners
-     * @param contentInputs    the sidebar preferences the rebuild sampled
-     * @param labelFace        the face the sector settled its labels on
+     * <p>The fit is wanted while the anchor overlay is shown, and only then: the view is a look at
+     * the anchors, so it fits nothing while nobody is looking at them.
+     *
+     * @param ownerBySystemKey     the owners the view traced, so its names and its borders name one
+     *                             owner per cell
+     * @param mapStyling           the scheme the overlay was traced under, so its names and its
+     *                             outlines are styled from one reading of the knobs
+     * @param reading              the active view's reading of its owners
+     * @param contentInputs        the sidebar preferences the rebuild sampled
+     * @param isAnchorOverlayShown whether the anchor overlay is shown, as the rebuild sampled it
+     * @param labelFace            the face the sector settled its labels on
      * @return the styling snapshot the traced names are fitted and drawn under
      */
     public static ClusterLabelStylingSnapshot resolveForTracing(
@@ -86,11 +121,13 @@ public record ClusterLabelStylingSnapshot(
             MapStyling mapStyling,
             OwnerReading reading,
             ContentInputs contentInputs,
+            boolean isAnchorOverlayShown,
             FontAtlas labelFace) {
 
         return new ClusterLabelStylingSnapshot(
             ownerBySystemKey,
             new MapPaints(mapStyling, reading, contentInputs.clearFilterPick()),
-            labelFace);
+            labelFace,
+            isAnchorOverlayShown);
     }
 }

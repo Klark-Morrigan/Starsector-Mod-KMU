@@ -1,0 +1,107 @@
+package kmu.maplayers.base.labels.extent;
+
+import kmlib.math.geometry.Segment;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
+import kmlib.starsector.ui.font.measure.LazyFontMeasurer;
+import kmlib.starsector.ui.font.measure.LineWidthMeasurer;
+
+import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * The room the drawn cluster names take up read line by line: one world-space box per line of
+ * words, sized to what that line measures at the size it renders at.
+ *
+ * <p>The tighter of the two readings of a name's extent. The other one, {@link ClusterNameBoxes},
+ * is the chord the search worked with, and a chord is accepted as soon as it is at least as long
+ * as the widest wrapped line, so it reaches past the words at both ends by however much it beat
+ * them. Read per line instead, what is kept clear of is what is drawn, by construction: the same
+ * argument the fitted reading makes, taken one level finer.
+ *
+ * <p>Per glyph would be the level below and is the wrong one - it cuts a ring into a comb of short
+ * arcs between letters, and anything laying one shape into the room left would end up in the gap
+ * between two words.
+ *
+ * <p>The lines and their hang points are not derived here: they come from the same plan the name
+ * renderer mints its strings from, so a box and the words inside it cannot be laid out by two
+ * different rules. What this adds is each line's measured length and the turn from a centred line
+ * into an oriented rectangle.
+ */
+public final class LabelLineBoxes {
+
+    // Derives only; never instantiated.
+    private LabelLineBoxes() {
+    }
+
+    /**
+     * The boxes the standing placements' drawn lines occupy, measured in the face they were fitted in.
+     *
+     * <p>Measured once per pass and kept with the placements. Every bake asks, and the bakes between
+     * two fits lay their bands against the same names, so measuring per ask would re-plan and
+     * re-measure every name on the map to re-lay a handful of cells.
+     *
+     * @param standingAnchors the placements to read, with the record of the face they were fitted in
+     * @return one closed ring of {x, y} corners per drawn line. Empty where nothing was fitted, and where
+     *         the face will not load, which is also when no name draws at all - a line nothing renders
+     *         is a line nothing has to keep clear of
+     */
+    public static List<List<double[]>> listLineBoxes(StandingClusterAnchors standingAnchors) {
+        return standingAnchors.computeLineBoxesIfAbsent(() -> measureStandingLineBoxes(standingAnchors));
+    }
+
+    // The same boxes over an injected measurement, so the geometry - centre, slant, length, girth
+    // to corners - is stated apart from the loaded face it needs a width from.
+    static List<List<double[]>> measureLineBoxes(
+            List<ClusterAnchor> anchors,
+            LineWidthMeasurer measurer) {
+
+        var boxes = new ArrayList<List<double[]>>();
+
+        for (var line : LabelsBuilder.planLabels(anchors)) {
+
+            var corners = computeLineBox(line, measurer);
+            if (!corners.isEmpty()) {
+                boxes.add(corners);
+            }
+        }
+
+        return boxes;
+    }
+
+    // One drawn line as the rectangle it fills: its measured length along the slant it reads at,
+    // one line height across, centred on the point the renderer hangs the string from. The string
+    // is drawn centre-anchored on that point, so a box centred there covers the words rather than
+    // starting where they do.
+    private static List<double[]> computeLineBox(
+            LabelsBuilder.LabelPlan line,
+            LineWidthMeasurer measurer) {
+
+        var lineLength = measurer.measureLineWidth(line.text(), line.fontHeight());
+
+        return Segment
+            .createCentredOn(
+                line.hangX(),
+                line.hangY(),
+                Math.toRadians(line.slantDegrees()),
+                lineLength)
+            .computeBandCorners(line.fontHeight());
+    }
+
+    // The measurement itself, which the standing placements run once per pass.
+    private static List<List<double[]>> measureStandingLineBoxes(StandingClusterAnchors standingAnchors) {
+
+        var fitFingerprint = standingAnchors.getFitFingerprint();
+        if (fitFingerprint == null) {
+            return List.of();
+        }
+
+        var resolvedFont = LazyFontCache.loadByFace(fitFingerprint.labelFace());
+        return resolvedFont == null
+            ? List.of()
+            : measureLineBoxes(standingAnchors.getAnchors(), new LazyFontMeasurer(resolvedFont));
+    }
+}

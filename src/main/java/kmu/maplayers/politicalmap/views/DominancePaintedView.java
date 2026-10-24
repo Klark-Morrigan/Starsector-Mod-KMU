@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
@@ -13,15 +14,14 @@ import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
-import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
+import kmu.maplayers.politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import java.util.function.Predicate;
 

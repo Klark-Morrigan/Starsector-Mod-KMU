@@ -12,7 +12,7 @@ import kmlib.colour.ColourPair;
  * that would be.
  *
  * <p>Which stakes that count stands for is settled before this value is built, by the layer's
- * own source: the rule on {@link RibbonPlan} counts what it is handed and asks nothing about
+ * own source: the rule on {@link OwnerRibbonRuns} counts what it is handed and asks nothing about
  * where the number came from. What reaches it per mechanic
  * is the order, so a band cannot mean one thing under one painting mechanic and another under
  * the next.

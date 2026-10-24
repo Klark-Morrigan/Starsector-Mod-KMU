@@ -19,9 +19,8 @@ import java.util.Map;
  * different passes, and nothing downstream could tell: a name would be fitted inside a border
  * traced from cells that no longer group that way.
  *
- * <p>It is also the term this seam was missing. A layer supplies one of these and the two
- * resolvers, and gets placements back - which is what makes the contract statable rather than an
- * argument list each caller reproduces.
+ * <p>It is the one term between the fit drive and the search: the drive cuts it from the keys a
+ * layer handed over, and the search reads it whole, so no layer assembles one itself.
  *
  * <p>Opaque owners throughout, like the geometry it is cut from, so any layer can partition on
  * whatever it groups by.
@@ -32,7 +31,7 @@ import java.util.Map;
  *                                keep-outs
  * @param grouping                which system each cell draws as, and each system's owner
  */
-public record ClusterPartition(
+record ClusterPartition(
     List<List<SystemKey>> clusterMemberSystemKeys,
     Map<SystemKey, List<CellEdge>> edgesByCellKey,
     Map<SystemKey, double[]> siteBySystemKey,

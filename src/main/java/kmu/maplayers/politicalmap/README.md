@@ -164,16 +164,8 @@ flowchart TD
     B --> MAP([Coloured map])
 ```
 
-The bands come after the names rather than before them because they are laid *around* them:
-a name is fitted inside the border its cluster's cells trace,
-so it has no place until the cells are shaped,
-and a band baked before that would run under a word.
-Baked last,
-each band carves the names' boxes out of its cell's ring and lays its runs along what is left -
-or carves nothing,
-where the player would rather have the whole band and let the name draw across it.
-Either way the pass runs last,
-so the ordering is what makes the choice available rather than what settles it.
+The bands come after the names because they are laid around them;
+why is [the band bake](../ownermap/render/ribbon/README.md#why-the-bands-bake-last)'s.
 
 What changes between views is only those four inputs;
 from the seam on,
@@ -362,18 +354,23 @@ the vanilla claim mechanic.
 Each holds its rule,
 its whole-sector stats and the sort modes over them,
 its band ranking and its hover box.
-The views and the holder sources sit beside the mechanics rather than inside one,
-in `views` and `holders`:
+The views,
+the holder sources and the held-or-claimed band planner sit beside the mechanics rather than inside one,
+in `views`,
+`holders` and `ribbon`:
 they are this layer's answers to the tier's seams,
 and they compose the mechanics -
-the Factions and Alliances holding folds claims onto held dominance -
+the Factions and Alliances holding folds claims onto held dominance,
+and their bands follow it -
 so shelving them under either mechanic would make that mechanic name the other.
+The build closes `dominance` and `claims` to each other.
 
 | Package | What is in it |
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
 | `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), and the contest-painted views' (`DominancePaintedView`) |
 | `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
+| [`ribbon`](ribbon/README.md) | the band planner of the views that fold claims onto held dominance (`HeldOrClaimedSystemRibbonPlanner`) |
 | [`dominance`](dominance/README.md) | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`), stated in [the market contest](dominance/README.md#what-a-colony-weighs) |
 | `dominance/standings` | one hovered system's ranked standings, per group and per faction |
@@ -501,10 +498,11 @@ Each view injects into the framework's hover box the explanation of the mechanic
 
 ### The presence ribbon
 
-The band's plan,
-its gate and its draw are the tier's:
-the [plan and its gate](../ownermap/ribbon/README.md)
-and the [ring geometry and the draw](../ownermap/render/ribbon/README.md).
+The band's runs and its gate are the tier's:
+the [runs](../ownermap/ribbon/README.md)
+and the [bake](../ownermap/render/ribbon/README.md).
+Its geometry and draw are the substrate's,
+in [`base.ribbon`](../base/ribbon/README.md).
 What this layer supplies is where a band's order comes from,
 which is each painting mechanic's own business
 and keeping it there is what makes one band mean one thing on every view:
@@ -516,7 +514,17 @@ the cells no claim covers among them,
 since the claim walk never sees a hidden or player-owned market
 and a band is the only thing that reports those systems.
 Which of the two answers for a cell is the view's own call,
-made through the same seam it picks its holder source and its hover box by.
+made through the same seam it picks its holder source and its hover box by;
+the Factions and Alliances views make it through [the held-or-claimed planner](ribbon/README.md).
+
+Where the bands are drawn is this layer's too:
+`PoliticalMapBandLayoutReader` reads the player's **Nebula draw order** setting for the presence bands into the `OwnerMapBandLayout` it hands the tier.
+It ships as **Below**,
+with the fills and borders the bands are laid on,
+and only the names rise clear of the nebulae:
+the nebulae decide whether a reader gets a word at all,
+where a shape they dim is merely quieter.
+The setting exists because how much a dimmed band loses depends on the palette it is read against.
 
 ### Sidebar controls
 

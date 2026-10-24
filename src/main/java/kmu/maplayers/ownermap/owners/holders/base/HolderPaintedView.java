@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
+import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
@@ -13,7 +14,6 @@ import kmu.maplayers.ownermap.picker.OwnerMetrics;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import java.util.function.Function;
 import java.util.function.Predicate;

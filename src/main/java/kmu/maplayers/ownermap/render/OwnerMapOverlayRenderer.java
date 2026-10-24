@@ -6,21 +6,24 @@ import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.MapLayerHoverGates;
 import kmu.maplayers.base.labels.LabelRenderer;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorRuns;
 import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.MapFrameCompositor;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
+import kmu.maplayers.base.ribbon.CellRibbonRenderer;
+import kmu.maplayers.base.ribbon.overlay.CellRibbonPathRenderer;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
-import kmu.maplayers.ownermap.render.ribbon.CellPresenceRibbonRenderer;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonPathRenderer;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.apache.log4j.Logger;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -82,6 +85,12 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // be told from one whose render never fired.
     private boolean hasLoggedFirstRender;
 
+    // The anchor overlay packed into its draw runs, and the placements it was packed from. Kept
+    // while the cache holds the same placements, which hands over a new list with every pass, so
+    // the overlay is packed once per pass rather than walked afresh every frame it is on.
+    private ClusterAnchorRuns anchorRuns = ClusterAnchorRuns.NONE;
+    private List<ClusterAnchor> packedAnchors = List.of();
+
     // The highlight's view of the draw lists, kept while the cache holds the same clusters, so a
     // frame with the cursor on the map allocates nothing for it.
     private OwnerMapHoverHighlightSource hoverHighlightSource;
@@ -133,7 +142,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         // being empty): the placements are also built for the owner names, so the list can be
         // non-empty while the debug overlay is off.
         if (isPaintingFills && KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
-            ClusterAnchorRenderer.renderOnMap(cache.getClusterAnchors(), mapFrame);
+            ClusterAnchorRenderer.renderOnMap(resolveAnchorRuns(cache.getClusterAnchors()), mapFrame);
         }
 
         // The debug overlay replaced the draw lists the bands were baked into, so there is nothing
@@ -238,6 +247,19 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         return hoverHighlightSource;
     }
 
+    // The runs packed from these placements: the ones held while they are the ones standing, fresh
+    // ones after a pass replaced them.
+    private ClusterAnchorRuns resolveAnchorRuns(List<ClusterAnchor> anchors) {
+
+        if (anchors != packedAnchors) {
+
+            anchorRuns = ClusterAnchorRuns.packAnchorRuns(anchors);
+            packedAnchors = anchors;
+        }
+
+        return anchorRuns;
+    }
+
     // The per-cell presence bands, and the debug overlay explaining them straight after: the path
     // draws over the band it explains, so a band and the ring it was laid on read against each
     // other. The overlay is gated by the paths themselves rather than by a settings read: the bake
@@ -245,12 +267,17 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // bands are gated the same way - a cell where nothing is present bakes none.
     private void renderPresenceBands(MapFrame mapFrame) {
 
-        CellPresenceRibbonRenderer.renderOnMap(
-            cache.getClusters().getPaintedCells().getRibbonByCellKey().values(),
+        var ribbonStore = cache
+            .getClusters()
+            .getPaintedCells()
+            .getRibbonStore();
+
+        CellRibbonRenderer.renderOnMap(
+            ribbonStore.getRibbonByCellKey().values(),
             mapFrame);
 
         CellRibbonPathRenderer.renderOnMap(
-            cache.getClusters().getPaintedCells().getRibbonPathByCellKey().values(),
+            ribbonStore.getRibbonPathByCellKey().values(),
             mapFrame);
     }
 

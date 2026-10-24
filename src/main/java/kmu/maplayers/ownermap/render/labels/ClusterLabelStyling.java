@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.colour.ColourPair;
 import kmlib.colour.Colours;
 import kmlib.starsector.systems.SystemKey;
@@ -10,6 +12,7 @@ import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
+import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
@@ -19,6 +22,7 @@ import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
 import kmu.maplayers.ownermap.render.style.OwnerStyleDecision;
 
+import org.apache.log4j.Logger;
 import org.lazywizard.lazylib.ui.LazyFont;
 
 import java.awt.Color;
@@ -31,7 +35,8 @@ import java.util.function.Function;
  * the fills resolve theirs, so a label never drifts from the cluster group it names. The
  * placement search owns where a label sits; this owns what shade it draws in and which
  * owner's name it spells, and hands the search both as plain functions of an owner ID so the
- * search itself stays ignorant of owners.
+ * search itself stays ignorant of owners. This is the whole of what the owner tier adds to a
+ * name: the fit drive below it is the same for every layer.
  *
  * <p>Both attributes follow the owner reading off filter and the filter rules under one. The
  * colour is baked from the same {@link MapPalettes} mapping the border uses, off the very
@@ -43,6 +48,8 @@ import java.util.function.Function;
  */
 final class ClusterLabelStyling {
 
+    private static final Logger LOG = Global.getLogger(ClusterLabelStyling.class);
+
     // The stand-in name shape (length as a multiple of line height) sized against when
     // no real measurement exists - the label font failed to load, or a cluster's owner
     // resolves no display name. A plausible owner-name proportion, so the debug band
@@ -51,6 +58,35 @@ final class ClusterLabelStyling {
 
     // Resolves only; never instantiated.
     private ClusterLabelStyling() {
+    }
+
+    // The resolver pair the fit names and shades each cluster through, off everything the pass was
+    // baked under. Everything comes off the paints the build beneath the names was painted in,
+    // production or tracing. The desaturation palette is that scheme's, so a desaturated owner's
+    // name matches its recoloured fill and border exactly. The style decision every label follows
+    // is the very one the fills were painted from, remembered per owner by the paints: under a
+    // filter it recedes every non-spotlit owner and leaves the spotlit one full, so a receded name
+    // matches its receded fill and a spotlit name stays full, the drift a filter opens.
+    //
+    // The names are measured in the face the fit hands over rather than the snapshot's own: that is
+    // the face the fit records beside its placements, so the measurement and the record cannot part.
+    static ClusterLabelResolvers createLabelResolvers(
+            ClusterLabelStylingSnapshot labelStyling,
+            FontAtlas labelFace) {
+
+        var paints = labelStyling.paints();
+        var styling = paints.getStyling();
+
+        return new ClusterLabelResolvers(
+            newLabelColourResolver(
+                labelStyling.ownerBySystemKey(),
+                new OwnerNameStyles(styling.categories().readNameStyles()),
+                paints::resolveOwnerStyleDecisionOf,
+                styling.desaturationPalette()),
+            newNameEstimatorResolver(
+                paints.getReading(),
+                paints.getContentInputs(),
+                labelFace));
     }
 
     // The colour a cluster's name (and its debug dot) draws in: the colour choice of the name
@@ -205,6 +241,13 @@ final class ClusterLabelStyling {
 
         var name = reading.resolveName(ownerId, nameFormat);
         if (name == null || name.isBlank()) {
+
+            // Once per owner per rebuild, through the memo above: a stand-in wraps no lines, so
+            // every cluster of this owner goes unnamed on the map, and nothing else says why.
+            LOG.debug("Cluster owner resolves no name, so its clusters draw none;"
+                + " ownerId=" + ownerId
+                + " nameFormat=" + nameFormat);
+
             return new AspectLabelLengthEstimator(FALLBACK_NAME_ASPECT);
         }
 
