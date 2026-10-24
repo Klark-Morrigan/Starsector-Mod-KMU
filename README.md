@@ -436,6 +436,14 @@ and batch files CRLF,
 which `cmd.exe` requires.
 Binary files are left to git's own detection.
 
+[scripts/show-download-counts.sh](scripts/show-download-counts.sh)
+(and its [.bat](scripts/show-download-counts.bat))
+shows the download counts and badge figures a badge run would publish,
+publishing nothing.
+It hands this repo's root to KMLib's script of the same name,
+so it needs KMLib and Common-Automation as sibling checkouts,
+and `gh` logged in.
+
 ### Developer tooling
 
 The `utils` source set,
