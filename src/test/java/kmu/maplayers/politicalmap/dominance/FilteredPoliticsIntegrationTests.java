@@ -11,6 +11,7 @@ import kmlib.colour.ColourPair;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderInhabitation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
@@ -75,6 +76,11 @@ class FilteredPoliticsIntegrationTests {
 
     // The one system the contested sector holds.
     private static final String OWNED_SYSTEM = "owned-system";
+
+    // A spotlight built outright, for the passes no faction can be read off.
+    private static final BlocSpotlight HEGEMONY_SPOTLIGHT = new BlocSpotlight(
+        "hegemony",
+        new SystemOwner(SPOTLIT_KEY, buildPaletteOf(HEGEMONY_FACTION_BRIGHT)));
 
     @Nested
     class ResolveFilteredHolder {
@@ -220,10 +226,11 @@ class FilteredPoliticsIntegrationTests {
                 Map.of("alliance-1", "Allied Powers"));
 
             var pass = DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping);
+            var spotlight = openSpotlightOver(pass, "alliance-1");
             var expectedHolder = new SystemOwner(SPOTLIT_KEY, buildPaletteOf(HEGEMONY_FACTION_BRIGHT));
 
             // ACT
-            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, "alliance-1");
+            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, spotlight);
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -311,7 +318,7 @@ class FilteredPoliticsIntegrationTests {
         void withholdsABlocWhoseOnlyMarketHereIsADerelict() {
 
             // ARRANGE
-            var sector = buildSectorWith("haven", List.of(buildFaction(Factions.NEUTRAL)));
+            var sector = buildSectorWith("haven", List.of(buildFaction(Factions.NEUTRAL, NEUTRAL_BASE)));
 
             placeMarketsOnSystemEntities(
                 buildOnlySystem(sector),
@@ -372,23 +379,6 @@ class FilteredPoliticsIntegrationTests {
                 .doesNotContainKey(buildCellKey("haven"));
         }
 
-        // No pick, no spotlight: the filtered holding is empty, the caller taking the plain one.
-        @Test
-        void isEmptyWhenNoBlocIsSelected() {
-
-            // ARRANGE
-            var sector = buildContestedSector();
-
-            // ACT
-            var actualResolution = FilteredPolitics.resolveFilteredHolder(buildPassOver(sector), null);
-
-            // ASSERT
-            assertThat(actualResolution.ownerBySystemKey())
-                .isEmpty();
-            assertThat(actualResolution.fillStates().getNonSolidFillStateBySystemKey())
-                .isEmpty();
-        }
-
         // A pass over no sector has nothing to walk.
         @Test
         void isEmptyForNullSector() {
@@ -397,7 +387,7 @@ class FilteredPoliticsIntegrationTests {
             var pass = buildPassOver(null);
 
             // ACT
-            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, "hegemony");
+            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, HEGEMONY_SPOTLIGHT);
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -415,7 +405,7 @@ class FilteredPoliticsIntegrationTests {
             var pass = buildPassOver(mock(SectorAPI.class));
 
             // ACT
-            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, "hegemony");
+            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, HEGEMONY_SPOTLIGHT);
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -453,6 +443,7 @@ class FilteredPoliticsIntegrationTests {
             // ARRANGE
             var sector = buildContestedSector();
             var pass = buildPassOver(sector);
+            var spotlight = openSpotlightOver(pass, "tritachyon");
             var expectedResolved = new ResolvedSystemOwner(
                 new SystemOwner(SPOTLIT_KEY, buildPaletteOf(TRITACHYON_FACTION_BRIGHT)),
                 FillState.HATCHED);
@@ -461,7 +452,7 @@ class FilteredPoliticsIntegrationTests {
             var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
                 buildOnlySystem(sector),
                 pass,
-                FilteredPolitics.createSpotlight(pass, "tritachyon"));
+                spotlight);
 
             // ASSERT
             assertThat(actualResolved)
@@ -475,6 +466,7 @@ class FilteredPoliticsIntegrationTests {
             // ARRANGE
             var sector = buildContestedSector();
             var pass = buildPassOver(sector);
+            var spotlight = openSpotlightOver(pass, "hegemony");
             var expectedResolved = new ResolvedSystemOwner(
                 new SystemOwner(SPOTLIT_KEY, buildPaletteOf(HEGEMONY_FACTION_BRIGHT)),
                 FillState.SOLID);
@@ -483,7 +475,7 @@ class FilteredPoliticsIntegrationTests {
             var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
                 buildOnlySystem(sector),
                 pass,
-                FilteredPolitics.createSpotlight(pass, "hegemony"));
+                spotlight);
 
             // ASSERT
             assertThat(actualResolved)
@@ -503,6 +495,7 @@ class FilteredPoliticsIntegrationTests {
                 buildVisibleMarket(tritachyon, 3));
 
             var pass = buildPassOver(sector);
+            var spotlight = openSpotlightOver(pass, "hegemony");
             var expectedResolved = new ResolvedSystemOwner(
                 new SystemOwner("tritachyon", buildPaletteOf(TRITACHYON_FACTION_BRIGHT)),
                 FillState.SOLID);
@@ -511,30 +504,7 @@ class FilteredPoliticsIntegrationTests {
             var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
                 buildOnlySystem(sector),
                 pass,
-                FilteredPolitics.createSpotlight(pass, "hegemony"));
-
-            // ASSERT
-            assertThat(actualResolved)
-                .isEqualTo(expectedResolved);
-        }
-
-        // A spotlight whose colour faction has gone holds no holder to draw the pick in, and today
-        // the held arm keeps the system on its real holder, solid, rather than dropping it - where
-        // the claim arm drops the pick's claims outright.
-        @Test
-        void keepsTheRealHolderSolidWhereTheSpotlightsColourFactionIsGone() {
-
-            // ARRANGE
-            var sector = buildContestedSector();
-            var expectedResolved = new ResolvedSystemOwner(
-                new SystemOwner("hegemony", buildPaletteOf(HEGEMONY_FACTION_BRIGHT)),
-                FillState.SOLID);
-
-            // ACT
-            var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
-                buildOnlySystem(sector),
-                buildPassOver(sector),
-                new FilteredPolitics.Spotlight("tritachyon", null));
+                spotlight);
 
             // ASSERT
             assertThat(actualResolved)
@@ -546,14 +516,13 @@ class FilteredPoliticsIntegrationTests {
         void answersNobodyForASystemTheSectorNoLongerLists() {
 
             // ARRANGE
-            var sector = buildContestedSector();
-            var pass = buildPassOver(sector);
+            var pass = buildPassOver(buildContestedSector());
 
             // ACT
             var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
                 null,
                 pass,
-                FilteredPolitics.createSpotlight(pass, "hegemony"));
+                HEGEMONY_SPOTLIGHT);
 
             // ASSERT
             assertThat(actualResolved)
@@ -572,51 +541,11 @@ class FilteredPoliticsIntegrationTests {
             var actualResolved = FilteredPolitics.resolveFilteredHolderIn(
                 mock(StarSystemAPI.class),
                 pass,
-                new FilteredPolitics.Spotlight("hegemony", null));
+                HEGEMONY_SPOTLIGHT);
 
             // ASSERT
             assertThat(actualResolved)
                 .isSameAs(ResolvedSystemOwner.UNOWNED);
-        }
-    }
-
-    @Nested
-    class CreateSpotlight {
-
-        // Every system the pick is present in carries one holder, so it is made once here: the
-        // spotlit key in the pick's own palette, which its bands take too.
-        @Test
-        void pairsThePickWithTheSpotlitKeyInItsPalette() {
-
-            // ARRANGE
-            var pass = buildPassOver(buildContestedSector());
-            var expectedSpotlight = new FilteredPolitics.Spotlight(
-                "hegemony",
-                new SystemOwner(SPOTLIT_KEY, buildPaletteOf(HEGEMONY_FACTION_BRIGHT)));
-
-            // ACT
-            var actualSpotlight = FilteredPolitics.createSpotlight(pass, "hegemony");
-
-            // ASSERT
-            assertThat(actualSpotlight)
-                .isEqualTo(expectedSpotlight);
-        }
-
-        // A pick whose colour faction the sector no longer names has no palette to draw in, so the
-        // spotlight carries no holder and every system falls back to its real one.
-        @Test
-        void carriesNoHolderWhereThePicksColourFactionIsGone() {
-
-            // ARRANGE
-            var pass = buildPassOver(buildContestedSector());
-            var expectedSpotlight = new FilteredPolitics.Spotlight("pirates", null);
-
-            // ACT
-            var actualSpotlight = FilteredPolitics.createSpotlight(pass, "pirates");
-
-            // ASSERT
-            assertThat(actualSpotlight)
-                .isEqualTo(expectedSpotlight);
         }
     }
 
@@ -660,15 +589,21 @@ class FilteredPoliticsIntegrationTests {
         return new ColourPair(brightColour, buildDarkTheme(brightColour));
     }
 
+    // The spotlight a pass opens for a pick whose colour faction the sector names.
+    private static BlocSpotlight openSpotlightOver(DominancePass pass, String selectedBlocId) {
+
+        return BlocSpotlight
+            .openOver(pass.holding(), selectedBlocId)
+            .orElseThrow();
+    }
+
     // Resolves the presence-aware holding for a selected faction under the identity grouping and
     // the shared stability rule, the shape every faction-view filter test reads.
     private static HolderResolution resolveFor(
             SectorAPI sector,
             String selectedBlocId) {
 
-        return FilteredPolitics.resolveFilteredHolder(
-            buildPassOver(sector),
-            selectedBlocId);
+        return resolveUnder(buildPassOver(sector), selectedBlocId);
     }
 
     // The same resolve with the dev reveal lifting the fog, for the one case that poses a colony
@@ -678,12 +613,16 @@ class FilteredPoliticsIntegrationTests {
             SectorAPI sector,
             String selectedBlocId) {
 
-        return FilteredPolitics.resolveFilteredHolder(
-            DominancePass.createOver(
-                sector,
-                STABILITY_WEIGHTED,
-                UNDER_THE_DEV_REVEAL,
-                HolderGrouping.identity()),
-            selectedBlocId);
+        var pass = DominancePass.createOver(
+            sector,
+            STABILITY_WEIGHTED,
+            UNDER_THE_DEV_REVEAL,
+            HolderGrouping.identity());
+
+        return resolveUnder(pass, selectedBlocId);
+    }
+
+    private static HolderResolution resolveUnder(DominancePass pass, String selectedBlocId) {
+        return FilteredPolitics.resolveFilteredHolder(pass, openSpotlightOver(pass, selectedBlocId));
     }
 }

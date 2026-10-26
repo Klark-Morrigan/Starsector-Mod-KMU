@@ -450,10 +450,12 @@ So a word of one axis never stands in for another:
 | cursor | 光标 | the usual UI word for the pointer on screen |
 | dev display (an overlay a Dev setting draws over the map) | 调试显示 | 调试, the usual word for debugging, with 显示, a display |
 | frame (one drawing of the screen) | 帧 | the usual graphics word; per frame is 每帧 |
+| fuse (cells of one owner drawn as one territory under one border) | 融合 | the plain word for things merging into one |
 | gate (the switch a smoothing pass runs under) | 开关 | the plain word for a switch, something turned on or off |
 | paint (everything one owner's elements draw from) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
 | paint scheme (the theme and palettes one build styles by) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
 | radio (a row of options with one lit) | 单选框 | the usual UI word for a one-of-many control |
+| real holder (who holds a system with no spotlight up) | 实际持有者 | 实际, actual, with 持有者, a holder: the holder the system has before any spotlight rekeys it |
 | rebuild (the map's drawing worked out again) | 重建 | the usual word for building something again |
 | recede control | 退后控件 | 退后 with 控件, the usual UI word for a control |
 | redraw (the map drawn again) | 重绘 | 重, again, with 绘, to draw; the word earlier entries already use |

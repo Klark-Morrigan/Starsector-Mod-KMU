@@ -3,10 +3,11 @@ package kmu.maplayers.politicalmap.holders;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.base.render.clusters.SystemFillStates;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
-import kmu.maplayers.politicalmap.claims.FilteredClaims;
+import kmu.maplayers.politicalmap.claims.FilteredClaimReader;
 
 /**
  * The holding source the Claims view resolves under: every claimed star system painted solid
@@ -55,11 +56,16 @@ public final class ClaimsHolderProvider
     @Override
     public HolderResolution resolveHolder(HolderPass pass, String selectedBlocId) {
 
+        var claimReader = FilteredClaimReader.openOver(
+            pass,
+            claimReaderSource,
+            BlocSpotlight.openOver(pass, selectedBlocId));
+
         // A claim covers the whole territory here, so every claimed system paints solid: no
         // contested and no unfilled systems, which the fill split reads as its whole-cluster-solid
         // fast path. The spotlight only changes which key a claim carries, never its fill.
         return new HolderResolution(
-            FilteredClaims.resolveFilteredClaimsThrough(pass, claimReaderSource, selectedBlocId),
+            claimReader.resolveClaimingHolderBySystemKey(),
             SystemFillStates.ALL_SOLID);
     }
 }

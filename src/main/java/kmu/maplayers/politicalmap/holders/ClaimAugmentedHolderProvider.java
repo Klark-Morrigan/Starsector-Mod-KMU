@@ -7,10 +7,11 @@ import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
-import kmu.maplayers.politicalmap.claims.FilteredClaims;
+import kmu.maplayers.politicalmap.claims.FilteredClaimReader;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -44,11 +45,11 @@ import java.util.Map;
 public final class ClaimAugmentedHolderProvider
         implements HolderProvider {
 
-    private final HolderProvider heldHolderProvider;
+    private final DominanceHolderProvider heldHolderProvider;
     private final ClaimReaderSource claimReaderSource;
 
     ClaimAugmentedHolderProvider(
-            HolderProvider heldHolderProvider,
+            DominanceHolderProvider heldHolderProvider,
             ClaimReaderSource claimReaderSource) {
 
         this.heldHolderProvider = heldHolderProvider;
@@ -70,14 +71,15 @@ public final class ClaimAugmentedHolderProvider
     @Override
     public HolderResolution resolveHolder(HolderPass pass, String selectedBlocId) {
 
-        var held = heldHolderProvider.resolveHolder(pass, selectedBlocId);
+        // One spotlight for both halves, so the bloc's held and claimed cells fuse through one value.
+        var spotlight = BlocSpotlight.openOver(pass, selectedBlocId);
+        var held = heldHolderProvider.resolveHolderUnder(pass, spotlight);
 
-        // The claims arrive already under whatever spotlight is active, so the fold only has to
-        // answer which claimed systems join the holder map, never which key each one carries.
-        var claimingHolderBySystemKey = FilteredClaims.resolveFilteredClaimsThrough(
-            pass,
-            claimReaderSource,
-            selectedBlocId);
+        // The claims arrive already under that spotlight, so the fold only has to answer which
+        // claimed systems join the holder map, never which key each one carries.
+        var claimingHolderBySystemKey = FilteredClaimReader
+            .openOver(pass, claimReaderSource, spotlight)
+            .resolveClaimingHolderBySystemKey();
 
         return foldClaimsIntoHeld(held, claimingHolderBySystemKey);
     }

@@ -124,11 +124,21 @@ see [`render.style`](../../ownermap/render/style/README.md).
 
 ## Under a spotlight
 
-`FilteredClaims` decides which claims a spotlight moves,
-once for both claim-reading sources.
+`FilteredClaimReader` decides which claims a spotlight moves,
+once for every claim-reading source and resolver.
 The spotlit bloc's claims carry its one synthetic spotlight key,
 and every rival's claim keeps its own,
 so the rivals fade with the rest of the background.
+
+It is opened over one pass,
+with the `BlocSpotlight` its caller opened over that pass.
+Where held dominance is read beside the claims,
+both halves take that one spotlight,
+so the bloc's held and claimed cells fuse through one value.
+With no spotlight every claim keeps its own key.
+That covers a pick whose colour faction has gone:
+its claims draw as their claimant's,
+as its held systems draw as their real holder's.
 
 ## The picker's numbers
 

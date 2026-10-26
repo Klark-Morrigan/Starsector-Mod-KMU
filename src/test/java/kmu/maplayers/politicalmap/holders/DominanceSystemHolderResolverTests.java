@@ -8,6 +8,7 @@ import kmlib.colour.ColourPair;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
@@ -21,25 +22,24 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.Optional;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins which contest a batch re-derives a marked system by: the plain one off filter, filled solid,
- * and the presence-aware one under the spotlight the batch was opened under, resolved once for the
- * batch. Both contests have suites of their own and are stood in for at their static seams.
+ * Pins which contest a batch re-derives a marked system by: the plain one with no spotlight, filled
+ * solid, and the presence-aware one under the spotlight the batch was opened under. Both contests
+ * have suites of their own and are stood in for at their static seams.
  */
 final class DominanceSystemHolderResolverTests {
 
-    private static final String SPOTLIT_BLOC_ID = "hegemony";
     private static final SystemOwner HEGEMONY = new SystemOwner("hegemony", new ColourPair(Color.RED, Color.BLUE));
+    private static final BlocSpotlight HEGEMONY_SPOTLIGHT = new BlocSpotlight("hegemony", HEGEMONY);
 
     private final HolderPass pass = HolderPass.createOver(
         mock(SectorAPI.class),
@@ -74,26 +74,29 @@ final class DominanceSystemHolderResolverTests {
     }
 
     @Nested
-    class ResolveHolderIn {
+    class OpenResolverUnder {
 
-        // Off filter the batch re-derives by the plain contest, which fills every system it gives
-        // anybody solid, as the whole-sector pass does.
+        // With no spotlight - off filter, or a pick whose colour faction has gone - the batch
+        // re-derives by the plain contest, which fills every system it gives anybody solid, as the
+        // whole-sector pass does.
         @Test
-        void answersThePlainContestsHolderFilledSolidOffFilter() {
+        void answersThePlainContestsHolderFilledSolidWithNoSpotlight() {
 
             // ARRANGE
+            var expectedResolved = new ResolvedSystemOwner(HEGEMONY, FillState.SOLID);
+
             plainContestMock
                 .when(() -> SectorPolitics.resolveDominantHolder(same(systemMock), same(dominancePassMock)))
                 .thenReturn(HEGEMONY);
 
             // ACT
             var actualResolved = DominanceSystemHolderResolver
-                .openResolverOver(pass, null)
+                .openResolverUnder(pass, Optional.empty())
                 .resolveHolderIn(systemMock);
 
             // ASSERT
             assertThat(actualResolved)
-                .isEqualTo(new ResolvedSystemOwner(HEGEMONY, FillState.SOLID));
+                .isEqualTo(expectedResolved);
 
             spotlitContestMock.verifyNoInteractions();
         }
@@ -101,7 +104,7 @@ final class DominanceSystemHolderResolverTests {
         // A system the contest gives nobody - nothing weighed there, or a system the sector no
         // longer lists - draws as nobody's, the one unowned answer.
         @Test
-        void answersUnownedWhereThePlainContestNamesNobodyOffFilter() {
+        void answersUnownedWhereThePlainContestNamesNobodyWithNoSpotlight() {
 
             // ARRANGE
             plainContestMock
@@ -110,7 +113,7 @@ final class DominanceSystemHolderResolverTests {
 
             // ACT
             var actualResolved = DominanceSystemHolderResolver
-                .openResolverOver(pass, null)
+                .openResolverUnder(pass, Optional.empty())
                 .resolveHolderIn(systemMock);
 
             // ASSERT
@@ -118,29 +121,24 @@ final class DominanceSystemHolderResolverTests {
                 .isSameAs(ResolvedSystemOwner.UNOWNED);
         }
 
-        // Under a spotlight the plain contest would overwrite the spotlit key, which is the one
-        // thing a filtered map could not fold before: the batch asks the presence-aware contest.
+        // Under a spotlight the plain contest would overwrite the spotlit key, so the batch asks the
+        // presence-aware contest, handed the very spotlight the batch was opened under.
         @Test
         void answersThePresenceAwareContestUnderTheSpotlight() {
 
             // ARRANGE
-            var spotlight = new FilteredPolitics.Spotlight(SPOTLIT_BLOC_ID, HEGEMONY);
             var expectedResolved = new ResolvedSystemOwner(HEGEMONY, FillState.HATCHED);
-
-            spotlitContestMock
-                .when(() -> FilteredPolitics.createSpotlight(same(dominancePassMock), eq(SPOTLIT_BLOC_ID)))
-                .thenReturn(spotlight);
 
             spotlitContestMock
                 .when(() -> FilteredPolitics.resolveFilteredHolderIn(
                     same(systemMock),
                     same(dominancePassMock),
-                    same(spotlight)))
+                    same(HEGEMONY_SPOTLIGHT)))
                 .thenReturn(expectedResolved);
 
             // ACT
             var actualResolved = DominanceSystemHolderResolver
-                .openResolverOver(pass, SPOTLIT_BLOC_ID)
+                .openResolverUnder(pass, Optional.of(HEGEMONY_SPOTLIGHT))
                 .resolveHolderIn(systemMock);
 
             // ASSERT
@@ -148,30 +146,6 @@ final class DominanceSystemHolderResolverTests {
                 .isSameAs(expectedResolved);
 
             plainContestMock.verifyNoInteractions();
-        }
-
-        // The spotlight is one batch's, as it is one walk's in the whole-sector arm, so every
-        // system the batch re-derives is painted the one spotlit holder.
-        @Test
-        void resolvesTheSpotlightOnceForTheBatch() {
-
-            // ARRANGE
-            spotlitContestMock
-                .when(() -> FilteredPolitics.createSpotlight(any(), any()))
-                .thenReturn(new FilteredPolitics.Spotlight(SPOTLIT_BLOC_ID, HEGEMONY));
-            spotlitContestMock
-                .when(() -> FilteredPolitics.resolveFilteredHolderIn(any(), any(), any()))
-                .thenReturn(ResolvedSystemOwner.UNOWNED);
-
-            var resolver = DominanceSystemHolderResolver.openResolverOver(pass, SPOTLIT_BLOC_ID);
-
-            // ACT
-            resolver.resolveHolderIn(systemMock);
-            resolver.resolveHolderIn(mock(StarSystemAPI.class));
-
-            // ASSERT
-            spotlitContestMock.verify(
-                () -> FilteredPolitics.createSpotlight(any(), any()));
         }
     }
 }

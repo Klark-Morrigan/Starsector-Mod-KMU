@@ -1,13 +1,14 @@
 package kmu.maplayers.politicalmap.holders;
 
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolver;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
+
+import java.util.Optional;
 
 /**
  * The political map's per-system holder read: the market contest, asked one system at a time -
@@ -18,47 +19,43 @@ import kmu.maplayers.politicalmap.dominance.SectorPolitics;
  * same rule - and over the batch's own pass, so under the same grouping and the same walk the
  * holder source answers the batch's other questions from. That is what makes a single-system
  * refresh land the winning bloc, and the hatching, the bulk pass would have.
+ *
+ * <p>Which of the two contests a batch asks is settled when its resolver opens, as the bulk pass
+ * settles it once per walk.
  */
-public final class DominanceSystemHolderResolver
-        implements SystemHolderResolver {
+public final class DominanceSystemHolderResolver {
 
-    private final DominancePass pass;
-
-    // The spotlight the standing build was painted under, or null off filter. Resolved once per
-    // batch, as the bulk pass resolves it once per walk.
-    private final FilteredPolitics.Spotlight spotlight;
-
-    private DominanceSystemHolderResolver(DominancePass pass, FilteredPolitics.Spotlight spotlight) {
-
-        this.pass = pass;
-        this.spotlight = spotlight;
+    private DominanceSystemHolderResolver() {
     }
 
     /**
      * Opens one batch's dominance pass over the batch's reading of the sector, and the resolver
      * above it.
      *
-     * @param pass          the batch's reading of the sector, under the grouping the standing
-     *                      build was folded by
-     * @param spotlitBlocId the bloc the standing build was spotlighting, or null off filter
+     * @param pass      the batch's reading of the sector, under the grouping the standing build was
+     *                  folded by
+     * @param spotlight the spotlight the standing build was painted under, opened over that same
+     *                  pass; empty off filter
      * @return the batch's resolver
      */
-    public static SystemHolderResolver openResolverOver(HolderPass pass, String spotlitBlocId) {
+    public static SystemHolderResolver openResolverUnder(HolderPass pass, Optional<BlocSpotlight> spotlight) {
 
         var dominancePass = DominancePass.readRulesFromLunaSettings(pass);
 
-        return new DominanceSystemHolderResolver(
-            dominancePass,
-            spotlitBlocId == null
-                ? null
-                : FilteredPolitics.createSpotlight(dominancePass, spotlitBlocId));
+        return spotlight
+            .map(openedSpotlight -> openSpotlitResolver(dominancePass, openedSpotlight))
+            .orElseGet(() -> openPlainResolver(dominancePass));
     }
 
-    @Override
-    public ResolvedSystemOwner resolveHolderIn(StarSystemAPI system) {
+    // Off filter each system goes to its single dominant holder, filled solid as the bulk pass
+    // fills every system it gives anybody.
+    private static SystemHolderResolver openPlainResolver(DominancePass pass) {
 
-        return spotlight == null
-            ? ResolvedSystemOwner.createSolidlyFilledBy(SectorPolitics.resolveDominantHolder(system, pass))
-            : FilteredPolitics.resolveFilteredHolderIn(system, pass, spotlight);
+        return system -> ResolvedSystemOwner.createSolidlyFilledBy(
+            SectorPolitics.resolveDominantHolder(system, pass));
+    }
+
+    private static SystemHolderResolver openSpotlitResolver(DominancePass pass, BlocSpotlight spotlight) {
+        return system -> FilteredPolitics.resolveFilteredHolderIn(system, pass, spotlight);
     }
 }

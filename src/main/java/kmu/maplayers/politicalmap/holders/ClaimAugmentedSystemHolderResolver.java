@@ -2,15 +2,13 @@ package kmu.maplayers.politicalmap.holders;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
-import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolver;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
-import kmu.maplayers.politicalmap.claims.FilteredClaims;
-import kmu.maplayers.politicalmap.claims.PassClaimReaders;
+import kmu.maplayers.politicalmap.claims.FilteredClaimReader;
 
 /**
  * The faction and alliance views' per-system holder read: held dominance one system at a time,
@@ -23,26 +21,21 @@ import kmu.maplayers.politicalmap.claims.PassClaimReaders;
  *
  * <p>The claim is read only where the held resolve left the system unowned, since a held system
  * keeps its held holder whatever is claimed there. The claim reader is opened over the batch's own
- * pass, so it reads the colonies the held resolve read rather than walking them again.
+ * pass, so it reads the colonies the held resolve read rather than walking them again. Both halves
+ * are opened under one spotlight, so a held cell and a claimed cell of the spotlit bloc fuse.
  */
 public final class ClaimAugmentedSystemHolderResolver
         implements SystemHolderResolver {
 
     private final SystemHolderResolver heldResolver;
-    private final HolderPass pass;
-    private final ClaimReader claimReader;
-    private final String spotlitBlocId;
+    private final FilteredClaimReader claimReader;
 
     private ClaimAugmentedSystemHolderResolver(
             SystemHolderResolver heldResolver,
-            HolderPass pass,
-            ClaimReader claimReader,
-            String spotlitBlocId) {
+            FilteredClaimReader claimReader) {
 
         this.heldResolver = heldResolver;
-        this.pass = pass;
         this.claimReader = claimReader;
-        this.spotlitBlocId = spotlitBlocId;
     }
 
     /**
@@ -54,11 +47,14 @@ public final class ClaimAugmentedSystemHolderResolver
      */
     public static SystemHolderResolverSource createSourceReadingThrough(ClaimReaderSource claimReaderSource) {
 
-        return (pass, spotlitBlocId) -> new ClaimAugmentedSystemHolderResolver(
-            DominanceSystemHolderResolver.openResolverOver(pass, spotlitBlocId),
-            pass,
-            PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
-            spotlitBlocId);
+        return (pass, spotlitBlocId) -> {
+
+            var spotlight = BlocSpotlight.openOver(pass, spotlitBlocId);
+
+            return new ClaimAugmentedSystemHolderResolver(
+                DominanceSystemHolderResolver.openResolverUnder(pass, spotlight),
+                FilteredClaimReader.openOver(pass, claimReaderSource, spotlight));
+        };
     }
 
     @Override
@@ -71,6 +67,6 @@ public final class ClaimAugmentedSystemHolderResolver
 
         return ClaimAugmentedHolderProvider.extendHeldByClaim(
             held,
-            FilteredClaims.resolveFilteredClaimIn(system, pass, claimReader, spotlitBlocId));
+            claimReader.resolveClaimIn(system));
     }
 }

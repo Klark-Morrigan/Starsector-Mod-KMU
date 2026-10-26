@@ -15,11 +15,10 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
-import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
@@ -31,6 +30,7 @@ import org.mockito.MockedStatic;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -40,7 +40,6 @@ import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -70,6 +69,9 @@ final class ClaimAugmentedHolderProviderTests {
         new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY));
     private static final SystemOwner SPOTLIGHT_HOLDER =
         new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY));
+
+    private static final Optional<BlocSpotlight> HEGEMONY_SPOTLIGHT =
+        Optional.of(new BlocSpotlight("hegemony", SPOTLIGHT_HOLDER));
 
     @Nested
     class CreateReadingThrough {
@@ -108,7 +110,7 @@ final class ClaimAugmentedHolderProviderTests {
     class ResolveHolder {
 
         private final ClaimReader claimReaderMock = mock(ClaimReader.class);
-        private final HolderProvider baseProviderMock = mock(HolderProvider.class);
+        private final DominanceHolderProvider baseProviderMock = mock(DominanceHolderProvider.class);
         private final HolderPass pass =
             HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
 
@@ -122,7 +124,7 @@ final class ClaimAugmentedHolderProviderTests {
         void foldsClaimedUnheldSystemsInAsUnfilledOffFilter() {
 
             // ARRANGE
-            stateTheHeld(null, Map.of(buildCellKey("held"), HEGEMONY_HOLDER), SystemFillStates.ALL_SOLID);
+            stateTheHeld(Optional.empty(), Map.of(buildCellKey("held"), HEGEMONY_HOLDER), SystemFillStates.ALL_SOLID);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
@@ -148,7 +150,7 @@ final class ClaimAugmentedHolderProviderTests {
         void keepsAHeldSystemsSolidHolderWhenItIsAlsoClaimed() {
 
             // ARRANGE
-            stateTheHeld(null, Map.of(buildCellKey("shared"), HEGEMONY_HOLDER), SystemFillStates.ALL_SOLID);
+            stateTheHeld(Optional.empty(), Map.of(buildCellKey("shared"), HEGEMONY_HOLDER), SystemFillStates.ALL_SOLID);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
@@ -172,7 +174,7 @@ final class ClaimAugmentedHolderProviderTests {
 
             // ARRANGE
             stateTheHeld(
-                null,
+                Optional.empty(),
                 Map.of(buildCellKey("shared"), HEGEMONY_HOLDER),
                 SystemFillStates.createOf(Map.of(buildCellKey("shared"), FillState.HATCHED)));
 
@@ -200,18 +202,15 @@ final class ClaimAugmentedHolderProviderTests {
 
             // ARRANGE
             stateTheHeld(
-                "hegemony",
+                HEGEMONY_SPOTLIGHT,
                 Map.of(buildCellKey("held"), SPOTLIGHT_HOLDER),
                 SystemFillStates.createOf(Map.of(buildCellKey("held"), FillState.HATCHED)));
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
+                    var spotlightMock = mockStatic(BlocSpotlight.class)) {
 
                 stateTheClaims(sectorClaimsMock, Map.of(buildCellKey("claimed"), HEGEMONY_HOLDER));
-
-                spotlitOwnersMock
-                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
-                    .thenReturn(SPOTLIGHT_HOLDER);
+                stateTheSpotlight(spotlightMock);
 
                 // ACT
                 var actualResolution = provider.resolveHolder(pass, "hegemony");
@@ -233,12 +232,13 @@ final class ClaimAugmentedHolderProviderTests {
         void keepsARivalBlocsClaimUnderItsOwnKeyUnderFilter() {
 
             // ARRANGE
-            stateTheHeld("hegemony", Map.of(buildCellKey("held"), SPOTLIGHT_HOLDER), SystemFillStates.ALL_SOLID);
+            stateTheHeld(HEGEMONY_SPOTLIGHT, Map.of(buildCellKey("held"), SPOTLIGHT_HOLDER), SystemFillStates.ALL_SOLID);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
+                    var spotlightMock = mockStatic(BlocSpotlight.class)) {
 
                 stateTheClaims(sectorClaimsMock, Map.of(buildCellKey("rival-claimed"), TRITACHYON_HOLDER));
+                stateTheSpotlight(spotlightMock);
 
                 // ACT
                 var actualResolution = provider.resolveHolder(pass, "hegemony");
@@ -266,7 +266,7 @@ final class ClaimAugmentedHolderProviderTests {
                     return claimReaderMock;
                 });
 
-            stateTheHeld(null, Map.of(), SystemFillStates.ALL_SOLID);
+            stateTheHeld(Optional.empty(), Map.of(), SystemFillStates.ALL_SOLID);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
@@ -301,7 +301,7 @@ final class ClaimAugmentedHolderProviderTests {
                     return claimReaderMock;
                 });
 
-            when(baseProviderMock.resolveHolder(gatedPass, null))
+            when(baseProviderMock.resolveHolderUnder(gatedPass, Optional.empty()))
                 .thenReturn(new HolderResolution(Map.of(), SystemFillStates.ALL_SOLID));
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
@@ -324,14 +324,22 @@ final class ClaimAugmentedHolderProviderTests {
                 .isEqualTo(GATED_VISIBILITY);
         }
 
-        // What the base provider answers for this case's pass under the given pick.
+        // What the base provider answers for this case's pass under the given spotlight.
         private void stateTheHeld(
-                String selectedBlocId,
+                Optional<BlocSpotlight> spotlight,
                 Map<SystemKey, SystemOwner> ownerBySystemKey,
                 SystemFillStates fillStates) {
 
-            when(baseProviderMock.resolveHolder(pass, selectedBlocId))
+            when(baseProviderMock.resolveHolderUnder(pass, spotlight))
                 .thenReturn(new HolderResolution(ownerBySystemKey, fillStates));
+        }
+
+        // The spotlight this case's pass opens for the pick, which both halves are handed.
+        private void stateTheSpotlight(MockedStatic<BlocSpotlight> spotlightMock) {
+
+            spotlightMock
+                .when(() -> BlocSpotlight.openOver(pass, "hegemony"))
+                .thenReturn(HEGEMONY_SPOTLIGHT);
         }
 
         // What the plain claim read answers for this case's pass, read through this case's reader.

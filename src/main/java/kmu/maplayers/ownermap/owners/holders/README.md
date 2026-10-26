@@ -41,7 +41,7 @@ flowchart LR
 
 | Package | What is in it |
 | --- | --- |
-| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's owner and shades, read once per pass (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
+| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the spotlit bloc paired with the holder it draws as (`BlocSpotlight`), the grouping seam (`HolderGrouping`), a bloc's owner and shades, read once per pass (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
 | `base.picker` | the picker every holder view shares: its assembly (`BlocPickerAssembly`), the standing mode it appends, and the colony size metric and modes a view ranks by |
 | `factions` | one faction as one owner: `FactionOwnerReading`, and the faction lines of the hover box |
 | `alliances` | a group of factions as one owner: `AllianceOwnerReading`, the contest axis (`BlocAffiliation`, `ContestSides`) and the lines naming a holder's allies and rivals |

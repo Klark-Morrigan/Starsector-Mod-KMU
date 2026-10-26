@@ -165,9 +165,13 @@ Widening them would put such a bloc into the ranking that hands out systems,
 and a spotlight must never move a fill.
 
 The spotlit bloc's whole footprint carries one synthetic key,
-which `SpotlitOwners` mints and recognises:
-it builds the spotlit owner from the bloc's palette,
-so the claims resolve spotlights a claim the same way without reaching into this package.
+which `SpotlitOwners` mints and recognises.
+`FilteredPolitics` is handed a `BlocSpotlight`,
+which pairs the bloc with its spotlit owner in the bloc's palette.
+The caller opens it once over the pass and hands the same one to the claims,
+so a held and a claimed cell of the bloc fuse without either mechanic reaching into the other.
+A pick whose colour faction has gone opens no spotlight,
+and every system then draws as its real holder.
 The geometry fuses it into one territory under one border,
 and the contested systems are reported apart (as hatched in `HolderResolution.fillStates`),
 so the fill splits per cell inside that border.

@@ -326,8 +326,10 @@ all of them this layer's own and all in `holders`:
   so nothing is ever contested or unfilled here:
   the resolution has no exceptions and takes the solid fast path on or off filter.
 
-Both claim-reading sources get their claims from [`FilteredClaims`](claims/README.md#under-a-spotlight),
+Both claim-reading sources get their claims from [`FilteredClaimReader`](claims/README.md#under-a-spotlight),
 so which claims a spotlight moves is answered once rather than once per source.
+Each source opens the pass's `BlocSpotlight` once
+and hands it to every half it reads through.
 Each reads them through the claim reader source its view hands it,
 the one the view's bands and hover box read through too;
 see [one reader per pass](claims/README.md#one-reader-per-pass).
@@ -336,8 +338,9 @@ An incremental refresh re-derives one system at a time,
 through a per-system resolver each view states,
 also in `holders`.
 The two dominance views state `ClaimAugmentedSystemHolderResolver`,
-under the spotlight the standing build was painted under.
-It asks `DominanceSystemHolderResolver` first:
+under the spotlight the standing build was painted under,
+opened once for the batch and handed to both its halves.
+It asks the resolver `DominanceSystemHolderResolver` opens first:
 the market contest asked of one system over the batch's own pass,
 under one weighting rule sampled per batch.
 Where the contest leaves the system unheld,
@@ -381,7 +384,7 @@ The build closes `dominance` and `claims` to each other.
 | `dominance/standings` | one hovered system's ranked standings, per group and per faction |
 | [`dominance/ribbon`](dominance/ribbon/README.md) | the band ranking on a cell the contest painted |
 | [`dominance/tooltip`](dominance/tooltip/README.md) | the domination box |
-| [`claims`](claims/README.md) | the claim mechanic: `SectorClaims`, `FilteredClaims`, `PassClaimReaders`, the stats and sort modes |
+| [`claims`](claims/README.md) | the claim mechanic: `SectorClaims`, `FilteredClaimReader`, `PassClaimReaders`, the stats and sort modes |
 | [`claims/ribbon`](claims/ribbon/README.md) | the band ranking on a claims-layer cell |
 | [`claims/tooltip`](claims/tooltip/README.md) | the claims box |
 | [`tooltip`](tooltip/README.md) | what both box families share: `PoliticalMapCellTooltip` with the decree read it heads every box with, `CoreTerritoryHeading`, the contest wording, the status line (`SystemStatusRow`), and the colony lines - a system's colony reading (`SystemColonyReading`) with the qualifier and the observation notes it lays on them |

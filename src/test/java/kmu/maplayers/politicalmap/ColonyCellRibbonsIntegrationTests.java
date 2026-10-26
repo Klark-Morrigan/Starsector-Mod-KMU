@@ -8,6 +8,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.ribbon.RibbonSegment;
+import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
@@ -84,30 +85,35 @@ final class ColonyCellRibbonsIntegrationTests {
     @Nested
     class PlanSystemRibbon {
 
+        // The Hegemony holds two colonies and takes the system on both mechanics; Tri-Tachyon holds
+        // one listed colony and one station the economy never registered. Both bands report two
+        // colonies each, in the same order, so the readout a player sees does not depend on which
+        // layer they are looking at.
         @Test
         void countsOneSystemAlikeThroughBothPaintingMechanics() {
-            // The Hegemony holds two colonies and takes the system on both mechanics; Tri-Tachyon
-            // holds one listed colony and one station the economy never registered. Both bands
-            // report two colonies each, in the same order, so the readout a player sees does not
-            // depend on which layer they are looking at.
+
+            // ARRANGE
             var sector = buildContestedSector();
             var system = buildOnlySystem(sector);
             var holding = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var inputs = buildInputsFor(holding);
 
-            var heldPlan = new HeldSystemRibbonPlanner(
-                    DominancePass.createOver(
-                        holding,
-                        DominancePassFixtures.buildStabilityWeightedRules()),
-                    inputs)
-                .planSystemRibbon(system);
+            var heldPlanner = new HeldSystemRibbonPlanner(
+                DominancePass.createOver(
+                    holding,
+                    DominancePassFixtures.buildStabilityWeightedRules()),
+                inputs);
 
-            var claimedPlan = new ClaimedSystemRibbonPlanner(
-                    buildReaderReporting(buildContestWonBy(HEGEMONY, TRITACHYON)),
-                    inputs)
-                .planSystemRibbon(system);
+            var claimedPlanner = new ClaimedSystemRibbonPlanner(
+                buildReaderReporting(buildContestWonBy(HEGEMONY, TRITACHYON)),
+                inputs);
 
-            assertThat(heldPlan.segments())
+            // ACT
+            var actualHeldPlan = heldPlanner.planSystemRibbon(system);
+            var actualClaimedPlan = claimedPlanner.planSystemRibbon(system);
+
+            // ASSERT
+            assertThat(actualHeldPlan.segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(HEGEMONY_DARK, 1),
@@ -116,17 +122,19 @@ final class ColonyCellRibbonsIntegrationTests {
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
                     new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
-            assertThat(claimedPlan)
-                .isEqualTo(heldPlan);
+            assertThat(actualClaimedPlan)
+                .isEqualTo(actualHeldPlan);
         }
 
+        // The band and the fill over one cell, asked together. Tri-Tachyon's only foothold is a
+        // station the economy never registered: it raises no dominance footprint, so a spotlight
+        // reading presence off the footprints would recede the very system whose band draws
+        // Tri-Tachyon a run. Posed here rather than in either surface's own suite for the reason the
+        // suite exists - each can be self-consistent while disagreeing with the other.
         @Test
         void countsTheBlocWhoseFillTheSpotlightKeeps() {
-            // The band and the fill over one cell, asked together. Tri-Tachyon's only foothold is a
-            // station the economy never registered: it raises no dominance footprint, so before the
-            // presence read was widened the spotlight receded the very system whose band was drawing
-            // Tri-Tachyon a run. Posed here rather than in either surface's own suite for the reason
-            // the suite exists - each was self-consistent while disagreeing with the other.
+
+            // ARRANGE
             var sector = buildSectorWhereTritachyonIsUnregistered();
             var system = buildOnlySystem(sector);
             var holding = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
@@ -134,13 +142,19 @@ final class ColonyCellRibbonsIntegrationTests {
                 holding,
                 DominancePassFixtures.buildStabilityWeightedRules());
 
-            var band = new HeldSystemRibbonPlanner(pass, buildInputsFor(holding))
-                .planSystemRibbon(system);
+            var spotlight = BlocSpotlight
+                .openOver(holding, TRITACHYON)
+                .orElseThrow();
 
-            assertThat(band.segments())
+            // ACT
+            var actualBand = new HeldSystemRibbonPlanner(pass, buildInputsFor(holding)).planSystemRibbon(system);
+            var actualFill = FilteredPolitics.resolveFilteredHolder(pass, spotlight);
+
+            // ASSERT
+            assertThat(actualBand.segments())
                 .extracting(RibbonSegment::colour)
                 .contains(TRITACHYON_BRIGHT);
-            assertThat(FilteredPolitics.resolveFilteredHolder(pass, TRITACHYON).fillStates().getNonSolidFillStateBySystemKey())
+            assertThat(actualFill.fillStates().getNonSolidFillStateBySystemKey())
                 .containsEntry(buildCellKey(SYSTEM_ID), FillState.HATCHED);
         }
     }
