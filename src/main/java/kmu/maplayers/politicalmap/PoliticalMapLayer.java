@@ -208,8 +208,9 @@ public final class PoliticalMapLayer
                 // This layer seeds a cell for every system the map draws, which is the substrate's
                 // own rule - stated here, where the layer composes itself, rather than inherited.
                 CellSeedRule.SEED_DRAWN_SYSTEMS,
-                // The market contest weighs every colony of the sector, so a colony change folds
-                // its system in place rather than walking the economy again.
+                // The tier's default, and this layer's need: the market contest weighs every colony
+                // of the sector, so a colony change folds its system in place rather than walking
+                // the economy again.
                 OwnerMapRefreshStrategy.INCREMENTAL));
     }
 

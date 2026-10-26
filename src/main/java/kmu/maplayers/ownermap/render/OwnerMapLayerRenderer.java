@@ -62,9 +62,10 @@ public final class OwnerMapLayerRenderer {
      *                                  {@link CellSeedRule#SEED_DRAWN_SYSTEMS} for a layer seeding
      *                                  exactly the systems the map draws
      * @param refreshStrategy           what a frame owing no rebuild does with the systems marked
-     *                                  since - {@link OwnerMapRefreshStrategy#FULL_REBUILD} for a
-     *                                  layer whose owner rule is cheap enough to rebuild on every
-     *                                  change
+     *                                  since - {@link OwnerMapRefreshStrategy#INCREMENTAL} by
+     *                                  default, {@link OwnerMapRefreshStrategy#FULL_REBUILD} for a
+     *                                  layer whose answer for one system moves with systems nobody
+     *                                  marked
      * @return a renderer for that machinery, its cache empty until the first frame builds it
      */
     public static SequencedMapLayerRenderer<OwnerPaintedView> createForLiveScreen(

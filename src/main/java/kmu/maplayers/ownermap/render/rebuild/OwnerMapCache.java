@@ -113,8 +113,9 @@ public final class OwnerMapCache
      * @param seedRule        which systems seed a cell - the layer's statement,
      *                        {@link CellSeedRule#SEED_DRAWN_SYSTEMS} for a layer with none of its own
      * @param refreshStrategy what a frame owing no rebuild does with the systems marked since -
-     *                        {@link OwnerMapRefreshStrategy#FULL_REBUILD} for a layer whose owner rule
-     *                        is cheap enough to rebuild on every change
+     *                        {@link OwnerMapRefreshStrategy#INCREMENTAL} by default,
+     *                        {@link OwnerMapRefreshStrategy#FULL_REBUILD} for a layer whose answer for
+     *                        one system moves with systems nobody marked
      */
     public OwnerMapCache(
             SectorMapMachinery machinery,

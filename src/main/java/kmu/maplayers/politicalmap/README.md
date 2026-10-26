@@ -475,7 +475,7 @@ all of them where `PoliticalMapLayer` builds its renderer:
 - **`OwnerMapRefreshStrategy.INCREMENTAL`**,
   the tier's -
   what a frame owing no rebuild does with the systems a change marked.
-  This layer folds them into the map on screen,
+  This layer takes the tier's default and folds them into the map on screen,
   because the market contest weighs every colony of the sector,
   and a colony change should not walk the economy again.
 

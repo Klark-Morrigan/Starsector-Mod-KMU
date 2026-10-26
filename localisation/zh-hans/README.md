@@ -487,8 +487,10 @@ So a word of one axis never stands in for another:
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
 | compositor (what stacks an owner map's sub-layers into one picture) | 合成器 | the usual graphics word for what puts layers together into one picture |
 | debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
+| default (the answer a layer names unless its rule needs another) | 默认 | the plain word; kept apart from 默认值, a setting's default value |
 | draw run (vertices drawn in one GL call) | 绘制批次 | 绘制, to draw, with 批次, a batch |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
+| enum, constant (a type whose values are a closed set of named constants, and one of them) | 枚举, 常量 | the usual Java words for both |
 | fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | fitted box (the box a name's fit reserved) | 拟合框 | 拟合, a fit, with 框, a box |

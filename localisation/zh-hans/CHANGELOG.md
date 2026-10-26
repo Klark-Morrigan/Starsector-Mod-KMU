@@ -76,7 +76,7 @@
 - **`StandingClusterAnchors.computeLineBoxesIfAbsent(Supplier)`**：现有名称的绘制文字所占的空间，每次拟合测量一次，并随该次拟合一起丢弃。`LabelLineBoxes.listLineBoxes` 通过它读取。
 - **`ClusterAnchor.computeFittedBox()`**：落点的拟合框，即名称拟合时预留的框，是名称拟合范围的唯一表述。
 - **`Label.applyFade(float)`**：只在地图的不透明度变化时为文字重新着色。
-- **`OwnerMapRefreshStrategy`**：无需重建的帧如何处理此后被标记的星系，由图层声明。`FULL_REBUILD` 把它们留给下一帧的重建，`INCREMENTAL` 把它们并入屏幕上的地图；结果为 `MarkedSystemsOutcome`。
+- **`OwnerMapRefreshStrategy`**：无需重建的帧如何处理此后被标记的星系，由图层声明。它是只有两个常量的枚举：默认的 `INCREMENTAL` 把它们并入屏幕上的地图；`FULL_REBUILD` 把它们留给下一帧的重建，供某一星系的结果会随未被标记的星系而变化的规则使用；结果为 `MarkedSystemsOutcome`。
 - **`ResolvedSystemOwner`**：单个星系的所有者及其填充状态，即所有者来源和持有规则逐星系给出的结果。
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及调用时其中记录的每个星系的填充状态。
 - **`FilteredPolitics.createSpotlight(DominancePass, String)`**、**`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, Spotlight)`** 和 **`FilteredClaims.resolveFilteredClaimIn(StarSystemAPI, HolderPass, ClaimReader, String)`**：逐星系给出聚焦下的争夺与宣称，所依规则与整个星域的解析相同。

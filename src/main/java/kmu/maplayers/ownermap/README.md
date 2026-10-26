@@ -77,7 +77,7 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | how a cell's presence band is counted | the same source's band planner |
 | each owner's shades, name, crest, recede and category, the shade an unowned cell paints in and the pair a receded one sinks toward | the `OwnerReading` resolved beside the source |
 | which systems seed a cell | a `CellSeedRule`, handed to `OwnerMapLayerRenderer.createForLiveScreen`; `SEED_DRAWN_SYSTEMS` for the systems the map draws |
-| what a frame owing no rebuild does with the systems marked since | an `OwnerMapRefreshStrategy`, handed to `OwnerMapLayerRenderer.createForLiveScreen`: `FULL_REBUILD` to rebuild, `INCREMENTAL` to fold - see [the rebuild is a slot](#the-rebuild-is-a-slot) |
+| what a frame owing no rebuild does with the systems marked since | an `OwnerMapRefreshStrategy`, handed to `OwnerMapLayerRenderer.createForLiveScreen`: `INCREMENTAL` to fold (the default), `FULL_REBUILD` to rebuild - see [the rebuild is a slot](#the-rebuild-is-a-slot) |
 | which categories cells divide into, which one is full strength, and which one an unowned cell falls to | `OwnerCategories`, through `OwnerPaintedView.resolveCategories` |
 | whether the cursor is answered at all | the substrate's `MapLayerHoverGates`, or the tier's `SharedOwnerMapHoverGates` over the shared owner-map switches |
 | what the picker's hovered row lights | `OwnerMapPreviewHighlight`, or the tier's `SpotlightPreviewHighlightRenderer` for a layer offering the spotlight picker |
@@ -169,19 +169,23 @@ rather than the stage reading them off the model it fills.
 A change in one system marks that system stale,
 and what a frame owing no rebuild does with it is the layer's choice:
 an `OwnerMapRefreshStrategy` the layer hands over where it composes itself.
-The answer turns on what the layer's owner rule costs.
-A rule cheap to run over the whole sector loses nothing by rebuilding,
-so `FULL_REBUILD` is the default a layer names:
-it folds nothing,
+`INCREMENTAL` is the default a layer names:
+it re-derives only the marked systems and redraws what they disturbed.
+`FULL_REBUILD` folds nothing,
 and the next frame rebuilds.
-A rule dear enough that a colony change should not walk the sector takes `INCREMENTAL`,
-which re-derives only the marked systems and redraws what they disturbed.
+A layer takes it when its rule's answer for one system moves with systems nobody marked,
+such as a network or reach rule,
+where re-deriving only the marked systems would draw them wrong.
 
-The incremental filler is a **stock** filler, not one layer's own.
+The incremental filler is the default because every layer can take it without cost.
 It reads nothing of a layer but the owner source the standing build was resolved by,
+which every layer states anyway,
 and a marked system lands as a rebuild would draw it,
-its fill state included -
-so a layer with any owner rule may take it.
+its fill state included.
+
+The strategy is an enum:
+the two fillers are the whole set,
+and each has a name a log line can print.
 
 A filtered map folds like any other.
 The source re-derives a marked system as the spotlit build painted it,
@@ -194,9 +198,10 @@ whatever the layer chose.
 Two other parts are slots in the same sense:
 which side of the nebulae each sub-layer paints (`OwnerMapBandLayout`)
 and what the picker's hovered row lights (`OwnerMapPreviewHighlight`).
-None of the three has a default in the tier,
+Neither has a default in the tier,
 since each is one layer's answer;
-a layer states each where it composes itself.
+a layer states both where it composes itself,
+beside its strategy.
 
 ## The arrow
 
