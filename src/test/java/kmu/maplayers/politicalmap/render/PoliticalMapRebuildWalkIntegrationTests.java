@@ -16,7 +16,6 @@ import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
-import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -26,10 +25,7 @@ import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
-import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
 import kmu.maplayers.politicalmap.views.FactionsView;
 
@@ -178,74 +174,94 @@ final class PoliticalMapRebuildWalkIntegrationTests {
     @Nested
     class RefreshDrawLists {
 
+        // The suite's own claim. Every stage asks the same question of the same systems, so the
+        // rebuild opens one reading of the sector and hands it down; three stages each opening a
+        // reading of their own is what this stops, and each would show here as another reading of
+        // every colony in the sector.
         @Test
         void selectsEachSystemsColoniesOnceForTheWholeRebuild() {
-            // The suite's own claim. Every stage asks the same question of the same systems, so the
-            // rebuild opens one reading of the sector and hands it down; three stages each opening
-            // a reading of their own is what this stops, and each would show here as another
-            // reading of every colony in the sector.
+
+            // ARRANGE
             buildContestedSectorWithAnEmptyNeighbour();
 
-            var refresh = captureOneRebuild();
+            // ACT
+            var actualRefresh = captureOneRebuild();
 
-            assertThat(ProfileCounts.readTotalOf(refresh, SectorWalkCounters.COLONIES_READ))
+            // ASSERT
+            assertThat(ProfileCounts.readTotalOf(actualRefresh, SectorWalkCounters.COLONIES_READ))
                 .isEqualTo(TWO_COLONIES_SELECTED_ONCE);
         }
 
+        // What the framework promises the frame it draws in, read off the row the frame opens around
+        // this very call: one traversal of the sector per refresh, however many stages run. A stage
+        // going looking for the system list on its own breaks it, and the breach is the finding a
+        // reader of a capture is handed rather than a number to compare.
         @Test
         void keepsTheRebuildInsideTheFrameworksWalkBudget() {
-            // What the framework promises the frame it draws in, read off the row the frame opens
-            // around this very call: one traversal of the sector per refresh, however many stages
-            // run. A stage going looking for the system list on its own breaks it, and the breach
-            // is the finding a reader of a capture is handed rather than a number to compare.
+
+            // ARRANGE
             buildContestedSectorWithAnEmptyNeighbour();
 
-            assertThat(captureOneRebuild().getBudgetBreach())
+            // ACT
+            var actualRefresh = captureOneRebuild();
+
+            // ASSERT
+            assertThat(actualRefresh.getBudgetBreach())
                 .isSameAs(BudgetBreach.NO_BREACH);
         }
 
+        // The second rebuild, which reads the sector afresh rather than off the first one's reading.
+        // Each refresh is judged on its own call, so a second rebuild that traversed twice would be
+        // the breach even though the first stayed inside the bound.
         @Test
         void keepsTheRebuildInsideTheWalkBudgetOnARefreshSignalToo() {
-            // The second rebuild, which reads the sector afresh rather than off the first one's
-            // reading. Each refresh is judged on its own call, so a second rebuild that traversed
-            // twice would be the breach even though the first stayed inside the bound.
+
+            // ARRANGE
             buildContestedSectorWithAnEmptyNeighbour();
 
-            assertThat(captureRebuildsAcrossARefreshSignal().getBudgetBreach())
+            // ACT
+            var actualRefresh = captureRebuildsAcrossARefreshSignal();
+
+            // ASSERT
+            assertThat(actualRefresh.getBudgetBreach())
                 .isSameAs(BudgetBreach.NO_BREACH);
         }
 
+        // The bound's other half: one walk per refresh rather than one walk ever. A reading kept
+        // between rebuilds would draw the second off the sector the first saw, which is the change a
+        // rebuild exists to show - and would show here as the walk that never happened.
         @Test
         void walksTheSectorAgainOnASecondRebuild() {
-            // The bound's other half: one walk per refresh rather than one walk ever. A reading
-            // kept between rebuilds would draw the second off the sector the first saw, which is
-            // the change a rebuild exists to show - and would show here as the walk that never
-            // happened.
+
+            // ARRANGE
             buildContestedSectorWithAnEmptyNeighbour();
 
-            var refresh = captureRebuildsAcrossARefreshSignal();
+            // ACT
+            var actualRefresh = captureRebuildsAcrossARefreshSignal();
 
-            assertThat(ProfileCounts.readTotalOf(refresh, SectorWalkCounters.SECTOR_WALKS))
+            // ASSERT
+            assertThat(ProfileCounts.readTotalOf(actualRefresh, SectorWalkCounters.SECTOR_WALKS))
                 .isEqualTo(ONE_SECTOR_WALK_PER_REBUILD);
         }
 
+        // The frame this cache spends nearly all of its life on: the map is open, refresh runs, and
+        // no input has moved. Both staleness questions are settled before a reading of the sector is
+        // opened for exactly this reason - a reading opened first would put a walk of every system
+        // into every frame of an idle map, which is worse than the three walks one shared reading
+        // saves.
         @Test
         void readsNoSectorOnAFrameWithNothingStaleToRebuild() {
-            // The frame this cache spends nearly all of its life on: the map is open, refresh runs,
-            // and no input has moved. Both staleness questions are settled before a reading of the
-            // sector is opened for exactly this reason - a reading opened first would put a walk of
-            // every system into every frame of an idle map, which is worse than the three walks one
-            // shared reading saves.
+
+            // ARRANGE
             var sector = buildContestedSectorWithAnEmptyNeighbour();
-            var cache = new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
+
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
+            // ASSERT
             for (var system : sector.getStarSystems()) {
 
                 verify(system, times(1))
@@ -253,193 +269,202 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             }
         }
 
+        // The other half of one reading: one sampling of the rules it is taken under. Three samplings
+        // let a gate flipped mid-rebuild cut the cells under one rule and paint the fills under
+        // another, which nothing on screen would report.
         @Test
         void samplesTheVisibilityRulesOnceForTheWholeRebuild() {
-            // The other half of one reading: one sampling of the rules it is taken under. Three
-            // samplings let a gate flipped mid-rebuild cut the cells under one rule and paint the
-            // fills under another, which nothing on screen would report.
+
+            // ARRANGE
             buildContestedSectorWithAnEmptyNeighbour();
+
+            // ACT
             runOneRebuild();
 
+            // ASSERT
             seams
                 .resolveVisibilityRulesSeam()
                 .verify(MapVisibilityRules::readFromLunaSettings, times(1));
         }
 
+        // The other half of holding one reading per rebuild: it has to be this rebuild's. An index
+        // kept between rebuilds would draw the second off the sector the first saw, which is
+        // precisely the change a rebuild exists to show.
         @Test
         void readsTheSectorAsItStandsOnEachRebuildRatherThanOffTheLastOnes() {
-            // The other half of holding one reading per rebuild: it has to be this rebuild's. An
-            // index kept between rebuilds would draw the second off the sector the first saw,
-            // which is precisely the change a rebuild exists to show.
+
+            // ARRANGE
             var sector = buildContestedSectorWithAnEmptyNeighbour();
-            var cache = new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             settleTheEmptyNeighbour(sector);
             requestTheNextRebuild();
 
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
+            // ASSERT
             assertThat(cache.getClusters().getOccupancy().getInhabitedSystemKeys())
-                .containsExactlyInAnyOrder(buildCellKey(ALPHA_ID), buildCellKey(BETA_ID));
+                .containsExactlyInAnyOrder(ALPHA_CELL, BETA_CELL);
         }
 
+        // A gate flipped between two rebuilds, posed on a colony nobody has discovered: under the
+        // shipped rule the system is unsettled, and under the reveal it is settled and contested. So
+        // the second rebuild's cut, fills and bands each have to move, and a stage sampling the rules
+        // for itself would be the one that did not.
         @Test
         void resolvesEveryStageOfARebuildUnderTheRulesInForceForThatRebuild() {
-            // A gate flipped between two rebuilds, posed on a colony nobody has discovered: under
-            // the shipped rule the system is unsettled, and under the reveal it is settled and
-            // contested. So the second rebuild's cut, fills and bands each have to move, and a
-            // stage sampling the rules for itself would be the one that did not.
+
+            // ARRANGE
             buildUndiscoveredSectorWithAnEmptyNeighbour();
 
-            var cache = new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
             seams.flipVisibilitySettings(UNDISCOVERED_REVEALED);
 
             requestTheNextRebuild();
 
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
-            var territories = cache.getClusters();
+            // ASSERT
+            var actualTerritories = cache.getClusters();
 
             // The cut: the revealed system is drawn, so it has a cell to paint at all.
-            assertThat(territories.getStyledCellByCellKey())
+            assertThat(actualTerritories.getStyledCellByCellKey())
                 .containsKey(ALPHA_CELL);
 
             // The fills: the same system reads as settled rather than as empty backdrop.
-            assertThat(territories.getOccupancy().getInhabitedSystemKeys())
-                .containsExactly(buildCellKey(ALPHA_ID));
+            assertThat(actualTerritories.getOccupancy().getInhabitedSystemKeys())
+                .containsExactly(ALPHA_CELL);
 
             // The bands: its two revealed blocs split the system, so its cell carries runs.
-            assertThat(territories.getPaintedCells().getRibbonStore().getRibbonByCellKey().get(ALPHA_CELL).isEmpty())
+            assertThat(actualTerritories
+                    .getPaintedCells()
+                    .getRibbonStore()
+                    .getRibbonByCellKey()
+                    .get(ALPHA_CELL)
+                    .isEmpty())
                 .isFalse();
         }
 
+        // The cut consults the movers so a system drifting across hyperspace seeds no cell and clips
+        // no neighbour, its borders having nowhere stable to sit. Posed here rather than in a unit
+        // because the moving set is published by a real tracker off real observations and read by a
+        // real cut - neither end of which a stand-in could stage.
         @Test
         void leavesOutTheSystemsItsOwnMachinerySawMoving() {
-            // The cut consults the movers so a system drifting across hyperspace seeds no cell and
-            // clips no neighbour, its borders having nowhere stable to sit. Posed here rather than
-            // in a unit because the moving set is published by a real tracker off real observations
-            // and read by a real cut - neither end of which a stand-in could stage.
+
+            // ARRANGE
             var sector = buildContestedSectorWithASettledNeighbour();
 
             observeSystemMovingInto(
                 machinery.resolveMovingSystems(),
                 SectorOwnershipFixtures.findSystemIn(sector, ALPHA_ID));
 
-            var cache = new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
+            // ASSERT
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKey(BETA_CELL)
                 .doesNotContainKey(ALPHA_CELL);
         }
 
+        // The tracker and the cut address a system the same way, so a mover leaves the partition as
+        // itself and its twin under the shared ID stays cut. Posed with the twin moving - the one an
+        // address by ID would have folded into the first - so it is the twin's own cell, and not the
+        // first system's, that goes.
         @Test
         void leavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
-            // The tracker and the cut address a system the same way, so a mover leaves the
-            // partition as itself and its twin under the shared ID stays cut. Posed with the twin
-            // moving - the one an address by ID would have folded into the first - so it is the
-            // twin's own cell, and not the first system's, that goes.
+
+            // ARRANGE
             var sector = buildContestedSectorWithACoLocatedTwin();
 
             observeSystemMovingInto(machinery.resolveMovingSystems(), findTheTwinIn(sector));
 
-            var cache = new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
+            // ASSERT
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKeys(ANCHORED_ALPHA_CELL, BETA_CELL)
                 .doesNotContainKey(TWIN_CELL);
         }
 
+        // The half a cache holding its own machinery is for. A tracker is keyed by system key and
+        // nothing forbids two sectors from minting a system under the same one, so a cache reading
+        // the running game's movers would drop this sector's system for a drift the other sector's
+        // made.
         @Test
         void cutsASystemAnotherMachinerySawMoving() {
-            // The half a cache holding its own machinery is for. A tracker is keyed by system
-            // key and nothing forbids two sectors from minting a system under the same one, so a
-            // cache reading the running game's movers would drop this sector's system for a
-            // drift the other sector's made.
+
+            // ARRANGE
             var sector = buildContestedSectorWithASettledNeighbour();
 
             observeSystemMovingInto(
                 otherMachinery.resolveMovingSystems(),
                 SectorOwnershipFixtures.findSystemIn(sector, ALPHA_ID));
 
-            var cache = new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
+            // ASSERT
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKeys(ALPHA_CELL, BETA_CELL);
         }
 
+        // The board's half of the same claim. A full rebuild re-derives every system, so it drains
+        // the marks it has just accounted for - and nothing forbids two sectors from minting a system
+        // under one key, so a rebuild draining a shared board would swallow another sector's pending
+        // re-shape and leave that sector drawing a holder that has already moved, with nothing on
+        // either map to say a mark went missing.
         @Test
         void drainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
-            // The board's half of the same claim. A full rebuild re-derives every system, so it
-            // drains the marks it has just accounted for - and nothing forbids two sectors from
-            // minting a system under one key, so a rebuild draining a shared board would swallow
-            // another sector's pending re-shape and leave that sector drawing a holder that has
-            // already moved, with nothing on either map to say a mark went missing.
+
+            // ARRANGE
             buildContestedSectorWithASettledNeighbour();
 
             machinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_CELL);
             otherMachinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_CELL);
 
-            new OwnerMapCache(
-                    machinery,
-                    OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                    CellSeedRule.SEED_DRAWN_SYSTEMS,
-                    OwnerMapRefreshStrategy.INCREMENTAL)
-                .refreshDrawLists(FactionsView.INSTANCE, SCREEN);
+            // ACT
+            runOneRebuild();
 
+            // ASSERT
             assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
             assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .containsExactly(ALPHA_CELL);
         }
 
+        // The question machinery per sector answers. Vanilla's map hook names no sector, so a rebuild
+        // asking the running game which one it is drawing would be right only while the sector it
+        // holds cells for and the sector that is loaded are the same. Posed with them apart: the
+        // cells have to come from the sector the machinery was installed on, and the running one has
+        // to reach nothing.
         @Test
         void cutsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
-            // The question machinery per sector answers. Vanilla's map hook names no sector, so a
-            // rebuild asking the running game which one it is drawing would be right only while
-            // the sector it holds cells for and the sector that is loaded are the same. Posed
-            // with them apart: the cells have to come from the sector the machinery was installed
-            // on, and the running one has to reach nothing.
+
+            // ARRANGE
             buildContestedSectorWithASettledNeighbour();
             stageADifferentSectorAsTheRunningOne();
 
-            var cache = new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
+            // ASSERT
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKeys(ALPHA_CELL, BETA_CELL)
                 .doesNotContainKey(GAMMA_CELL);
@@ -450,11 +475,8 @@ final class PoliticalMapRebuildWalkIntegrationTests {
     // what the rebuild sampled, rather than on what it traversed, wants.
     private void runOneRebuild() {
 
-        new OwnerMapCache(
-                machinery,
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL)
+        PoliticalMapCacheFixture
+            .createCacheOver(machinery)
             .refreshDrawLists(FactionsView.INSTANCE, SCREEN);
     }
 
@@ -463,11 +485,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
     // refresh is allowed to traverse.
     private ProfileNode captureOneRebuild() {
 
-        var cache = new OwnerMapCache(
-            machinery,
-            OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-            CellSeedRule.SEED_DRAWN_SYSTEMS,
-            OwnerMapRefreshStrategy.INCREMENTAL);
+        var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
         return captureRefreshesOf(profiler -> {
 
@@ -482,11 +500,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
     // path. Both land on the one row, each as a call of its own.
     private ProfileNode captureRebuildsAcrossARefreshSignal() {
 
-        var cache = new OwnerMapCache(
-            machinery,
-            OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-            CellSeedRule.SEED_DRAWN_SYSTEMS,
-            OwnerMapRefreshStrategy.INCREMENTAL);
+        var cache = PoliticalMapCacheFixture.createCacheOver(machinery);
 
         return captureRefreshesOf(profiler -> {
 

@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.colour.ColourPair;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.ArrayList;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
@@ -76,6 +78,31 @@ final class ClaimAugmentedSystemHolderResolverTests {
     }
 
     @Nested
+    class CreateSourceReadingThrough {
+
+        // The claim reader shares the batch's walk of each system rather than adding one, so the
+        // claim half reads the colonies the held half was handed.
+        @Test
+        void opensItsClaimReaderOverThePassesOwnWalk() {
+
+            // ARRANGE
+            var openedOver = new ArrayList<SectorPassIndex>();
+            var source = ClaimAugmentedSystemHolderResolver.createSourceReadingThrough(
+                (knownColonyReader, sectorIndex) -> {
+                    openedOver.add(sectorIndex);
+                    return claimReaderMock;
+                });
+
+            // ACT
+            source.openResolverOver(pass, SPOTLIT_BLOC_ID);
+
+            // ASSERT
+            assertThat(openedOver)
+                .containsExactly(pass.sectorIndex());
+        }
+    }
+
+    @Nested
     class ResolveHolderIn {
 
         // The held signal is the stronger one, so a held system keeps its holder and fill whatever
@@ -115,6 +142,7 @@ final class ClaimAugmentedSystemHolderResolverTests {
                 .isEqualTo(new ResolvedSystemOwner(TRITACHYON, FillState.UNFILLED));
         }
 
+        // Neither half names anybody, so the system draws as nobody's, as a rebuild leaves it.
         @Test
         void answersNobodyForAnUnheldUnclaimedSystem() {
 

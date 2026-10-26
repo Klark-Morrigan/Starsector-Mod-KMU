@@ -25,6 +25,7 @@ import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.extent.ClusterNameBoxes;
 import kmu.maplayers.base.labels.extent.LabelLineBoxes;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -71,6 +72,7 @@ import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.HEGEMO
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.SMALL_CELL_SIDE;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.UNFILLED_BY_HEGEMONY;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnerOf;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnersOf;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildSectorWithSystems;
@@ -102,7 +104,7 @@ import static org.mockito.Mockito.when;
  * still opened here, because a case about the redraw has to state the change that provoked it.
  *
  * <p>A unit test, so what the redraw delegates to is stood in for: the owner source the standing
- * build retains, whose resolve answers who owns a marked system and whether anything stands in it;
+ * build retains, whose resolver answers who owns a marked system and whether anything stands in it;
  * the two builders that turn a re-shaped cell and an owner's members into draw records, stood in
  * as the batch constructs them; and, at their static seams, the anchor and label rebuilds that ride
  * along. Each is pinned by its own
@@ -114,6 +116,10 @@ import static org.mockito.Mockito.when;
  * when the placements it labels were themselves rebuilt.
  */
 public final class IncrementalOwnerRefreshTests {
+
+    // A third owner, holding the distant system, so a refill there names an owner neither side of
+    // a flip elsewhere names.
+    private static final String PERSEAN = "persean";
 
     // The revision the caller's cells stand at. This path re-shapes cells but never recuts
     // them, so it fits against the geometry it was handed and reports that same revision back.
@@ -138,6 +144,11 @@ public final class IncrementalOwnerRefreshTests {
     // comes back with runs rather than with the empty band a collapsed inset would give.
     private static final double BAND_SIZED_CELL_SIDE = 4000;
 
+    // Where the flipped and the distant systems' bands start: one site apiece, far enough apart
+    // that neither band reaches the other's cell.
+    private static final double[] FLIPPED_SITE = {2000.0, 2000.0};
+    private static final double[] DISTANT_SITE = {12000.0, 12000.0};
+
     @Nested
     class ApplyStaleOwnerUpdates {
 
@@ -161,8 +172,12 @@ public final class IncrementalOwnerRefreshTests {
         // rather than draining any board of its own, so a case states the batch directly.
         private final Set<SystemKey> staleSystemKeys = new LinkedHashSet<>();
 
+        // The fill states each cluster-group builder the batch stood up was handed, in the order
+        // they were stood up, so a case can read what a re-trace fills by.
+        private final List<SystemFillStates> groupBuilderFillStates = new ArrayList<>();
+
         // The source the standing build was resolved by, which the batch re-derives through, and
-        // what each of its resolves answers. Stated rather than derived from a sector: who owns a
+        // what each of its resolvers answers. Stated rather than derived from a sector: who owns a
         // system is the painting layer's, and this suite is about what the batch does with the
         // answer.
         private OwnerSourceFake ownerSourceFake;
@@ -173,6 +188,7 @@ public final class IncrementalOwnerRefreshTests {
         private MockedConstruction<PaintedCellBuilder> paintedCellsMock;
         private MockedConstruction<ClusterGroupBuilder> clustersMock;
         private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
+        private MockedStatic<LabelsBuilder> labelsMock;
         private MockedStatic<KmuOwnerMapRibbonSettings> settingsMock;
 
         private SectorAPI sectorMock;
@@ -207,10 +223,17 @@ public final class IncrementalOwnerRefreshTests {
                         .createPlaceholderPaintedCellOn(
                             invocation.<ShapedCell>getArgument(1).fillPolygon())));
 
+            // The fill states are the builder's fourth argument, read off the occupancy as the batch
+            // stands the builder up.
             clustersMock = mockConstruction(
                 ClusterGroupBuilder.class,
-                (builderMock, context) -> when(builderMock.buildClusterGroup(any(), anyList()))
-                    .thenReturn(OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of())));
+                (builderMock, context) -> {
+
+                    groupBuilderFillStates.add((SystemFillStates) context.arguments().get(3));
+
+                    when(builderMock.buildClusterGroup(any(), anyList()))
+                        .thenReturn(OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of()));
+                });
 
             // Both ride along after a flip and are pinned by their own suites; opening them
             // leaves each a no-op, so a case here asserts the fold and not their output. The
@@ -228,7 +251,7 @@ public final class IncrementalOwnerRefreshTests {
                     any()))
                 .thenReturn(ClusterNameDisturbance.NONE);
 
-            seams.openSeam(LabelsBuilder.class);
+            labelsMock = seams.openSeam(LabelsBuilder.class);
 
             // The pair arrives labelled by a pass that ran before this frame, which is what
             // every case here folds into: a fold that overwrote the label without re-fitting
@@ -258,125 +281,117 @@ public final class IncrementalOwnerRefreshTests {
             seams.closeEverySeam();
         }
 
+        // A resize changes holding over cells already drawn; it never admits a system to the map,
+        // so one with no cell has nothing to re-shape and must not reach the re-derive at all.
         @Test
         void skipsAStaleSystemThatSeedsNoCell() {
-            // A resize changes holding over cells already drawn; it never admits a
-            // system to the map, so one with no cell has nothing to re-shape and must not
-            // reach the re-derive at all.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
             markStale(CELL_LESS_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(ownerSourceFake.readResolvedSystemIds())
                 .isEmpty();
             assertThat(clusters.getStyledCellByCellKey())
                 .isEmpty();
         }
 
+        // The common resize: a settlement grows, its owner still wins, and what stands there is what
+        // stood there - so the batch disturbed nothing and no cell or cluster group is built again.
+        // The marked system's band is re-baked all the same, which the case below states; here the
+        // cell carries none, so the re-bake finds nothing to write.
         @Test
         void redrawsNothingWhenNoFactMoved() {
-            // The common resize: a settlement grows, its owner still wins, and what stands there is
-            // what stood there - so the batch disturbed nothing and no cell or cluster group is built
-            // again. The marked system's band is re-baked all the same, which the case below
-            // states; here the cell carries none, so the re-bake finds nothing to write.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
-            verifyNoCellBaked();
+            // ASSERT
+            verifyNoCellReshaped();
             verifyNoClusterGroupTraced();
         }
 
+        // What marks a system is a settlement appearing, growing, or changing hands - which is
+        // exactly what changes how many settlements a band counts. So a marked system owes a
+        // re-baked band even on the frame where nothing about its fill moved, and waiting for a
+        // flip would leave the band reporting a settlement that is no longer there.
         @Test
         void rebakesTheBandOfAMarkedSystemThatDidNotFlip() {
-            // What marks a system is a settlement appearing, growing, or changing hands - which is
-            // exactly what changes how many settlements a band counts. So a marked system owes a
-            // re-baked band even on the frame where nothing about its fill moved, and waiting for
-            // a flip would leave the band reporting a settlement that is no longer there.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            clusters.getPaintedCells().putPaintedCell(
-                buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
+            seedBandedFlippedCell(clusters);
 
-            // The band starts above the cell's own site, so the marked system needs one; the
-            // shared geometry fixture records none, every other case being about shapes.
-            when(cellGeometry.cells().getSiteBySystemKey())
-                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
-
-            ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
-
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             // Nothing else moved: a re-bake is not a re-shape.
-            verifyNoCellBaked();
+            verifyNoCellReshaped();
             verifyNoClusterGroupTraced();
         }
 
+        // A band is laid around the cluster names, so a re-bake has to read the placements the map
+        // is drawing rather than lay a band as though there were none. This name lies across the
+        // whole marked cell, which leaves its ring with nowhere to put one - a re-bake blind to the
+        // names would hand it a band running under the word. A name takes up room only while the
+        // names are being drawn at all, and which pass drew them is what the standing map records -
+        // so the format is stated on the map the fold edits rather than on the save behind it.
         @Test
         void rebakesABandClearOfTheNamesAlreadyPlaced() {
-            // A band is laid around the cluster names, so a re-bake has to read the placements the
-            // map is drawing rather than lay a band as though there were none. This name lies
-            // across the whole marked cell, which leaves its ring with nowhere to put one - a
-            // re-bake blind to the names would hand it a band running under the word.
-            // A name takes up room only while the names are being drawn at all, and which pass
-            // drew them is what the standing map records - so the format is stated on the map the
-            // fold edits rather than on the save behind it.
+
+            // ARRANGE
             var clusters = buildOwnedBySpelling(
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 OwnerNameFormatChoice.SHORT,
                 ownerSourceFake);
 
-            clusters.getPaintedCells().putPaintedCell(
-                buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
-
-            when(cellGeometry.cells().getSiteBySystemKey())
-                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
-
-            ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
-
+            seedBandedFlippedCell(clusters);
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
 
+        // The same name over the same cell, read by the words it draws rather than by the box its
+        // placement reserved. The two readings disagree about this cell outright - the fitted box
+        // covers it whole, while the words land elsewhere entirely - so a band comes back where the
+        // case above had none, and the reading the player did not pick is never asked for at all.
         @Test
         void rebakesABandAroundTheWordsWhereTheClearanceReadsThem() {
-            // The same name over the same cell, read by the words it draws rather than by the box
-            // its placement reserved. The two readings disagree about this cell outright - the
-            // fitted box covers it whole, while the words land elsewhere entirely - so a band comes
-            // back where the case above had none, and the reading the player did not pick is never
-            // asked for at all.
+
+            // ARRANGE
             var clusters = buildOwnedBySpelling(
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 OwnerNameFormatChoice.SHORT,
                 ownerSourceFake);
 
-            clusters.getPaintedCells().putPaintedCell(
-                buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
-
-            when(cellGeometry.cells().getSiteBySystemKey())
-                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
-
-            ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
+            seedBandedFlippedCell(clusters);
 
             settingsMock
                 .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonNameClearance)
@@ -395,65 +410,58 @@ public final class IncrementalOwnerRefreshTests {
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             fittedBoxesMock.verifyNoInteractions();
         }
 
+        // The same name across the same cell, with the names switched off: nothing is drawn for the
+        // band to be interrupted by, so it takes the whole ring. The placements are still standing -
+        // they are built for the anchor overlay too - which is why the room they would take is read
+        // off the name choice rather than off the list being empty.
         @Test
         void reservesNoRoomForANameWhileTheNamesAreSwitchedOff() {
-            // The same name across the same cell, with the names switched off: nothing is drawn
-            // for the band to be interrupted by, so it takes the whole ring. The placements are
-            // still standing - they are built for the anchor overlay too - which is why the room
-            // they would take is read off the name choice rather than off the list being empty.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            clusters.getPaintedCells().putPaintedCell(
-                buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
-
-            when(cellGeometry.cells().getSiteBySystemKey())
-                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
-
-            ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
-
+            seedBandedFlippedCell(clusters);
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
+        // The same name across the same cell, drawn this time, with the player having asked that
+        // the bands not give way to it: the band takes the whole ring and the word draws across it.
+        // The pair with the case above is the point - the two reasons a band has nothing to keep
+        // clear of reach the same result by different routes, one because there is no name on the
+        // map and one because the player would rather have the band.
         @Test
         void reservesNoRoomForANameWhileTheBandsIgnoreTheNames() {
-            // The same name across the same cell, drawn this time, with the player having asked
-            // that the bands not give way to it: the band takes the whole ring and the word draws
-            // across it. The pair with the case above is the point - the two reasons a band has
-            // nothing to keep clear of reach the same result by different routes, one because
-            // there is no name on the map and one because the player would rather have the band.
+
+            // ARRANGE
             var clusters = buildOwnedBySpelling(
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 OwnerNameFormatChoice.SHORT,
                 ownerSourceFake);
 
-            clusters.getPaintedCells().putPaintedCell(
-                buildCellKey(FLIPPED_SYSTEM),
-                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
-
-            when(cellGeometry.cells().getSiteBySystemKey())
-                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
-
-            ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
+            seedBandedFlippedCell(clusters);
 
             settingsMock
                 .when(KmuOwnerMapRibbonSettings::shouldKeepOwnerMapRibbonsClearOfNames)
@@ -461,32 +469,38 @@ public final class IncrementalOwnerRefreshTests {
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
+        // A restyled system - one that just became settled, or that the pick just settled - is
+        // redrawn through the same primitive a flip's cells are, and nothing beyond it: a cell's
+        // shape is settled by which of its edges are same-owner seams, and neither fact is one of
+        // them. That is what makes this cheap enough to run on every marked change.
         @Test
         void redrawsOnlyItsOwnCellWhenOnlyInhabitationMoved() {
-            // A restyled system - one that just became settled, or that the pick just settled -
-            // is redrawn through the same primitive a flip's cells are, and nothing beyond it: a
-            // cell's shape is settled by which of its edges are same-owner seams, and neither fact
-            // is one of them. That is what makes this cheap enough to run on every marked change.
+
+            // ARRANGE
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
                 Set.of(),
                 ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, null);
-            assertSettledIs(FLIPPED_SYSTEM, true);
-
+            stateOwnerOf(FLIPPED_SYSTEM, ResolvedSystemOwner.UNOWNED);
+            stateInhabitationOf(FLIPPED_SYSTEM, true);
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             verify(readCellBuilder())
                 .buildPaintedCell(eq(buildCellKey(FLIPPED_SYSTEM)), any());
 
@@ -496,11 +510,13 @@ public final class IncrementalOwnerRefreshTests {
             verifyNoClusterGroupTraced();
         }
 
+        // The band needs no wiring of its own: a marked system is re-baked either way, and what
+        // decides whether it gets a band is the very set the fold has just written. Left out of
+        // that set, the cell reaches the band pass as empty space and nothing is laid.
         @Test
         void bandsASystemThatJustBecameSettled() {
-            // The band needs no wiring of its own: a marked system is re-baked either way, and
-            // what decides whether it gets a band is the very set the fold has just written. Left
-            // out of that set, the cell reaches the band pass as empty space and nothing is laid.
+
+            // ARRANGE
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
                 Set.of(),
@@ -508,85 +524,100 @@ public final class IncrementalOwnerRefreshTests {
 
             seedBandSizedDistantCell(clusters);
 
-            assertResolvesTo(DISTANT_SYSTEM, null);
-            assertSettledIs(DISTANT_SYSTEM, true);
-
+            stateOwnerOf(DISTANT_SYSTEM, ResolvedSystemOwner.UNOWNED);
+            stateInhabitationOf(DISTANT_SYSTEM, true);
             markStale(DISTANT_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
+        // The whole batch is answered off one reading of the sector: a resolver per marked system
+        // would pay a settings read and a walk of that system for each of the questions asked about
+        // it, which is what this path exists to avoid.
         @Test
         void opensOneResolverHoweverManySystemsAreMarked() {
-            // The whole batch is answered off one reading of the sector: a resolve per marked
-            // system would pay a settings read and a walk of that system for each of the
-            // questions asked about it, which is what this path exists to avoid.
+
+            // ARRANGE
+            var expectedResolverCount = 1;
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-            assertResolvesTo(NEIGHBOUR_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
+            stateOwnerOf(NEIGHBOUR_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
             markStale(NEIGHBOUR_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(ownerSourceFake.readSystemResolverWalks())
-                .hasSize(1);
+                .hasSize(expectedResolverCount);
         }
 
+        // This fold is reached through a static entry point handed the standing map's halves and
+        // the caller's walk, so it has no sector of its own to read: the walk is the one its caller
+        // opened beside the board it drained. Re-derived over any other, a marked system would be
+        // answered out of a sector the standing cells were never cut from.
         @Test
         void resolvesOverTheWalkItWasHanded() {
-            // This fold is reached through a static entry point handed the standing map's halves and
-            // the caller's walk, so it has no sector of its own to read: the walk is the one its
-            // caller opened beside the board it drained. Re-derived over any other, a marked system
-            // would be answered out of a sector the standing cells were never cut from.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(ownerSourceFake.readSystemResolverWalks())
                 .singleElement()
                 .isSameAs(handedWalk);
         }
 
+        // A last stage handed a bare sector would open a second reading of it - for a sector that
+        // cannot have moved since the re-derive read it a moment earlier. So the bake is read at the
+        // source it counts through, and the walk it was handed has to be the one the re-derive was.
         @Test
         void bakesTheBandsOffTheBatchesOwnWalkOfTheSector() {
-            // A last stage handed a bare sector would open a second reading of it - for a sector
-            // that cannot have moved since the re-derive read it a moment earlier. So the bake is
-            // read at the source it counts through, and the walk it was handed has to be the one the
-            // re-derive was.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
             seedBandSizedDistantCell(clusters);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(ownerSourceFake.readRibbonPlannerWalks())
                 .singleElement()
-                .isSameAs(ownerSourceFake.readSystemResolverWalks().get(0));
+                .isSameAs(handedWalk);
         }
 
+        // The board marks a system by key, and two systems the sector lists under one ID each seed a
+        // cell of their own - so a mark on the twin re-derives the twin and redraws its cell alone,
+        // leaving the other standing on the reading it already has. A mark by ID could only have
+        // fanned out to both, re-deriving a system nothing happened in.
         @Test
         void redrawsOnlyTheMarkedOneOfTwoSystemsSharingAnId() {
-            // The board marks a system by key, and two systems the sector lists under one ID each
-            // seed a cell of their own - so a mark on the twin re-derives the twin and redraws its
-            // cell alone, leaving the other standing on the reading it already has. A mark by ID
-            // could only have fanned out to both, re-deriving a system nothing happened in.
+
+            // ARRANGE
             var firstCell = new SystemKey(FLIPPED_SYSTEM, null, "8b3");
             var twinCell = new SystemKey(FLIPPED_SYSTEM, null, "38d53");
-
             var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
 
             ownerBySystemKey.put(firstCell, buildOwnerOf(HEGEMONY));
@@ -616,17 +647,19 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSystemKeyByCellKey())
                 .thenReturn(systemKeyByCellKey);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
             markStaleKey(twinCell);
-            applyOverTheSector(
-                StarSystemFixture.buildSectorOf(
-                    StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "8b3"),
-                    StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "38d53")),
-                clusters);
 
-            // Re-derived once - the twin - and its cell redrawn; the first system is neither
-            // asked about nor redrawn, since nothing marked it.
+            var twinSector = StarSystemFixture.buildSectorOf(
+                StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "8b3"),
+                StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "38d53"));
+
+            // ACT
+            applyOverTheSector(twinSector, clusters);
+
+            // ASSERT
+            // Re-derived once - the twin - and its cell redrawn; the first system is neither asked
+            // about nor redrawn, since nothing marked it.
             assertThat(ownerSourceFake.readResolvedSystemIds())
                 .containsExactly(FLIPPED_SYSTEM);
 
@@ -636,22 +669,26 @@ public final class IncrementalOwnerRefreshTests {
                 .buildPaintedCell(eq(firstCell), any());
         }
 
+        // The neighbour's own owner did not move, but the edge it shares with the flipped system
+        // just turned from a same-owner seam into a cluster border, so it has to be re-shaped too
+        // or the border draws down one side only.
         @Test
         void reshapesTheFlippedSystemAndItsNeighbour() {
-            // The neighbour's own owner did not move, but the edge it shares with the
-            // flipped system just turned from a same-owner seam into a cluster border,
-            // so it has to be re-shaped too or the border draws down one side only.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             verify(readCellBuilder())
                 .buildPaintedCell(eq(buildCellKey(FLIPPED_SYSTEM)), any());
 
@@ -659,26 +696,61 @@ public final class IncrementalOwnerRefreshTests {
                 .buildPaintedCell(eq(buildCellKey(NEIGHBOUR_SYSTEM)), any());
         }
 
+        // Both sides of the transfer change shape - one loses the cell, the other gains it - and no
+        // third owner's rings trace a cell that moved, so exactly these two rebuild.
         @Test
         void rebuildsTheLosingAndGainingOwnersClusters() {
-            // Both sides of the transfer change shape - one loses the cell, the other gains
-            // it - and no third owner's rings trace a cell that moved, so exactly these
-            // two rebuild.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             verify(readGroupBuilder())
                 .buildClusterGroup(argThat(owner -> owner.ownerId().equals(HEGEMONY)), anyList());
             verify(readGroupBuilder())
                 .buildClusterGroup(argThat(owner -> owner.ownerId().equals(TRITACHYON)), anyList());
+        }
+
+        // A refill in the same batch as a flip elsewhere: the flip's own two owners are traced
+        // anyway, so a refilled owner that is neither of them is the one a batch keyed on its flips
+        // would leave filling the old way.
+        @Test
+        void retracesTheRefilledOwnerOfABatchThatAlsoFlips() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY,
+                DISTANT_SYSTEM,
+                PERSEAN), ownerSourceFake);
+
+            seedDrawnDistantCell(clusters);
+
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            stateOwnerOf(
+                DISTANT_SYSTEM,
+                new ResolvedSystemOwner(buildOwnerOf(PERSEAN), FillState.UNFILLED));
+            markStale(FLIPPED_SYSTEM);
+            markStale(DISTANT_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            verify(readGroupBuilder())
+                .buildClusterGroup(argThat(owner -> owner.ownerId().equals(PERSEAN)), anyList());
         }
 
         // A fill state moving under the same owner re-splits that owner's fill: its group is traced
@@ -688,19 +760,24 @@ public final class IncrementalOwnerRefreshTests {
 
             // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
+            var expectedFillState = FillState.UNFILLED;
 
-            ownerSourceFake.recordResolvedOwnerOf(
-                FLIPPED_SYSTEM,
-                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
-
+            stateOwnerOf(FLIPPED_SYSTEM, UNFILLED_BY_HEGEMONY);
             markStale(FLIPPED_SYSTEM);
 
             // ACT
             applyTo(clusters);
 
+            var actualFillState = groupBuilderFillStates
+                .get(0)
+                .resolveFillStateOf(buildCellKey(FLIPPED_SYSTEM));
+
             // ASSERT
             verify(readGroupBuilder())
                 .buildClusterGroup(argThat(owner -> owner.ownerId().equals(HEGEMONY)), anyList());
+
+            assertThat(actualFillState)
+                .isEqualTo(expectedFillState);
         }
 
         // The border did not move, so neither the cells nor the names are owed anything: a refill
@@ -711,29 +788,85 @@ public final class IncrementalOwnerRefreshTests {
             // ARRANGE
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            ownerSourceFake.recordResolvedOwnerOf(
-                FLIPPED_SYSTEM,
-                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
-
+            stateOwnerOf(FLIPPED_SYSTEM, UNFILLED_BY_HEGEMONY);
             markStale(FLIPPED_SYSTEM);
 
             // ACT
             applyTo(clusters);
 
             // ASSERT
-            verifyNoCellBaked();
+            verifyNoCellReshaped();
 
             anchorsMock
                 .verifyNoInteractions();
         }
 
+        // No border moved, so the clusters are the clusters they were and no name was re-fitted for
+        // a label to follow: re-indexing or minting here would spend a flip's work on a fill.
+        @Test
+        void reindexesNoClusterAndMintsNoLabelWhenOnlyTheFillStateMoved() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
+            var standingClusterIndex = clusters.getClusterIndex();
+
+            stateOwnerOf(FLIPPED_SYSTEM, UNFILLED_BY_HEGEMONY);
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            assertThat(clusters.getClusterIndex())
+                .isSameAs(standingClusterIndex);
+
+            labelsMock.verifyNoInteractions();
+        }
+
+        // A refill moves no name, so the only band it owes is the marked cell's own, which counts
+        // what stands there. A re-bake of every cell the refilled owner holds would re-lay bands
+        // nothing moved.
+        @Test
+        void rebakesOnlyTheMarkedCellsBandWhenOnlyTheFillStateMoved() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                DISTANT_SYSTEM,
+                HEGEMONY), ownerSourceFake);
+
+            seedDrawnDistantCell(clusters);
+            seedBandedFlippedCell(clusters);
+
+            // Both cells carry a site, so a bake reaching the distant one would lay it a band.
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(
+                    FLIPPED_SYSTEM,
+                    FLIPPED_SITE,
+                    DISTANT_SYSTEM,
+                    DISTANT_SITE)));
+
+            stateOwnerOf(FLIPPED_SYSTEM, UNFILLED_BY_HEGEMONY);
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
+        }
+
+        // The flip re-fits the names, and the re-fit moved none of them - so a cell the flip never
+        // touched is laid out against exactly the names it was laid out against before, and
+        // re-baking it would spend a carve, a count and a stroke to arrive at what it is already
+        // carrying. Read as a pair with the case below, which is the same flip over the same cell
+        // with one name moved onto it.
         @Test
         void leavesTheBandOfACellNoMovedNameReaches() {
-            // The flip re-fits the names, and the re-fit moved none of them - so a cell the flip
-            // never touched is laid out against exactly the names it was laid out against before,
-            // and re-baking it would spend a carve, a count and a stroke to arrive at what it is
-            // already carrying. Read as a pair with the case below, which is the same flip over
-            // the same cell with one name moved onto it.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
@@ -742,11 +875,13 @@ public final class IncrementalOwnerRefreshTests {
 
             seedDrawnDistantCell(clusters);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
             markStale(FLIPPED_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .doesNotContainKey(buildCellKey(DISTANT_SYSTEM));
         }
@@ -779,8 +914,7 @@ public final class IncrementalOwnerRefreshTests {
                     any()))
                 .thenReturn(nameDisturbanceMock);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
             markStale(FLIPPED_SYSTEM);
 
             // ACT
@@ -791,13 +925,15 @@ public final class IncrementalOwnerRefreshTests {
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
+        // The third reason a cell owes a band, and the one the other two hide: a settlement appeared
+        // somewhere that did not change hands, in the same batch as a flip elsewhere. That system is
+        // neither re-shaped nor reached by a name, so a bake taking only those two would leave its
+        // band counting a settlement that is no longer there - exactly what the no-flip path
+        // re-bakes the marked systems for.
         @Test
         void rebakesTheBandOfAMarkedSystemWhileAnotherFlips() {
-            // The third reason a cell owes a band, and the one the other two hide: a settlement
-            // appeared somewhere that did not change hands, in the same batch as a flip
-            // elsewhere. That system is neither re-shaped nor reached by a name, so a bake taking
-            // only those two would leave its band counting a settlement that is no longer there -
-            // exactly what the no-flip path re-bakes the marked systems for.
+
+            // ARRANGE
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
                 HEGEMONY,
@@ -806,15 +942,139 @@ public final class IncrementalOwnerRefreshTests {
 
             seedDrawnDistantCell(clusters);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-            assertResolvesTo(DISTANT_SYSTEM, buildOwnerOf(HEGEMONY));
-
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            stateOwnerOf(DISTANT_SYSTEM, buildOwnerOf(HEGEMONY));
             markStale(FLIPPED_SYSTEM);
             markStale(DISTANT_SYSTEM);
+
+            // ACT
             applyTo(clusters);
 
+            // ASSERT
             assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
+        }
+
+        // The caller's own cells-and-revision pair goes out as it came in, because this path
+        // re-shapes cells within a partition it never recut - so the fit ran against the very
+        // geometry the caller named, and a re-fit reported against any other one would offer its
+        // placements to a later rebuild standing somewhere else.
+        @Test
+        void refitsAgainstTheCallersGeometry() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY), ownerSourceFake);
+
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            anchorsMock.verify(
+                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    any(),
+                    same(cellGeometry),
+                    any()));
+        }
+
+        // The re-fit here is partial for the same reason a full rebuild's is: a flip re-partitions
+        // the clusters it touches and leaves the rest alone, so what the standing placements were
+        // fitted under has to reach the fit or every cluster is searched again. That record and the
+        // placements are one value, and it is the caller's own - handing a copy down would carry
+        // over correctly and still leave the caller holding placements labelled by the pass before
+        // this one.
+        @Test
+        void refitsIntoTheCallersOwnStandingPair() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY), ownerSourceFake);
+
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            anchorsMock.verify(
+                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    same(standingAnchors),
+                    any(),
+                    any()));
+        }
+
+        // The fold re-fits some names and carries the rest over, so the re-fitted ones have to be
+        // measured in the face the carried-over ones were, read off their own record.
+        @Test
+        void reFitsInTheFaceTheStandingNamesWereFittedIn() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY), ownerSourceFake);
+
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            anchorsMock.verify(
+                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    any(),
+                    any(),
+                    argThat(fitInputs -> fitInputs.labelFace() == STANDING_LABEL_FACE)));
+        }
+
+        // A resize that leaves the winner alone leaves the placements alone: nothing was re-fitted,
+        // so the standing placements and the rules recorded for them still describe each other and
+        // neither half may move.
+        @Test
+        void leavesTheStandingPairAloneWhenTheOwnerDidNotChange() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
+
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            applyTo(clusters);
+
+            // ASSERT
+            anchorsMock.verifyNoInteractions();
+
+            assertThat(standingAnchors.getFitFingerprint())
+                .isEqualTo(STANDING_FIT);
+        }
+
+        // Seeds the flipped cell drawn on the band-sized ring with its own site and a planner that
+        // reports a band, for a case reading whether a re-bake reached it.
+        private void seedBandedFlippedCell(OwnerMapClusters clusters) {
+
+            clusters.getPaintedCells().putPaintedCell(
+                buildCellKey(FLIPPED_SYSTEM),
+                OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
+
+            // The band starts above the cell's own site, so the marked system needs one; the shared
+            // geometry fixture records none, every other case being about shapes.
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, FLIPPED_SITE)));
+
+            ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
         }
 
         // Seeds a drawn cell far from the flip, with the geometry a band needs to be laid in it:
@@ -823,7 +1083,7 @@ public final class IncrementalOwnerRefreshTests {
         // it - which is what lets a case about the reasons other than a re-shape use it.
         private void seedDrawnDistantCell(OwnerMapClusters clusters) {
 
-            seedDistantCellGeometry(clusters, buildSquareCell(10000, 0, SMALL_CELL_SIDE));
+            seedDistantCellGeometry(buildSquareCell(10000, 0, SMALL_CELL_SIDE));
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(DISTANT_SYSTEM),
@@ -836,18 +1096,14 @@ public final class IncrementalOwnerRefreshTests {
         // ring a band fits in - and reads back a band this batch laid rather than one it was given.
         private void seedBandSizedDistantCell(OwnerMapClusters clusters) {
 
-            seedDistantCellGeometry(
-                clusters,
-                buildSquareCell(10000, 10000, BAND_SIZED_CELL_SIDE));
+            seedDistantCellGeometry(buildSquareCell(10000, 10000, BAND_SIZED_CELL_SIDE));
         }
 
         // What both distant-cell arrangements share: the distant cell added to the two adjacent
         // ones, its site, and a planner that reports a band for whatever it is asked about. Held in
         // one place because the two differ only in the cell's edges and whether it starts drawn,
         // and a site or planner that drifted between them would leave one case's band unexplained.
-        private void seedDistantCellGeometry(
-                OwnerMapClusters clusters,
-                List<CellEdge> distantCellEdges) {
+        private void seedDistantCellGeometry(List<CellEdge> distantCellEdges) {
 
             when(cellGeometry.cells().getCellEdgesByCellKey())
                 .thenReturn(buildKeyedValues(Map.of(
@@ -868,98 +1124,9 @@ public final class IncrementalOwnerRefreshTests {
                     DISTANT_SYSTEM)));
 
             when(cellGeometry.cells().getSiteBySystemKey())
-                .thenReturn(buildKeyedValues(Map.of(DISTANT_SYSTEM, new double[] {12000.0, 12000.0})));
+                .thenReturn(buildKeyedValues(Map.of(DISTANT_SYSTEM, DISTANT_SITE)));
 
             ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
-        }
-
-        @Test
-        void refitsAgainstTheCallersGeometry() {
-            // The caller's own cells-and-revision pair goes out as it came in, because this path
-            // re-shapes cells within a partition it never recut - so the fit ran against the very
-            // geometry the caller named, and a re-fit reported against any other one would offer
-            // its placements to a later rebuild standing somewhere else.
-            var clusters = buildOwnedBy(Map.of(
-                FLIPPED_SYSTEM,
-                HEGEMONY,
-                NEIGHBOUR_SYSTEM,
-                HEGEMONY), ownerSourceFake);
-
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
-            markStale(FLIPPED_SYSTEM);
-            applyTo(clusters);
-
-            anchorsMock.verify(
-                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
-                    any(),
-                    same(cellGeometry),
-                    any()));
-        }
-
-        @Test
-        void refitsIntoTheCallersOwnStandingPair() {
-            // The re-fit here is partial for the same reason a full rebuild's is: a flip
-            // re-partitions the clusters it touches and leaves the rest alone, so what the
-            // standing placements were fitted under has to reach the fit or every cluster is
-            // searched again. That record and the placements are one value, and it is the
-            // caller's own - handing a copy down would carry over correctly and still leave
-            // the caller holding placements labelled by the pass before this one.
-            var clusters = buildOwnedBy(Map.of(
-                FLIPPED_SYSTEM,
-                HEGEMONY,
-                NEIGHBOUR_SYSTEM,
-                HEGEMONY), ownerSourceFake);
-
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
-            markStale(FLIPPED_SYSTEM);
-            applyTo(clusters);
-
-            anchorsMock.verify(
-                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
-                    same(standingAnchors),
-                    any(),
-                    any()));
-        }
-
-        @Test
-        void reFitsInTheFaceTheStandingNamesWereFittedIn() {
-            // The fold re-fits some names and carries the rest over, so the re-fitted ones have to be
-            // measured in the face the carried-over ones were, read off their own record.
-            var clusters = buildOwnedBy(Map.of(
-                FLIPPED_SYSTEM,
-                HEGEMONY,
-                NEIGHBOUR_SYSTEM,
-                HEGEMONY), ownerSourceFake);
-
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
-
-            markStale(FLIPPED_SYSTEM);
-            applyTo(clusters);
-
-            anchorsMock.verify(
-                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
-                    any(),
-                    any(),
-                    argThat(fitInputs -> fitInputs.labelFace() == STANDING_LABEL_FACE)));
-        }
-
-        @Test
-        void leavesTheStandingPairAloneWhenTheOwnerDidNotChange() {
-            // A resize that leaves the winner alone leaves the placements alone: nothing was
-            // re-fitted, so the standing placements and the rules recorded for them still describe
-            // each other and neither half may move.
-            var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
-
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
-
-            markStale(FLIPPED_SYSTEM);
-            applyTo(clusters);
-
-            anchorsMock.verifyNoInteractions();
-            assertThat(standingAnchors.getFitFingerprint())
-                .isEqualTo(STANDING_FIT);
         }
 
         // The cell builder the batch stood up, which every cell it re-shaped was baked by. One per
@@ -973,8 +1140,8 @@ public final class IncrementalOwnerRefreshTests {
             return clustersMock.constructed().get(0);
         }
 
-        // That the batch baked no cell: whatever cell builder it stood up was never asked.
-        private void verifyNoCellBaked() {
+        // That the batch re-shaped no cell: whatever cell builder it stood up was never asked.
+        private void verifyNoCellReshaped() {
 
             assertThat(paintedCellsMock.constructed())
                 .allSatisfy(cellBuilder -> verifyNoInteractions(cellBuilder));
@@ -987,16 +1154,21 @@ public final class IncrementalOwnerRefreshTests {
                 .allSatisfy(groupBuilder -> verifyNoInteractions(groupBuilder));
         }
 
-        // What the re-derive answers for one system this pass. Every case stubs the systems
-        // it marks; an unstubbed one comes back null, which reads as a system that lost its
-        // owner rather than as a missing stub.
-        private void assertResolvesTo(String systemId, SystemOwner owner) {
+        // States who the resolver answers owns one system this pass, filling it solid. Every case
+        // states the systems it marks; an unstated one comes back unowned, which reads as a system
+        // that lost its owner rather than as a missing statement.
+        private void stateOwnerOf(String systemId, SystemOwner owner) {
             ownerSourceFake.recordOwnerOf(systemId, owner);
         }
 
-        // What the inhabitation read answers for one system this pass, against the source's
-        // "still settled" default.
-        private void assertSettledIs(String systemId, boolean isInhabited) {
+        // The same with the fill state stated too, for a case about how a system fills.
+        private void stateOwnerOf(String systemId, ResolvedSystemOwner resolved) {
+            ownerSourceFake.recordResolvedOwnerOf(systemId, resolved);
+        }
+
+        // States what the resolver answers for one system's inhabitation this pass, against the
+        // source's "still settled" default.
+        private void stateInhabitationOf(String systemId, boolean isInhabited) {
             ownerSourceFake.recordInhabitationOf(systemId, isInhabited);
         }
 

@@ -26,6 +26,7 @@ import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.FLIPPE
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.UNFILLED_BY_HEGEMONY;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnerOf;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildOwnersOf;
 import static kmu.maplayers.ownermap.render.rebuild.StaleOwnerMapFixtures.buildSectorWithSystems;
@@ -89,61 +90,76 @@ final class MarkedSystemRederiveTests {
         @Test
         void recordsTheNewOwnerWhenASystemChangesHands() {
 
+            // ARRANGE
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
+            // ACT
             rederive(clusters, FLIPPED_SYSTEM);
 
+            // ASSERT
             assertThat(clusters.getOccupancy().getOwnerBySystemKey())
                 .containsExactly(Map.entry(buildCellKey(FLIPPED_SYSTEM), buildOwnerOf(TRITACHYON)));
         }
 
+        // Both outlines moved and every neighbour's shared edge changed class, so the batch owes
+        // the ring a re-shape and both sides a cluster group rebuild. Recorded together because
+        // half of that is a border drawn down one side only.
         @Test
         void disturbsBothSidesAndTheRingOfAFlip() {
-            // Both outlines moved and every neighbour's shared edge changed class, so the batch
-            // owes the ring a re-shape and both sides a cluster group rebuild. Recorded together
-            // because half of that is a border drawn down one side only.
+
+            // ARRANGE
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
-            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+            // ACT
+            var actualDisturbance = rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(disturbance.getCellKeysToRedraw())
+            // ASSERT
+            assertThat(actualDisturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM), buildCellKey(NEIGHBOUR_SYSTEM));
-            assertThat(disturbance.getAffectedOwnerIds())
+            assertThat(actualDisturbance.getAffectedOwnerIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
         }
 
+        // Emptied: the entry goes rather than being left pointing at the owner that lost it, since
+        // every reader takes an absent entry for "nobody holds this".
         @Test
         void dropsTheOwnerOfASystemThatLostItsLastSettlement() {
-            // Emptied: the entry goes rather than being left pointing at the owner that lost it,
-            // since every reader takes an absent entry for "nobody holds this".
+
+            // ARRANGE
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, null);
+            stateOwnerOf(FLIPPED_SYSTEM, ResolvedSystemOwner.UNOWNED);
 
+            // ACT
             rederive(clusters, FLIPPED_SYSTEM);
 
+            // ASSERT
             assertThat(clusters.getOccupancy().getOwnerBySystemKey())
                 .isEmpty();
         }
 
+        // The common resize: a settlement grew, its owner still wins, nothing about what stands
+        // there changed. Every fill and border is identical, so a disturbance recorded here would
+        // spend a frame redrawing the map it already had.
         @Test
         void disturbsNothingWhenNoFactMoved() {
-            // The common resize: a settlement grew, its owner still wins, nothing about what stands
-            // there changed. Every fill and border is identical, so a disturbance recorded here
-            // would spend a frame redrawing the map it already had.
+
+            // ARRANGE
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
-            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+            // ACT
+            var actualDisturbance = rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(disturbance.getCellKeysToRedraw())
+            // ASSERT
+            assertThat(actualDisturbance.getCellKeysToRedraw())
                 .isEmpty();
-            assertThat(disturbance.hasFlips())
+            assertThat(actualDisturbance.hasFlips())
                 .isFalse();
         }
 
@@ -155,17 +171,20 @@ final class MarkedSystemRederiveTests {
 
             // ARRANGE
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var expectedResolved = new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED);
 
-            ownerSourceFake.recordResolvedOwnerOf(
-                FLIPPED_SYSTEM,
-                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+            stateOwnerOf(FLIPPED_SYSTEM, UNFILLED_BY_HEGEMONY);
 
             // ACT
             rederive(clusters, FLIPPED_SYSTEM);
 
+            var actualResolved = clusters
+                .getOccupancy()
+                .readResolvedOwnerOf(buildCellKey(FLIPPED_SYSTEM));
+
             // ASSERT
-            assertThat(clusters.getOccupancy().readResolvedOwnerOf(buildCellKey(FLIPPED_SYSTEM)))
-                .isEqualTo(new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+            assertThat(actualResolved)
+                .isEqualTo(expectedResolved);
         }
 
         // The fill is the owner's group's, inside a border that did not move: the group re-traces,
@@ -176,123 +195,140 @@ final class MarkedSystemRederiveTests {
             // ARRANGE
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            ownerSourceFake.recordResolvedOwnerOf(
-                FLIPPED_SYSTEM,
-                new ResolvedSystemOwner(buildOwnerOf(HEGEMONY), FillState.UNFILLED));
+            stateOwnerOf(FLIPPED_SYSTEM, UNFILLED_BY_HEGEMONY);
 
             // ACT
-            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+            var actualDisturbance = rederive(clusters, FLIPPED_SYSTEM);
 
             // ASSERT
-            assertThat(disturbance.getAffectedOwnerIds())
+            assertThat(actualDisturbance.getAffectedOwnerIds())
                 .containsExactly(HEGEMONY);
-            assertThat(disturbance.getCellKeysToRedraw())
+            assertThat(actualDisturbance.getCellKeysToRedraw())
                 .isEmpty();
-            assertThat(disturbance.hasFlips())
+            assertThat(actualDisturbance.hasFlips())
                 .isFalse();
         }
 
+        // A haven appearing where nothing stood, on a layer whose holding cannot account for
+        // whoever built it: no owner moves, so this set is the only record of the change and the
+        // cell over it the only surface that can report one.
         @Test
         void addsASystemTakingItsFirstSettlementToTheInhabitedSet() {
-            // A haven appearing where nothing stood, on a layer whose holding cannot account for
-            // whoever built it: no owner moves, so this set is the only record of the change and
-            // the cell over it the only surface that can report one.
+
+            // ARRANGE
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
                 Set.of());
 
-            assertResolvesTo(FLIPPED_SYSTEM, null);
-            assertSettledIs(FLIPPED_SYSTEM, true);
+            stateOwnerOf(FLIPPED_SYSTEM, ResolvedSystemOwner.UNOWNED);
+            stateInhabitationOf(FLIPPED_SYSTEM, true);
 
-            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+            // ACT
+            var actualDisturbance = rederive(clusters, FLIPPED_SYSTEM);
 
+            // ASSERT
             assertThat(clusters.getOccupancy().getInhabitedSystemKeys())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
-            assertThat(disturbance.getCellKeysToRedraw())
+            assertThat(actualDisturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
 
         @Test
         void removesASystemLosingItsLastSettlementFromTheInhabitedSet() {
 
+            // ARRANGE
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
                 Set.of(FLIPPED_SYSTEM));
 
-            assertResolvesTo(FLIPPED_SYSTEM, null);
-            assertSettledIs(FLIPPED_SYSTEM, false);
+            stateOwnerOf(FLIPPED_SYSTEM, ResolvedSystemOwner.UNOWNED);
+            stateInhabitationOf(FLIPPED_SYSTEM, false);
 
-            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+            // ACT
+            var actualDisturbance = rederive(clusters, FLIPPED_SYSTEM);
 
+            // ASSERT
             assertThat(clusters.getOccupancy().getInhabitedSystemKeys())
                 .isEmpty();
-            assertThat(disturbance.getCellKeysToRedraw())
+            assertThat(actualDisturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
 
+        // Inhabitation moves no seam - a cell's shape is settled by which of its edges are
+        // same-owner seams - so the neighbour keeps the shape it has and no owner's outline is
+        // retraced. This is what makes the redraw cheap enough to run on every marked change.
         @Test
         void rebuildsNoClusterGroupWhenOnlyInhabitationMoved() {
-            // Inhabitation moves no seam - a cell's shape is settled by which of its edges are
-            // same-owner seams - so the neighbour keeps the shape it has and no owner's outline is
-            // retraced. This is what makes the redraw cheap enough to run on every marked change.
+
+            // ARRANGE
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
                 Set.of());
 
-            assertResolvesTo(FLIPPED_SYSTEM, null);
-            assertSettledIs(FLIPPED_SYSTEM, true);
+            stateOwnerOf(FLIPPED_SYSTEM, ResolvedSystemOwner.UNOWNED);
+            stateInhabitationOf(FLIPPED_SYSTEM, true);
 
-            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+            // ACT
+            var actualDisturbance = rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(disturbance.getAffectedOwnerIds())
+            // ASSERT
+            assertThat(actualDisturbance.getAffectedOwnerIds())
                 .isEmpty();
-            assertThat(disturbance.getCellKeysToRedraw())
+            assertThat(actualDisturbance.getCellKeysToRedraw())
                 .doesNotContain(buildCellKey(NEIGHBOUR_SYSTEM));
         }
 
+        // The third fact, which goes stale exactly as the other two do: a cell restyled against the
+        // standing presence set would sink the pick's brand new settlement under the recede meant
+        // for everything the pick is not.
         @Test
         void recordsThePickArrivingInAnUnheldSystem() {
-            // The third fact, which goes stale exactly as the other two do: a cell restyled against
-            // the standing presence set would sink the pick's brand new settlement under the recede
-            // meant for everything the pick is not.
+
+            // ARRANGE
             var clusters = OwnerMapClusterFixtures.createClustersSpotlighting(
                 SPOTLIT_OWNER,
                 Map.of(),
                 Set.of(FLIPPED_SYSTEM),
                 Set.of());
 
-            assertResolvesTo(FLIPPED_SYSTEM, null);
-            assertPickLivesIn(FLIPPED_SYSTEM);
+            stateOwnerOf(FLIPPED_SYSTEM, ResolvedSystemOwner.UNOWNED);
+            statePickLivesIn(FLIPPED_SYSTEM);
 
-            var disturbance = rederive(clusters, FLIPPED_SYSTEM);
+            // ACT
+            var actualDisturbance = rederive(clusters, FLIPPED_SYSTEM);
 
+            // ASSERT
             assertThat(clusters.getOccupancy().getSpotlitPresenceSystemKeys())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
-            assertThat(disturbance.getCellKeysToRedraw())
+            assertThat(actualDisturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
 
+        // Presence is what spares a cell nobody holds, so a system the batch has just given to the
+        // pick leaves the set rather than being carried in it under an owner that draws it anyway -
+        // which is the set a full rebuild would have resolved, asked only of the systems its
+        // holding left out.
         @Test
         void dropsThePickPresenceOfASystemItNowHolds() {
-            // Presence is what spares a cell nobody holds, so a system the batch has just given to
-            // the pick leaves the set rather than being carried in it under an owner that draws it
-            // anyway - which is the set a full rebuild would have resolved, asked only of the
-            // systems its holding left out.
+
+            // ARRANGE
             var clusters = OwnerMapClusterFixtures.createClustersSpotlighting(
                 SPOTLIT_OWNER,
                 Map.of(),
                 Set.of(FLIPPED_SYSTEM),
                 Set.of(FLIPPED_SYSTEM));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(SPOTLIT_OWNER));
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(SPOTLIT_OWNER));
 
             // The pick does live there, so a presence asked of an owned system would come back
             // true: an empty set is what says it was never asked, the system's answer deciding
             // nothing once somebody owns it.
-            assertPickLivesIn(FLIPPED_SYSTEM);
+            statePickLivesIn(FLIPPED_SYSTEM);
 
+            // ACT
             rederive(clusters, FLIPPED_SYSTEM);
 
+            // ASSERT
             assertThat(clusters.getOccupancy().getSpotlitPresenceSystemKeys())
                 .isEmpty();
         }
@@ -323,24 +359,30 @@ final class MarkedSystemRederiveTests {
                 buildOwnersOf(ownerIdBySystemId));
         }
 
-        // What the resolver answers for one system's owner this batch. Every case states the
-        // systems it marks; an unstated one comes back null, which reads as a system that lost its
-        // owner rather than as a missing statement.
-        private void assertResolvesTo(String systemId, SystemOwner owner) {
+        // States who the resolver answers owns one system this batch, filling it solid. Every case
+        // states the systems it marks; an unstated one comes back unowned, which reads as a system
+        // that lost its owner rather than as a missing statement.
+        private void stateOwnerOf(String systemId, SystemOwner owner) {
 
             ownerSourceFake.recordOwnerOf(systemId, owner);
         }
 
-        // What the resolver answers for one system's inhabitation, against the "still settled"
-        // default.
-        private void assertSettledIs(String systemId, boolean isInhabited) {
+        // The same with the fill state stated too, for a case about how a system fills.
+        private void stateOwnerOf(String systemId, ResolvedSystemOwner resolved) {
+
+            ownerSourceFake.recordResolvedOwnerOf(systemId, resolved);
+        }
+
+        // States what the resolver answers for one system's inhabitation, against the "still
+        // settled" default.
+        private void stateInhabitationOf(String systemId, boolean isInhabited) {
 
             ownerSourceFake.recordInhabitationOf(systemId, isInhabited);
         }
 
-        // Where the resolver finds the pick living. The rule behind it is the layer's; what a case
-        // here states is the answer the batch folds.
-        private void assertPickLivesIn(String systemId) {
+        // States where the resolver finds the pick living. The rule behind it is the layer's; what
+        // a case here states is the answer the batch folds.
+        private void statePickLivesIn(String systemId) {
 
             ownerSourceFake.recordSpotlitPresenceIn(systemId);
         }

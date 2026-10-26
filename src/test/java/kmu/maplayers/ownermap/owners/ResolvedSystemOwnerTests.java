@@ -6,16 +6,18 @@ import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.awt.Color;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 /**
- * Pins the per-system answer's one invariant and its two named forms: a system nobody owns fills
- * solid, the answer for nobody is the unowned constant, and a solid answer for an owner carries that
- * owner.
+ * Pins the per-system answer's two invariants and its named form: every answer states a fill, a
+ * system nobody owns fills solid, and a solid answer for an owner carries that owner while the
+ * answer for nobody is the unowned constant.
  */
 final class ResolvedSystemOwnerTests {
 
@@ -29,17 +31,39 @@ final class ResolvedSystemOwnerTests {
         @Test
         void refusesASystemNobodyOwnsFillingOtherThanSolid() {
 
-            assertThatThrownBy(() -> new ResolvedSystemOwner(null, FillState.UNFILLED))
+            // ACT
+            var actualThrown = catchThrowable(() -> new ResolvedSystemOwner(null, FillState.UNFILLED));
+
+            // ASSERT
+            assertThat(actualThrown)
                 .isInstanceOf(IllegalArgumentException.class);
         }
 
+        // A missing fill is a rule that forgot to decide one, and every reader past here takes the
+        // state as given - the occupancy folds it and the fill split draws it.
         @Test
-        void acceptsAnOwnedSystemInAnyFillState() {
+        void refusesAMissingFillState() {
 
-            var actualResolved = new ResolvedSystemOwner(OWNER, FillState.HATCHED);
+            // ACT
+            var actualThrown = catchThrowable(() -> new ResolvedSystemOwner(OWNER, null));
 
+            // ASSERT
+            assertThat(actualThrown)
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("fillState");
+        }
+
+        // An owner's border holds any fill, so the guard above must refuse nobody but the unowned.
+        @ParameterizedTest
+        @EnumSource(FillState.class)
+        void acceptsAnOwnedSystemInAnyFillState(FillState fillState) {
+
+            // ACT
+            var actualResolved = new ResolvedSystemOwner(OWNER, fillState);
+
+            // ASSERT
             assertThat(actualResolved.fillState())
-                .isEqualTo(FillState.HATCHED);
+                .isEqualTo(fillState);
         }
     }
 
@@ -51,27 +75,26 @@ final class ResolvedSystemOwnerTests {
         @Test
         void answersUnownedForNobody() {
 
-            assertThat(ResolvedSystemOwner.createSolidlyFilledBy(null))
+            // ACT
+            var actualResolved = ResolvedSystemOwner.createSolidlyFilledBy(null);
+
+            // ASSERT
+            assertThat(actualResolved)
                 .isSameAs(ResolvedSystemOwner.UNOWNED);
         }
 
         @Test
         void fillsAnOwnersSystemSolid() {
 
-            assertThat(ResolvedSystemOwner.createSolidlyFilledBy(OWNER))
-                .isEqualTo(new ResolvedSystemOwner(OWNER, FillState.SOLID));
-        }
-    }
+            // ARRANGE
+            var expectedResolved = new ResolvedSystemOwner(OWNER, FillState.SOLID);
 
-    @Nested
-    class Unowned {
+            // ACT
+            var actualResolved = ResolvedSystemOwner.createSolidlyFilledBy(OWNER);
 
-        @Test
-        void namesNobodyFillingSolid() {
-
-            assertThat(ResolvedSystemOwner.UNOWNED)
-                .extracting(ResolvedSystemOwner::owner, ResolvedSystemOwner::fillState)
-                .containsExactly(null, FillState.SOLID);
+            // ASSERT
+            assertThat(actualResolved)
+                .isEqualTo(expectedResolved);
         }
     }
 }

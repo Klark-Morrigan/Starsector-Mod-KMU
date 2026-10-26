@@ -9,7 +9,6 @@ import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
-import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
@@ -23,7 +22,6 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
-import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.MapStyling;
@@ -282,11 +280,10 @@ public final class OwnerMapClusterFixtures {
             OwnerSource ownerSource) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createCopyOf(new ResolvedOwners(
+            SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(
                 ownerBySystemKey,
-                SystemFillStates.ALL_SOLID,
                 inhabitedSystemKeys,
-                spotlitPresenceSystemKeys)),
+                spotlitPresenceSystemKeys),
             new OwnerMapBuildInputs(
                 new MapStyling(
                     null, // No render style.

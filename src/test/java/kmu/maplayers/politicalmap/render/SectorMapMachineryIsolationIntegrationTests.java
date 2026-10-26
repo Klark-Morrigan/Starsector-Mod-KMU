@@ -8,7 +8,6 @@ import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
-import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -17,11 +16,9 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
-import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
-import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.politicalmap.PoliticalMapInstaller;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.views.FactionsView;
@@ -153,22 +150,25 @@ final class SectorMapMachineryIsolationIntegrationTests {
     @Nested
     class InstallMachineryOn {
 
+        // The mark is a system key on a board, and both sectors mint the same one for this system,
+        // so this is where two sectors collide most quietly: a shared board would have one sector's
+        // resize reshape the other's cell, with nothing on either map to say where the mark came
+        // from. Driven through the listener the installer actually registered, which is also what
+        // says that listener was built against the sector it was installed on.
         @Test
         void marksOnlyTheChangedSectorsSystemStaleWhenAColonyResizesThere() {
-            // The mark is a system key on a board, and both sectors mint the same one for this
-            // system, so this is where two sectors collide most quietly: a shared board would have
-            // one sector's resize reshape the other's cell, with nothing on either map to say
-            // where the mark came from. Driven through the listener the installer actually
-            // registered, which is also what says that listener was built against the sector it
-            // was installed on.
+
+            // ARRANGE
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
+            // ACT
             findInstalledListenerOn(firstSector, PoliticalMapColonySizeListener.class)
                 .reportColonySizeChanged(
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
+            // ASSERT
             assertThat(resolveMachineryOf(firstSector)
                     .resolveRefreshBoard()
                     .drainStaleGroupingSystemKeys())
@@ -180,35 +180,39 @@ final class SectorMapMachineryIsolationIntegrationTests {
                 .isEmpty();
         }
 
+        // The drawing itself. The geometry cache reconciles by system key, so a cache serving two
+        // sectors would not overwrite one sector's cell with the other's - it would keep the first
+        // cut and leave the second sector drawing a cell around a place it does not hold.
         @Test
         void cutsEachSectorsOwnCellsWhereBothHoldASystemUnderOneId() {
-            // The drawing itself. The geometry cache reconciles by system key, so a cache serving two
-            // sectors would not overwrite one sector's cell with the other's - it would keep the
-            // first cut and leave the second sector drawing a cell around a place it does not hold.
+
+            // ARRANGE
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
-            var firstTerritories = new PoliticalMapCacheDriver(firstSector).rebuild();
-            var secondTerritories = new PoliticalMapCacheDriver(secondSector).rebuild();
+            // ACT
+            var actualFirstTerritories = new PoliticalMapCacheDriver(firstSector).rebuild();
+            var actualSecondTerritories = new PoliticalMapCacheDriver(secondSector).rebuild();
 
-            assertThat(firstTerritories.getStyledCellByCellKey())
+            // ASSERT
+            assertThat(actualFirstTerritories.getStyledCellByCellKey())
                 .containsKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(FIRST_SECTOR_SYSTEM_ID))
                 .doesNotContainKey(buildCellKey(SECOND_SECTOR_SYSTEM_ID));
 
-            assertThat(secondTerritories.getStyledCellByCellKey())
+            assertThat(actualSecondTerritories.getStyledCellByCellKey())
                 .containsKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID))
                 .doesNotContainKey(buildCellKey(FIRST_SECTOR_SYSTEM_ID));
 
             // The shared ID is held by a different faction in each, so the cell they both have an ID
             // for still paints each sector's own holder.
-            assertThat(firstTerritories
+            assertThat(actualFirstTerritories
                     .getOccupancy()
                     .getOwnerBySystemKey()
                     .get(buildCellKey(SHARED_SYSTEM_ID))
                     .ownerId())
                 .isEqualTo(HEGEMONY_ID);
 
-            assertThat(secondTerritories
+            assertThat(actualSecondTerritories
                     .getOccupancy()
                     .getOwnerBySystemKey()
                     .get(buildCellKey(SHARED_SYSTEM_ID))
@@ -216,13 +220,15 @@ final class SectorMapMachineryIsolationIntegrationTests {
                 .isEqualTo(TRITACHYON_ID);
         }
 
+        // The three halves joined, which is what neither of the two cases above does on its own: a
+        // change marks one sector, that sector re-derives the system it marked, and the sector nobody
+        // touched still draws what it drew. The re-derive is the targeted path rather than a whole
+        // rebuild, so the sector that path folds is what is under test - a leak here reads as the
+        // other sector's cell changing hands to a faction it never held.
         @Test
         void leavesTheOtherSectorsDrawnHoldersStandingWhenAChangeRebuildsOne() {
-            // The three halves joined, which is what neither of the two cases above does on its own:
-            // a change marks one sector, that sector re-derives the system it marked, and the sector
-            // nobody touched still draws what it drew. The re-derive is the targeted path rather
-            // than a whole rebuild, so the sector that path folds is what is under test - a leak here
-            // reads as the other sector's cell changing hands to a faction it never held.
+
+            // ARRANGE
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
@@ -238,39 +244,45 @@ final class SectorMapMachineryIsolationIntegrationTests {
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
-            assertThat(firstMap
-                    .rebuild()
+            // ACT
+            var actualChangedTerritories = firstMap.rebuild();
+            var actualUntouchedTerritories = secondMap.readTerritories();
+
+            // ASSERT
+            assertThat(actualChangedTerritories
                     .getOccupancy()
                     .getOwnerBySystemKey()
                     .get(buildCellKey(SHARED_SYSTEM_ID))
                     .ownerId())
                 .isEqualTo(PERSEAN_ID);
 
-            var untouchedTerritories = secondMap.readTerritories();
-
-            assertThat(untouchedTerritories
+            assertThat(actualUntouchedTerritories
                     .getOccupancy()
                     .getOwnerBySystemKey()
                     .get(buildCellKey(SHARED_SYSTEM_ID))
                     .ownerId())
                 .isEqualTo(TRITACHYON_ID);
 
-            assertThat(untouchedTerritories.getStyledCellByCellKey())
+            assertThat(actualUntouchedTerritories.getStyledCellByCellKey())
                 .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
         }
 
+        // The installer's own wiring, which nothing else reads back. The watcher is built with the
+        // machinery resolved for the sector it is added to, and that argument is invisible either
+        // side of the install - so a watcher handed the other sector's machinery would observe these
+        // positions into that sector's tracker, and the cut over there would drop a system for a
+        // drift it never made.
         @Test
         void observesEachSectorsPositionsIntoTheTrackerOfTheMachineryItsWatcherWasBuiltWith() {
-            // The installer's own wiring, which nothing else reads back. The watcher is built with
-            // the machinery resolved for the sector it is added to, and that argument is
-            // invisible either side of the install - so a watcher handed the other sector's
-            // machinery would observe these positions into that sector's tracker, and the cut
-            // over there would drop a system for a drift it never made.
+
+            // ARRANGE
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
+            // ACT
             driftTheSharedSystemPastTwoPollsOf(firstSector);
 
+            // ASSERT
             assertThat(resolveMachineryOf(firstSector)
                     .resolveMovingSystems()
                     .getMovingSystemKeys())
@@ -282,17 +294,21 @@ final class SectorMapMachineryIsolationIntegrationTests {
                 .isEmpty();
         }
 
+        // A hover names a cell by system key too, so a shared holder would light a cell on the other
+        // sector's map and name that system in its box. Both ends go through the index rather than
+        // through the handle the install returned, since what a render pass has is a sector to
+        // resolve from.
         @Test
         void leavesTheOtherSectorsHoverParkedWhenACursorReadLandsOnOne() {
-            // A hover names a cell by system key too, so a shared holder would light a cell on
-            // the other sector's map and name that system in its box. Both ends go through the index
-            // rather than through the handle the install returned, since what a render pass has is a
-            // sector to resolve from.
+
+            // ARRANGE
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
+            // ACT
             resolveMachineryOf(firstSector).resolveHoverState().publishHover(HOVERED_SHARED_CELL);
 
+            // ASSERT
             assertThat(resolveMachineryOf(firstSector).resolveHoverState().getHover())
                 .isSameAs(HOVERED_SHARED_CELL);
             assertThat(resolveMachineryOf(secondSector).resolveHoverState().getHover())
@@ -303,12 +319,14 @@ final class SectorMapMachineryIsolationIntegrationTests {
     @Nested
     class UninstallMachineryFrom {
 
+        // A sector removed mid-session - the player switching the layers off on one while another is
+        // still installed. What must survive is the other sector's drawing; what must not is any
+        // route back to the removed sector's holders, which would otherwise go on answering for a
+        // sector nothing draws.
         @Test
         void leavesTheOtherSectorDrawingAndPutsTheRemovedOnesMachineryBeyondReach() {
-            // A sector removed mid-session - the player switching the layers off on one while
-            // another is still installed. What must survive is the other sector's drawing; what must
-            // not is any route back to the removed sector's holders, which would otherwise go on
-            // answering for a sector nothing draws.
+
+            // ARRANGE
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
             var removedMachinery = resolveMachineryOf(firstSector);
@@ -316,9 +334,13 @@ final class SectorMapMachineryIsolationIntegrationTests {
             removedMachinery.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_KEY);
             removedMachinery.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
 
+            // ACT
             SectorMapMachineryIndex.uninstallMachineryFrom(firstSector);
 
-            assertThat(new PoliticalMapCacheDriver(secondSector).rebuild().getStyledCellByCellKey())
+            var actualRemainingTerritories = new PoliticalMapCacheDriver(secondSector).rebuild();
+
+            // ASSERT
+            assertThat(actualRemainingTerritories.getStyledCellByCellKey())
                 .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
 
             assertThat(removedMachinery.isDisposed())
@@ -331,13 +353,15 @@ final class SectorMapMachineryIsolationIntegrationTests {
     @Nested
     class DisposeAllMachinery {
 
+        // The load discard, which is why nothing has to notice that a sector went away. Every holder
+        // the previous sector filled is staged first - a stale mark, a drift, a hover - so a discard
+        // that missed one shows up as that sector's state answering for the loaded one, and the drift
+        // shows up twice over: a tracker carried across would drop the shared system from the loaded
+        // sector's cut for a move the previous sector made.
         @Test
         void leavesTheSectorLoadedNextNothingOfThePreviousOnes() {
-            // The load discard, which is why nothing has to notice that a sector went away. Every
-            // holder the previous sector filled is staged first - a stale mark, a drift, a hover -
-            // so a discard that missed one shows up as that sector's state answering for the loaded
-            // one, and the drift shows up twice over: a tracker carried across would drop the shared
-            // system from the loaded sector's cut for a move the previous sector made.
+
+            // ARRANGE
             var previousSector = installMachineryOnAFirstSector();
             var previousMachinery = resolveMachineryOf(previousSector);
 
@@ -345,12 +369,16 @@ final class SectorMapMachineryIsolationIntegrationTests {
             previousMachinery.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
 
             driftTheSharedSystemPastTwoPollsOf(previousSector);
+
+            // ACT
             SectorMapMachineryIndex.disposeAllMachinery();
 
             var loadedSector = installMachineryOnASecondSector();
             var loadedMachinery = resolveMachineryOf(loadedSector);
+            var actualLoadedTerritories = new PoliticalMapCacheDriver(loadedSector).rebuild();
 
-            assertThat(new PoliticalMapCacheDriver(loadedSector).rebuild().getStyledCellByCellKey())
+            // ASSERT
+            assertThat(actualLoadedTerritories.getStyledCellByCellKey())
                 .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
 
             assertThat(loadedMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
@@ -513,11 +541,7 @@ final class SectorMapMachineryIsolationIntegrationTests {
 
         private PoliticalMapCacheDriver(SectorAPI sector) {
 
-            cache = new OwnerMapCache(
-                resolveMachineryOf(sector),
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                CellSeedRule.SEED_DRAWN_SYSTEMS,
-                OwnerMapRefreshStrategy.INCREMENTAL);
+            cache = PoliticalMapCacheFixture.createCacheOver(resolveMachineryOf(sector));
         }
 
         // What the cache last drew, without asking it to draw again - for a case claiming a sector

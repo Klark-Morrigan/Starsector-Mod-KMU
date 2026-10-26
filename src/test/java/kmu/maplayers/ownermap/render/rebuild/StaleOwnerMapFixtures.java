@@ -8,6 +8,8 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
@@ -50,6 +52,12 @@ final class StaleOwnerMapFixtures {
     // The side of the small square cells the batch cases redraw. Real coordinates because a redraw
     // insets these edges for real; only the adjacency tag is what the re-derive itself reads.
     static final double SMALL_CELL_SIDE = 50;
+
+    // The Hegemony keeping a system but leaving it unfilled: the refill both suites pose, a fill
+    // state moving under an owner that stayed.
+    static final ResolvedSystemOwner UNFILLED_BY_HEGEMONY = new ResolvedSystemOwner(
+        buildOwnerOf(HEGEMONY),
+        FillState.UNFILLED);
 
     // Fixtures only; never instantiated.
     private StaleOwnerMapFixtures() {

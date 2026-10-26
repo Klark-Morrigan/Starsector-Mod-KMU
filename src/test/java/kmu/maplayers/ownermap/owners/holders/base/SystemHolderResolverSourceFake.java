@@ -1,6 +1,10 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
-import kmu.maplayers.ownermap.owners.SystemOwner;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmlib.starsector.systems.SystemKey;
+
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,12 +19,12 @@ import java.util.Map;
  * other answers came from, under the spotlight the standing build was painted under. Both are read
  * off what this recorded.
  *
- * <p>The holding each open answers with is stated by the case, on this source; a source nobody
- * states a holding on opens resolvers holding nothing.
+ * <p>The holding each open answers with is stated by the case, on this source, as the holder and the
+ * fill state together; a source nobody states a holding on opens resolvers holding nothing.
  */
 public final class SystemHolderResolverSourceFake implements SystemHolderResolverSource {
 
-    private final Map<String, SystemOwner> holderBySystemId = new LinkedHashMap<>();
+    private final Map<String, ResolvedSystemOwner> holderBySystemId = new LinkedHashMap<>();
     private final List<HolderPass> passesOpenedOver = new ArrayList<>();
     private final List<String> spotlitBlocIdsOpenedUnder = new ArrayList<>();
 
@@ -43,12 +47,12 @@ public final class SystemHolderResolverSourceFake implements SystemHolderResolve
     }
 
     /**
-     * States who holds one system, for every resolver this source hands out.
+     * States who holds one system and how it fills, for every resolver this source hands out.
      *
      * @param systemId the system's own ID
-     * @param holder   the holder to answer with, or null for a system nobody holds
+     * @param holder   the holder and fill state to answer with
      */
-    public void recordHolderOf(String systemId, SystemOwner holder) {
+    public void recordHolderOf(String systemId, ResolvedSystemOwner holder) {
         holderBySystemId.put(systemId, holder);
     }
 
@@ -58,6 +62,19 @@ public final class SystemHolderResolverSourceFake implements SystemHolderResolve
         passesOpenedOver.add(pass);
         spotlitBlocIdsOpenedUnder.add(spotlitBlocId);
 
-        return SystemHolderResolverFake.createHolding(holderBySystemId);
+        return new StatedHolderResolverFake();
+    }
+
+    /** The holding this source states, read live so a case may state it late. */
+    private final class StatedHolderResolverFake
+            implements SystemHolderResolver {
+
+        @Override
+        public ResolvedSystemOwner resolveHolderIn(StarSystemAPI system) {
+
+            return holderBySystemId.getOrDefault(
+                SystemKey.readKeyOf(system).systemId(),
+                ResolvedSystemOwner.UNOWNED);
+        }
     }
 }

@@ -76,6 +76,8 @@ final class DominanceSystemHolderResolverTests {
     @Nested
     class ResolveHolderIn {
 
+        // Off filter the batch re-derives by the plain contest, which fills every system it gives
+        // anybody solid, as the whole-sector pass does.
         @Test
         void answersThePlainContestsHolderFilledSolidOffFilter() {
 
@@ -94,6 +96,26 @@ final class DominanceSystemHolderResolverTests {
                 .isEqualTo(new ResolvedSystemOwner(HEGEMONY, FillState.SOLID));
 
             spotlitContestMock.verifyNoInteractions();
+        }
+
+        // A system the contest gives nobody - nothing weighed there, or a system the sector no
+        // longer lists - draws as nobody's, the one unowned answer.
+        @Test
+        void answersUnownedWhereThePlainContestNamesNobodyOffFilter() {
+
+            // ARRANGE
+            plainContestMock
+                .when(() -> SectorPolitics.resolveDominantHolder(same(systemMock), same(dominancePassMock)))
+                .thenReturn(null);
+
+            // ACT
+            var actualResolved = DominanceSystemHolderResolver
+                .openResolverOver(pass, null)
+                .resolveHolderIn(systemMock);
+
+            // ASSERT
+            assertThat(actualResolved)
+                .isSameAs(ResolvedSystemOwner.UNOWNED);
         }
 
         // Under a spotlight the plain contest would overwrite the spotlit key, which is the one

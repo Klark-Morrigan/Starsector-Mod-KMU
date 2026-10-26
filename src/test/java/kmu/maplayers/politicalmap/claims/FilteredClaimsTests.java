@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the one rule both claim-reading providers share: which claims a spotlight rekeys and which
- * it leaves alone. The claim resolve and the spotlight holder are both stubbed - each has its own
+ * it leaves alone. The plain claim read and the spotlight holder are both stubbed - each has its own
  * suite - so these tests isolate the routing decision rather than the reads behind it.
  */
 final class FilteredClaimsTests {
@@ -42,32 +42,31 @@ final class FilteredClaimsTests {
     private static final SystemOwner SPOTLIT_HOLDER =
         new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY));
 
+    private static final SystemOwner HEGEMONY_CLAIMANT =
+        new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY));
+    private static final SystemOwner RIVAL_CLAIMANT =
+        new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY));
+
     private static final SystemKey HEGEMONY_CLAIMED = buildCellKey("hegemony-claimed");
     private static final SystemKey RIVAL_CLAIMED = buildCellKey("rival-claimed");
 
-    // Two claimed systems under different claimants, so every case can assert both what the
+    private final ClaimReader claimReaderMock = mock(ClaimReader.class);
+    private final HolderPass pass =
+        HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+
+    // Two claimed systems under different claimants, so every case can state both what the
     // spotlight moves and what it leaves where it was.
-    private static Map<SystemKey, SystemOwner> buildTwoClaimantSector() {
-
-        var claims = new LinkedHashMap<SystemKey, SystemOwner>();
-
-        claims.put(HEGEMONY_CLAIMED, new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY)));
-        claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY)));
-
-        return claims;
-    }
+    private final Map<SystemKey, SystemOwner> claims = buildTwoClaimantSector();
 
     @Nested
     class ResolveFilteredClaimsThrough {
 
+        // Opened over the pass's own walk and colony rule, so the claims read the colonies the pass
+        // already walked.
         @Test
         void resolvesThroughAReaderOpenedOverThePass() {
-            // Opened over the pass's own walk and colony rule, so the claims read the colonies the
-            // pass already walked.
-            var sectorMock = mock(SectorAPI.class);
-            var claimReaderMock = mock(ClaimReader.class);
-            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
-            var claims = buildTwoClaimantSector();
+
+            // ARRANGE
             var openedOver = new ArrayList<Object>();
 
             ClaimReaderSource claimReaderSource = (knownColonyReader, sectorIndex) -> {
@@ -78,11 +77,13 @@ final class FilteredClaimsTests {
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
-                sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
-                    .thenReturn(claims);
+                stateThePlainClaims(sectorClaimsMock, pass, claims);
 
-                assertThat(FilteredClaims.resolveFilteredClaimsThrough(pass, claimReaderSource, null))
+                // ACT
+                var actualClaims = FilteredClaims.resolveFilteredClaimsThrough(pass, claimReaderSource, null);
+
+                // ASSERT
+                assertThat(actualClaims)
                     .isSameAs(claims);
             }
 
@@ -94,128 +95,90 @@ final class FilteredClaimsTests {
     @Nested
     class ResolveFilteredClaims {
 
+        // No selection means no spotlight to fuse anything into, so the plain claim read is handed
+        // back untouched rather than copied.
         @Test
-        void passesThePlainClaimResolveThroughOffFilter() {
+        void passesThePlainClaimReadThroughOffFilter() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var claimReaderMock = mock(ClaimReader.class);
-            var grouping = HolderGrouping.identity();
-            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
-            var claims = buildTwoClaimantSector();
-
+            // ARRANGE
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
-                sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
-                        pass,
-                        claimReaderMock))
-                    .thenReturn(claims);
+                stateThePlainClaims(sectorClaimsMock, pass, claims);
 
-                var resolved = FilteredClaims.resolveFilteredClaims(
-                    pass,
-                    claimReaderMock,
-                    null);
+                // ACT
+                var actualClaims = FilteredClaims.resolveFilteredClaims(pass, claimReaderMock, null);
 
-                // No selection means no spotlight to fuse anything into, so the claim resolve is
-                // handed back untouched rather than copied.
-                assertThat(resolved)
+                // ASSERT
+                assertThat(actualClaims)
                     .isSameAs(claims);
             }
         }
 
+        // The selected bloc's claim carries the one spotlight key, which is what draws it at full
+        // strength and joins it to whatever else that bloc has spotlit; the rival's keeps its own
+        // bloc key, which is what the style layer reads to recede it.
         @Test
         void movesOnlyTheSelectedBlocsClaimsOntoTheSpotlightHolder() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var claimReaderMock = mock(ClaimReader.class);
-            var grouping = HolderGrouping.identity();
-            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
-            var claims = buildTwoClaimantSector();
-
+            // ARRANGE
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
-                sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
-                        pass,
-                        claimReaderMock))
-                    .thenReturn(claims);
+                stateThePlainClaims(sectorClaimsMock, pass, claims);
+                stateTheSpotlightHolder(spotlitOwnersMock, SPOTLIT_HOLDER);
 
-                spotlitOwnersMock
-                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
-                    .thenReturn(SPOTLIT_HOLDER);
+                // ACT
+                var actualClaims = FilteredClaims.resolveFilteredClaims(pass, claimReaderMock, "hegemony");
 
-                var resolved = FilteredClaims.resolveFilteredClaims(
-                    pass,
-                    claimReaderMock,
-                    "hegemony");
-
-                // The selected bloc's claim carries the one spotlight key, which is what draws it
-                // at full strength and joins it to whatever else that bloc has spotlit; the
-                // rival's keeps its own bloc key, which is what the style layer reads to recede it.
-                assertThat(resolved.get(HEGEMONY_CLAIMED))
-                    .isSameAs(SPOTLIT_HOLDER);
-                assertThat(resolved.get(RIVAL_CLAIMED))
-                    .isSameAs(claims.get(RIVAL_CLAIMED));
+                // ASSERT
+                assertThat(actualClaims)
+                    .containsExactly(
+                        Map.entry(HEGEMONY_CLAIMED, SPOTLIT_HOLDER),
+                        Map.entry(RIVAL_CLAIMED, RIVAL_CLAIMANT));
             }
         }
 
+        // The degenerate case: the selected bloc's colour faction vanished mid-session, so its
+        // claims drop rather than paint colourless. Every other claim is unaffected.
         @Test
         void dropsTheSelectedBlocsClaimsWhenItsPaletteIsGone() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var claimReaderMock = mock(ClaimReader.class);
-            var grouping = HolderGrouping.identity();
-            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
-            var claims = buildTwoClaimantSector();
-
+            // ARRANGE
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
-                sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
-                        pass,
-                        claimReaderMock))
-                    .thenReturn(claims);
+                stateThePlainClaims(sectorClaimsMock, pass, claims);
+                stateTheSpotlightHolder(spotlitOwnersMock, null);
 
-                spotlitOwnersMock
-                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
-                    .thenReturn(null);
+                // ACT
+                var actualClaims = FilteredClaims.resolveFilteredClaims(pass, claimReaderMock, "hegemony");
 
-                var resolved = FilteredClaims.resolveFilteredClaims(
-                    pass,
-                    claimReaderMock,
-                    "hegemony");
-
-                // The degenerate case: the selected bloc's colour faction vanished mid-session, so
-                // its claims drop rather than paint colourless. Every other claim is unaffected.
-                assertThat(resolved).containsExactly(
-                    Map.entry(RIVAL_CLAIMED, claims.get(RIVAL_CLAIMED)));
+                // ASSERT
+                assertThat(actualClaims)
+                    .containsExactly(Map.entry(RIVAL_CLAIMED, RIVAL_CLAIMANT));
             }
         }
 
+        // A pass over no sector walks no systems, so there is no claim for the selection to
+        // spotlight - the plain read's own empty answer stands.
         @Test
-        void passesThePlainClaimResolveThroughWithNoSector() {
+        void passesThePlainClaimReadThroughWithNoSector() {
 
-            var claimReaderMock = mock(ClaimReader.class);
-            var pass = HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity());
+            // ARRANGE
+            var passOverNoSector = HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity());
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
-                sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
-                        pass,
-                        claimReaderMock))
-                    .thenReturn(Map.of());
+                stateThePlainClaims(sectorClaimsMock, passOverNoSector, Map.of());
 
-                var resolved = FilteredClaims.resolveFilteredClaims(
-                    pass,
+                // ACT
+                var actualClaims = FilteredClaims.resolveFilteredClaims(
+                    passOverNoSector,
                     claimReaderMock,
                     "hegemony");
 
-                // A pass over no sector walks no systems, so there is no claim for the selection to
-                // spotlight - the claim resolve's own empty answer stands.
-                assertThat(resolved)
+                // ASSERT
+                assertThat(actualClaims)
                     .isEmpty();
             }
         }
@@ -224,30 +187,24 @@ final class FilteredClaimsTests {
     @Nested
     class ResolveFilteredClaimIn {
 
-        private final SectorAPI sectorMock = mock(SectorAPI.class);
-        private final ClaimReader claimReaderMock = mock(ClaimReader.class);
         private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
-        private final HolderPass pass =
-            HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
 
         // Off filter a batch re-derives the plain claimant, exactly as the whole-sector arm hands
-        // the plain resolve back.
+        // the plain read back.
         @Test
         void answersThePlainClaimantOffFilter() {
 
             // ARRANGE
-            var claimant = buildTwoClaimantSector().get(HEGEMONY_CLAIMED);
-
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
-                stubClaimant(sectorClaimsMock, claimant);
+                stateTheClaimant(sectorClaimsMock, HEGEMONY_CLAIMANT);
 
                 // ACT
                 var actualClaimant = FilteredClaims.resolveFilteredClaimIn(systemMock, pass, claimReaderMock, null);
 
                 // ASSERT
                 assertThat(actualClaimant)
-                    .isSameAs(claimant);
+                    .isSameAs(HEGEMONY_CLAIMANT);
             }
         }
 
@@ -260,11 +217,8 @@ final class FilteredClaimsTests {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
-                stubClaimant(sectorClaimsMock, buildTwoClaimantSector().get(HEGEMONY_CLAIMED));
-
-                spotlitOwnersMock
-                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
-                    .thenReturn(SPOTLIT_HOLDER);
+                stateTheClaimant(sectorClaimsMock, HEGEMONY_CLAIMANT);
+                stateTheSpotlightHolder(spotlitOwnersMock, SPOTLIT_HOLDER);
 
                 // ACT
                 var actualClaimant = FilteredClaims.resolveFilteredClaimIn(
@@ -279,20 +233,16 @@ final class FilteredClaimsTests {
             }
         }
 
+        // A rival's claim keeps its own key under the spotlight, so the style layer recedes it.
         @Test
         void leavesARivalsClaimOnItsOwnKey() {
 
             // ARRANGE
-            var rivalClaimant = buildTwoClaimantSector().get(RIVAL_CLAIMED);
-
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
-                stubClaimant(sectorClaimsMock, rivalClaimant);
-
-                spotlitOwnersMock
-                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
-                    .thenReturn(SPOTLIT_HOLDER);
+                stateTheClaimant(sectorClaimsMock, RIVAL_CLAIMANT);
+                stateTheSpotlightHolder(spotlitOwnersMock, SPOTLIT_HOLDER);
 
                 // ACT
                 var actualClaimant = FilteredClaims.resolveFilteredClaimIn(
@@ -303,17 +253,22 @@ final class FilteredClaimsTests {
 
                 // ASSERT
                 assertThat(actualClaimant)
-                    .isSameAs(rivalClaimant);
+                    .isSameAs(RIVAL_CLAIMANT);
             }
         }
 
+        // The single-system arm drops the selected bloc's claim when its colour faction has gone,
+        // as the whole-sector arm does: today the claim leaves the map, where the held arm keeps the
+        // system on its real holder.
         @Test
-        void answersNobodyForAnUnclaimedSystemUnderASpotlight() {
+        void dropsTheSelectedBlocsClaimWhenItsPaletteIsGone() {
 
             // ARRANGE
-            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class);
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
-                stubClaimant(sectorClaimsMock, null);
+                stateTheClaimant(sectorClaimsMock, HEGEMONY_CLAIMANT);
+                stateTheSpotlightHolder(spotlitOwnersMock, null);
 
                 // ACT
                 var actualClaimant = FilteredClaims.resolveFilteredClaimIn(
@@ -328,12 +283,65 @@ final class FilteredClaimsTests {
             }
         }
 
-        // What the single-system claim resolve answers for this case's system.
-        private void stubClaimant(MockedStatic<SectorClaims> sectorClaimsMock, SystemOwner claimant) {
+        // Nobody claims the system, so there is nothing for the spotlight to rekey.
+        @Test
+        void answersNobodyForAnUnclaimedSystemUnderASpotlight() {
+
+            // ARRANGE
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+
+                stateTheClaimant(sectorClaimsMock, null);
+
+                // ACT
+                var actualClaimant = FilteredClaims.resolveFilteredClaimIn(
+                    systemMock,
+                    pass,
+                    claimReaderMock,
+                    "hegemony");
+
+                // ASSERT
+                assertThat(actualClaimant)
+                    .isNull();
+            }
+        }
+
+        // What the single-system claim read answers for this case's system.
+        private void stateTheClaimant(MockedStatic<SectorClaims> sectorClaimsMock, SystemOwner claimant) {
 
             sectorClaimsMock
                 .when(() -> SectorClaims.resolveClaimingHolderIn(systemMock, pass, claimReaderMock))
                 .thenReturn(claimant);
         }
+    }
+
+    // The holder every claim of the selected bloc draws as; null for a colour faction that is gone.
+    private static void stateTheSpotlightHolder(
+            MockedStatic<SpotlitOwners> spotlitOwnersMock,
+            SystemOwner spotlightHolder) {
+
+        spotlitOwnersMock
+            .when(() -> SpotlitOwners.createSpotlitOwner(any()))
+            .thenReturn(spotlightHolder);
+    }
+
+    private static Map<SystemKey, SystemOwner> buildTwoClaimantSector() {
+
+        var claimingHolderBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
+
+        claimingHolderBySystemKey.put(HEGEMONY_CLAIMED, HEGEMONY_CLAIMANT);
+        claimingHolderBySystemKey.put(RIVAL_CLAIMED, RIVAL_CLAIMANT);
+
+        return claimingHolderBySystemKey;
+    }
+
+    // What the whole-sector claim read answers over the given pass, through this suite's reader.
+    private void stateThePlainClaims(
+            MockedStatic<SectorClaims> sectorClaimsMock,
+            HolderPass claimedPass,
+            Map<SystemKey, SystemOwner> claimingHolderBySystemKey) {
+
+        sectorClaimsMock
+            .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(claimedPass, claimReaderMock))
+            .thenReturn(claimingHolderBySystemKey);
     }
 }
