@@ -46,9 +46,9 @@ import java.util.Set;
  * live input, when one of the sidebar preferences the bake reads holds a different value
  * ({@link ContentInputs}), or when the geometry itself was rebuilt. So switching a colour, dragging
  * an opacity slider or picking a spotlight takes effect live. The per-frame path is otherwise one
- * sample of the sidebar preferences, compared with the revisions against what the standing map was
- * built under - never a per-frame economy scan. The sample stays per frame because a screen switch
- * moves every pick while no counter moves.
+ * sample of the sidebar preferences, held with the revisions and compared by value against what the
+ * standing map was built under - never a per-frame economy scan. The sample stays per frame because a
+ * screen switch moves every pick while no counter moves.
  *
  * <p>Between those, a change in one system marks just its own system stale, and what a frame does
  * with the marked systems is the layer's {@link OwnerMapRefreshStrategy}: fold them into the
@@ -229,10 +229,10 @@ public final class OwnerMapCache
     // settings alone, so it runs first and most frames stop at it.
     private void rebuildStaleHalves(OwnerPaintedView view, ScreenMemoryScope memoryScope) {
 
-        // Both views null means neither has been built for this sector, so the first frame forces
-        // the build even if the content revision happens to match its unbuilt seed.
+        // Both views null means neither has been built for this sector, so the frame forces the
+        // build whatever the keys say.
         var staleHalves = decider.decideWhatIsStale(view, memoryScope, drawables.hasNothingBuilt());
-        if (!staleHalves.isContentStale()) {
+        if (staleHalves.staleness() == Staleness.NOTHING) {
 
             refreshMarkedSystems(staleHalves);
             return;

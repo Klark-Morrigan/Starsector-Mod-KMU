@@ -257,7 +257,7 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | **nothing** - see below |
-| `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/ownermap/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the clusters rebuild, which folds its values into the content revision |
+| `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/ownermap/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the clusters rebuild, which compares its values with what the standing map was built from |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the clusters rebuild |
 | content revision | each `OwnerPaintedView` | the view's own live inputs, folded via `Fingerprints` off the board it is handed | the clusters rebuild, and the sidebar picker memo |
 
@@ -275,7 +275,7 @@ so flipping one does *not* bump `settingsRevision`.
 Each setter raises its own signal,
 and none of those three signals triggers a rebuild:
 the clusters are rebuilt on the *values* the toggles hold,
-sampled once per rebuild into `ContentInputs` and folded into the content revision.
+sampled once per rebuild into `ContentInputs` and compared with what the standing map was built from.
 A counter reports that somebody clicked something;
 the values answer the only question a rebuild turns on -
 would this build come out the same.
@@ -338,6 +338,9 @@ asked first and acted on:
 the decider holds what each half was built against and compares this frame's revisions and settings to it,
 which opens no reading of the sector,
 so nearly every frame stops at it.
+It compares whole values by `equals` rather than a hash of them,
+so two readings that differ always rebuild,
+however their values happen to fold.
 The settings the cells are cut from are read again only when KMU's settings revision moves,
 since every one of them is a LunaLib field and LunaLib reports each change;
 on any other frame the last reading stands.

@@ -150,7 +150,7 @@ final class FullOwnerMapRebuild {
     /**
      * The rebuild itself, run only where the decision found something stale. Reports each stage
      * complete to the decider only after it completes, so a thrown rebuild is retried next frame.
-     * Builds under the active view's rules, so a view switch (folded into the content revision)
+     * Builds under the active view's rules, so a view switch (held in the content key)
      * rebuilds the clusters under the newly-selected view.
      *
      * <p>A rebuild is a pass, and is read as one: whichever stages run, they run against one reading
@@ -179,7 +179,11 @@ final class FullOwnerMapRebuild {
             new SectorPassIndex(sector),
             staleHalves.cellCut().visibilityRules());
 
-        if (staleHalves.isCellCutStale()) {
+        var isCellCutStale = staleHalves
+            .staleness()
+            .isCellCutStale();
+
+        if (isCellCutStale) {
             rebuildGeometry(staleHalves, sector, walk.sectorIndex());
         }
 
@@ -201,9 +205,9 @@ final class FullOwnerMapRebuild {
             // the bake folds the sampled values - so this is the only place the answer lands where
             // the rebuild it preceded can be read against it. It is context rather than cause: a
             // signal may be raised with no rebuild owed, and a rebuild may be owed with none raised.
-            drawablesScope.tagCall("contentRevision=" + staleHalves.contentRevision()
+            drawablesScope.tagCall("content=" + staleHalves.contentKey()
                 + " " + drawables.describeBuiltCounts()
-                + " geometryRebuilt=" + staleHalves.isCellCutStale()
+                + " geometryRebuilt=" + isCellCutStale
                 + " ownersReused=" + wereOwnersReused
                 + " signalsRaised=" + signalTracker.describeRaisesSinceTheLastReading());
         }
@@ -227,6 +231,7 @@ final class FullOwnerMapRebuild {
         // what the fold is for - where a drain after the build would discard it on the assumption
         // that the build had read everything, an assumption reused owners do not meet.
         var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
+        var contentInputs = staleHalves.contentKey().contentInputs();
         var wereOwnersReused = false;
 
         // The view's two answers about its owners, resolved once for this rebuild under one
@@ -241,15 +246,15 @@ final class FullOwnerMapRebuild {
 
         // Build one view or the other, never both: the debug overlay replaces the normal
         // render, so in debug mode the production draw lists are not built at all, and the
-        // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
-        // revision and forces this rebuild - which is what swaps the two.
+        // unused view is nulled. The toggle is a KMU setting, so flipping it moves the settings
+        // revision the content key holds and forces this rebuild - which is what swaps the two.
         if (KmuOwnerMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
 
             drawables.rebuildBorderTracingOverlay(
                 cellGeometry,
                 walk,
                 viewReading,
-                staleHalves.contentInputs(),
+                contentInputs,
                 isAnchorOverlayShown);
 
             // The overlay read owners for itself and drops what was marked, so nothing standing
@@ -268,7 +273,7 @@ final class FullOwnerMapRebuild {
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
         // what is minted matches what was fitted.
-        drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
+        drawables.rebuildLabels(contentInputs.nameFormat().areNamesDrawn());
         decider.recordContentRebuilt(staleHalves);
 
         return wereOwnersReused;
@@ -284,6 +289,7 @@ final class FullOwnerMapRebuild {
             SectorWalk walk,
             Set<SystemKey> staleSystemKeys) {
 
+        var contentInputs = staleHalves.contentKey().contentInputs();
         var wereOwnersReused = decider.canReuseStandingOwners(
             staleHalves,
             standingOwners != null,
@@ -294,7 +300,7 @@ final class FullOwnerMapRebuild {
             standingOwners = OwnerMapBuilder.resolveOwners(
                 viewReading.source(),
                 walk,
-                staleHalves.contentInputs());
+                contentInputs);
             decider.recordOwnersResolved(staleHalves);
         }
 
@@ -302,7 +308,7 @@ final class FullOwnerMapRebuild {
             cellGeometry,
             walk,
             viewReading,
-            staleHalves.contentInputs(),
+            contentInputs,
             isAnchorOverlayShown,
             standingOwners);
 

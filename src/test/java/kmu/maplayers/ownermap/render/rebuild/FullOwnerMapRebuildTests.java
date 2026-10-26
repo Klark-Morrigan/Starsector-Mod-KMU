@@ -60,23 +60,24 @@ final class FullOwnerMapRebuildTests {
         new CellSeedInputs(8, 1000.0),
         MapVisibilityRules.BASE);
 
+    // What every rebuild here is keyed by. No case turns on the values, the decider being stood in for.
+    private static final ViewKey VIEW_KEY = new ViewKey(0, "view", 0);
+    private static final ContentKey CONTENT_KEY = new ContentKey(VIEW_KEY, ContentInputs.createEmpty());
+    private static final OwnersKey OWNERS_KEY = new OwnersKey(VIEW_KEY, null);
+
     // A decision owing a recut and everything after it.
     private static final StaleHalves RECUT_HALVES = new StaleHalves(
         CELL_CUT,
-        true,
-        ContentInputs.createEmpty(),
-        0,
-        0,
-        true);
+        CONTENT_KEY,
+        OWNERS_KEY,
+        Staleness.CUT_AND_CONTENT);
 
     // A decision owing the content alone, over cells that stand.
     private static final StaleHalves CONTENT_ONLY_HALVES = new StaleHalves(
         CELL_CUT,
-        false,
-        ContentInputs.createEmpty(),
-        0,
-        0,
-        true);
+        CONTENT_KEY,
+        OWNERS_KEY,
+        Staleness.CONTENT);
 
     // Any view: what the rebuild keeps turns on what the decider answered, never on who is painting.
     private static final OwnerPaintedView VIEW_FAKE = new OwnerPaintedViewFake(new OwnerSourceFake());
@@ -330,6 +331,23 @@ final class FullOwnerMapRebuildTests {
 
             // ARRANGE
             var expectedTagPart = "ownersReused=false";
+
+            // ACT
+            var actualTag = recordRebuildTag(CONTENT_ONLY_HALVES);
+
+            // ASSERT
+            assertThat(actualTag)
+                .contains(expectedTagPart);
+        }
+
+        // The line names what the clusters were built from in full, so a rebuild can be read against
+        // the setting, view or pick that owed it.
+        @Test
+        void tagsTheContentKeyItWasBuiltFrom() {
+
+            // ARRANGE
+            var expectedTagPart = "content=ContentKey[viewKey=ViewKey[settingsRevision=0, viewId=view, "
+                + "viewContentRevision=0], contentInputs=ContentInputs[selectedOwnerId=null";
 
             // ACT
             var actualTag = recordRebuildTag(CONTENT_ONLY_HALVES);

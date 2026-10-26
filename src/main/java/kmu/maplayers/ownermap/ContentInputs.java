@@ -21,9 +21,9 @@ import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
  * preference flipped mid-rebuild leaves the cells shaped under one answer and named under another;
  * sampled once and carried, every stage bakes the same picks.
  *
- * <p>It is also what tells a rebuild it is owed one: these values are folded into the content
- * revision in place of the refresh counters their flips raise, so two readings holding the same
- * picks are the same bake however many counters have moved between them.
+ * <p>It is also what tells a rebuild it is owed one: these values are compared, as part of what a
+ * rebuild records it was built from, in place of the refresh counters their flips raise, so two
+ * readings holding the same picks are the same bake however many counters have moved between them.
  *
  * @param selectedOwnerId           the spotlighted owner, or null off filter
  * @param filterRecedeAdjustment    how the rest of the sector recedes behind that spotlight;

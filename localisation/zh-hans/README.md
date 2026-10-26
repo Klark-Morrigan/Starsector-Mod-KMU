@@ -432,6 +432,7 @@ So a word of one axis never stands in for another:
 | Full / Short / No (faction names) | 全称 / 简称 / 无 | the usual words for a full and a short name |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |
 | Name, Domination, Presence, Score, Market size, Claims, Attitude (sort) | 名称, 主导, 存在, 得分, 市场规模, 宣称, 关系 | Attitude follows vanilla's 关系 |
+| pick (a choice made on the sidebar) | 选择 | the plain word for a choice, as in 选择器, the picker it is made in |
 | picker (the sidebar list a bloc is spotlit from) | 选择器 | the usual UI word for a control a choice is made in |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Rest of the sector | 星域其余部分 | vanilla's 星域 with 其余部分, the part remaining |

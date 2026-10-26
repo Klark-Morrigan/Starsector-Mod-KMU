@@ -53,6 +53,11 @@ final class OwnerMapRebuildDeciderTests {
     // A cell reach no default lands on, so a recut seen after it is the reach's doing.
     private static final double MOVED_CELL_RADIUS = 1234.0;
 
+    // A view content revision that, with the settings revision one higher, folds to the same
+    // Objects.hash as both at zero: the fold weighs the settings revision 961 (31 squared) times the
+    // view's content revision.
+    private static final int HASH_COLLIDING_VIEW_CONTENT_REVISION = -961;
+
     // The screen each decision is taken for. A stand-in rather than one of the two live screens:
     // nothing here turns on which panel the frame was prepared for.
     private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
@@ -84,6 +89,7 @@ final class OwnerMapRebuildDeciderTests {
 
         nameFormatMock = mock(NameFormatPreference.class);
 
+        announceSettingsRevision(settingsRevision);
         pickNameFormat(OwnerNameFormatChoice.FULL);
 
         var preferences = OwnerMapBodyPreferencesFixtures.createUnderTestKeys();
@@ -107,222 +113,349 @@ final class OwnerMapRebuildDeciderTests {
     @Nested
     class DecideWhatIsStale {
 
+        // Every baseline starts at its never-built state, and nothing has been cut, so the first
+        // frame after a sector is installed on builds both halves from scratch.
         @Test
-        void owesBothHalvesOnTheFirstFrame() {
-            // Every baseline starts at its rebuild-forcing seed, and nothing has been cut, so the
-            // first frame after a sector is installed on builds both halves from scratch.
-            var staleHalves = decideWithNothingBuilt();
+        void owesTheCutAndTheContentOnTheFirstFrame() {
 
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
-            assertThat(staleHalves.isCellCutStale())
-                .isTrue();
+            // ARRANGE
+            var expectedStaleness = Staleness.CUT_AND_CONTENT;
+
+            // ACT
+            var actualStaleness = decideWithNothingBuilt().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // The frame the map spends nearly all of its life on: a rebuild has been recorded and no
+        // input moved since, so the decision stops here and opens no reading.
         @Test
         void owesNothingOnceTheRebuildIsRecordedAndNothingMoved() {
-            // The frame the map spends nearly all of its life on: a rebuild has been recorded and
-            // no input moved since, so the decision stops here and opens no reading.
+
+            // ARRANGE
+            var expectedStaleness = Staleness.NOTHING;
+
             decideAndRecordARebuild();
 
-            var staleHalves = decideAfterABuild();
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
 
-            assertThat(staleHalves.isContentStale())
-                .isFalse();
-            assertThat(staleHalves.isCellCutStale())
-                .isFalse();
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // Nothing built forces the build even when every key matches its baseline, but the cells
+        // were cut, so they stand.
         @Test
-        void owesARebuildButNoRecutWhileNothingIsBuilt() {
-            // Nothing built forces the build even when every revision matches its baseline, but
-            // the cells were cut, so they stand.
+        void owesTheContentAloneWhileNothingIsBuilt() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
             decideAndRecordARebuild();
 
-            var staleHalves = decideWithNothingBuilt();
+            // ACT
+            var actualStaleness = decideWithNothingBuilt().staleness();
 
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
-            assertThat(staleHalves.isCellCutStale())
-                .isFalse();
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // The reachable set moved, so the cells it seeds are cut again and the clusters over them
+        // rebuilt.
         @Test
-        void owesARecutWhenTheGeometrySignalIsRaised() {
+        void owesTheCutAndTheContentWhenTheGeometrySignalIsRaised() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CUT_AND_CONTENT;
 
             decideAndRecordARebuild();
             raiseTheGeometrySignal();
 
-            var staleHalves = decideAfterABuild();
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
 
-            assertThat(staleHalves.isCellCutStale())
-                .isTrue();
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // The cell reach reseeds every cell without the reachable set moving, which is why the cut
+        // is asked of what it is cut from rather than of the signal.
         @Test
-        void owesARecutWhenACellSettingMovesWithoutTheGeometrySignal() {
-            // The cell reach reseeds every cell without the reachable set moving, which is why the
-            // cut is asked of what it is cut from rather than of the signal.
+        void owesTheCutWhenACellSettingMovesWithoutTheGeometrySignal() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CUT_AND_CONTENT;
+
             decideAndRecordARebuild();
             moveTheCellRadius();
 
-            assertThat(decideAfterABuild().isCellCutStale())
-                .isTrue();
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // Every cell setting is a LunaLib field, so an unmoved revision means an unmoved setting,
+        // and the per-frame decision reads them once rather than every frame.
         @Test
         void keepsTheCellSettingsItReadWhileTheSettingsRevisionHolds() {
-            // Every cell setting is a LunaLib field, so an unmoved revision means an unmoved
-            // setting, and the per-frame decision reads them once rather than every frame.
+
+            // ARRANGE
             decideAndRecordARebuild();
+
+            // ACT
             decideAfterABuild();
             decideAfterABuild();
 
+            // ASSERT
             geometrySettingsSeam.verify(
                 KmuOwnerMapGeometrySettings::getOwnerMapCellRadius,
                 times(1));
         }
 
+        // A settings change restyles every cell over the fixed geometry, so it owes a rebuild; the
+        // cut reads the same values again and so owes none.
         @Test
-        void owesARebuildButNoRecutWhenOnlyTheSettingsRevisionMoves() {
-            // A settings change restyles every cell over the fixed geometry, so it owes a rebuild;
-            // the cut reads the same values again and so owes none.
+        void owesTheContentAloneWhenOnlyTheSettingsRevisionMoves() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
             decideAndRecordARebuild();
             moveTheSettingsRevision();
 
-            var staleHalves = decideAfterABuild();
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
 
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
-            assertThat(staleHalves.isCellCutStale())
-                .isFalse();
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // The view's fingerprint stands for whatever it samples, so a change to one rebuilds
+        // without any setting moving.
         @Test
-        void owesARebuildWhenTheViewsLiveInputsMove() {
-            // The view's fingerprint stands for whatever it samples, so a change to one rebuilds
-            // without any setting moving.
+        void owesTheContentWhenTheViewsLiveInputsMove() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
             decideAndRecordARebuild();
             viewFake.setContentRevision(1);
 
-            assertThat(decideAfterABuild().isContentStale())
-                .isTrue();
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // What the map was built from is compared whole, so two readings that differ rebuild
+        // however their values fold. These two fold to one Objects.hash.
         @Test
-        void owesARebuildButNoRecutWhenTheSpotlitOwnerMoves() {
-            // A pick is a different map but the same cells: the content revision folds the sampled
-            // reading and moves, while nothing the cells are cut from has.
+        void owesTheContentWhenTheReadingsDifferButTheirHashesCollide() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
+            decideAndRecordARebuild();
+            moveTheSettingsRevision();
+            viewFake.setContentRevision(HASH_COLLIDING_VIEW_CONTENT_REVISION);
+
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
+        }
+
+        // A pick is a different map but the same cells: the content key holds the sampled reading
+        // and moves, while nothing the cells are cut from has.
+        @Test
+        void owesTheContentAloneWhenTheSpotlitOwnerMoves() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
+            decideAndRecordARebuild();
+            spotlight(HEGEMONY_ID);
+
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
+        }
+
+        // The spotlight decides who holds a cell, so the owners key holds it.
+        @Test
+        void movesTheOwnersKeyWhenTheSpotlitOwnerMoves() {
+
+            // ARRANGE
             var rebuilt = decideAndRecordARebuild();
 
             spotlight(HEGEMONY_ID);
 
-            var staleHalves = decideAfterABuild();
+            // ACT
+            var actualOwnersKey = decideAfterABuild().ownersKey();
 
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
-            assertThat(staleHalves.isCellCutStale())
-                .isFalse();
-            assertThat(staleHalves.ownersRevision())
-                .isNotEqualTo(rebuilt.ownersRevision());
+            // ASSERT
+            assertThat(actualOwnersKey)
+                .isNotEqualTo(rebuilt.ownersKey());
         }
 
+        // The name format reaches the paint and nothing before it, so the rebuild it owes is one
+        // that may keep the owners it already read.
         @Test
-        void owesARebuildButKeepsTheOwnersRevisionWhenAStylePickMoves() {
-            // The name format reaches the paint and nothing before it, so the rebuild it owes is
-            // one that may keep the owners it already read.
+        void owesTheContentButKeepsTheOwnersKeyWhenAStylePickMoves() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
             var rebuilt = decideAndRecordARebuild();
 
             pickNameFormat(OwnerNameFormatChoice.SHORT);
 
-            var staleHalves = decideAfterABuild();
+            // ACT
+            var actualHalves = decideAfterABuild();
 
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
-            assertThat(staleHalves.ownersRevision())
-                .isEqualTo(rebuilt.ownersRevision());
+            // ASSERT
+            assertThat(actualHalves.staleness())
+                .isEqualTo(expectedStaleness);
+            assertThat(actualHalves.ownersKey())
+                .isEqualTo(rebuilt.ownersKey());
         }
 
+        // The baselines advance only as the cache reports each stage complete, which is what lets a
+        // rebuild that threw part way be asked for again rather than taken as done.
         @Test
-        void goesOnOwingTheRebuildUntilAStageIsRecorded() {
-            // The baselines advance only as the cache reports each stage complete, which is what
-            // lets a rebuild that threw part way be asked for again rather than taken as done.
+        void goesOnOwingTheCutAndTheContentUntilAStageIsRecorded() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CUT_AND_CONTENT;
+
             decideWithNothingBuilt();
 
-            var staleHalves = decideAfterABuild();
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
 
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
-            assertThat(staleHalves.isCellCutStale())
-                .isTrue();
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
     }
 
     @Nested
     class CanReuseStandingOwners {
 
+        // The owners were resolved under the key this frame reads again, so they still say who owns
+        // what.
         @Test
         void isTrueWhenNothingReachingTheResolveMoved() {
 
+            // ARRANGE
             decideAndRecordARebuild();
 
-            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
+            // ACT
+            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+
+            // ASSERT
+            assertThat(actualCanReuse)
                 .isTrue();
         }
 
+        // The case the owners key exists for: a rebuild is owed, and the owners it would read
+        // afresh are the ones already standing.
         @Test
         void isTrueWhenOnlyAStylePickMoved() {
-            // The case the owners revision exists for: a rebuild is owed, and the owners it would
-            // read afresh are the ones already standing.
+
+            // ARRANGE
             decideAndRecordARebuild();
             pickNameFormat(OwnerNameFormatChoice.SHORT);
 
-            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
+            // ACT
+            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+
+            // ASSERT
+            assertThat(actualCanReuse)
                 .isTrue();
         }
 
+        // A cache's first rebuild has nothing to keep, whatever the keys say.
         @Test
         void isFalseWhileNothingIsStanding() {
-            // A cache's first rebuild has nothing to keep, whatever the revisions say.
+
+            // ARRANGE
             decideAndRecordARebuild();
 
-            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), false, Set.of()))
+            // ACT
+            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), false, Set.of());
+
+            // ASSERT
+            assertThat(actualCanReuse)
                 .isFalse();
         }
 
+        // A marked system is one the sector moved under, so owners read before it moved no longer
+        // say who owns it.
         @Test
         void isFalseWhenASystemIsMarked() {
-            // A marked system is one the sector moved under, so owners read before it moved no
-            // longer say who owns it.
+
+            // ARRANGE
             decideAndRecordARebuild();
 
-            assertThat(decider.canReuseStandingOwners(
-                    decideAfterABuild(),
-                    true,
-                    Set.of(buildCellKey("marked"))))
+            // ACT
+            var actualCanReuse = decider.canReuseStandingOwners(
+                decideAfterABuild(),
+                true,
+                Set.of(buildCellKey("marked")));
+
+            // ASSERT
+            assertThat(actualCanReuse)
                 .isFalse();
         }
 
+        // A recut admits or drops systems, so the owners have to be read over the new set.
         @Test
         void isFalseWhenTheCellsAreRecut() {
-            // A recut admits or drops systems, so the owners have to be read over the new set.
+
+            // ARRANGE
             decideAndRecordARebuild();
             raiseTheGeometrySignal();
 
-            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
+            // ACT
+            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+
+            // ASSERT
+            assertThat(actualCanReuse)
                 .isFalse();
         }
 
+        // The spotlight decides who holds a cell rather than only how it is coloured, so the owners
+        // key holds it and a moved pick reads the owners afresh.
         @Test
         void isFalseWhenAPickReachingTheResolveMoved() {
-            // The spotlight decides who holds a cell rather than only how it is coloured, so the
-            // owners revision folds it and a moved pick reads the owners afresh.
+
+            // ARRANGE
             decideAndRecordARebuild();
             spotlight(HEGEMONY_ID);
 
-            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
+            // ACT
+            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+
+            // ASSERT
+            assertThat(actualCanReuse)
                 .isFalse();
         }
     }
@@ -330,21 +463,35 @@ final class OwnerMapRebuildDeciderTests {
     @Nested
     class DescribeCellCutTransition {
 
+        // The never-cut state is a reading of its own rather than a zero one, so the first recut
+        // says so instead of naming a set of inputs no player was ever under.
         @Test
         void namesTheNeverCutStateBeforeAnythingIsCut() {
-            // The never-cut state is a reading of its own rather than a zero one, so the first
-            // recut says so instead of naming a set of inputs no player was ever under.
-            assertThat(decider.describeCellCutTransition(decideWithNothingBuilt()))
-                .startsWith("from null to ");
+
+            // ARRANGE
+            var expectedPrefix = "from null to ";
+
+            // ACT
+            var actualTransition = decider.describeCellCutTransition(decideWithNothingBuilt());
+
+            // ASSERT
+            assertThat(actualTransition)
+                .startsWith(expectedPrefix);
         }
 
+        // The other half of recording a cut: the reading a later recut moves away from is the one
+        // that was actually cut, so a transition described after it names no absence.
         @Test
         void namesTheStandingReadingOnceACutIsRecorded() {
-            // The other half of recording a cut: the reading a later recut moves away from is the
-            // one that was actually cut, so a transition described after it names no absence.
+
+            // ARRANGE
             decideAndRecordARebuild();
 
-            assertThat(decider.describeCellCutTransition(decideAfterABuild()))
+            // ACT
+            var actualTransition = decider.describeCellCutTransition(decideAfterABuild());
+
+            // ASSERT
+            assertThat(actualTransition)
                 .doesNotContain("null");
         }
     }
@@ -352,70 +499,97 @@ final class OwnerMapRebuildDeciderTests {
     @Nested
     class RecordCellsCut {
 
+        // The cut and the clusters advance apart, so a rebuild that threw after the cut recuts
+        // nothing on its retry.
         @Test
-        void clearsTheRecutAloneLeavingTheRebuildOwed() {
+        void clearsTheCutAloneLeavingTheContentOwed() {
 
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
+            // ACT
             decider.recordCellsCut(decideWithNothingBuilt());
 
-            var staleHalves = decideAfterABuild();
+            var actualStaleness = decideAfterABuild().staleness();
 
-            assertThat(staleHalves.isCellCutStale())
-                .isFalse();
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
     }
 
     @Nested
     class RecordContentRebuilt {
 
+        // The clusters and the owners advance apart: a rebuild that painted over owners it never
+        // recorded resolving has nothing a later rebuild may keep.
         @Test
         void clearsTheRebuildWithoutLettingTheOwnersBeKept() {
-            // The clusters and the owners advance apart: a rebuild that painted over owners it
-            // never recorded resolving has nothing a later rebuild may keep.
+
+            // ARRANGE
+            var expectedStaleness = Staleness.NOTHING;
+
             var staleHalves = decideWithNothingBuilt();
 
             decider.recordCellsCut(staleHalves);
+
+            // ACT
             decider.recordContentRebuilt(staleHalves);
 
             var nextHalves = decideAfterABuild();
 
-            assertThat(nextHalves.isContentStale())
-                .isFalse();
+            // ASSERT
+            assertThat(nextHalves.staleness())
+                .isEqualTo(expectedStaleness);
             assertThat(decider.canReuseStandingOwners(nextHalves, true, Set.of()))
                 .isFalse();
         }
 
+        // The owed rebuild is the one that read the dropped systems, so once it is recorded the map
+        // is current again.
         @Test
         void paysAnOwedRebuild() {
-            // The owed rebuild is the one that read the dropped systems, so once it is recorded the
-            // map is current again.
-            decideAndRecordARebuild();
 
+            // ARRANGE
+            var expectedStaleness = Staleness.NOTHING;
+
+            decideAndRecordARebuild();
             decider.recordRebuildOwed();
+
+            // ACT
             decider.recordContentRebuilt(decideAfterABuild());
 
-            assertThat(decideAfterABuild().isContentStale())
-                .isFalse();
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
     }
 
     @Nested
     class RecordOwnersResolved {
 
+        // A rebuild that resolved the owners and then threw leaves the owners good to keep, so the
+        // retry paints over it rather than reading the sector again.
         @Test
         void letsTheOwnersBeKeptWhileTheRebuildIsStillOwed() {
-            // A rebuild that resolved the owners and then threw leaves the owners good to keep,
-            // so the retry paints over it rather than reading the sector again.
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
             var staleHalves = decideWithNothingBuilt();
 
             decider.recordCellsCut(staleHalves);
+
+            // ACT
             decider.recordOwnersResolved(staleHalves);
 
             var nextHalves = decideAfterABuild();
 
-            assertThat(nextHalves.isContentStale())
-                .isTrue();
+            // ASSERT
+            assertThat(nextHalves.staleness())
+                .isEqualTo(expectedStaleness);
             assertThat(decider.canReuseStandingOwners(nextHalves, true, Set.of()))
                 .isTrue();
         }
@@ -424,32 +598,45 @@ final class OwnerMapRebuildDeciderTests {
     @Nested
     class RecordRebuildOwed {
 
+        // A dropped batch is the only record that an owner changed, and no revision moved for it,
+        // so the owed rebuild is what the next decision turns on. The cells stand: an owner change
+        // seeds no cell.
         @Test
-        void owesARebuildButNoRecutWithNothingElseMoved() {
-            // A dropped batch is the only record that an owner changed, and no revision moved for
-            // it, so the owed rebuild is what the next decision turns on. The cells stand: an owner
-            // change seeds no cell.
+        void owesTheContentAloneWithNothingElseMoved() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
             decideAndRecordARebuild();
+
+            // ACT
             decider.recordRebuildOwed();
 
-            var staleHalves = decideAfterABuild();
+            var actualStaleness = decideAfterABuild().staleness();
 
-            assertThat(staleHalves.isContentStale())
-                .isTrue();
-            assertThat(staleHalves.isCellCutStale())
-                .isFalse();
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
+        // A rebuild that threw before reporting itself leaves the change unread, so it is asked for
+        // again.
         @Test
         void goesOnOwingTheRebuildUntilOneIsRecorded() {
-            // A rebuild that threw before reporting itself leaves the change unread, so it is asked
-            // for again.
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
             decideAndRecordARebuild();
             decider.recordRebuildOwed();
             decideAfterABuild();
 
-            assertThat(decideAfterABuild().isContentStale())
-                .isTrue();
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
     }
 
@@ -468,7 +655,12 @@ final class OwnerMapRebuildDeciderTests {
 
         settingsRevision++;
 
-        var announcedRevision = settingsRevision;
+        announceSettingsRevision(settingsRevision);
+    }
+
+    // Stands in for the settings revision LunaLib's listener keeps, so no case reads the shared
+    // static the rest of the test JVM may have moved.
+    private void announceSettingsRevision(int announcedRevision) {
 
         lunaSettingsSeam
             .when(KmuLunaSettings::getSettingsRevision)
