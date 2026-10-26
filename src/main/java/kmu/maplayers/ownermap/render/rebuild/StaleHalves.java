@@ -13,8 +13,9 @@ package kmu.maplayers.ownermap.render.rebuild;
  * another.
  *
  * <p>It carries this frame's sampled readings and the answers taken off them, never the baselines
- * those answers were compared against: what the standing map was built under stays behind the
- * decider that holds it, so nothing downstream can read a baseline and reach its own verdict.
+ * those answers were compared against: what the standing map was built under stays behind
+ * {@link OwnerMapBuildLedger}, so nothing downstream can read a baseline and reach its own
+ * verdict.
  *
  * @param cellCut    what the cells would be cut from now, sampled once
  * @param contentKey everything the clusters would be styled under, the picks sampled once

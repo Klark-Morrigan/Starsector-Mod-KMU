@@ -37,7 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what a frame is decided to owe, what the baselines that decision is taken against advance
+ * Pins what a frame is decided to owe, what the ledger entries that decision is taken against advance
  * on, and when the standing owners may be painted over rather than read.
  *
  * <p>Nothing here opens a reading of the sector: the decision is answerable from the board and
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
  * live LunaLib reads and the per-save picks - through seams that otherwise call the real reads, so
  * a case moves only the one it is about.
  */
-final class OwnerMapRebuildDeciderTests {
+final class OwnerMapBuildLedgerTests {
 
     private static final String HEGEMONY_ID = "hegemony";
 
@@ -71,19 +71,20 @@ final class OwnerMapRebuildDeciderTests {
     private SectorMapMachinery machinery;
     private int settingsRevision;
 
-    // Any view: what the decider answers turns on what moved, never on who is painting. One per
+    // Any view: what the ledger answers turns on what moved, never on who is painting. One per
     // case, because a case moving its fingerprint must not move the next case's.
     private OwnerPaintedViewFake viewFake;
-    private OwnerMapRebuildDecider decider;
+    private OwnerMapBuildLedger ledger;
 
     @BeforeEach
-    void openSeamsAndBuildTheDecider() {
+    void openSeamsAndBuildTheLedger() {
 
         seams = new StaticSeams();
         filterSelectionSeam = seams.openSeam(FilterSelection.class);
 
         lunaSettingsSeam = seams.holdSeam(
             mockStatic(KmuLunaSettings.class, Mockito.CALLS_REAL_METHODS));
+
         geometrySettingsSeam = seams.holdSeam(
             mockStatic(KmuOwnerMapGeometrySettings.class, Mockito.CALLS_REAL_METHODS));
 
@@ -96,7 +97,7 @@ final class OwnerMapRebuildDeciderTests {
 
         machinery = new SectorMapMachinery(mock(SectorAPI.class));
         viewFake = new OwnerPaintedViewFake(new OwnerSourceFake());
-        decider = new OwnerMapRebuildDecider(
+        ledger = new OwnerMapBuildLedger(
             machinery,
             new OwnerMapBodyPreferences(
                 nameFormatMock,
@@ -337,7 +338,7 @@ final class OwnerMapRebuildDeciderTests {
                 .isEqualTo(rebuilt.ownersKey());
         }
 
-        // The baselines advance only as the cache reports each stage complete, which is what lets a
+        // The ledger's entries advance only as the cache reports each stage complete, which is what lets a
         // rebuild that threw part way be asked for again rather than taken as done.
         @Test
         void goesOnOwingTheCutAndTheContentUntilAStageIsRecorded() {
@@ -368,7 +369,7 @@ final class OwnerMapRebuildDeciderTests {
             decideAndRecordARebuild();
 
             // ACT
-            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+            var actualCanReuse = ledger.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
 
             // ASSERT
             assertThat(actualCanReuse)
@@ -385,7 +386,7 @@ final class OwnerMapRebuildDeciderTests {
             pickNameFormat(OwnerNameFormatChoice.SHORT);
 
             // ACT
-            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+            var actualCanReuse = ledger.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
 
             // ASSERT
             assertThat(actualCanReuse)
@@ -400,7 +401,7 @@ final class OwnerMapRebuildDeciderTests {
             decideAndRecordARebuild();
 
             // ACT
-            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), false, Set.of());
+            var actualCanReuse = ledger.canReuseStandingOwners(decideAfterABuild(), false, Set.of());
 
             // ASSERT
             assertThat(actualCanReuse)
@@ -416,7 +417,7 @@ final class OwnerMapRebuildDeciderTests {
             decideAndRecordARebuild();
 
             // ACT
-            var actualCanReuse = decider.canReuseStandingOwners(
+            var actualCanReuse = ledger.canReuseStandingOwners(
                 decideAfterABuild(),
                 true,
                 Set.of(buildCellKey("marked")));
@@ -435,7 +436,7 @@ final class OwnerMapRebuildDeciderTests {
             raiseTheGeometrySignal();
 
             // ACT
-            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+            var actualCanReuse = ledger.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
 
             // ASSERT
             assertThat(actualCanReuse)
@@ -452,7 +453,7 @@ final class OwnerMapRebuildDeciderTests {
             spotlight(HEGEMONY_ID);
 
             // ACT
-            var actualCanReuse = decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+            var actualCanReuse = ledger.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
 
             // ASSERT
             assertThat(actualCanReuse)
@@ -472,7 +473,7 @@ final class OwnerMapRebuildDeciderTests {
             var expectedPrefix = "from null to ";
 
             // ACT
-            var actualTransition = decider.describeCellCutTransition(decideWithNothingBuilt());
+            var actualTransition = ledger.describeCellCutTransition(decideWithNothingBuilt());
 
             // ASSERT
             assertThat(actualTransition)
@@ -488,7 +489,7 @@ final class OwnerMapRebuildDeciderTests {
             decideAndRecordARebuild();
 
             // ACT
-            var actualTransition = decider.describeCellCutTransition(decideAfterABuild());
+            var actualTransition = ledger.describeCellCutTransition(decideAfterABuild());
 
             // ASSERT
             assertThat(actualTransition)
@@ -508,7 +509,7 @@ final class OwnerMapRebuildDeciderTests {
             var expectedStaleness = Staleness.CONTENT;
 
             // ACT
-            decider.recordCellsCut(decideWithNothingBuilt());
+            ledger.recordCellsCut(decideWithNothingBuilt());
 
             var actualStaleness = decideAfterABuild().staleness();
 
@@ -531,17 +532,17 @@ final class OwnerMapRebuildDeciderTests {
 
             var staleHalves = decideWithNothingBuilt();
 
-            decider.recordCellsCut(staleHalves);
+            ledger.recordCellsCut(staleHalves);
 
             // ACT
-            decider.recordContentRebuilt(staleHalves);
+            ledger.recordContentRebuilt(staleHalves);
 
             var nextHalves = decideAfterABuild();
 
             // ASSERT
             assertThat(nextHalves.staleness())
                 .isEqualTo(expectedStaleness);
-            assertThat(decider.canReuseStandingOwners(nextHalves, true, Set.of()))
+            assertThat(ledger.canReuseStandingOwners(nextHalves, true, Set.of()))
                 .isFalse();
         }
 
@@ -554,10 +555,10 @@ final class OwnerMapRebuildDeciderTests {
             var expectedStaleness = Staleness.NOTHING;
 
             decideAndRecordARebuild();
-            decider.recordRebuildOwed();
+            ledger.recordRebuildOwed();
 
             // ACT
-            decider.recordContentRebuilt(decideAfterABuild());
+            ledger.recordContentRebuilt(decideAfterABuild());
 
             var actualStaleness = decideAfterABuild().staleness();
 
@@ -580,17 +581,17 @@ final class OwnerMapRebuildDeciderTests {
 
             var staleHalves = decideWithNothingBuilt();
 
-            decider.recordCellsCut(staleHalves);
+            ledger.recordCellsCut(staleHalves);
 
             // ACT
-            decider.recordOwnersResolved(staleHalves);
+            ledger.recordOwnersResolved(staleHalves);
 
             var nextHalves = decideAfterABuild();
 
             // ASSERT
             assertThat(nextHalves.staleness())
                 .isEqualTo(expectedStaleness);
-            assertThat(decider.canReuseStandingOwners(nextHalves, true, Set.of()))
+            assertThat(ledger.canReuseStandingOwners(nextHalves, true, Set.of()))
                 .isTrue();
         }
     }
@@ -610,7 +611,7 @@ final class OwnerMapRebuildDeciderTests {
             decideAndRecordARebuild();
 
             // ACT
-            decider.recordRebuildOwed();
+            ledger.recordRebuildOwed();
 
             var actualStaleness = decideAfterABuild().staleness();
 
@@ -628,7 +629,7 @@ final class OwnerMapRebuildDeciderTests {
             var expectedStaleness = Staleness.CONTENT;
 
             decideAndRecordARebuild();
-            decider.recordRebuildOwed();
+            ledger.recordRebuildOwed();
             decideAfterABuild();
 
             // ACT
@@ -674,7 +675,7 @@ final class OwnerMapRebuildDeciderTests {
             .thenReturn(nameFormat);
     }
 
-    // Raises the reachable-set signal on this decider's own board.
+    // Raises the reachable-set signal on the board this ledger reads.
     private void raiseTheGeometrySignal() {
 
         machinery
@@ -693,13 +694,13 @@ final class OwnerMapRebuildDeciderTests {
     // The first frame's decision, before anything has been built.
     private StaleHalves decideWithNothingBuilt() {
 
-        return decider.decideWhatIsStale(viewFake, SCREEN, true);
+        return ledger.decideWhatIsStale(viewFake, SCREEN, true);
     }
 
     // A later frame's decision, once something stands to compare against.
     private StaleHalves decideAfterABuild() {
 
-        return decider.decideWhatIsStale(viewFake, SCREEN, false);
+        return ledger.decideWhatIsStale(viewFake, SCREEN, false);
     }
 
     // One whole rebuild as the cache reports it: the first decision taken, and every stage of the
@@ -708,9 +709,9 @@ final class OwnerMapRebuildDeciderTests {
 
         var staleHalves = decideWithNothingBuilt();
 
-        decider.recordCellsCut(staleHalves);
-        decider.recordOwnersResolved(staleHalves);
-        decider.recordContentRebuilt(staleHalves);
+        ledger.recordCellsCut(staleHalves);
+        ledger.recordOwnersResolved(staleHalves);
+        ledger.recordContentRebuilt(staleHalves);
 
         return staleHalves;
     }

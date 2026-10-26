@@ -31,7 +31,7 @@ import java.util.function.Supplier;
  * base views, the cluster-label placements drawn over either, and the name labels minted from them.
  *
  * <p>Apart from what decides <em>when</em> to rebuild, because the two are different questions. The
- * decider reads revisions and settings to say whether anything is owed; this holds the products
+ * ledger reads revisions and settings to say whether anything is owed; this holds the products
  * and knows, for each, which builder makes it from which inputs. A rebuild is then
  * {@link FullOwnerMapRebuild} naming the stages in order and this running them, and neither has to
  * know the other's bookkeeping.

@@ -16,24 +16,23 @@ import kmu.settings.KmuOwnerMapGeometrySettings;
 import java.util.Set;
 
 /**
- * Decides what a frame owes an owner map: whether the cells have to be recut, whether the
- * clusters have to be rebuilt, and whether the owners the last rebuild read can be painted
- * over again rather than read afresh.
+ * What an owner map's standing build was made from - what its cells were cut from, what its
+ * clusters were built from and what its owners were resolved under - and each frame's comparison
+ * against it: whether the cells have to be recut, whether the clusters have to be rebuilt, and
+ * whether the owners the last rebuild read can be painted over again rather than read afresh.
  *
  * <p>Kept apart from the cache that acts on the answer, because the two run at different cadences:
  * nearly every frame the map is open asks this and stops, while a rebuild is the rare frame. The
  * answer comes off revisions, the sidebar picks and settings read again only when LunaLib reports
  * a change, so it opens no reading of the sector.
  *
- * <p>What it holds is the baselines the question is asked against - the revisions the standing
- * map was built under and what its cells were cut from - and those advance only when
- * {@link FullOwnerMapRebuild} reports a stage complete, so a rebuild that threw part way is asked
- * again next frame rather than being taken as done.
+ * <p>Its entries advance only when {@link FullOwnerMapRebuild} reports a stage complete, so a
+ * rebuild that threw part way is asked again next frame rather than being taken as done.
  *
  * <p>The board every revision is read off is the machinery's own, so a signal raised in another
  * sector cannot restyle these cells - and a signal raised in this one cannot fail to.
  */
-final class OwnerMapRebuildDecider {
+final class OwnerMapBuildLedger {
 
     // The settings revision's seed, below any the settings can report, so the first frame reads
     // what the cells are cut from.
@@ -78,7 +77,7 @@ final class OwnerMapRebuildDecider {
     private CellCutInputs sampledCellCut;
     private int sampledSettingsRevision = UNREAD_SETTINGS_REVISION;
 
-    OwnerMapRebuildDecider(SectorMapMachinery machinery, OwnerMapBodyPreferences bodyPreferences) {
+    OwnerMapBuildLedger(SectorMapMachinery machinery, OwnerMapBodyPreferences bodyPreferences) {
 
         this.machinery = machinery;
         this.bodyPreferences = bodyPreferences;
@@ -227,7 +226,7 @@ final class OwnerMapRebuildDecider {
         return Staleness.NOTHING;
     }
 
-    // The terms both keys share, read off the board this decider's machinery holds.
+    // The terms both keys share, read off the board of the machinery this ledger belongs to.
     private ViewKey readViewKey(OwnerPaintedView view) {
 
         return new ViewKey(

@@ -278,7 +278,7 @@ since that is what a player's stored setting is keyed by.
 | [`render/ribbon`](render/ribbon/README.md) | the bake: which cells band, whose runs each plans, and the player's band settings |
 | [`ribbon`](ribbon/README.md) | how an owner-painted cell's runs are laid from the ranked count a layer hands over: their lengths and their dividers, behind the substrate's `SystemRibbonPlanner` port the count arrives through |
 | `render` | the compositor stacking the sub-layers in their band order, the band layout it stacks them by, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
-| `render/rebuild` | what a frame owes (`OwnerMapRebuildDecider`), the cache acting on it (`OwnerMapCache`), the full walk (`FullOwnerMapRebuild`), and the slot for marked systems (`OwnerMapRefreshStrategy`) with its incremental filler |
+| `render/rebuild` | what the standing build was made from and what a frame owes against it (`OwnerMapBuildLedger`), the cache acting on it (`OwnerMapCache`), the full walk (`FullOwnerMapRebuild`), and the slot for marked systems (`OwnerMapRefreshStrategy`) with its incremental filler |
 | `render/hover` | what the cursor is over on this map, the seam a layer answers the picker preview through, and the tier's shared answers to it and to the substrate's cursor switches |
 | `sidebar` | the body controls a layer built on this tier offers, and the memo behind its picker |
 

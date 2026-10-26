@@ -56,7 +56,7 @@ import java.util.Set;
  * - for a strategy that does not fold, for a standing map that cannot take a fold, the debug
  * overlay's or a failed build's, and for a fold that threw.
  *
- * <p>Which of those a frame owes is {@link OwnerMapRebuildDecider}'s answer, asked first and acted on
+ * <p>Which of those a frame owes is {@link OwnerMapBuildLedger}'s answer, asked first and acted on
  * here: the decision is answerable from revisions and settings alone and nearly every frame stops at
  * it, while a rebuild opens a reading of the sector. The rebuild itself is
  * {@link FullOwnerMapRebuild}'s; this class is the frame around it.
@@ -92,9 +92,9 @@ public final class OwnerMapCache
     // produces.
     private final OwnerMapDrawables drawables = new OwnerMapDrawables(this::settleLabelFace);
 
-    // What a frame owes, and the baselines that question is asked against. Advanced only as each
+    // What a frame owes, and the ledger that question is asked against. Advanced only as each
     // stage reports itself complete, so a thrown rebuild is asked again next frame.
-    private final OwnerMapRebuildDecider decider;
+    private final OwnerMapBuildLedger ledger;
 
     // The full walk a stale frame runs, and the cells and kept owners only it writes.
     private final FullOwnerMapRebuild fullRebuild;
@@ -125,8 +125,8 @@ public final class OwnerMapCache
 
         this.machinery = machinery;
         this.refreshStrategy = refreshStrategy;
-        this.decider = new OwnerMapRebuildDecider(machinery, bodyPreferences);
-        this.fullRebuild = new FullOwnerMapRebuild(machinery, seedRule, drawables, decider);
+        this.ledger = new OwnerMapBuildLedger(machinery, bodyPreferences);
+        this.fullRebuild = new FullOwnerMapRebuild(machinery, seedRule, drawables, ledger);
     }
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
@@ -218,7 +218,7 @@ public final class OwnerMapCache
                 "Owner map rebuild failed; retrying next frame, keeping last good draw lists",
                 runtimeException);
 
-            decider.recordRebuildOwed();
+            ledger.recordRebuildOwed();
             drawables.ensureClustersNonNull(view);
         }
     }
@@ -231,7 +231,7 @@ public final class OwnerMapCache
 
         // Both views null means neither has been built for this sector, so the frame forces the
         // build whatever the keys say.
-        var staleHalves = decider.decideWhatIsStale(view, memoryScope, drawables.hasNothingBuilt());
+        var staleHalves = ledger.decideWhatIsStale(view, memoryScope, drawables.hasNothingBuilt());
         if (staleHalves.staleness() == Staleness.NOTHING) {
 
             refreshMarkedSystems(staleHalves);
@@ -291,7 +291,7 @@ public final class OwnerMapCache
             LOG.debug("Owner map left " + staleSystemKeys.size()
                 + " marked system(s) unfolded; next frame rebuilds");
 
-            decider.recordRebuildOwed();
+            ledger.recordRebuildOwed();
             return;
         }
 

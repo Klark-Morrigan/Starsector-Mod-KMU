@@ -74,13 +74,13 @@ final class FullOwnerMapRebuild {
     // layer has one partition whichever view it paints - a view switch must not recut the cells.
     private final CellSeedRule seedRule;
 
-    // What the rebuild builds into, and the baselines it reports each stage complete to. Both are
+    // What the rebuild builds into, and the ledger it reports each stage complete to. Both are
     // the cache's, shared with the frame that asks for this rebuild.
     private final OwnerMapDrawables drawables;
-    private final OwnerMapRebuildDecider decider;
+    private final OwnerMapBuildLedger ledger;
 
     // Which sidebar preference a player touched since the last rebuild, for the line a rebuild
-    // writes. Held here rather than by the decider because it decides nothing: a raise is context
+    // writes. Held here rather than by the ledger because it decides nothing: a raise is context
     // read beside a rebuild, and this is what writes that rebuild's line.
     private final RefreshSignalTracker signalTracker;
 
@@ -109,18 +109,18 @@ final class FullOwnerMapRebuild {
      * @param machinery the machinery installed on the sector this rebuild draws
      * @param seedRule  which systems seed a cell - the layer's statement
      * @param drawables what the rebuild builds into
-     * @param decider   the baselines each stage reports itself complete to
+     * @param ledger    the ledger each stage reports itself complete to
      */
     FullOwnerMapRebuild(
             SectorMapMachinery machinery,
             CellSeedRule seedRule,
             OwnerMapDrawables drawables,
-            OwnerMapRebuildDecider decider) {
+            OwnerMapBuildLedger ledger) {
 
         this.machinery = machinery;
         this.seedRule = seedRule;
         this.drawables = drawables;
-        this.decider = decider;
+        this.ledger = ledger;
         this.signalTracker = new RefreshSignalTracker(
             machinery.resolveRefreshBoard(),
             TRACED_PREFERENCE_SIGNALS);
@@ -149,7 +149,7 @@ final class FullOwnerMapRebuild {
 
     /**
      * The rebuild itself, run only where the decision found something stale. Reports each stage
-     * complete to the decider only after it completes, so a thrown rebuild is retried next frame.
+     * complete to the ledger only after it completes, so a thrown rebuild is retried next frame.
      * Builds under the active view's rules, so a view switch (held in the content key)
      * rebuilds the clusters under the newly-selected view.
      *
@@ -274,7 +274,7 @@ final class FullOwnerMapRebuild {
         // The name choice comes off this rebuild's own sampling rather than the preference, so
         // what is minted matches what was fitted.
         drawables.rebuildLabels(contentInputs.nameFormat().areNamesDrawn());
-        decider.recordContentRebuilt(staleHalves);
+        ledger.recordContentRebuilt(staleHalves);
 
         return wereOwnersReused;
     }
@@ -290,7 +290,7 @@ final class FullOwnerMapRebuild {
             Set<SystemKey> staleSystemKeys) {
 
         var contentInputs = staleHalves.contentKey().contentInputs();
-        var wereOwnersReused = decider.canReuseStandingOwners(
+        var wereOwnersReused = ledger.canReuseStandingOwners(
             staleHalves,
             standingOwners != null,
             staleSystemKeys);
@@ -301,7 +301,7 @@ final class FullOwnerMapRebuild {
                 viewReading.source(),
                 walk,
                 contentInputs);
-            decider.recordOwnersResolved(staleHalves);
+            ledger.recordOwnersResolved(staleHalves);
         }
 
         drawables.rebuildClustersAndBands(
@@ -336,10 +336,10 @@ final class FullOwnerMapRebuild {
 
         // Transition trace: a stale cell or one left behind after an access change can be tied
         // to the revision step - or the seed inputs or toggle flip - that drove it. Described by
-        // the decider, which holds the reading being moved away from, and read before the cut is
+        // the ledger, which holds the reading being moved away from, and read before the cut is
         // recorded below.
         LOG.debug("Owner map geometry stale; rebuilding cut " + cellGeometry.revision()
-            + " " + decider.describeCellCutTransition(staleHalves));
+            + " " + ledger.describeCellCutTransition(staleHalves));
 
         var pass = new MapVisibilityPass(
             sectorIndex,
@@ -360,6 +360,6 @@ final class FullOwnerMapRebuild {
         // visibility-rule recut.
         cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
 
-        decider.recordCellsCut(staleHalves);
+        ledger.recordCellsCut(staleHalves);
     }
 }

@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
  * at, the owners it may paint over again, and the line it writes about each rebuild.
  *
  * <p>A unit test, so what the rebuild drives is stood in for: the drawables it builds into, the
- * decider it asks and reports to, the cells it cuts and the owner resolve behind the production view.
+ * ledger it asks and reports to, the cells it cuts and the owner resolve behind the production view.
  * What each of them does is pinned by its own suite; what belongs here is what the rebuild hands each
  * and what it keeps between two rebuilds.
  */
@@ -60,7 +60,7 @@ final class FullOwnerMapRebuildTests {
         new CellSeedInputs(8, 1000.0),
         MapVisibilityRules.BASE);
 
-    // What every rebuild here is keyed by. No case turns on the values, the decider being stood in for.
+    // What every rebuild here is keyed by. No case turns on the values, the ledger being stood in for.
     private static final ViewKey VIEW_KEY = new ViewKey(0, "view", 0);
     private static final ContentKey CONTENT_KEY = new ContentKey(VIEW_KEY, ContentInputs.createEmpty());
     private static final OwnersKey OWNERS_KEY = new OwnersKey(VIEW_KEY, null);
@@ -79,7 +79,7 @@ final class FullOwnerMapRebuildTests {
         OWNERS_KEY,
         Staleness.CONTENT);
 
-    // Any view: what the rebuild keeps turns on what the decider answered, never on who is painting.
+    // Any view: what the rebuild keeps turns on what the ledger answered, never on who is painting.
     private static final OwnerPaintedView VIEW_FAKE = new OwnerPaintedViewFake(new OwnerSourceFake());
 
     // The system a change marked stale between two rebuilds.
@@ -94,7 +94,7 @@ final class FullOwnerMapRebuildTests {
         new SectorMapMachinery(StaleOwnerMapFixtures.buildSectorWithSystems());
 
     private final OwnerMapDrawables drawablesMock = mock(OwnerMapDrawables.class);
-    private final OwnerMapRebuildDecider deciderMock = mock(OwnerMapRebuildDecider.class);
+    private final OwnerMapBuildLedger ledgerMock = mock(OwnerMapBuildLedger.class);
 
     // What every owner resolve answers, held so a case can tell the owners a build was handed apart
     // from a fresh read.
@@ -123,7 +123,7 @@ final class FullOwnerMapRebuildTests {
             machinery,
             CellSeedRule.SEED_DRAWN_SYSTEMS,
             drawablesMock,
-            deciderMock);
+            ledgerMock);
     }
 
     @AfterEach
@@ -205,10 +205,10 @@ final class FullOwnerMapRebuildTests {
         // A style pick reaches the paint and nothing before it, so the rebuild it owes paints over
         // the owners the last one read rather than asking the sector the same question.
         @Test
-        void paintsOverTheOwnersItKeptWhereTheDeciderLetsThemBeKept() {
+        void paintsOverTheOwnersItKeptWhereTheLedgerLetsThemBeKept() {
 
             // ARRANGE
-            when(deciderMock.canReuseStandingOwners(any(), eq(true), any()))
+            when(ledgerMock.canReuseStandingOwners(any(), eq(true), any()))
                 .thenReturn(true);
 
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
@@ -230,11 +230,11 @@ final class FullOwnerMapRebuildTests {
                 same(resolvedOwners));
         }
 
-        // A marked system is one the sector moved under, so the decider is asked with the marks in
+        // A marked system is one the sector moved under, so the ledger is asked with the marks in
         // hand: owners read before the sector moved cannot say who holds it, however small the pick
         // that owed the rebuild.
         @Test
-        void handsTheDeciderTheSystemsMarkedSinceTheLastRebuild() {
+        void handsTheLedgerTheSystemsMarkedSinceTheLastRebuild() {
 
             // ARRANGE
             var expectedStaleSystemKeys = Set.of(MARKED_CELL);
@@ -246,7 +246,7 @@ final class FullOwnerMapRebuildTests {
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
 
             // ASSERT
-            verify(deciderMock).canReuseStandingOwners(
+            verify(ledgerMock).canReuseStandingOwners(
                 any(),
                 eq(true),
                 eq(expectedStaleSystemKeys));
@@ -268,7 +268,7 @@ final class FullOwnerMapRebuildTests {
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
 
             // ASSERT
-            verify(deciderMock, never()).canReuseStandingOwners(
+            verify(ledgerMock, never()).canReuseStandingOwners(
                 any(),
                 eq(true),
                 any());
@@ -312,7 +312,7 @@ final class FullOwnerMapRebuildTests {
             // ARRANGE
             var expectedTagPart = "ownersReused=true";
 
-            when(deciderMock.canReuseStandingOwners(any(), eq(true), any()))
+            when(ledgerMock.canReuseStandingOwners(any(), eq(true), any()))
                 .thenReturn(true);
 
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
@@ -375,7 +375,7 @@ final class FullOwnerMapRebuildTests {
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
 
             // ASSERT
-            verify(deciderMock, never()).canReuseStandingOwners(
+            verify(ledgerMock, never()).canReuseStandingOwners(
                 any(),
                 eq(true),
                 any());

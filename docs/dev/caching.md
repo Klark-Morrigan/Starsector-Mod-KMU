@@ -331,11 +331,10 @@ and asks it to `refreshDrawLists` each frame the map is open.
 It holds both halves
 (geometry and built draw lists)
 and rebuilds only the stale half.
-What a frame owes is
-[`OwnerMapRebuildDecider`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapRebuildDecider.java)'s
-answer,
+What a frame owes is answered by
+[`OwnerMapBuildLedger`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapBuildLedger.java),
 asked first and acted on:
-the decider holds what each half was built against and compares this frame's revisions and settings to it,
+the ledger holds what each half was built from and compares this frame's revisions and settings to it,
 which opens no reading of the sector,
 so nearly every frame stops at it.
 It compares whole values by `equals` rather than a hash of them,
@@ -348,7 +347,7 @@ The two are apart because they run at different cadences -
 the question every frame,
 the rebuild rarely -
 and a class holding both put the cheap question and the expensive answer behind one door.
-The baselines advance only as the full rebuild
+The ledger's entries advance only as the full rebuild
 ([`FullOwnerMapRebuild`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/FullOwnerMapRebuild.java))
 reports each stage complete,
 so a rebuild that threw part way is asked again next frame rather than taken as done.

@@ -65,7 +65,7 @@ import static org.mockito.Mockito.times;
  * owing no rebuild hands the systems marked since to the layer's strategy and owes the next frame a
  * rebuild where it folds nothing.
  *
- * <p>The cache runs with its real drawables, decider and full rebuild, over a sector listing no
+ * <p>The cache runs with its real drawables, ledger and full rebuild, over a sector listing no
  * systems, since what is pinned is how the four agree about a frame. Every builder either view is
  * made by, and the fold the incremental strategy hands a batch to, is stood in for at its static
  * seam: what each of them produces is pinned by its own suite, and what belongs here is which of
