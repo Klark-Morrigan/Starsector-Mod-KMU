@@ -65,6 +65,9 @@ import static org.mockito.Mockito.mock;
  *
  * <p>Where a bloc lives is {@link HolderInhabitation}'s read and is pinned in its own suite. The
  * presence cases here pin only that this assembly reads presence from it rather than from the weights.
+ *
+ * <p>The cases over a whole sector ask each system as a rebuild does, through
+ * {@link HolderResolution#collectOver}.
  */
 class FilteredPoliticsIntegrationTests {
 
@@ -83,7 +86,7 @@ class FilteredPoliticsIntegrationTests {
         new SystemOwner(SPOTLIT_KEY, buildPaletteOf(HEGEMONY_FACTION_BRIGHT)));
 
     @Nested
-    class ResolveFilteredHolder {
+    class ResolveFilteredHolderIn {
 
         // The selected hegemony wins its system, so its cell keys spotlit and paints in hegemony's
         // own palette, and it is left out of the contested set (drawn solid).
@@ -95,7 +98,7 @@ class FilteredPoliticsIntegrationTests {
             var expectedHolder = new SystemOwner(SPOTLIT_KEY, buildPaletteOf(HEGEMONY_FACTION_BRIGHT));
 
             // ACT
-            var actualResolution = resolveFor(sector, "hegemony");
+            var actualResolution = collectFilteredHoldersFor(sector, "hegemony");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -115,7 +118,7 @@ class FilteredPoliticsIntegrationTests {
             var expectedHolder = new SystemOwner(SPOTLIT_KEY, buildPaletteOf(TRITACHYON_FACTION_BRIGHT));
 
             // ACT
-            var actualResolution = resolveFor(sector, "tritachyon");
+            var actualResolution = collectFilteredHoldersFor(sector, "tritachyon");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -141,7 +144,7 @@ class FilteredPoliticsIntegrationTests {
             var expectedHolder = new SystemOwner("tritachyon", buildPaletteOf(TRITACHYON_FACTION_BRIGHT));
 
             // ACT
-            var actualResolution = resolveFor(sector, "hegemony");
+            var actualResolution = collectFilteredHoldersFor(sector, "hegemony");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -168,7 +171,7 @@ class FilteredPoliticsIntegrationTests {
                     buildVisibleMarket(tritachyon, 5)));
 
             // ACT
-            var actualResolution = resolveFor(sector, "hegemony");
+            var actualResolution = collectFilteredHoldersFor(sector, "hegemony");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey().get(buildCellKey("solid-system")).ownerId())
@@ -192,7 +195,7 @@ class FilteredPoliticsIntegrationTests {
                 listSystemMarkets("system-b", buildVisibleMarket(hegemony, 4)));
 
             // ACT
-            var actualResolution = resolveFor(sector, "hegemony");
+            var actualResolution = collectFilteredHoldersFor(sector, "hegemony");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey().get(buildCellKey("system-a")).ownerId())
@@ -230,7 +233,7 @@ class FilteredPoliticsIntegrationTests {
             var expectedHolder = new SystemOwner(SPOTLIT_KEY, buildPaletteOf(HEGEMONY_FACTION_BRIGHT));
 
             // ACT
-            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, spotlight);
+            var actualResolution = collectFilteredHolders(pass, spotlight);
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -254,7 +257,7 @@ class FilteredPoliticsIntegrationTests {
                 buildVisibleMarket(hegemony, 3));
 
             // ACT
-            var actualResolution = resolveFor(sector, "hegemony");
+            var actualResolution = collectFilteredHoldersFor(sector, "hegemony");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey().get(buildCellKey("salvage-system")).ownerId())
@@ -277,7 +280,7 @@ class FilteredPoliticsIntegrationTests {
             var expectedHolder = new SystemOwner(SPOTLIT_KEY, buildPaletteOf(TRITACHYON_FACTION_BRIGHT));
 
             // ACT
-            var actualResolution = resolveFor(sector, "tritachyon");
+            var actualResolution = collectFilteredHoldersFor(sector, "tritachyon");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -302,7 +305,7 @@ class FilteredPoliticsIntegrationTests {
                 buildVisibleMarket(pirates, 4));
 
             // ACT
-            var actualResolution = resolveFor(sector, "pirates");
+            var actualResolution = collectFilteredHoldersFor(sector, "pirates");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey().get(buildCellKey("haven")).ownerId())
@@ -325,7 +328,7 @@ class FilteredPoliticsIntegrationTests {
                 buildAbandonedStationMarket(4));
 
             // ACT
-            var actualResolution = resolveFor(sector, Factions.NEUTRAL);
+            var actualResolution = collectFilteredHoldersFor(sector, Factions.NEUTRAL);
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -343,8 +346,8 @@ class FilteredPoliticsIntegrationTests {
                 tritachyon -> buildUndiscoveredHiddenMarket(tritachyon, 3));
 
             // ACT
-            var actualFoggedResolution = resolveFor(sector, "tritachyon");
-            var actualRevealedResolution = resolveRevealedFor(sector, "tritachyon");
+            var actualFoggedResolution = collectFilteredHoldersFor(sector, "tritachyon");
+            var actualRevealedResolution = collectRevealedFilteredHoldersFor(sector, "tritachyon");
 
             // ASSERT
             assertThat(actualFoggedResolution.ownerBySystemKey().get(buildCellKey(OWNED_SYSTEM)).ownerId())
@@ -372,7 +375,7 @@ class FilteredPoliticsIntegrationTests {
                 buildVisibleMarket(pirates, 4));
 
             // ACT
-            var actualResolution = resolveFor(sector, "hegemony");
+            var actualResolution = collectFilteredHoldersFor(sector, "hegemony");
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -387,7 +390,7 @@ class FilteredPoliticsIntegrationTests {
             var pass = buildPassOver(null);
 
             // ACT
-            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, HEGEMONY_SPOTLIGHT);
+            var actualResolution = collectFilteredHolders(pass, HEGEMONY_SPOTLIGHT);
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -405,7 +408,7 @@ class FilteredPoliticsIntegrationTests {
             var pass = buildPassOver(mock(SectorAPI.class));
 
             // ACT
-            var actualResolution = FilteredPolitics.resolveFilteredHolder(pass, HEGEMONY_SPOTLIGHT);
+            var actualResolution = collectFilteredHolders(pass, HEGEMONY_SPOTLIGHT);
 
             // ASSERT
             assertThat(actualResolution.ownerBySystemKey())
@@ -423,20 +426,16 @@ class FilteredPoliticsIntegrationTests {
             var sector = buildContestedSector();
 
             // ACT
-            var actualResolution = resolveFor(sector, "tritachyon");
+            var actualResolution = collectFilteredHoldersFor(sector, "tritachyon");
 
             // ASSERT
             assertThat(actualResolution.fillStates().getNonSolidFillStateBySystemKey())
                 .containsExactly(Map.entry(buildCellKey(OWNED_SYSTEM), FillState.HATCHED));
         }
-    }
 
-    @Nested
-    class ResolveFilteredHolderIn {
-
-        // The single-system arm a batch asks under a spotlight settles a system as the whole-sector
-        // arm does - the spotlit key in the pick's palette, hatched where the pick lives without
-        // winning - so a re-derived system lands where a filtered rebuild draws it.
+        // A batch asks one system what a rebuild asks every system - the spotlit key in the pick's
+        // palette, hatched where the pick lives without winning - so a re-derived system lands
+        // where a filtered rebuild draws it.
         @Test
         void answersAPresentButDominatedSystemUnderTheSpotlitKeyHatched() {
 
@@ -597,19 +596,21 @@ class FilteredPoliticsIntegrationTests {
             .orElseThrow();
     }
 
-    // Resolves the presence-aware holding for a selected faction under the identity grouping and
+    // Collects the presence-aware holding for a selected faction under the identity grouping and
     // the shared stability rule, the shape every faction-view filter test reads.
-    private static HolderResolution resolveFor(
+    private static HolderResolution collectFilteredHoldersFor(
             SectorAPI sector,
             String selectedBlocId) {
 
-        return resolveUnder(buildPassOver(sector), selectedBlocId);
+        var pass = buildPassOver(sector);
+
+        return collectFilteredHolders(pass, openSpotlightOver(pass, selectedBlocId));
     }
 
-    // The same resolve with the dev reveal lifting the fog, for the one case that poses a colony
+    // The same collection with the dev reveal lifting the fog, for the one case that poses a colony
     // the player has not found: the reveal is a knob on the reading of the sector rather than on
     // the weighting rule, so it cannot be reached through the shared pass builder.
-    private static HolderResolution resolveRevealedFor(
+    private static HolderResolution collectRevealedFilteredHoldersFor(
             SectorAPI sector,
             String selectedBlocId) {
 
@@ -619,10 +620,15 @@ class FilteredPoliticsIntegrationTests {
             UNDER_THE_DEV_REVEAL,
             HolderGrouping.identity());
 
-        return resolveUnder(pass, selectedBlocId);
+        return collectFilteredHolders(pass, openSpotlightOver(pass, selectedBlocId));
     }
 
-    private static HolderResolution resolveUnder(DominancePass pass, String selectedBlocId) {
-        return FilteredPolitics.resolveFilteredHolder(pass, openSpotlightOver(pass, selectedBlocId));
+    // Every system's presence-aware holder as a filtered rebuild collects it: the spotlit contest
+    // asked of each system the pass walks, under the one spotlight opened for the rebuild.
+    private static HolderResolution collectFilteredHolders(DominancePass pass, BlocSpotlight spotlight) {
+
+        return HolderResolution.collectOver(
+            pass.holding(),
+            system -> FilteredPolitics.resolveFilteredHolderIn(system, pass, spotlight));
     }
 }

@@ -10,7 +10,6 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
@@ -22,7 +21,6 @@ import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolver;
-import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
 import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.Optional;
@@ -54,7 +52,7 @@ public final class ClaimsView
     public static final ClaimsView INSTANCE = new ClaimsView();
 
     // Where this view's claim reader comes from, held as the means of opening one rather than as
-    // a reader for the same reason the claim-reading holder providers hold it that way: a reader
+    // a reader for the same reason the claim-reading holder resolvers hold it that way: a reader
     // answers off the colonies behind it, so one is opened over the read being made and discarded
     // with it. This view outlives every one of them.
     //
@@ -63,7 +61,7 @@ public final class ClaimsView
     private final ClaimBreakdownReaderSource claimReaderSource;
 
     // Both stateless past the source, so this view builds each once.
-    private final ClaimsHolderProvider holderProvider;
+    private final SystemHolderResolverSource holderResolverSource;
     private final SystemClaimTooltip hoverTooltip;
 
     private ClaimsView() {
@@ -73,7 +71,7 @@ public final class ClaimsView
     ClaimsView(ClaimBreakdownReaderSource claimReaderSource) {
 
         this.claimReaderSource = claimReaderSource;
-        this.holderProvider = new ClaimsHolderProvider(claimReaderSource);
+        this.holderResolverSource = ClaimSystemHolderResolver.createSourceReadingThrough(claimReaderSource);
         this.hoverTooltip = SystemClaimTooltip.createReadingThrough(claimReaderSource);
     }
 
@@ -106,18 +104,11 @@ public final class ClaimsView
     }
 
     @Override
-    public HolderProvider resolveHolderProvider() {
-        // Holder is the claim mechanic itself: every claimed system painted solid in its
-        // claimant's colours, rather than the held-plus-claims default the faction view resolves.
-        return holderProvider;
-    }
-
-    @Override
     public SystemHolderResolverSource resolveSystemHolderResolverSource() {
-        // A marked system is re-derived to its claimant, through the claim reader this view reads
-        // every claim through - the market contest the other two views re-derive by would hand a
-        // claimed system to whoever holds it, which is not what this view painted.
-        return ClaimSystemHolderResolver.createSourceReadingThrough(claimReaderSource);
+        // Holder is the claim mechanic itself: every claimed system painted solid in its claimant's
+        // colours, through the claim reader this view reads every claim through. The held-plus-claims
+        // rule the other two views resolve by would hand a claimed system to whoever holds it.
+        return holderResolverSource;
     }
 
     @Override

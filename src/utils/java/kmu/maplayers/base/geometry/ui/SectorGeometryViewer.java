@@ -93,7 +93,7 @@ import javax.swing.SwingUtilities;
  *       {@code getCellEdgesByCellId}. {@link SectorFixture} cuts its cells through the cache's
  *       own cell-to-edge translation, but every fixture row is drawn and nothing runs the
  *       cache, its diffing, or the incremental refresh.</li>
- *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantHolderBySystemKey},
+ *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantHolder},
  *       {@code SystemDominance}, {@code SystemOwner.mapOwnerIdBySystemKey},
  *       {@code DecivilisedMarkets.isRevealedDecivilised},
  *       {@code FilteredPolitics}, {@code FilterSelection}. Ownership is the fixture's

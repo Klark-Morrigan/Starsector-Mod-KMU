@@ -9,7 +9,6 @@ import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
-import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolverSource;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
@@ -19,7 +18,6 @@ import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedSystemHolderResolver;
 import kmu.maplayers.politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
@@ -55,28 +53,16 @@ public interface DominancePaintedView
     }
 
     /**
-     * The source the contest-painted views resolve their per-system holder from: each inhabited
-     * system's dominant holder, extended with each system a bloc claims but does not hold, drawn
-     * as an unfilled part of that bloc's territory.
+     * The holding of the contest-painted views: each inhabited system's dominant holder under one
+     * weighting rule sampled per rebuild or batch, extended with each system a bloc claims but does
+     * not hold, drawn as an unfilled part of that bloc's territory.
      *
      * <p>Answered here rather than on {@link HolderPaintedView}, for the reason the ribbon planner
      * is: a default there would name this mechanic's resolver in front of every view, including
      * the ones it does not paint. Both views the contest paints resolve identically, so it is
      * stated once between them instead of twice beside them.
      *
-     * @return the provider that folds claims onto held dominance
-     */
-    @Override
-    default HolderProvider resolveHolderProvider() {
-        return ClaimAugmentedHolderProvider.createReadingThrough(resolveClaimReaderSource());
-    }
-
-    /**
-     * The per-system half of {@link #resolveHolderProvider}: a marked system re-derived by the
-     * market contest under one weighting rule sampled per batch, and extended by its claim where
-     * the contest leaves it unheld - so it lands the holder and fill state a rebuild would draw.
-     *
-     * @return the source a batch opens its resolver from
+     * @return the source a rebuild or batch opens its resolver from
      */
     @Override
     default SystemHolderResolverSource resolveSystemHolderResolverSource() {
@@ -87,8 +73,8 @@ public interface DominancePaintedView
      * The band counting for a view the contest paints: held dominance where a bloc holds something
      * in a system, and the claim contest where only a claim paints the cell.
      *
-     * <p>Both halves are here because both are how such a view paints. Its holder source extends
-     * held territory with the systems a bloc claims but does not hold, so a cell of either kind can
+     * <p>Both halves are here because both are how such a view paints. Its holding extends held
+     * territory with the systems a bloc claims but does not hold, so a cell of either kind can
      * carry a band, and each has to be counted by the mechanic that painted it - the composition
      * decides which per system off the very economy read the held count makes anyway.
      *

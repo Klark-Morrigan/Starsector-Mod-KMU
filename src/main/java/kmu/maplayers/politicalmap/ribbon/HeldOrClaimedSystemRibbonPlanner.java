@@ -25,8 +25,8 @@ import org.apache.log4j.Logger;
  *
  * <p>Composed rather than branched inside either planner, so each one stays a plain statement of
  * its own mechanic and this holds the one rule about which of them speaks for a cell. It sits
- * beside the two mechanics rather than inside either, as the holder sources folding claims onto
- * held dominance do: shelved under one mechanic, it would make that mechanic name the other.
+ * beside the two mechanics rather than inside either, as the holder resolver folding claims onto
+ * held dominance does: shelved under one mechanic, it would make that mechanic name the other.
  */
 public final class HeldOrClaimedSystemRibbonPlanner
         implements SystemRibbonPlanner {

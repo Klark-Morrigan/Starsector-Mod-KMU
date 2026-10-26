@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.claims;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
@@ -10,8 +9,6 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
@@ -30,9 +27,9 @@ import java.util.function.UnaryOperator;
  * could never join under their own bloc key. Where claims are the whole layer the claimant's
  * systems already share a key, so the swap regroups nothing and buys only the spotlit answer.
  *
- * <p>Every claim-reading holder source and resolver reads through one, whether claims are the whole
- * layer or an unfilled extension of held dominance, so no two of them can spotlight the same claim
- * differently on two views of one sector.
+ * <p>Every claim-reading holder resolver reads through one, whether claims are the whole layer or an
+ * unfilled extension of held dominance, so no two of them can spotlight the same claim differently
+ * on two views of one sector.
  *
  * <p>Opened over one pass and discarded with it, as the claim reader inside it is: a reader answers
  * off the colonies the pass walked. The rekey is settled when it opens, so a system asked of it is
@@ -81,7 +78,7 @@ public final class FilteredClaimReader {
     }
 
     /**
-     * The claiming holder of one star system, for a batch re-deriving a marked system.
+     * The claiming holder of one star system under the spotlight this read was opened under.
      *
      * @param system the system to read; null yields null
      * @return the claiming holder, or null where nobody claims the system or the claimant's colour
@@ -93,23 +90,6 @@ public final class FilteredClaimReader {
         return claim == null
             ? null
             : claimRekey.apply(claim);
-    }
-
-    /**
-     * The claiming holder of every claimed system, for a rebuild.
-     *
-     * @return the claiming holder keyed by {@link SystemKey}, in star-system walk order; a pass over
-     *         no sector yields an empty map
-     */
-    public Map<SystemKey, SystemOwner> resolveClaimingHolderBySystemKey() {
-
-        var claimingHolderBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
-
-        SectorClaims
-            .resolveClaimingHolderBySystemKey(pass, claimReader)
-            .forEach((systemKey, claim) -> claimingHolderBySystemKey.put(systemKey, claimRekey.apply(claim)));
-
-        return claimingHolderBySystemKey;
     }
 
     // One claim under the spotlight: the selected bloc's own claim takes the spotlight holder, a

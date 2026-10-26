@@ -34,6 +34,7 @@
   - 势力名称在绘制时不再每帧为每个名称生成新的颜色。
   - 殖民地变化后重新排布附近的色带时，不再先把地图上的每个名称重新测量一遍。
   - 聚焦某个势力时，殖民地变化只重绘其周围的星系，而不再重绘整个地图。
+  - *势力*和*联盟*视图重绘时，只读取无人持有的星系的宣称。
 
 ### 面向开发者
 
@@ -56,8 +57,8 @@
 - **`CellTooltipEntryLine.createCountedEntityLine(EntityNameplate, int)`**：为星域地图绘制的对象建立计数行，以其地图图标开头。
 - **`ContestBlockHeading.createFixedKeySource(String)`**：标题不随安装环境变化的区块所用的标题来源。
 - **`BlocSpotlight`**：被聚焦集团及其星系绘制所用的持有者。`BlocSpotlight.openOver(HolderPass, String)` 每个批次或每次重建打开一个，交给每个在聚焦下解析星系的部分，因此该集团持有的单元与宣称的单元通过同一个值融合。若集团配色所取自的势力已不存在，则不打开聚焦，其持有和宣称的星系都按实际持有者绘制。
-- **`FilteredClaimReader`**：本次计算在其聚焦下的宣称，由 `openOver(HolderPass, ClaimReaderSource, Optional)` 打开，可通过 `resolveClaimIn(StarSystemAPI)` 逐星系读取，或通过 `resolveClaimingHolderBySystemKey()` 一次读取全部。
-- **`DominanceHolderProvider.resolveHolderUnder(HolderPass, Optional)`**：在调用方打开并与他处共用的聚焦下解析持有者。
+- **`FilteredClaimReader`**：本次计算在其聚焦下的宣称，由 `openOver(HolderPass, ClaimReaderSource, Optional)` 打开，可通过 `resolveClaimIn(StarSystemAPI)` 逐星系读取。
+- **`HolderResolution.collectOver(HolderPass, SystemHolderResolver)`**：对本次计算中的每个星系逐一询问图层的持有规则，重建即由此得出其持有结果。
 - **`KmuErrorReporter.createLoggingReporter(Class)`**：把每个被捕获的失败连同其原因以警告级别写入报告方所属类的日志。
 - **`MapLayerRefreshBoard.getGroupingRevision()`**：星系被标记为过期的次数，任何取出操作都不会让它回退。无法取出该集合的读取方（例如侧边栏选择器的缓存）以它为键。
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**：一次构建的绘制方案，只读取一次，再交给构建中按它着色的每个部分。
@@ -82,8 +83,8 @@
 - **`OwnerMapRefreshStrategy`**：无需重建的帧如何处理此后被标记的星系，由图层声明。它是只有两个常量的枚举：默认的 `INCREMENTAL` 把它们并入屏幕上的地图；`FULL_REBUILD` 把它们留给下一帧的重建，供某一星系的结果会随未被标记的星系而变化的规则使用；结果为 `MarkedSystemsOutcome`。
 - **`ResolvedSystemOwner`**：单个星系的所有者及其填充状态，即所有者来源和持有规则逐星系给出的结果。
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及调用时其中记录的每个星系的填充状态。
-- **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**：逐星系给出聚焦下的争夺，所依规则与整个星域的解析相同。
-- **`ClaimAugmentedSystemHolderResolver`**：`ClaimAugmentedHolderProvider` 的逐星系部分，使争夺未让任何集团持有的已标记星系按其宣称重新解析。
+- **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**：逐星系给出聚焦下的争夺，重建会对每个星系询问它。
+- **`ClaimAugmentedSystemHolderResolver`**：*势力*和*联盟*视图的持有规则，先看争夺，仅当争夺未让任何集团持有该星系时才读取宣称。
 - **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。
 
 #### 修复
@@ -140,7 +141,7 @@
 | `SelectableBloc`、`SelectableBlocCache`、`RankedBloc`、`BlocMetrics`、`PaintingBlocMetrics`、`BlocMetricSortMode`、`BlocSortModeComposer`、`BlocPickerRead`、`BlocPresenceIndex`、`BlocPresenceIndexBuilder`、`BlocStatsRead`、`SpotlitBlocs`、`ResolvedBlocPaint`、`BlocNameStyles` 和 `BlocPresence` | 各名称及其成员中的 `Bloc` 换为 `Owner` |
 | `FactionNameFormatChoice`、`FactionPaletteSlot`、`FactionlessStyleResolver` 和 `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`、`OwnerPaletteSlot`、`UnownedStyleResolver` 和 `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`，以及为绘制联盟的图层建立在其上的 `AllianceOwnerReading` |
-| `OwnerMapCategory`、`OwnerMapInhabitation` 和 `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`、`HolderInhabitation` 和 `DominanceHolderProvider` |
+| `OwnerMapCategory` 和 `OwnerMapInhabitation` | `HolderCategory` 和 `HolderInhabitation` |
 | `OwnerMapCache.getFactionLabels()`、`StandingOwnerMap` 的 `factionLabels` 组件、`OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` 和 `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`、`ownerLabels`、`MapPaints.resolveOwnerPaintOf(SystemOwner)` 和 `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`。所有者的 ID 取自 `SystemOwner` 本身 |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
 | 九个 `KmuStringKeys.OWNER_MAP_TOOLTIP_*` 常量及其 `strings.json` 键 | `KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_*`：只有政治地图的悬停框读取它们 |
@@ -178,8 +179,10 @@
 | 成员列表为空的 `GroupStanding(String, int, List)` | 以 `IllegalArgumentException` 拒绝：势力组只能通过位于该星系的成员出现在其中 |
 | `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)`：集团的配色取自本次计算自身的 `palettes()` |
 | `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` 和 `SpotlitOwners.readSpotlitOwnerKey()` | `SpotlitOwners.createSpotlitOwner(ColourPair)`，接收取自本次计算自身 `palettes()` 的集团配色，因此宣称的解析无需提及主导包即可聚焦 |
-| `FilteredPolitics.resolveFilteredHolder(HolderPass, String)` 和 `resolveFilteredHolder(DominancePass, String)`，没有选择时给出空的持有结果 | `resolveFilteredHolder(HolderPass, BlocSpotlight)` 和 `resolveFilteredHolder(DominancePass, BlocSpotlight)`，在调用方打开的聚焦下解析。没有选择时调用方改用普通解析 |
-| `FilteredClaims.resolveFilteredClaims(HolderPass, ClaimReader, String)` | `FilteredClaimReader.openOver(HolderPass, ClaimReaderSource, Optional)`，再调用 `resolveClaimingHolderBySystemKey()`。`FilteredClaims` 已移除 |
+| `HolderProvider`、`HolderPaintedView.resolveHolderProvider()`、`DefaultHolderProvider`、`ClaimsHolderProvider` 和 `ClaimAugmentedHolderProvider` | 已移除：视图只通过 `resolveSystemHolderResolverSource()` 逐星系给出一次其持有规则。重建通过 `HolderResolution.collectOver(HolderPass, SystemHolderResolver)` 对每个星系询问它，因此重建与批次不会把同一星系画得不同。*宣称*视图的规则是 `ClaimSystemHolderResolver`，*势力*和*联盟*视图的规则是 `ClaimAugmentedSystemHolderResolver` |
+| `SectorPolitics.resolveDominantHolderBySystemKey(HolderPass)` 和 `resolveDominantHolderBySystemKey(DominancePass)`，以及 `SectorClaims.resolveClaimingHolderBySystemKey(HolderPass, ClaimReader)` | 已移除：`SectorPolitics.resolveDominantHolder(StarSystemAPI, DominancePass)` 和 `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` 给出单个星系的结果，由 `HolderResolution.collectOver` 询问每个星系 |
+| `FilteredPolitics.resolveFilteredHolder(HolderPass, String)` 和 `resolveFilteredHolder(DominancePass, String)`，没有选择时给出空的持有结果 | 已移除：`resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)` 在调用方打开的聚焦下给出单个星系的结果。没有选择时调用方改用普通争夺 |
+| `FilteredClaims.resolveFilteredClaims(HolderPass, ClaimReader, String)` | `FilteredClaimReader.openOver(HolderPass, ClaimReaderSource, Optional)`，再对每个星系调用 `resolveClaimIn(StarSystemAPI)`。`FilteredClaims` 已移除 |
 | `ArrangementDialogMapCover`、`CodexMapCover`、`ModalDialogMapCover` 和 `kmu.mods.console.ConsoleMapCover` | 一个 `ScreenClaimMapCover`，读取 `ScreenClaim.isScreenClaimed()` |
 | 自行组合可选 Mod 遮挡的 `MapCoverReader.createForLiveScreen()` | `MapCoverReader.registerOptionalModCovers(List)`，由 `MapLayers` 以已安装 Mod 的遮挡调用 |
 | 向 Nexerelin 询问是否提供联盟视图的 `VanillaMapLayerToggleAttacher()` | `VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(BooleanSupplier)`，由 `MapLayers` 调用 |

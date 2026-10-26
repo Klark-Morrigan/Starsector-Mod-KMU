@@ -12,7 +12,6 @@ import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
-import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -38,6 +37,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
 import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.STANDARD_RULES;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,16 +91,6 @@ final class HolderOwnerSourceTests {
 
     private MockedStatic<DecivilisedColonyHabitation> habitationSettingMock;
 
-    // The layer's whole-sector rule: one held system, one contested and one unfilled.
-    private final HolderProviderFake holderProviderFake = HolderProviderFake.createAnswering(
-        new HolderResolution(
-            Map.of(HELD_SYSTEM, HEGEMONY_OWNER),
-            SystemFillStates.createOf(Map.of(
-                CONTESTED_SYSTEM,
-                FillState.HATCHED,
-                UNFILLED_SYSTEM,
-                FillState.UNFILLED))));
-
     private final SystemHolderResolverSourceFake holderResolverSourceFake =
         new SystemHolderResolverSourceFake();
 
@@ -110,6 +100,22 @@ final class HolderOwnerSourceTests {
     private final List<RibbonPlanInputs> plannerInputs = new ArrayList<>();
 
     private final StaticSeams seams = new StaticSeams();
+
+    // The layer's holding rule: one held system, one contested and one unfilled, every other system
+    // the walk lists nobody's.
+    @BeforeEach
+    void stateTheLayersHolding() {
+
+        holderResolverSourceFake.recordHolderOf(
+            HELD_SYSTEM.systemId(),
+            ResolvedSystemOwner.createSolidlyFilledBy(HEGEMONY_OWNER));
+        holderResolverSourceFake.recordHolderOf(
+            CONTESTED_SYSTEM.systemId(),
+            new ResolvedSystemOwner(HEGEMONY_OWNER, FillState.HATCHED));
+        holderResolverSourceFake.recordHolderOf(
+            UNFILLED_SYSTEM.systemId(),
+            new ResolvedSystemOwner(HEGEMONY_OWNER, FillState.UNFILLED));
+    }
 
     @BeforeEach
     void openTheColonySeams() {
@@ -158,7 +164,7 @@ final class HolderOwnerSourceTests {
             // ARRANGE
             var viewMock = stubViewOver(OwnerAffiliation.NONE, inputs -> system -> RibbonPlan.NONE);
 
-            when(viewMock.resolveHolderProvider())
+            when(viewMock.resolveSystemHolderResolverSource())
                 .thenReturn(null);
 
             // ACT
@@ -167,7 +173,7 @@ final class HolderOwnerSourceTests {
             // ASSERT
             assertThat(actualThrown)
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("holderProvider");
+                .hasMessage("holderResolverSource");
         }
     }
 
@@ -187,7 +193,7 @@ final class HolderOwnerSourceTests {
             source.resolveOwners(walk, null);
 
             // ASSERT
-            assertThat(holderProviderFake.readResolvedPasses())
+            assertThat(holderResolverSourceFake.readPassesOpenedOver())
                 .singleElement()
                 .extracting(HolderPass::sectorIndex)
                 .isSameAs(walk.sectorIndex());
@@ -206,7 +212,7 @@ final class HolderOwnerSourceTests {
             source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
 
             // ASSERT
-            assertThat(holderProviderFake.readResolvedPasses())
+            assertThat(holderResolverSourceFake.readPassesOpenedOver())
                 .singleElement()
                 .extracting(HolderPass::grouping)
                 .isSameAs(grouping);
@@ -268,26 +274,34 @@ final class HolderOwnerSourceTests {
             source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
             // ASSERT
-            assertThat(holderProviderFake.readSelectedBlocIds())
+            assertThat(holderResolverSourceFake.readSpotlitBlocIdsOpenedUnder())
                 .containsExactly(HEGEMONY);
         }
 
+        // The holding is the layer's per-system rule asked of every system the walk lists, so a
+        // rebuild draws each system as a batch re-deriving it would.
         @Test
         void answersWithTheLayersOwnersAndFillExceptions() {
 
             // ARRANGE
             var source = buildSourceUnder(HolderGrouping.identity());
+            var expectedFillStateBySystemKey = Map.of(
+                CONTESTED_SYSTEM,
+                FillState.HATCHED,
+                UNFILLED_SYSTEM,
+                FillState.UNFILLED);
 
             // ACT
             var actualOwners = source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
 
             // ASSERT
             assertThat(actualOwners.ownerBySystemKey())
-                .containsExactly(Map.entry(HELD_SYSTEM, HEGEMONY_OWNER));
+                .containsOnly(
+                    Map.entry(HELD_SYSTEM, HEGEMONY_OWNER),
+                    Map.entry(CONTESTED_SYSTEM, HEGEMONY_OWNER),
+                    Map.entry(UNFILLED_SYSTEM, HEGEMONY_OWNER));
             assertThat(actualOwners.fillStates().getNonSolidFillStateBySystemKey())
-                .containsEntry(CONTESTED_SYSTEM, FillState.HATCHED);
-            assertThat(actualOwners.fillStates().getNonSolidFillStateBySystemKey())
-                .containsEntry(UNFILLED_SYSTEM, FillState.UNFILLED);
+                .isEqualTo(expectedFillStateBySystemKey);
         }
 
         // Off one pass, the holding and the inhabitation cannot disagree about a colony the
@@ -339,7 +353,7 @@ final class HolderOwnerSourceTests {
 
             // ARRANGE
             var source = buildSourceUnder(HolderGrouping.identity());
-            var expectedTag = "owned=1 filtering=false contested=1 unfilled=1";
+            var expectedTag = "owned=3 filtering=false contested=1 unfilled=1";
 
             // ACT
             var capture = RecordedCapture.recordWhile(
@@ -358,7 +372,7 @@ final class HolderOwnerSourceTests {
 
             // ARRANGE
             var source = buildSourceUnder(HolderGrouping.identity());
-            var expectedTag = "owned=1 filtering=true contested=1 unfilled=1";
+            var expectedTag = "owned=3 filtering=true contested=1 unfilled=1";
 
             // ACT
             var capture = RecordedCapture.recordWhile(
@@ -411,8 +425,7 @@ final class HolderOwnerSourceTests {
             source.openSystemResolver(walk, null);
 
             // ASSERT
-            assertThat(holderResolverSourceFake.readPassesOpenedOver())
-                .singleElement()
+            assertThat(readLastOpenedPass())
                 .isSameAs(readFirstResolvedPass());
         }
 
@@ -431,8 +444,7 @@ final class HolderOwnerSourceTests {
             source.openSystemResolver(batchWalk, null);
 
             // ASSERT
-            assertThat(holderResolverSourceFake.readPassesOpenedOver())
-                .singleElement()
+            assertThat(readLastOpenedPass())
                 .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::sectorIndex)
                 .isSameAs(batchWalk.sectorIndex());
@@ -454,8 +466,7 @@ final class HolderOwnerSourceTests {
             otherSource.openSystemResolver(walk, null);
 
             // ASSERT
-            assertThat(holderResolverSourceFake.readPassesOpenedOver())
-                .singleElement()
+            assertThat(readLastOpenedPass())
                 .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::grouping)
                 .isSameAs(otherGrouping);
@@ -636,10 +647,19 @@ final class HolderOwnerSourceTests {
         return new HolderOwnerSource(grouping, stubViewOver(affiliation, this::recordPlannerInputs));
     }
 
-    // The first pass the layer's whole-sector rule was handed, which every other read in a case is
-    // compared against.
+    // The first pass the layer's rule was opened over, which every other read in a case is compared
+    // against.
     private HolderPass readFirstResolvedPass() {
-        return holderProviderFake.readResolvedPasses().get(0);
+        return holderResolverSourceFake.readPassesOpenedOver().get(0);
+    }
+
+    // The pass the layer's rule was last opened over: a batch's, where a case opens one after the
+    // rebuild.
+    private HolderPass readLastOpenedPass() {
+
+        var openedPasses = holderResolverSourceFake.readPassesOpenedOver();
+
+        return openedPasses.get(openedPasses.size() - 1);
     }
 
     // The layer's band planner: records what it was handed, and counts nothing.
@@ -658,8 +678,6 @@ final class HolderOwnerSourceTests {
 
         when(viewMock.resolveContestAffiliation())
             .thenReturn(affiliation);
-        when(viewMock.resolveHolderProvider())
-            .thenReturn(holderProviderFake);
         when(viewMock.resolveSystemHolderResolverSource())
             .thenReturn(holderResolverSourceFake);
         when(viewMock.resolveRibbonPlanner(any()))
@@ -668,10 +686,19 @@ final class HolderOwnerSourceTests {
         return viewMock;
     }
 
-    // A walk over no sector: every read beneath the source is stood in for, so only which walk and
-    // which rule reach it matter.
+    // A walk over a sector listing the four systems the cases name, with nothing in them: the
+    // holding is the layer's rule and the colony scans are stood in for, so only which systems,
+    // which walk and which rule reach them matter.
     private static SectorWalk buildWalkUnder(MapVisibilityRules rules) {
-        return new SectorWalk(new SectorPassIndex(null), rules);
+
+        var sector = SectorOwnershipFixtures.buildSectorWithSystems(
+            List.of(),
+            listSystemMarkets(HELD_SYSTEM.systemId()),
+            listSystemMarkets(UNHELD_SETTLED_SYSTEM.systemId()),
+            listSystemMarkets(CONTESTED_SYSTEM.systemId()),
+            listSystemMarkets(UNFILLED_SYSTEM.systemId()));
+
+        return new SectorWalk(new SectorPassIndex(sector), rules);
     }
 
     private static StarSystemAPI buildSystem(String systemId) {

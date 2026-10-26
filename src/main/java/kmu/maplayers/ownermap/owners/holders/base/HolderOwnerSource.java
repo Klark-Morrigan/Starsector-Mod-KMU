@@ -25,14 +25,16 @@ import java.util.function.Supplier;
  * The owner source of a layer painting holders: it opens a {@link HolderPass} over the walk the
  * tier hands it, folded by the grouping it was built under, and answers every question the tier
  * asks about owners off that one pass - who holds each system through the layer's own
- * {@link HolderProvider}, who lives where through the pass's habitation, where the spotlit bloc
+ * {@link SystemHolderResolver}, who lives where through the pass's habitation, where the spotlit bloc
  * lives among the unheld, and how a cell's band is counted.
  *
- * <p>What the layer states is the three rules that are its own - the whole-sector holding, the
- * per-system holding and the band planner - beside the grouping every one of them is read under and
- * who stands together in a contest. What this adds is the colony reading none of them should open
- * for itself: one pass per walk, so the holder scan, the habitation scan and the band count read
- * each system once between them, and cannot disagree about a colony the habitation rule admits.
+ * <p>What the layer states is the two rules that are its own - the holding and the band planner -
+ * beside the grouping both are read under and who stands together in a contest. The holding is
+ * stated one system at a time, and this runs it over every system for a rebuild and over the marked
+ * ones for a batch, so the two cannot draw one system differently. What this adds is the colony
+ * reading neither rule should open for itself: one pass per walk, so the holder scan, the
+ * habitation scan and the band count read each system once between them, and cannot disagree about
+ * a colony the habitation rule admits.
  *
  * <p>Built per rebuild, over one sampling of the grouping and the affiliation: a view that reads its grouping live
  * makes a fresh source each rebuild, and the build retains it, so a batch that follows re-derives
@@ -59,7 +61,6 @@ public final class HolderOwnerSource
 
     private final HolderGrouping grouping;
     private final OwnerAffiliation contestAffiliation;
-    private final HolderProvider holderProvider;
     private final SystemHolderResolverSource holderResolverSource;
     private final HolderPaintedView view;
 
@@ -78,7 +79,6 @@ public final class HolderOwnerSource
             view.resolveContestAffiliation(),
             "contestAffiliation");
 
-        this.holderProvider = Objects.requireNonNull(view.resolveHolderProvider(), "holderProvider");
         this.holderResolverSource = Objects.requireNonNull(
             view.resolveSystemHolderResolverSource(),
             "holderResolverSource");
@@ -147,9 +147,10 @@ public final class HolderOwnerSource
     }
 
     // Who holds each system under this layer's rule, and - under a filter - which of the spotlit
-    // systems are contested. The holder scan walks the whole economy, the priciest content step,
-    // so it is profiled on its own and names what it resolved on the call, which is the reading
-    // its duration has to be judged against.
+    // systems are contested: the layer's per-system rule, opened once and asked of every system. The
+    // holder scan walks the whole economy, the priciest content step, so it is profiled on its own
+    // and names what it resolved on the call, which is the reading its duration has to be judged
+    // against.
     private HolderResolution resolveHolders(
             Profiler profiler,
             HolderPass pass,
@@ -157,7 +158,9 @@ public final class HolderOwnerSource
 
         try (var holdersScope = profiler.open(RESOLVE_HOLDERS_SECTION)) {
 
-            var resolution = holderProvider.resolveHolder(pass, spotlitOwnerId);
+            var resolution = HolderResolution.collectOver(
+                pass,
+                holderResolverSource.openResolverOver(pass, spotlitOwnerId));
 
             holdersScope.tagCall("owned=" + resolution.ownerBySystemKey().size()
                 + " filtering=" + (spotlitOwnerId != null)

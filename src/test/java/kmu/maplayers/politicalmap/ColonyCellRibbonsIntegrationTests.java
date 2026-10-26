@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildInputsFor;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
@@ -148,14 +147,14 @@ final class ColonyCellRibbonsIntegrationTests {
 
             // ACT
             var actualBand = new HeldSystemRibbonPlanner(pass, buildInputsFor(holding)).planSystemRibbon(system);
-            var actualFill = FilteredPolitics.resolveFilteredHolder(pass, spotlight);
+            var actualFill = FilteredPolitics.resolveFilteredHolderIn(system, pass, spotlight);
 
             // ASSERT
             assertThat(actualBand.segments())
                 .extracting(RibbonSegment::colour)
                 .contains(TRITACHYON_BRIGHT);
-            assertThat(actualFill.fillStates().getNonSolidFillStateBySystemKey())
-                .containsEntry(buildCellKey(SYSTEM_ID), FillState.HATCHED);
+            assertThat(actualFill.fillState())
+                .isEqualTo(FillState.HATCHED);
         }
     }
 

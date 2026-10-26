@@ -588,7 +588,7 @@ and a link error must not take the alliance read down with it.
 A view, or a hover line, could show which colonies are held by someone other than their original owner
 ([Ownership](#ownership)).
 The cheapest seam is a word on `ColonyQualifier` in the political hover box.
-A view would be a fourth holder provider beside the claims view's;
+A view would be a fourth holder resolver beside the claims view's;
 a fill state would be a framework change,
 both exceptions to the solid fill already being taken.
 

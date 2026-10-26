@@ -2,14 +2,10 @@ package kmu.maplayers.politicalmap.dominance;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SystemKey;
-
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -29,50 +25,12 @@ import java.util.Map;
  * {@link DominancePass} so the two never drift on which blocs hold territory.
  *
  * <p>The weighting rule, colony rule, and grouping a pass resolves under travel together as a
- * {@link DominancePass}: the live entry points read the player's settings into one,
- * and every explicit caller hands its own down, so a whole pass resolves under one
- * consistent set of knobs.
+ * {@link DominancePass}, which the caller opens once and hands down, so every system a rebuild
+ * asks about resolves under one consistent set of knobs.
  */
 public final class SectorPolitics {
 
     private SectorPolitics() {
-    }
-
-    /**
-     * Builds the dominant holder for every inhabited star system over a rebuild's own reading of
-     * the sector, reading the weighting rule live - the entry a holding provider calls, the rule
-     * being the one knob the pass it was handed does not carry.
-     *
-     * @param pass the rebuild's reading of the sector, whose walk of each system this resolve
-     *             shares; a pass over no sector yields an empty map
-     * @return the dominant holder keyed by {@link SystemKey}; a system with no owned
-     *         markets is absent from the map (uninhabited)
-     */
-    public static Map<SystemKey, SystemOwner> resolveDominantHolderBySystemKey(HolderPass pass) {
-        return resolveDominantHolderBySystemKey(
-            DominancePass.readRulesFromLunaSettings(pass));
-    }
-
-    /**
-     * Builds the dominant holder for every inhabited star system under an explicit
-     * dominance pass, for a caller that has already sampled the player's settings.
-     *
-     * @param pass the weighting rule, colony rule, grouping, and sector walk this pass resolves under
-     * @return the dominant holder keyed by {@link SystemKey}; a system with no folded
-     *         markets is absent from the map (uninhabited)
-     */
-    public static Map<SystemKey, SystemOwner> resolveDominantHolderBySystemKey(
-            DominancePass pass) {
-
-        var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
-
-        for (var system : pass.readSystems()) {
-            var holder = resolveDominantHolder(system, pass);
-            if (holder != null) {
-                ownerBySystemKey.put(SystemKey.readKeyOf(system), holder);
-            }
-        }
-        return ownerBySystemKey;
     }
 
     /**

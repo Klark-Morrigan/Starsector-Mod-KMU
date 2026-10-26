@@ -36,9 +36,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the faction and alliance views' per-system read: held dominance first, and the claim only
- * where the contest left the system unheld, folded unfilled by the rule the whole-sector provider
- * folds by - under one spotlight the batch opens for both halves.
+ * Pins the faction and alliance views' holding rule: held dominance first, and the claim only where
+ * the contest left the system unheld, folded in unfilled - under one spotlight the rebuild or batch
+ * opens for both halves.
  *
  * <p>The spotlight, the contest and the claim read are each stood in for at their static seams, all
  * having suites of their own; what belongs here is how their answers compose.

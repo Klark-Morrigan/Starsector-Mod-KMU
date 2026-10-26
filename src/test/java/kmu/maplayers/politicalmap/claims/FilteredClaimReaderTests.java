@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.colour.ColourPair;
-import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
@@ -19,11 +18,8 @@ import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the one rule every claim-reading source and resolver shares: which claims a spotlight rekeys
+ * Pins the one rule every claim-reading resolver shares: which claims a spotlight rekeys
  * and which it leaves alone. The plain claim read is stood in for at its static seam, having its own
  * suite, so these cases isolate the rekey rather than the read behind it.
  */
@@ -51,9 +47,6 @@ final class FilteredClaimReaderTests {
 
     private static final Optional<BlocSpotlight> HEGEMONY_SPOTLIGHT =
         Optional.of(new BlocSpotlight("hegemony", SPOTLIT_HOLDER));
-
-    private static final SystemKey HEGEMONY_CLAIMED = buildCellKey("hegemony-claimed");
-    private static final SystemKey RIVAL_CLAIMED = buildCellKey("rival-claimed");
 
     private final ClaimReader claimReaderMock = mock(ClaimReader.class);
 
@@ -110,8 +103,8 @@ final class FilteredClaimReaderTests {
             }
         }
 
-        // The single-system arm rekeys by the same rule as the whole-sector one, so a re-derived
-        // claim of the selected bloc joins its spotlit territory as the rebuild drew it.
+        // The selected bloc's claim carries the one spotlight key, which is what draws it at full
+        // strength and joins it to whatever else that bloc has spotlit.
         @Test
         void movesTheSelectedBlocsClaimOntoTheSpotlightHolder() {
 
@@ -129,7 +122,8 @@ final class FilteredClaimReaderTests {
             }
         }
 
-        // A rival's claim keeps its own key under the spotlight, so the style layer recedes it.
+        // A rival's claim keeps its own bloc key under the spotlight, which is what the style layer
+        // reads to recede it.
         @Test
         void leavesARivalsClaimOnItsOwnKey() {
 
@@ -171,66 +165,6 @@ final class FilteredClaimReaderTests {
             sectorClaimsMock
                 .when(() -> SectorClaims.resolveClaimingHolderIn(systemMock, pass, claimReaderMock))
                 .thenReturn(claimant);
-        }
-    }
-
-    @Nested
-    class ResolveClaimingHolderBySystemKey {
-
-        // No spotlight means nothing to fuse anything into, so every claim keeps its own key.
-        @Test
-        void passesThePlainClaimsThroughWithNoSpotlight() {
-
-            // ARRANGE
-            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
-
-                stateThePlainClaims(sectorClaimsMock);
-
-                // ACT
-                var actualClaims = openWithReaderUnder(Optional.empty()).resolveClaimingHolderBySystemKey();
-
-                // ASSERT
-                assertThat(actualClaims)
-                    .containsExactly(
-                        Map.entry(HEGEMONY_CLAIMED, HEGEMONY_CLAIMANT),
-                        Map.entry(RIVAL_CLAIMED, RIVAL_CLAIMANT));
-            }
-        }
-
-        // The selected bloc's claim carries the one spotlight key, which is what draws it at full
-        // strength and joins it to whatever else that bloc has spotlit; the rival's keeps its own
-        // bloc key, which is what the style layer reads to recede it.
-        @Test
-        void movesOnlyTheSelectedBlocsClaimsOntoTheSpotlightHolder() {
-
-            // ARRANGE
-            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
-
-                stateThePlainClaims(sectorClaimsMock);
-
-                // ACT
-                var actualClaims = openWithReaderUnder(HEGEMONY_SPOTLIGHT).resolveClaimingHolderBySystemKey();
-
-                // ASSERT
-                assertThat(actualClaims)
-                    .containsExactly(
-                        Map.entry(HEGEMONY_CLAIMED, SPOTLIT_HOLDER),
-                        Map.entry(RIVAL_CLAIMED, RIVAL_CLAIMANT));
-            }
-        }
-
-        // Two claimed systems under different claimants, so every case can state both what the
-        // spotlight moves and what it leaves where it was.
-        private void stateThePlainClaims(MockedStatic<SectorClaims> sectorClaimsMock) {
-
-            var claimingHolderBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
-
-            claimingHolderBySystemKey.put(HEGEMONY_CLAIMED, HEGEMONY_CLAIMANT);
-            claimingHolderBySystemKey.put(RIVAL_CLAIMED, RIVAL_CLAIMANT);
-
-            sectorClaimsMock
-                .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
-                .thenReturn(claimingHolderBySystemKey);
         }
     }
 

@@ -35,6 +35,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - The faction names draw without making a new colour for each name on every frame.
   - A colony change re-lays the nearby bands without re-measuring every name on the map first.
   - With a faction spotlit, a colony change redraws the systems around it rather than the whole map.
+  - A redraw of the *Factions* and *Alliances* views reads claims only for the systems nobody holds.
 
 ### For developers
 
@@ -57,8 +58,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`CellTooltipEntryLine.createCountedEntityLine(EntityNameplate, int)`**: a counted line naming something the sector map draws, led by its map glyph.
 - **`ContestBlockHeading.createFixedKeySource(String)`**: the heading source of a block whose heading no install changes.
 - **`BlocSpotlight`**: the spotlit bloc paired with the holder its systems draw as. `BlocSpotlight.openOver(HolderPass, String)` opens one per batch or rebuild, which every half that rekeys a system is handed, so a held and a claimed cell of the bloc fuse through one value. A pick whose colour faction has gone opens none, and its held and claimed systems draw as their real holders.
-- **`FilteredClaimReader`**: one pass's claims under its spotlight, opened by `openOver(HolderPass, ClaimReaderSource, Optional)` and read one system at a time through `resolveClaimIn(StarSystemAPI)` or all at once through `resolveClaimingHolderBySystemKey()`.
-- **`DominanceHolderProvider.resolveHolderUnder(HolderPass, Optional)`**: the held holding under a spotlight its caller opened and shares.
+- **`FilteredClaimReader`**: one pass's claims under its spotlight, opened by `openOver(HolderPass, ClaimReaderSource, Optional)` and read one system at a time through `resolveClaimIn(StarSystemAPI)`.
+- **`HolderResolution.collectOver(HolderPass, SystemHolderResolver)`**: a layer's holding rule asked of every system a pass walks, which is how a rebuild builds its holding.
 - **`KmuErrorReporter.createLoggingReporter(Class)`**: a reporter writing each caught failure as a warning, with its cause, under the reporting class's logger.
 - **`MapLayerRefreshBoard.getGroupingRevision()`**: how many times a system has been marked stale on the board, which no drain moves back. A reader that cannot drain the set, such as the sidebar picker's memo, keys on it.
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**: one build's paint scheme, read once and handed to every part of the build that styles by it.
@@ -83,8 +84,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`OwnerMapRefreshStrategy`**: what a frame owing no rebuild does with the systems marked since, which a layer states. An enum of two constants: `INCREMENTAL`, the default, folds them into the map on screen, and `FULL_REBUILD` leaves them to the next frame's rebuild, for a rule whose answer for one system moves with systems nobody marked; the answer is a `MarkedSystemsOutcome`.
 - **`ResolvedSystemOwner`**: one system's owner and fill state, the per-system answer an owner source and a holder rule give.
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** and **`snapshotFillStates()`**: one system's owner with its fill state, and every system's fill state as the occupancy holds them at the call.
-- **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**: the spotlit contest one system at a time, by the rule the whole-sector resolve uses.
-- **`ClaimAugmentedSystemHolderResolver`**: the per-system half of `ClaimAugmentedHolderProvider`, so a marked system the contest leaves unheld is re-derived to its claim.
+- **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**: the spotlit contest one system at a time, which a rebuild asks of every system.
+- **`ClaimAugmentedSystemHolderResolver`**: the *Factions* and *Alliances* views' holding rule, the contest first and the claim only where the contest leaves a system unheld.
 - **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views.
 
 #### Fixed
@@ -141,7 +142,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `SelectableBloc`, `SelectableBlocCache`, `RankedBloc`, `BlocMetrics`, `PaintingBlocMetrics`, `BlocMetricSortMode`, `BlocSortModeComposer`, `BlocPickerRead`, `BlocPresenceIndex`, `BlocPresenceIndexBuilder`, `BlocStatsRead`, `SpotlitBlocs`, `ResolvedBlocPaint`, `BlocNameStyles` and `BlocPresence` | `Owner` in place of `Bloc` in each name and its members |
 | `FactionNameFormatChoice`, `FactionPaletteSlot`, `FactionlessStyleResolver` and `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`, `OwnerPaletteSlot`, `UnownedStyleResolver` and `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`, and `AllianceOwnerReading` over it for a layer painting alliances |
-| `OwnerMapCategory`, `OwnerMapInhabitation` and `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`, `HolderInhabitation` and `DominanceHolderProvider` |
+| `OwnerMapCategory` and `OwnerMapInhabitation` | `HolderCategory` and `HolderInhabitation` |
 | `OwnerMapCache.getFactionLabels()`, `StandingOwnerMap`'s `factionLabels` component, `OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` and `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`, `ownerLabels`, `MapPaints.resolveOwnerPaintOf(SystemOwner)` and `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`. The owner's ID is the `SystemOwner`'s own |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
 | The nine `KmuStringKeys.OWNER_MAP_TOOLTIP_*` constants and their `strings.json` keys | `KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_*`: only the political map's boxes read them |
@@ -179,8 +180,10 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `GroupStanding(String, int, List)` over an empty member list | Refused with an `IllegalArgumentException`: a group stands in a system only through a member there |
 | `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)`: a bloc's shades come off the pass's own `palettes()` |
 | `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` and `SpotlitOwners.readSpotlitOwnerKey()` | `SpotlitOwners.createSpotlitOwner(ColourPair)`, handed the bloc's shades off the pass's own `palettes()`, so the claims resolve spotlights without naming the dominance package |
-| `FilteredPolitics.resolveFilteredHolder(HolderPass, String)` and `resolveFilteredHolder(DominancePass, String)`, answering empty holding for no pick | `resolveFilteredHolder(HolderPass, BlocSpotlight)` and `resolveFilteredHolder(DominancePass, BlocSpotlight)`, under the spotlight its caller opened. With no pick the caller takes the plain resolve |
-| `FilteredClaims.resolveFilteredClaims(HolderPass, ClaimReader, String)` | `FilteredClaimReader.openOver(HolderPass, ClaimReaderSource, Optional)`, then `resolveClaimingHolderBySystemKey()`. `FilteredClaims` is gone |
+| `HolderProvider`, `HolderPaintedView.resolveHolderProvider()`, `DefaultHolderProvider`, `ClaimsHolderProvider` and `ClaimAugmentedHolderProvider` | Gone: a view states its holding once, one system at a time, through `resolveSystemHolderResolverSource()`. A rebuild asks it of every system through `HolderResolution.collectOver(HolderPass, SystemHolderResolver)`, so a rebuild and a batch cannot draw a system differently. The *Claims* view's rule is `ClaimSystemHolderResolver`, and the *Factions* and *Alliances* views' is `ClaimAugmentedSystemHolderResolver` |
+| `SectorPolitics.resolveDominantHolderBySystemKey(HolderPass)` and `resolveDominantHolderBySystemKey(DominancePass)`, and `SectorClaims.resolveClaimingHolderBySystemKey(HolderPass, ClaimReader)` | Gone: `SectorPolitics.resolveDominantHolder(StarSystemAPI, DominancePass)` and `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` answer one system, and `HolderResolution.collectOver` asks every system |
+| `FilteredPolitics.resolveFilteredHolder(HolderPass, String)` and `resolveFilteredHolder(DominancePass, String)`, answering empty holding for no pick | Gone: `resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)` answers one system under the spotlight its caller opened. With no pick the caller takes the plain contest |
+| `FilteredClaims.resolveFilteredClaims(HolderPass, ClaimReader, String)` | `FilteredClaimReader.openOver(HolderPass, ClaimReaderSource, Optional)`, then `resolveClaimIn(StarSystemAPI)` for each system. `FilteredClaims` is gone |
 | `ArrangementDialogMapCover`, `CodexMapCover`, `ModalDialogMapCover` and `kmu.mods.console.ConsoleMapCover` | One `ScreenClaimMapCover`, reading `ScreenClaim.isScreenClaimed()` |
 | `MapCoverReader.createForLiveScreen()` composing the optional mods' covers itself | `MapCoverReader.registerOptionalModCovers(List)`, called by `MapLayers` with the covers of the mods installed |
 | `VanillaMapLayerToggleAttacher()` asking Nexerelin whether the alliances view is offered | `VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(BooleanSupplier)`, called by `MapLayers` |

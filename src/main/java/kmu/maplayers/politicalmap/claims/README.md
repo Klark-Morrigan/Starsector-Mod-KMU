@@ -54,7 +54,7 @@ what may be told of a colony is the map's judgement.
 
 Each view holds one KMLib `ClaimBreakdownReaderSource`,
 a `ClaimReaderSource` whose readers also explain the claims they read.
-The view hands it to its holder provider, its band planner and its hover box,
+The view hands it to its holder resolver, its band planner and its hover box,
 so the fills, the bands and the box read claims through one binding.
 `ClaimsView` holds its own;
 `DominancePaintedView` states one for the Factions and Alliances views.
@@ -125,7 +125,7 @@ see [`render.style`](../../ownermap/render/style/README.md).
 ## Under a spotlight
 
 `FilteredClaimReader` decides which claims a spotlight moves,
-once for every claim-reading source and resolver.
+once for every claim-reading resolver.
 The spotlit bloc's claims carry its one synthetic spotlight key,
 and every rival's claim keeps its own,
 so the rivals fade with the rest of the background.
@@ -160,8 +160,6 @@ Who the picker lists is `ClaimsView`'s to state.
   the claims box,
   which explains a claim from the same read.
 - **`holders`** -
-  `ClaimsHolderProvider`,
-  `ClaimAugmentedHolderProvider`,
   `ClaimAugmentedSystemHolderResolver` and `ClaimSystemHolderResolver`,
   which state this mechanic to the tier's holder source;
   see [the ownership sources](../README.md#the-ownership-sources).
