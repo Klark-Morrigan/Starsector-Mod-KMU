@@ -174,7 +174,7 @@ fills,
 bands,
 and labels identically.
 The sources themselves are [below](#the-ownership-sources);
-the seam they answer is [ownership resolution](../ownermap/owners/holders/README.md),
+what they answer through is [the holder owners](../ownermap/owners/holders/README.md),
 and the three fill states are [the split fill](../ownermap/render/clusters/README.md#the-split-fill-solid-hatched-unfilled).
 
 The fourth input, the owner reading, is where the views differ least.
@@ -299,7 +299,7 @@ all of them this layer's own and all in `holders`:
   each system goes to its single strongest owner,
   with no exceptions,
   by [the market contest](dominance/README.md#who-holds-a-system)'s rule.
-  Under a spotlight it switches to [the presence-aware resolver](dominance/README.md#under-a-spotlight):
+  Under a spotlight it switches to [the presence-aware contest](dominance/README.md#under-a-spotlight):
   the chosen bloc stays drawn wherever it holds a colony -
   solid where it wins,
   hatched where it does not.
@@ -335,10 +335,15 @@ see [one reader per pass](claims/README.md#one-reader-per-pass).
 An incremental refresh re-derives one system at a time,
 through a per-system resolver each view states,
 also in `holders`.
-The two dominance views state `DominanceSystemHolderResolver`:
+The two dominance views state `ClaimAugmentedSystemHolderResolver`,
+under the spotlight the standing build was painted under.
+It asks `DominanceSystemHolderResolver` first:
 the market contest asked of one system over the batch's own pass,
-under one weighting rule sampled per batch,
-so a single-system refresh lands the bloc the bulk pass would have.
+under one weighting rule sampled per batch.
+Where the contest leaves the system unheld,
+it then reads the system's claim,
+folded by the rule `ClaimAugmentedHolderProvider` applies to the whole sector.
+So a single-system refresh lands the bloc and the fill state the bulk pass would have.
 The Claims view states `ClaimSystemHolderResolver`:
 the claimant of one system,
 read through the same claim reader and folded and coloured by the same rule
@@ -369,7 +374,7 @@ The build closes `dominance` and `claims` to each other.
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
 | `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), and the contest-painted views' (`DominancePaintedView`) |
-| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolvers, `DominanceSystemHolderResolver` and `ClaimSystemHolderResolver` |
+| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the three per-system resolvers, `DominanceSystemHolderResolver`, `ClaimAugmentedSystemHolderResolver` and `ClaimSystemHolderResolver` |
 | [`ribbon`](ribbon/README.md) | the band planner of the views that fold claims onto held dominance (`HeldOrClaimedSystemRibbonPlanner`) |
 | [`dominance`](dominance/README.md) | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`), stated in [the market contest](dominance/README.md#what-a-colony-weighs) |
@@ -391,8 +396,8 @@ That tier is not this layer's,
 which is why it is a package of its own,
 and the build keeps it from naming this one.
 
-- **[Ownership resolution](../ownermap/owners/holders/README.md)** -
-  the per-view ownership seam
+- **[Holder owners](../ownermap/owners/holders/README.md)** -
+  what a view painting holders states
   and what lands in each fill state.
 - **[Cluster fills and borders](../ownermap/render/clusters/README.md)** -
   how cells become each bloc's coloured cluster,
@@ -467,6 +472,12 @@ all of them where `PoliticalMapLayer` builds its renderer:
   which systems seed a cell.
   This layer seeds one for every system the map draws,
   and states it rather than inheriting it.
+- **`OwnerMapRefreshStrategy.INCREMENTAL`**,
+  the tier's -
+  what a frame owing no rebuild does with the systems a change marked.
+  This layer folds them into the map on screen,
+  because the market contest weighs every colony of the sector,
+  and a colony change should not walk the economy again.
 
 Who owns each system is not handed to the renderer at all:
 every view answers it through `resolveViewReading`,

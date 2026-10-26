@@ -39,14 +39,16 @@ import java.util.Set;
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the raw cells are built
  * once and cached; they are reseeded only when the reachable-system set changes, the
- * frontier-resolution or cell-reach setting changes (either seeds every cell), or a visibility setting
- * override flips (each changes which systems seed a cell). The clusters are rebuilt in full when
+ * frontier-resolution or cell-reach setting changes (either seeds every cell), or the visibility
+ * rules change (they decide which systems seed a cell). The clusters are rebuilt in full when
  * KMU's LunaLib settings change (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}), when the view switches or samples a different
  * live input, when one of the sidebar preferences the bake reads holds a different value
  * ({@link ContentInputs}), or when the geometry itself was rebuilt. So switching a colour, dragging
- * an opacity slider or picking a spotlight takes effect live, and the per-frame path is otherwise a
- * couple of int compares, never a per-frame economy scan.
+ * an opacity slider or picking a spotlight takes effect live. The per-frame path is otherwise one
+ * sample of the sidebar preferences, compared with the revisions against what the standing map was
+ * built under - never a per-frame economy scan. The sample stays per frame because a screen switch
+ * moves every pick while no counter moves.
  *
  * <p>Between those, a change in one system marks just its own system stale, and what a frame does
  * with the marked systems is the layer's {@link OwnerMapRefreshStrategy}: fold them into the
@@ -100,7 +102,7 @@ public final class OwnerMapCache
     // What a frame owing no rebuild does with the systems marked since: the layer's choice.
     private final OwnerMapRefreshStrategy refreshStrategy;
 
-    // Said once per session: refresh runs every frame the map is open, so a recurring rebuild
+    // Said once per session: refreshDrawLists runs every frame the map is open, so a recurring rebuild
     // failure would otherwise flood the log, and the second line says nothing the first did not.
     private final SessionWarning rebuildFaultWarning = new SessionWarning(LOG);
 

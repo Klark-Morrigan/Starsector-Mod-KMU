@@ -192,30 +192,28 @@ which the same source answers in the same call:
 the settled systems the spotlit owner lives in that nobody owns.
 One source answering both is what lets presence be a partition of the set emptiness is asked of,
 so a cell cannot be called empty space while the spotlight keeps an owner's fill over it.
-How a source reads the two is its own business;
-KMU's own layers describe theirs beside their answers,
-which [the owner seams](../../owners/README.md) link to.
+How a source reads the two is its own business,
+and [the owner seams](../../owners/README.md) say what each must answer.
 
-Both sets sit with the owner map in **`SystemOccupancy`** -
+Both sets sit with the owner map and each system's fill state in **`SystemOccupancy`** -
 who is in each system -
-rather than beside the `ContentInputs` the build was baked under or the contested set it derived,
-both of which are fixed once the build ends,
-because all three of these move between rebuilds:
+rather than beside the `ContentInputs` the build was baked under,
+which are fixed once the build ends,
+because all four of these move between rebuilds:
+an owner's rule can change how a system's fill draws without changing who owns it,
 a settlement founded or lost changes what stands in a system,
 and the pick founding one changes where the pick lives,
-in neither case moving an owner the map would notice.
+in none of these cases moving an owner the map would notice.
 The incremental refresh folds each marked system's answer into that one type,
-so the three facts a cell is styled from are read off one state of the sector rather than three.
+so the four facts a system is drawn from are read off one state of the sector rather than several.
 
 The type owns its collections -
 it copies what a pass hands it and answers every read with an unmodifiable view -
 so the only way to move a fact is one of its folds,
-each of which reports whether it moved anything.
-That report is what the refresh redraws a cell on.
-Held as three loose collections instead,
-they would have had to be mutable by the caller's good manners,
-which a build answering with an immutable empty set keeps perfectly
-until the first settlement is founded.
+each of which lets the caller tell whether it moved anything.
+That is what the refresh redraws a cell on.
+Held as loose collections instead,
+they would be kept from moving by the caller's good manners alone.
 
 ## Borders against empty space
 
@@ -336,8 +334,10 @@ the `MapStyling` (the theme, the border trace, the layer's categories and the th
 the `ViewReading` (the view, the owner reading it was styled and named by,
 and the owner source it was resolved under),
 the `ContentInputs` it sampled,
-and the `SystemFillStates` the source decided -
-which systems hatch and which paint no fill.
+and whether the anchor overlay is shown.
+The fill states are not among them:
+the `SystemOccupancy` beside them holds each system's,
+since a batch folds them.
 The source rides there for the incremental refresh alone,
 which reopens a per-system resolver under the sampling it patches;
 nothing styles or names by it.

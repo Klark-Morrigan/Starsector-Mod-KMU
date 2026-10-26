@@ -63,7 +63,7 @@ as one `ResolvedOwners`:
 - which systems anything stands in, whoever owns them;
 - where the spotlit owner lives among the inhabited systems nobody owns.
 
-One value because its five parts are one reading of the sector,
+One value because its four parts are one reading of the sector,
 and because they are what a rebuild may keep:
 a rebuild owed by a style pick alone paints over the owners the last one resolved
 instead of asking the source again.

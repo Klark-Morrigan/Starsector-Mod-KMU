@@ -91,11 +91,11 @@ final class FullOwnerMapRebuild {
     // pair is replaced rather than the cells.
     //
     // That number counts cuts rather than echoing the reachable-set revision, because the two
-    // are not the same fact: a seed-input or dev-toggle change recuts every cell while that
+    // are not the same fact: a seed-input or visibility-rule change recuts every cell while that
     // signal stands still (see CellCutInputs). Anything keying reused work off which cut it was
-    // derived against needs a value that moves on all three, and a counter moves on every recut
-    // by construction - where a fold of the three inputs could collide two cuts onto one number
-    // and offer work fitted inside cell shapes that are gone.
+    // derived against needs a value that moves on every recut, which a counter does by
+    // construction - where a fold of the cut's inputs could collide two cuts onto one number and
+    // offer work fitted inside cell shapes that are gone.
     private RevisedCellGeometry cellGeometry =
         new RevisedCellGeometry(new CellGeometryCache(), FIRST_CUT_NUMBER);
 
@@ -213,7 +213,7 @@ final class FullOwnerMapRebuild {
     // left, and the staleness this rebuild has just answered drained.
     //
     // Reports whether the owners were carried over from the last rebuild rather than read, for the
-    // line the rebuild writes: a rebuild that reused it cost what the paint costs, and a reader of
+    // line the rebuild writes: a rebuild that reused them cost what the paint costs, and a reader of
     // that line should be able to tell the two apart without the scan rows beneath.
     private boolean rebuildDrawables(
             StaleHalves staleHalves,
@@ -348,10 +348,10 @@ final class FullOwnerMapRebuild {
             machinery.resolveMovingSystems().getMovingSystemKeys(),
             cellCut.seedInputs());
 
-        // A fresh cut number the moment the cells are recut, whichever of the four inputs
-        // drove it - so work derived from the previous cut can never read as derived from
-        // this one. Counted rather than taken from the reachable-set revision, which stands
-        // still through a seed-input or dev-toggle recut.
+        // A fresh cut number the moment the cells are recut, whichever input drove it - so work
+        // derived from the previous cut can never read as derived from this one. Counted rather
+        // than taken from the reachable-set revision, which stands still through a seed-input or
+        // visibility-rule recut.
         cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
 
         decider.recordCellsCut(staleHalves);

@@ -94,10 +94,7 @@ public final class IncrementalOwnerRefresh {
     // Both the walk and the marked systems arrive from the caller rather than being resolved here.
     // This entry point is static and is handed the standing map whole, so the batch holds no
     // machinery to ask either of - and the caller that assembles that map is exactly the one that
-    // does hold it, so what it drains and what it walks are one sector's by construction. It is
-    // also what answers for the frames with nothing marked, which is nearly all of them: having
-    // drained the board itself, it knows there is nothing to fold before it assembles anything for
-    // one.
+    // does hold it, so what it drains and what it walks are one sector's by construction.
     //
     // Who owns a marked system is asked of the source the standing build was resolved by, never of
     // the view afresh: that source carries the one sampling of the layer's live inputs every

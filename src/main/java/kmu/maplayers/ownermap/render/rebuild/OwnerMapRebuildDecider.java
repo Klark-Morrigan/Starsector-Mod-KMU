@@ -27,9 +27,9 @@ import java.util.Set;
  * a change, so it opens no reading of the sector.
  *
  * <p>What it holds is the baselines the question is asked against - the revisions the standing
- * map was built under and what its cells were cut from - and those advance only when the cache
- * reports a stage complete, so a rebuild that threw part way is asked again next frame rather
- * than being taken as done.
+ * map was built under and what its cells were cut from - and those advance only when
+ * {@link FullOwnerMapRebuild} reports a stage complete, so a rebuild that threw part way is asked
+ * again next frame rather than being taken as done.
  *
  * <p>The board every revision is read off is the machinery's own, so a signal raised in another
  * sector cannot restyle these cells - and a signal raised in this one cannot fail to.
@@ -68,12 +68,11 @@ final class OwnerMapRebuildDecider {
     // frame rebuild rather than paint the old owner until something unrelated moves.
     private boolean isRebuildOwed;
 
-    // What the cells currently held were cut from. One value rather than a revision, the seed
-    // inputs and the dev toggles side by side, because each of the three recuts every cell and
-    // the question asked of them is the single one they answer together: would the cells be cut
-    // differently now. Null (not a zero reading) is the never-cut state, since every reading the
-    // record can hold is one the player can actually be under - and it is what makes a cache's
-    // first frame cut, whatever the signal happens to say.
+    // What the cells currently held were cut from: one CellCutInputs rather than the reachable-set
+    // revision alone, because the question asked of its parts is the single one they answer
+    // together - would the cells be cut differently now. Null (not a zero reading) is the never-cut
+    // state, since every reading the record can hold is one the player can actually be under - and
+    // it is what makes a cache's first frame cut, whatever the signal happens to say.
     private CellCutInputs lastCellCut;
 
     // The last sampling of what the cells are cut from, and the settings revision it was read
@@ -265,9 +264,9 @@ final class OwnerMapRebuildDecider {
     }
 
     // What the cells would be cut from right now. The reachable-set revision alone does not answer
-    // that: the frontier resolution, the cell reach and the two visibility overrides each reseed
-    // every cell without it moving, so all four are read into one value and the staleness question
-    // is asked of that value rather than of the signal.
+    // that: the seed inputs and the visibility rules recut every cell without it moving, so they
+    // are read into one CellCutInputs with it and the staleness question is asked of that value
+    // rather than of the signal.
     //
     // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and the
     // bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave cells cut

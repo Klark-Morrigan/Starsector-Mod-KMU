@@ -74,10 +74,10 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | --- | --- |
 | who owns each system, which owned systems draw hatched or unfilled, what stands where and where the spotlit owner lives, for a whole rebuild | an `OwnerSource`, resolved with the reading through `OwnerPaintedView.resolveViewReading` and handed the rebuild's `SectorWalk` |
 | who owns one marked system and how its fill draws, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolver` that same source opens over the batch's own walk, under the spotlight the standing build was painted under |
-| what a frame owing no rebuild does with the systems marked since | an `OwnerMapRefreshStrategy`, handed to `OwnerMapLayerRenderer.createForLiveScreen`: `FULL_REBUILD` to rebuild, `INCREMENTAL` to fold - see [the rebuild is a slot](#the-rebuild-is-a-slot) |
 | how a cell's presence band is counted | the same source's band planner |
 | each owner's shades, name, crest, recede and category, the shade an unowned cell paints in and the pair a receded one sinks toward | the `OwnerReading` resolved beside the source |
 | which systems seed a cell | a `CellSeedRule`, handed to `OwnerMapLayerRenderer.createForLiveScreen`; `SEED_DRAWN_SYSTEMS` for the systems the map draws |
+| what a frame owing no rebuild does with the systems marked since | an `OwnerMapRefreshStrategy`, handed to `OwnerMapLayerRenderer.createForLiveScreen`: `FULL_REBUILD` to rebuild, `INCREMENTAL` to fold - see [the rebuild is a slot](#the-rebuild-is-a-slot) |
 | which categories cells divide into, which one is full strength, and which one an unowned cell falls to | `OwnerCategories`, through `OwnerPaintedView.resolveCategories` |
 | whether the cursor is answered at all | the substrate's `MapLayerHoverGates`, or the tier's `SharedOwnerMapHoverGates` over the shared owner-map switches |
 | what the picker's hovered row lights | `OwnerMapPreviewHighlight`, or the tier's `SpotlightPreviewHighlightRenderer` for a layer offering the spotlight picker |
@@ -181,21 +181,21 @@ The incremental filler is a **stock** filler, not one layer's own.
 It reads nothing of a layer but the owner source the standing build was resolved by,
 and a marked system lands as a rebuild would draw it,
 its fill state included -
-so a layer with any owner rule may take it,
-and KMU's own layers take it because their owner rule weighs every colony of the sector.
+so a layer with any owner rule may take it.
 
 A filtered map folds like any other.
 The source re-derives a marked system as the spotlit build painted it,
-so a spotlight no longer owes a rebuild per colony change.
+so a spotlight owes no rebuild per colony change.
 What still owes one is a standing map that cannot take a fold -
 the debug overlay's,
 or a failed build's placeholder -
 whatever the layer chose.
 
-The other two parts a layer may leave out are slots in the same sense:
+Two other parts are slots in the same sense:
 which side of the nebulae each sub-layer paints (`OwnerMapBandLayout`)
 and what the picker's hovered row lights (`OwnerMapPreviewHighlight`).
-None of the three is folded into the tier on the grounds that not every layer has one;
+None of the three has a default in the tier,
+since each is one layer's answer;
 a layer states each where it composes itself.
 
 ## The arrow
@@ -217,7 +217,7 @@ Inside the tier,
 the core may not import `owners/holders`,
 the one subtree it is closed to.
 The holder answers fill the core's seams from inside the tier
-so both layers painting holders can reach them,
+so every layer painting holders can reach them,
 and a core that imported one would know what an owner is.
 The edge leaves the subtree out with the gate's `except:`,
 so a core package added later is closed to it without a line of its own.

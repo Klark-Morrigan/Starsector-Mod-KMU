@@ -18,8 +18,7 @@ import kmu.maplayers.ownermap.ContentInputs;
  * those answers were compared against: what the standing map was built under stays behind the
  * decider that holds it, so nothing downstream can read a baseline and reach its own verdict.
  *
- * @param cellCut         what the cells would be cut from now: the reachable-set revision, the
- *                        seed knobs and the visibility rules, sampled once
+ * @param cellCut         what the cells would be cut from now, sampled once
  * @param isCellCutStale  whether those differ from what the standing cells were cut from
  * @param contentInputs   the sidebar preferences a rebuild would bake under, sampled once
  * @param contentRevision the fold of every input the clusters are styled under

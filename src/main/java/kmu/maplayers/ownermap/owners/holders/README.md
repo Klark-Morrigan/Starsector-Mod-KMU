@@ -48,10 +48,10 @@ flowchart LR
 
 ## Why it sits inside the tier
 
-Both layers painting holders answer the tier's seams the same way apart from their shades:
-they walk the same colonies under the same grouping.
+Every layer painting holders answers the tier's seams the same way apart from its shades:
+it walks the sector's colonies under a grouping.
 One layer may not import another,
-so the shared answers sit where both reach them -
+so the shared answers sit where every such layer reaches them -
 inside the tier,
 nested under the seam they fill.
 
@@ -317,7 +317,7 @@ What a holder rule puts in the two exceptions:
 - **Unfilled** -
   a system a rule extends a bloc's holdings with though the bloc does not hold it.
 
-A rule that never contests or unfills leaves both sets empty,
+A rule that never contests or unfills leaves every system solid,
 and pays nothing for the split.
 
 ## What is not here

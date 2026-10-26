@@ -5,7 +5,7 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 /**
  * Everything that decides the shape of a cut of the cells: the revision of the reachable set,
- * what each cell is seeded with, and which reveal toggles widen the set that seeds one.
+ * what each cell is seeded with, and the visibility rules that widen the set that seeds one.
  *
  * <p>The three are one fact because each of them recuts every cell, and a recut is a recut
  * whichever one drove it. Held apart, "have the cells changed" is three comparisons a caller has

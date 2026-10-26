@@ -21,7 +21,7 @@ import java.util.Set;
  * inside that owner's border, whether anything stands in it at all, and - while an owner is
  * spotlighted - whether the pick is one of the things standing in it.
  *
- * <p>The three travel together because a map is drawn from all three at once. The owner decides
+ * <p>The four travel together because a map is drawn from all four at once. The owner decides
  * whether the cell fuses into a cluster group or draws alone, and its fill state how the group
  * fills over it; inhabitation tells a settled cell nobody owns from the empty backdrop; and the
  * pick's presence spares such a cell the recede a spotlight sinks the rest of the sector under. Read
@@ -29,17 +29,15 @@ import java.util.Set;
  * have drawn - a haven sunk under a spotlight it is the subject of, or a colonised system still
  * drawn as backdrop.
  *
- * <p>Which is why they move together too. A full rebuild resolves all three; the incremental
- * refresh re-derives all three per marked system, through the folds below rather than by editing
+ * <p>Which is why they move together too. A full rebuild resolves all four; the incremental
+ * refresh re-derives all four per marked system, through the folds below rather than by editing
  * collections it was handed. Each fold lets the caller tell whether it moved anything, because a
  * change here is exactly what obliges the system's cell or its owner's group to be drawn again - so
  * no fact can be brought up to date without the redraw it owes being noticed.
  *
  * <p>The collections are this type's own, copied on the way in. Anything reachable from a getter is
- * an unmodifiable view of them, so the only way to move a fact is a fold. That is the whole point
- * of the type rather than three loose collections on the built map: those had to be mutable by
- * caller convention, which a caller passing an immutable empty set kept perfectly until the first
- * fold threw.
+ * an unmodifiable view of them, so the only way to move a fact is a fold. Loose collections on the
+ * built map would be kept from moving by caller convention alone.
  */
 public final class SystemOccupancy {
 

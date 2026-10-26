@@ -81,7 +81,7 @@ final class MarkedSystemRederive {
      * @param clusters         the built map whose occupancy is folded
      * @param geometryCache    the cells, read for a flipped system's neighbours
      * @param walk             the batch's walk of the sector, which names the system behind each key
-     * @param ownerResolver     the batch's resolver, opened over that walk and shared by all three
+     * @param ownerResolver    the batch's resolver, opened over that walk and shared by all three
      *                         reads
      * @param markedSystemKeys the systems to re-derive, each of which draws a cell
      * @return what the batch disturbed: the cells to redraw, and the owners to rebuild
@@ -102,8 +102,8 @@ final class MarkedSystemRederive {
     private StaleOwnerMapDisturbance rederiveEachMarkedSystem(Set<SystemKey> markedSystemKeys) {
 
         // Off the batch's own walk rather than a traversal opened here: every read below goes
-        // through that walk, and a second traversal for the systems alone is what the bound on a
-        // batch counts against it. By key rather than by ID, so a marked system that shares an ID
+        // through that walk, and a second traversal for the systems alone would walk the sector
+        // twice per batch. By key rather than by ID, so a marked system that shares an ID
         // with another is re-derived as itself rather than as whichever of them comes first.
         var systemByKey = walk.sectorIndex().readSystemsByKey();
 

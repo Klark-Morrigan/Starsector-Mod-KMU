@@ -473,7 +473,8 @@ So a word of one axis never stands in for another:
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
 | anchor overlay (the dev overlay showing each name's fitted line) | 锚点叠加层 | 锚点, an anchor, the point a name is fixed to, with 叠加层, an overlay |
 | bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
-| batch (the systems marked since a frame, re-derived together) | 批次 | the plain word for a batch, as in 绘制批次 |
+| band layout (which side of the nebulae each sub-layer paints) | 分层布局 | 分层, set out in layers, with 布局, a layout; kept apart from 星云绘制顺序, the player's setting it is read from |
+| batch (the systems marked since a frame, re-derived together) | 批次 | the plain word for a batch; kept apart from 绘制批次, a draw run |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
 | call tag (the words a profiled call is written with) | 调用标签 | 调用, a call, with 标签, a tag, KMLib's word for a command's tags |
@@ -481,6 +482,8 @@ So a word of one axis never stands in for another:
 | carve (taking the names and a cell's narrow places off a band's ring) | 裁切 | the plain word for cutting something away |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
 | centreline (the line an anchor overlay's band is drawn along) | 中线 | 中, the middle, with 线, a line: the line down the middle of the band |
+| claim reader (the object a view reads every claim through) | 宣称读取器 | 宣称, a claim, with 读取器, a thing that reads; kept apart from 读取方, whoever reads a value |
+| component (one named part of a record) | 组件 | the usual computing word for a part a thing is built of |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
 | compositor (what stacks an owner map's sub-layers into one picture) | 合成器 | the usual graphics word for what puts layers together into one picture |
 | debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
@@ -496,6 +499,7 @@ So a word of one axis never stands in for another:
 | holding rule (the rule a layer decides who holds a system by) | 持有规则 | 持有, to hold, with 规则, a rule |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | lane rule (a line dividing an anchor overlay's band between a name's lines) | 行间分隔线 | 行间, between lines of text, with 分隔线, a dividing line; kept apart from 行数, a count of lines, which the rule does not show |
+| marked (a system a change flagged to be re-derived) | 已标记 | 已, already, with 标记, to mark |
 | mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
@@ -521,12 +525,14 @@ So a word of one axis never stands in for another:
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
 | reset hook (a call that empties held state back to its start) | 重置钩子 | 重置, to reset, with 钩子, a hook, the usual computing word for a call others attach to |
 | resolver (a function answering one value per owner, such as a name's shade) | 解析函数 | 解析, to resolve, with 函数, a function |
+| resolver (the object a batch re-derives its marked systems through) | 解析器 | 解析, to resolve, with 器, the usual suffix for a thing that does a job; kept apart from 解析函数, a function answering per owner |
 | sealed type (a type whose every case is named where it is declared) | 密封类型 | the usual Java word, 密封, sealed |
 | seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
 | standing build (the build on screen, which a batch folds into) | 现有构建 | 现有, existing, with 构建, a build |
 | stroke (a band's runs turned into triangles) | 描边 | the usual graphics word for stroking a line |
+| sub-layer (one of the fills, borders, bands and names an owner map stacks) | 子图层 | 子, a part of, with 图层, a map layer: one layer of the picture inside a map layer |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
 | take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |

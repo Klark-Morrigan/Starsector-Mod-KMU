@@ -242,7 +242,7 @@ reaches that sector's board directly,
 and every one of them does.
 A sidebar control looks like the exception,
 a settings change naming no sector,
-but the tab's body build resolves an machinery once and hands its board to each control it places,
+but the tab's body build resolves a machinery once and hands its board to each control it places,
 so a flip repaints the map that control was placed over.
 Nothing resolves a board off the running sector:
 a producer reaching one it was not handed is a producer that can raise on a map nobody is looking at.
@@ -327,7 +327,7 @@ each owner-painted layer's renderer holds one -
 one per layer per sector,
 the renderer itself held by that sector's installed machinery under the layer's ID
 (`SectorMapMachinery.resolveLayerMachinery`) -
-and asks it to `refresh` each frame the map is open.
+and asks it to `refreshDrawLists` each frame the map is open.
 It holds both halves
 (geometry and built draw lists)
 and rebuilds only the stale half.
@@ -345,13 +345,15 @@ The two are apart because they run at different cadences -
 the question every frame,
 the rebuild rarely -
 and a class holding both put the cheap question and the expensive answer behind one door.
-The baselines advance only as the cache reports each stage complete,
+The baselines advance only as the full rebuild
+([`FullOwnerMapRebuild`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/FullOwnerMapRebuild.java))
+reports each stage complete,
 so a rebuild that threw part way is asked again next frame rather than taken as done.
 The geometry's revision is not a field beside the cells but rides with them,
 for the same reason the placements ride with their fingerprint below:
 a revision naming cells other than the ones in hand reads as permission to reuse work fitted inside a partition that has since been recut.
 It **counts cuts** rather than echoing the reachable-set signal,
-since that signal is only one of the four things that recut them -
+since that signal is only one of the three things that recut them -
 see below.
 
 A frame that owes no rebuild may still have drained systems a change marked,
@@ -397,7 +399,7 @@ with nothing on screen reporting which half was which.
 
 Both staleness questions are settled **before** the index is opened,
 and that ordering is the arrangement rather than an accident.
-`refresh` runs every frame the map is open and nearly every frame rebuilds nothing,
+`refreshDrawLists` runs every frame the map is open and nearly every frame rebuilds nothing,
 so a reading opened first would put a walk of every system into every idle frame -
 worse than the three walks per rebuild it was opened to collapse.
 The incremental re-shape below therefore opens a reading of its own,
@@ -427,17 +429,19 @@ and every farther cell is provably untouched.
 Two seed inputs bypass the diff and force a full reseed,
 because each changes every cell:
 the frontier resolution and the cell reach.
-So do the dev reveal toggles,
+So do the visibility rules,
 which change *which* systems seed a cell at all.
 
-Those four -
-the reachable-set revision plus those three settings -
+Those three -
+the reachable-set revision,
+the seed inputs
+and the visibility rules -
 are one value,
 [`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/CellCutInputs.java),
 because the question asked of them is the single one they answer together:
 would the cells be cut differently now.
 Only the first raises a framework signal;
-the other three move without it,
+the other two move without it,
 so a staleness test taken on the signal alone reads a settings recut as no change at all.
 
 The cache holds raw cells,
@@ -789,11 +793,6 @@ in increasing cost:
    who holds it and how its fill draws,
    whether anything stands in it,
    and whether the spotlit bloc is one of the things standing in it.
-   A fill state moving under the same holder -
-   a claimed system losing its last colony,
-   say -
-   re-traces that holder's cluster group and nothing else,
-   its border being where it was.
    The last two are what a cell that no bloc holds is drawn from,
    and they move without any holder moving -
    a system settled or emptied on a layer
@@ -802,6 +801,11 @@ in increasing cost:
    Such a cell is redrawn alone:
    neither fact moves a seam,
    so no neighbour re-shapes and no cluster is retraced.
+   A fill state moving under the same holder -
+   a claimed system losing its last colony,
+   say -
+   re-traces that holder's cluster group and nothing else,
+   its border being where it was.
    The marked systems' presence bands are re-baked whether or not anything flipped:
    the colonisation and transfer events that mark a system are exactly the events that change how many colonies are in it,
    and a band counts colonies where the fills only weigh them.

@@ -20,7 +20,7 @@
 - **在*势力*和*联盟*视图上，被宣称星系的最后一个殖民地离开后，该星系仍以不填充的方式留在宣称方的领土中**，而不再在下一次完整重绘之前显示为无所有者。
 - **两个势力权重相同的星系在其中一方取得它时会重绘**，而不必等到下一次完整重绘。
 - **Nexerelin 联盟改名后，联盟视图会显示新名称**，而不再保留旧名称，直到其他变化重绘地图。
-- **市场条件管理器 (MCM) 不再在玩家已离开的殖民地上打开。**
+- **市场条件管理器 (MCM) 在玩家所在的殖民地上打开，绝不会在已离开的殖民地上打开。**
 - **中文压缩包中的市场条件管理器 (MCM) 显示为中文。**
 - **中文压缩包的控制台文字在英文旁附有中文译文**：帮助在英文之上显示中文，市场条件管理器的指令则显示其英文，待 Console Commands 的中文版能够显示中文时即可阅读。在此之前，中文会显示为 `?`，这是其 [Fossic 帖子中列出的已知问题](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524)，玩家曾于 [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560)、[2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) 和 [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213) 反馈过。
 - **[KMLib]** **更新检查器会以中文打开中文压缩包的更新日志。**
@@ -78,7 +78,7 @@
 - **`Label.applyFade(float)`**：只在地图的不透明度变化时为文字重新着色。
 - **`OwnerMapRefreshStrategy`**：无需重建的帧如何处理此后被标记的星系，由图层声明。`FULL_REBUILD` 把它们留给下一帧的重建，`INCREMENTAL` 把它们并入屏幕上的地图；结果为 `MarkedSystemsOutcome`。
 - **`ResolvedSystemOwner`**：单个星系的所有者及其填充状态，即所有者来源和持有规则逐星系给出的结果。
-- **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及其中当前记录的每个星系的填充状态。
+- **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及调用时其中记录的每个星系的填充状态。
 - **`FilteredPolitics.createSpotlight(DominancePass, String)`**、**`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, Spotlight)`** 和 **`FilteredClaims.resolveFilteredClaimIn(StarSystemAPI, HolderPass, ClaimReader, String)`**：逐星系给出聚焦下的争夺与宣称，所依规则与整个星域的解析相同。
 - **`ClaimAugmentedSystemHolderResolver`**：`ClaimAugmentedHolderProvider` 的逐星系部分，使争夺未让任何集团持有的已标记星系按其宣称重新解析。
 - **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。
@@ -86,13 +86,13 @@
 #### 修复
 
 - **政治地图*宣称*视图的悬停框读取交给它的星域**：状态行与宣称机制共用一次扫描，而不再让宣称读取正在运行的游戏中的星域。
-- **市场条件管理器 (MCM) 会把它捕获后继续执行的失败写入日志**，此前这些失败会被丢弃。
+- **市场条件管理器 (MCM) 会把它捕获后继续执行的每个失败写入日志。**
 - **中文显示的市场条件管理器 (MCM) 与控制台指令帮助：** `strings.json` 存放管理器的反馈、元数据行和打开时的消息，通过 `KmuMarketConditionStringKeys` 读取。`localisation/<locale>/commands.csv` 会写入 `data/console/commands.csv`，后者不再提交到仓库。译文帮助的末尾在 `-- English --` 一行之后附上英文帮助，每个 `console_` 字符串也是如此，指令通过 KMLib 的 `ConsoleStrings` 读取它们。KMLib 的 `LocaleParity` 核对每份英文副本与英文语言包一致。无论结果显示什么，日志都以英文记录管理器的失败。
 
 #### 变更
 
 - **构建 KMU 不再需要 Nexerelin 的 jar。** KMU 不引用任何 Nexerelin 类型，读取全部由 KMLib 的适配器完成，因此引用了这类类型的 KMU 类会无法编译。CI 运行器仍为一同构建的 KMLib 提供该 jar。
-- **色带烘焙与名称拟合改用地图图层的前缀进行性能分析**，记为 `mapLayer.bakeRibbons` 和 `mapLayer.fitClusterAnchors`，取代 `ownerMap.bakeRibbons` 和 `ownerMap.fitClusterAnchors`，因为两者现在都在地图图层框架中运行。
+- **色带烘焙与名称拟合改用地图图层的前缀进行性能分析**，记为 `mapLayer.bakeRibbons` 和 `mapLayer.fitClusterAnchors`，取代 `ownerMap.bakeRibbons` 和 `ownerMap.fitClusterAnchors`，因为两者都在地图图层框架中运行。
 - **`mapLayer.fitClusterAnchors` 的调用标签以沿用情况结尾**：`carried`，以及 `reuse`，取值为 `offered`、`unrecorded`，或 `dropped` 并以 `moved` 列出发生变化的指纹部分。
 - **`mapLayer.render.ribbons` 在 GL 状态压栈之内计时**，与星图的其他绘制过程一致。
 
@@ -120,13 +120,13 @@
 | `ownermap.render.ribbon` 中的 `CellRibbonPath`、`RibbonPathVerdict` 和 `CellRibbonPathRenderer` | `base.ribbon.overlay`：色带路径叠加层，与色带本身分开。构建禁止它导入 `base.ribbon` 的其余部分 |
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`：任何有区域的图层都以同样方式拟合名称 |
 | `base.labels.anchor` 中的 `ClusterNameBoxes` 和 `base.labels` 中的 `LabelLineBoxes` | `base.labels.extent`：名称所占空间的两种读法。构建禁止 `base.labels.anchor` 导入 `base.labels` 的其余部分 |
-| `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，不再实现 `MapLayerStalenessSource` |
+| `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，它不是 `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`，与读取它的悬停框放在一起 |
 | `politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner` | `politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner`，与它所组合的两种机制并列。构建禁止 `politicalmap.dominance` 与 `politicalmap.claims` 相互导入 |
 | `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`：它不读取任何 Nexerelin 类型 |
 | `kmu.ui.context` 和 `kmu.ui.geometry.KmuUiSize` | `kmu.conditions.ui.context` 和 `kmu.conditions.ui.picker.render.KmuUiSize`，位于它们唯一服务的功能中。`kmu.ui` 已移除 |
 | `KmuStringKeys` 的字符串 ID | `kmu.util` 中每个读取方一个键类：`KmuMapStringKeys`、`KmuOwnerMapStringKeys`、`KmuPoliticalMapStringKeys` 和 `KmuMarketConditionStringKeys`。`KmuStringKeys` 保留字符串类别、`get(String)`、`format(String, Object...)` 和 LunaLib 设置的一对键 |
-| `ownermap.render` 中的 `OwnerMapCache`、`IncrementalOwnerRefresh` 和 `StandingOwnerMap` | `ownermap.render.rebuild`，与每帧所依的判断和刷新策略放在一起。`ownermap.render` 保留合成器、星云绘制顺序和 `OwnerMapLayerRenderer` |
+| `ownermap.render` 中的 `OwnerMapCache`、`IncrementalOwnerRefresh` 和 `StandingOwnerMap` | `ownermap.render.rebuild`，与每帧所依的判断和刷新策略放在一起。`ownermap.render` 保留合成器、决定各子图层绘于星云之上或之下的分层布局和 `OwnerMapLayerRenderer` |
 
 构建禁止 `kmu.maplayers.base` 导入 `kmu.mods`，禁止 `kmu.conditions` 与 `kmu.maplayers` 相互导入，并禁止 `kmu.settings` 和 `kmu.util` 导入这两个功能。
 
@@ -138,7 +138,7 @@
 | `FactionNameFormatChoice`、`FactionPaletteSlot`、`FactionlessStyleResolver` 和 `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`、`OwnerPaletteSlot`、`UnownedStyleResolver` 和 `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`，以及为绘制联盟的图层建立在其上的 `AllianceOwnerReading` |
 | `OwnerMapCategory`、`OwnerMapInhabitation` 和 `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`、`HolderInhabitation` 和 `DominanceHolderProvider` |
-| `OwnerMapCache` 与 `OwnerMapDrawables` 的 `getFactionLabels()`、`OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` 和 `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`、`MapPaints.resolveOwnerPaintOf(SystemOwner)` 和 `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`。所有者的 ID 取自 `SystemOwner` 本身 |
+| `OwnerMapCache.getFactionLabels()`、`StandingOwnerMap` 的 `factionLabels` 组件、`OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` 和 `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`、`ownerLabels`、`MapPaints.resolveOwnerPaintOf(SystemOwner)` 和 `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`。所有者的 ID 取自 `SystemOwner` 本身 |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
 | 九个 `KmuStringKeys.OWNER_MAP_TOOLTIP_*` 常量及其 `strings.json` 键 | `KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_*`：只有政治地图的悬停框读取它们 |
 | `ownermap.owners.OwnerPalette` | KMLib 的 `kmlib.colour.ColourPair`，势力的配色本就是它。`SectorBlocPalettes.adoptFactionPalette(FactionPalette)` 已移除 |
@@ -147,9 +147,9 @@
 | `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
 | `SidebarStyles.buildSidebarSoundScheme()` | `SidebarSounds.buildSoundScheme()` |
 | `MapPalettes.pickHolderPaletteColour(ElementPaintSelection, SystemOwner, Color)` | `pickOwnerPaletteColour(ElementPaintSelection, SystemOwner, Color)` |
-| `OwnerPresence` 的 `marketCount`，连同 `marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`、`stakeCount()`、`hasStakes()` 和 `stakeLengthUnits()`。所有者地图的核心不再使用 *holder* 和 *market* 二词，构建会确保这一点 |
+| `OwnerPresence` 的 `marketCount`，连同 `marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`、`stakeCount()`、`hasStakes()` 和 `stakeLengthUnits()`。所有者地图的核心不使用 *holder* 和 *market* 二词，构建会确保这一点 |
 | `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`：它为集团排名 |
-| `SystemOwnerResolve`、`SystemHolderResolve`、`SystemHolderResolveSource`、`DominanceSystemHolderResolve` 和 `ClaimSystemHolderResolve`，以及 `OwnerSource.openSystemResolve(SectorWalk, String)`、`openResolveOver` 和 `HolderPaintedView.resolveSystemHolderResolveSource()` | 各名称中的 `Resolve` 换为 `Resolver`：每一个都是批次解析其已标记星系所用的对象 |
+| `SystemOwnerResolve`、`SystemHolderResolve`、`SystemHolderResolveSource`、`DominanceSystemHolderResolve` 和 `ClaimSystemHolderResolve`，以及 `OwnerSource.openSystemResolve(SectorWalk, String)`、`openResolveOver` 和 `HolderPaintedView.resolveSystemHolderResolveSource()` | 各名称中的 `Resolve` 换为 `Resolver`：解析器是批次重新解析其已标记星系所用的对象 |
 
 ##### 接缝
 
@@ -190,7 +190,7 @@
 | `OwnerMapBuildInputs`，基于绘制方案、视图读取、选择和两个填充集合的记录类型 | 改为不可继承的类，基于绘制方案、视图读取、选择和锚点叠加层是否显示，持有构建的 `MapPaints`，只与自身相等。读取方法为 `getStyling()`、`getViewReading()`、`getContentInputs()`、`isAnchorOverlayShown()` 和 `getPaints()`。填充状态归 `SystemOccupancy`，由批次逐星系并入 |
 | `SystemOccupancy.createCopyOf(Map, Set, Set)` 和 `recordOwnerOf(SystemKey, SystemOwner)` | `createCopyOf(ResolvedOwners)` 和 `recordOwnerOf(SystemKey, ResolvedSystemOwner)`：每个星系的填充状态与其所有者一同记录 |
 | 给出 `SystemOwner` 的 `SystemOwnerResolve.resolveOwnerOf(StarSystemAPI)` 和 `SystemHolderResolve.resolveHolderIn(StarSystemAPI)` | 改为给出 `ResolvedSystemOwner`，使已标记星系在重建会以斜线或不填充绘制的地方同样如此绘制 |
-| `SystemHolderResolveSource.openResolveOver(HolderPass)` 和 `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `openResolverOver(HolderPass, String)`，在现有构建所聚焦的集团下打开：聚焦中的地图会并入已标记星系，而不再需要一次重建 |
+| `SystemHolderResolveSource.openResolveOver(HolderPass)` 和 `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `openResolverOver(HolderPass, String)`，在现有构建所聚焦的集团下打开：聚焦中的地图会并入已标记星系，而不是为此重建一次 |
 | 只按争夺给出结果的 `DominancePaintedView.resolveSystemHolderResolveSource()` | `ClaimAugmentedSystemHolderResolver.createSourceReadingThrough(ClaimReaderSource)`，基于视图自身的宣称读取器 |
 | `OwnerMapCache(SectorMapMachinery, OwnerMapBodyPreferences, CellSeedRule)` 和 `OwnerMapLayerRenderer.createForLiveScreen(SectorMapMachinery, String, MapLayerViewRegistry, OwnerMapBodyPreferences, OwnerMapPreviewHighlight, MapLayerHoverGates, Supplier, CellSeedRule)` | 各自另需一个 `OwnerMapRefreshStrategy` |
 | `HolderResolution` 与 `ResolvedOwners` 的 `contestedSystemKeys` 和 `unfilledSystemKeys`，以及 `FillSplit.splitMembersByFillState(CellGrouping, List, Set, Set)` 和 `FillSplit.classifyFillState(SystemKey, Set, Set)` | 合为一个 `SystemFillStates fillStates`，因此不会有星系同时以斜线和不填充绘制。拆分改为接受它：`splitMembersByFillState(CellGrouping, List, SystemFillStates)`；单个星系的状态由 `resolveFillStateOf(SystemKey)` 给出 |
@@ -223,7 +223,7 @@
 | `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)` 及其三参数形式，以及 `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` 和 `(KmuConditionPickerActionHandler, float, float)` | 各自还接收选择器报告所用的 `KmuConditionPickerFeedbackSink` |
 | `MapHover(SystemKey, List)` | `MapHover(SystemKey, StarSystemAPI, List)`：悬停携带光标抵达单元时其键所指的实时星系 |
 | `MapHoverPublisher(MapHoverState, ModelviewMatrixReader, CellArrivalAnnouncer, BooleanSupplier)` | 还接收用于查找悬停星系的 `Function<SystemKey, StarSystemAPI>`，每抵达一个单元只询问一次 |
-| `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` 和 `getLoneCells()`，每次重建只划分一次。`OwnerMapClusters` 和 `PaintedCellStore` 保留 `getStyledCellByCellKey()`，但改为只读：写入改用 `putPaintedCell` 和 `removePaintedCell` |
+| `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` 和 `getLoneCells()`，每次重建只划分一次。`OwnerMapClusters` 和 `PaintedCellStore` 保留 `getStyledCellByCellKey()`，为只读：写入改用 `putPaintedCell` 和 `removePaintedCell` |
 | `BaseSidebarHost` | 宿主实现 `composeTabStyle()` 并读取 `resolveTabStyle()`，后者保留样式，直到设置修订号或星域已确定的字体变化 |
 | `SystemCellTooltip`、`PoliticalMapCellTooltip`、`SystemClaimTooltip` 和 `SystemDominationTooltip` 上的 `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` | 已移除：按键从绘制所保留的组合主体读取 `deepestHeldLevel()`，因此图层只在 `composeBody` 中给出其深度 |
 | `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方已读取的权重，因此为星系排名并解释其分数的悬停框只为每个市场计算一次权重 |
@@ -247,7 +247,7 @@
 
 ##### 移至 KMLib
 
-与 KMU 无关的代码改由 KMLib 提供，任何基于它构建的 Mod 都能使用。
+与 KMU 无关的代码由 KMLib 提供，任何基于它构建的 Mod 都能使用。
 
 | 之前 | 之后 |
 | --- | --- |

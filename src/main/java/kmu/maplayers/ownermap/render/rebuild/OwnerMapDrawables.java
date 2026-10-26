@@ -30,11 +30,11 @@ import java.util.function.Supplier;
  * What an owner map has built to draw, and how each part of it is rebuilt: one of the two
  * base views, the cluster-label placements drawn over either, and the name labels minted from them.
  *
- * <p>Apart from the cache that decides <em>when</em> to rebuild, because the two are different
- * questions. The cache reads revisions and settings to say whether anything is owed; this holds
- * the products and knows, for each, which builder makes it from which inputs. A rebuild is then
- * the cache naming the stages in order and this running them, and neither has to know the other's
- * bookkeeping.
+ * <p>Apart from what decides <em>when</em> to rebuild, because the two are different questions. The
+ * decider reads revisions and settings to say whether anything is owed; this holds the products
+ * and knows, for each, which builder makes it from which inputs. A rebuild is then
+ * {@link FullOwnerMapRebuild} naming the stages in order and this running them, and neither has to
+ * know the other's bookkeeping.
  *
  * <p>Exactly one of the two base views is non-null once anything has been built: the debug
  * border-tracing overlay replaces the production draw lists outright rather than drawing over them.

@@ -21,7 +21,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **On the *Factions* and *Alliances* views, a claimed system whose last colony leaves stays in its claimant's territory, unfilled**, rather than showing as nobody's until the next full redraw.
 - **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
-- **The Market Condition Manager no longer opens on a colony the player has already left.**
+- **The Market Condition Manager opens on the colony the player is at, never on one already left.**
 - **The Chinese zip shows the Market Condition Manager in Chinese.**
 - **The Chinese zip's console text carries a Chinese translation beside the English**: the help shows the Chinese above the English, and the Market Condition Manager command prints its English, ready for when the Chinese version of Console Commands draws Chinese. Until then the Chinese shows as `?`, a [known issue on its Fossic thread](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524) that players reported on [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560), [2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) and [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213).
 - **[KMLib]** **An update checker opens the Chinese zip's changelog in Chinese.**
@@ -79,7 +79,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`Label.applyFade(float)`**: recolours the string only when the map's alpha moved.
 - **`OwnerMapRefreshStrategy`**: what a frame owing no rebuild does with the systems marked since, which a layer states. `FULL_REBUILD` leaves them to the next frame's rebuild and `INCREMENTAL` folds them into the map on screen; the answer is a `MarkedSystemsOutcome`.
 - **`ResolvedSystemOwner`**: one system's owner and fill state, the per-system answer an owner source and a holder rule give.
-- **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** and **`snapshotFillStates()`**: one system's owner with its fill state, and every system's fill state as the occupancy now holds them.
+- **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** and **`snapshotFillStates()`**: one system's owner with its fill state, and every system's fill state as the occupancy holds them at the call.
 - **`FilteredPolitics.createSpotlight(DominancePass, String)`**, **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, Spotlight)`** and **`FilteredClaims.resolveFilteredClaimIn(StarSystemAPI, HolderPass, ClaimReader, String)`**: the spotlit contest and the spotlit claim one system at a time, by the rule the whole-sector resolves use.
 - **`ClaimAugmentedSystemHolderResolver`**: the per-system half of `ClaimAugmentedHolderProvider`, so a marked system the contest leaves unheld is re-derived to its claim.
 - **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views.
@@ -87,13 +87,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Fixed
 
 - **The *Claims* view's hover box reads the sector it was handed**, through one walk shared by its status line and the claim mechanic, rather than letting the claim read the running game's sector.
-- **The Market Condition Manager logs the failures it carries on past**, where they were dropped.
+- **The Market Condition Manager logs every failure it carries on past.**
 - **The Market Condition Manager and the console help in Chinese:** `strings.json` holds the manager's feedback, metadata lines and open messages, read through `KmuMarketConditionStringKeys`. `localisation/<locale>/commands.csv` is written to `data/console/commands.csv`, which is no longer committed. A translated help ends in the English one after a `-- English --` line, and so does each `console_` string, which the command reads through KMLib's `ConsoleStrings`. KMLib's `LocaleParity` holds each copy to the English bundle. The log keeps the manager's failures in English, whatever the result says.
 
 #### Changed
 
 - **Building KMU needs no Nexerelin jar.** KMU names no Nexerelin type, KMLib's adapters doing all of the reading, so a KMU class that named one fails to compile. The CI runner still provides the jar for the KMLib build alongside.
-- **The band bake and the name fit are profiled under the map layers' prefix**, as `mapLayer.bakeRibbons` and `mapLayer.fitClusterAnchors` in place of `ownerMap.bakeRibbons` and `ownerMap.fitClusterAnchors`, since both now run in the map layers framework.
+- **The band bake and the name fit are profiled under the map layers' prefix**, as `mapLayer.bakeRibbons` and `mapLayer.fitClusterAnchors` in place of `ownerMap.bakeRibbons` and `ownerMap.fitClusterAnchors`, since both run in the map layers framework.
 - **The `mapLayer.fitClusterAnchors` call ends with what it carried over**: `carried`, and `reuse` as `offered`, `unrecorded`, or `dropped` with the fingerprint parts that `moved`.
 - **`mapLayer.render.ribbons` times the draw inside the GL state push**, as the other map passes do.
 
@@ -121,7 +121,7 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `CellRibbonPath`, `RibbonPathVerdict` and `CellRibbonPathRenderer` in `ownermap.render.ribbon` | `base.ribbon.overlay`, the band's diagnostic path overlay apart from the band itself. The build closes it to the rest of `base.ribbon` |
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`: any layer with clusters fits its names the same way |
 | `ClusterNameBoxes` in `base.labels.anchor` and `LabelLineBoxes` in `base.labels` | `base.labels.extent`, the two readings of the room a name takes. The build closes `base.labels.anchor` to the rest of `base.labels` |
-| `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`, final, beside the register it writes into. Its sweep is `recordSightingsByInhabitants()`, and it no longer implements `MapLayerStalenessSource` |
+| `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`, final, beside the register it writes into. Its sweep is `recordSightingsByInhabitants()`, and it is not a `MapLayerStalenessSource` |
 | `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`, beside the box that reads it |
 | `politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner` | `politicalmap.ribbon.HeldOrClaimedSystemRibbonPlanner`, beside the two mechanics it composes. The build closes `politicalmap.dominance` and `politicalmap.claims` to each other |
 | `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`: it reads no Nexerelin type |
@@ -139,7 +139,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `FactionNameFormatChoice`, `FactionPaletteSlot`, `FactionlessStyleResolver` and `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`, `OwnerPaletteSlot`, `UnownedStyleResolver` and `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`, and `AllianceOwnerReading` over it for a layer painting alliances |
 | `OwnerMapCategory`, `OwnerMapInhabitation` and `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`, `HolderInhabitation` and `DominanceHolderProvider` |
-| `getFactionLabels()` on `OwnerMapCache` and `OwnerMapDrawables`, `OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` and `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`, `MapPaints.resolveOwnerPaintOf(SystemOwner)` and `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`. The owner's ID is the `SystemOwner`'s own |
+| `OwnerMapCache.getFactionLabels()`, `StandingOwnerMap`'s `factionLabels` component, `OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` and `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`, `ownerLabels`, `MapPaints.resolveOwnerPaintOf(SystemOwner)` and `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`. The owner's ID is the `SystemOwner`'s own |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
 | The nine `KmuStringKeys.OWNER_MAP_TOOLTIP_*` constants and their `strings.json` keys | `KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_*`: only the political map's boxes read them |
 | `ownermap.owners.OwnerPalette` | KMLib's `kmlib.colour.ColourPair`, which a faction's pair already is. `SectorBlocPalettes.adoptFactionPalette(FactionPalette)` is gone |
@@ -148,9 +148,9 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
 | `SidebarStyles.buildSidebarSoundScheme()` | `SidebarSounds.buildSoundScheme()` |
 | `MapPalettes.pickHolderPaletteColour(ElementPaintSelection, SystemOwner, Color)` | `pickOwnerPaletteColour(ElementPaintSelection, SystemOwner, Color)` |
-| `OwnerPresence`'s `marketCount`, with `marketCount()` and `hasMarkets()`, and `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`, `stakeCount()`, `hasStakes()` and `stakeLengthUnits()`. The owner-map core no longer says *holder* or *market*, and the build holds it to that |
+| `OwnerPresence`'s `marketCount`, with `marketCount()` and `hasMarkets()`, and `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`, `stakeCount()`, `hasStakes()` and `stakeLengthUnits()`. The owner-map core says neither *holder* nor *market*, and the build holds it to that |
 | `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`: it ranks blocs |
-| `SystemOwnerResolve`, `SystemHolderResolve`, `SystemHolderResolveSource`, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve`, with `OwnerSource.openSystemResolve(SectorWalk, String)`, `openResolveOver` and `HolderPaintedView.resolveSystemHolderResolveSource()` | `Resolver` in place of `Resolve` in each name: each is the object a batch resolves its marked systems through |
+| `SystemOwnerResolve`, `SystemHolderResolve`, `SystemHolderResolveSource`, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve`, with `OwnerSource.openSystemResolve(SectorWalk, String)`, `openResolveOver` and `HolderPaintedView.resolveSystemHolderResolveSource()` | `Resolver` in place of `Resolve` in each name: a resolver is the object a batch re-derives its marked systems through |
 
 ##### Seams
 
@@ -224,7 +224,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)`, its three-argument form, and `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` and `(KmuConditionPickerActionHandler, float, float)` | Each also takes the `KmuConditionPickerFeedbackSink` a picker reports to |
 | `MapHover(SystemKey, List)` | `MapHover(SystemKey, StarSystemAPI, List)`: the hover carries the live system its key named when the cursor reached the cell |
 | `MapHoverPublisher(MapHoverState, ModelviewMatrixReader, CellArrivalAnnouncer, BooleanSupplier)` | Also takes the `Function<SystemKey, StarSystemAPI>` it finds the hovered system with, asked once per cell reached |
-| `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` and `getLoneCells()`, parted once per rebuild. `OwnerMapClusters` and `PaintedCellStore` keep `getStyledCellByCellKey()`, now read-only: write through `putPaintedCell` and `removePaintedCell` |
+| `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` and `getLoneCells()`, parted once per rebuild. `OwnerMapClusters` and `PaintedCellStore` keep `getStyledCellByCellKey()`, read-only: write through `putPaintedCell` and `removePaintedCell` |
 | `BaseSidebarHost` | A host implements `composeTabStyle()` and reads `resolveTabStyle()`, which keeps the style until the settings revision or the sector's settled faces move |
 | `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` on `SystemCellTooltip`, `PoliticalMapCellTooltip`, `SystemClaimTooltip` and `SystemDominationTooltip` | Gone: the press reads `deepestHeldLevel()` off the composed body the paint holds, so a layer states its depth only in `composeBody` |
 | `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`, over the weights the caller read, so a box ranking a system and explaining its scores weighs each market once |
@@ -248,7 +248,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 
 ##### Moved to KMLib
 
-Code that knows nothing of KMU now lives in KMLib, where any mod built on it can reach it.
+Code that knows nothing of KMU lives in KMLib, where any mod built on it can reach it.
 
 | Before | After |
 | --- | --- |
