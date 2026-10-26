@@ -365,10 +365,15 @@ Why that is a slot rather than one behaviour is
 [the tier's](../../src/main/java/kmu/maplayers/ownermap/README.md#the-rebuild-is-a-slot).
 
 It is also where rebuild faults are contained:
-a failing rebuild is logged once rather than per frame,
-leaves the cached revisions un-advanced so the next frame retries,
+a failing rebuild or fold is logged once rather than per frame,
+owes the next frame the full rebuild,
 and installs an empty placeholder so the renderer never dereferences a null draw list.
-The last good draw lists stay on screen in the meantime.
+A failing rebuild would be retried anyway,
+since it advances no cached revision.
+A failing fold would not:
+its batch is already drained and no revision moved for it,
+so the debt is the only record that the marked systems still need redrawing.
+The draw lists already on screen stay there in the meantime.
 
 **A rebuild is a pass too**,
 on the same terms the poll is and for the heavier reason:

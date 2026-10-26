@@ -63,9 +63,10 @@ final class OwnerMapRebuildDecider {
     // what the last one read rather than walking the sector for the same answer.
     private int lastOwnersRevision = UNBUILT_REVISION;
 
-    // Whether a frame drained marked systems it could not fold into the standing map. Nothing else
-    // remembers them once drained, and no revision moves for them, so this is what makes the next
-    // frame rebuild rather than paint the old owner until something unrelated moves.
+    // Whether a frame left the standing map behind the sector: it drained marked systems it did not
+    // fold, or it threw. Nothing else remembers the drained systems, and no revision moves for them,
+    // so this is what makes the next frame rebuild rather than paint the old owner until something
+    // unrelated moves.
     private boolean isRebuildOwed;
 
     // What the cells currently held were cut from: one CellCutInputs rather than the reachable-set
@@ -194,8 +195,8 @@ final class OwnerMapRebuildDecider {
     }
 
     /**
-     * Records that the systems marked since the last drain were dropped rather than folded, so the
-     * next frame owes a full rebuild that reads them for itself.
+     * Records that the next frame owes a full rebuild that reads the sector for itself: the systems
+     * marked since the last drain were dropped rather than folded, or the frame threw part way.
      */
     public void recordRebuildOwed() {
         isRebuildOwed = true;

@@ -53,8 +53,8 @@ import java.util.Set;
  * <p>Between those, a change in one system marks just its own system stale, and what a frame does
  * with the marked systems is the layer's {@link OwnerMapRefreshStrategy}: fold them into the
  * standing map, or owe the next frame the full rebuild. The full rebuild is the fallback either way
- * - for a strategy that does not fold, and for a standing map that cannot take a fold, the debug
- * overlay's or a failed build's.
+ * - for a strategy that does not fold, for a standing map that cannot take a fold, the debug
+ * overlay's or a failed build's, and for a fold that threw.
  *
  * <p>Which of those a frame owes is {@link OwnerMapRebuildDecider}'s answer, asked first and acted on
  * here: the decision is answerable from revisions and settings alone and nearly every frame stops at
@@ -190,10 +190,15 @@ public final class OwnerMapCache
 
     /**
      * Brings the cached draw lists in line with the active view, rebuilding only the stale half.
-     * Guarded because it runs every frame the map is open: a rebuild fault is recorded once (not
-     * per frame), and the catch leaves the baselines un-advanced so the next frame retries
-     * rather than the overlay going permanently stale, plus installs an empty placeholder so the
-     * renderer never dereferences a null draw list.
+     * Guarded because it runs every frame the map is open: a fault is recorded once (not per frame),
+     * and the catch owes the next frame the full rebuild rather than the overlay going permanently
+     * stale, plus installs an empty placeholder so the renderer never dereferences a null draw list.
+     *
+     * <p>The debt is what makes a thrown fold retry. Its batch was drained and the standing owners
+     * dropped before it threw, and no revision moves for either, so without the debt the next frame
+     * would owe nothing and the map would keep the old owner. The marks are not kept for a second
+     * fold: a fold that threw over a batch would throw over it again, and the full rebuild reads
+     * every system for itself.
      *
      * @param view        the view being painted, whose rules the rebuild builds under
      * @param memoryScope the screen being painted for, whose panel holds every sidebar preference the
@@ -213,6 +218,7 @@ public final class OwnerMapCache
                 "Owner map rebuild failed; retrying next frame, keeping last good draw lists",
                 runtimeException);
 
+            decider.recordRebuildOwed();
             drawables.ensureClustersNonNull(view);
         }
     }

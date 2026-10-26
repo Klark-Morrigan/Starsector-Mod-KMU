@@ -59,7 +59,8 @@ import static org.mockito.Mockito.times;
 
 /**
  * Pins the cache's guarantees that hold outside a running game: a rebuild that throws leaves
- * something safe to draw and is retried on the next frame, releasing the cache drops everything it
+ * something safe to draw and is retried on the next frame, a fold that throws owes the next frame
+ * the rebuild, releasing the cache drops everything it
  * built for its sector, the debug toggle picks which of the two views a rebuild builds, and a frame
  * owing no rebuild hands the systems marked since to the layer's strategy and owes the next frame a
  * rebuild where it folds nothing.
@@ -196,6 +197,35 @@ final class OwnerMapCacheIntegrationTests {
             incrementalRefreshMock.verifyNoInteractions();
             productionBuilderMock.verify(
                 () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
+                times(2));
+        }
+
+        // The fold's batch is drained and the standing owners dropped before it runs, and no
+        // revision moves for either, so a fold that throws leaves the thrown frame as the only
+        // record: without the debt it owes, the map keeps the old owner until something unrelated
+        // moves.
+        @Test
+        void rebuildsOnTheFrameAfterAThrownFold() {
+
+            // ARRANGE
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            throwFromEveryFold();
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ACT
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ASSERT
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
+                times(2));
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
                 times(2));
         }
 
@@ -685,6 +715,14 @@ final class OwnerMapCacheIntegrationTests {
             .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()))
             .thenThrow(new IllegalStateException("first build fails"))
             .thenReturn(builtClusters);
+    }
+
+    // Has every fold throw part way, as a fault in any of its stages would.
+    private void throwFromEveryFold() {
+
+        incrementalRefreshMock
+            .when(() -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any()))
+            .thenThrow(new IllegalStateException("fold fails"));
     }
 
     // Stands in for everything a rebuild reaches past its cut of an empty sector, so the frame
