@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInputsSpellingNames;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -52,12 +53,17 @@ final class ClusterLabelStylingSnapshotTests {
     // The face a snapshot is handed, for the cases about anything else it carries.
     private static final StarsectorFont LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_42;
 
+    // The picks a snapshot is styled under, for the cases about anything else it carries: nothing
+    // spotlit, and the names spelled in full.
+    private static final ContentInputs FULL_NAME_INPUTS = createInputsSpellingNames(OwnerNameFormatChoice.FULL);
+
     @Nested
     class ResolveFrom {
 
         @Test
         void carriesTheOwnersOfTheClusters() {
 
+            // ARRANGE
             var ownerBySystemKey = Map.of(
                 buildCellKey("corvus"),
                 new SystemOwner(
@@ -69,35 +75,43 @@ final class ClusterLabelStylingSnapshotTests {
                 buildViewReading(),
                 buildSpotlightPicks());
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
+            // ACT
+            var actualStyling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
+            // ASSERT
             // Against what the built map itself hands out rather than against what was handed to
             // it: the owners are the occupancy's own, so identity here is what says the snapshot
             // reads them live rather than taking a copy that a later refresh would leave behind.
-            assertThat(styling.ownerBySystemKey())
+            assertThat(actualStyling.ownerBySystemKey())
                 .isSameAs(clusters.getOccupancy().getOwnerBySystemKey());
         }
 
+        // The very paints the fills were painted in, not a second set over the same parts: a
+        // name's colour is then read off the style decision its fill was, remembered once.
         @Test
         void carriesTheBuildsOwnPaints() {
-            // The very paints the fills were painted in, not a second set over the same parts: a
-            // name's colour is then read off the style decision its fill was, remembered once.
+
+            // ARRANGE
             var clusters = buildClusters(
                 Map.of(),
                 buildViewReading(),
                 buildSpotlightPicks());
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
+            // ACT
+            var actualStyling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
-            assertThat(styling.paints())
+            // ASSERT
+            assertThat(actualStyling.paints())
                 .isSameAs(clusters.getBuildInputs().getPaints());
         }
 
+        // Taken as the retained values rather than re-resolved, so the scheme a label is
+        // coloured by, the reading it is named under, the filter it recedes by and the format
+        // it is spelled in cannot come from two passes.
         @Test
         void carriesTheBuildsStylingReadingAndSampledPicksWhole() {
-            // Taken as the retained values rather than re-resolved, so the scheme a label is
-            // coloured by, the reading it is named under, the filter it recedes by and the format
-            // it is spelled in cannot come from two passes.
+
+            // ARRANGE
             var viewReading = buildViewReading();
             var contentInputs = buildSpotlightPicks();
 
@@ -106,43 +120,55 @@ final class ClusterLabelStylingSnapshotTests {
                 viewReading,
                 contentInputs);
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
+            // ACT
+            var actualStyling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
-            assertThat(styling.paints().getStyling())
+            // ASSERT
+            assertThat(actualStyling.paints().getStyling())
                 .isSameAs(clusters.getBuildInputs().getStyling());
-            assertThat(styling.paints().getReading())
+            assertThat(actualStyling.paints().getReading())
                 .isSameAs(viewReading.reading());
-            assertThat(styling.paints().getContentInputs())
+            assertThat(actualStyling.paints().getContentInputs())
                 .isSameAs(contentInputs);
         }
 
+        // A pass with no spotlight still answers the filter question, so the label rebuild
+        // reads "nothing recedes" off the snapshot rather than off a null it must interpret.
         @Test
         void carriesAnUnfilteredPassAsUnfiltered() {
-            // A pass with no spotlight still answers the filter question, so the label rebuild
-            // reads "nothing recedes" off the snapshot rather than off a null it must interpret.
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(
-                buildClusters(
-                    Map.of(),
-                    buildViewReading(),
-                    ContentInputs.createEmpty()),
-                LABEL_FACE);
 
-            assertThat(styling.paints().getContentInputs().isFiltering())
+            // ARRANGE
+            var clusters = buildClusters(
+                Map.of(),
+                buildViewReading(),
+                FULL_NAME_INPUTS);
+
+            // ACT
+            var actualStyling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
+
+            // ASSERT
+            assertThat(actualStyling.paints().getContentInputs().isFiltering())
                 .isFalse();
         }
 
+        // Settled by the cache that asked for the rebuild, so the names are fitted in the face
+        // they are minted in rather than in one the snapshot chose for itself.
         @Test
         void carriesTheFaceTheSectorSettledItsLabelsOn() {
-            // Settled by the cache that asked for the rebuild, so the names are fitted in the face
-            // they are minted in rather than in one the snapshot chose for itself.
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(
-                buildClusters(
-                    Map.of(),
-                    buildViewReading(),
-                    ContentInputs.createEmpty()),
+
+            // ARRANGE
+            var clusters = buildClusters(
+                Map.of(),
+                buildViewReading(),
+                FULL_NAME_INPUTS);
+
+            // ACT
+            var actualStyling = ClusterLabelStylingSnapshot.resolveFrom(
+                clusters,
                 StarsectorFont.VANILLA_INSIGNIA_25);
 
-            assertThat(styling.labelFace())
+            // ASSERT
+            assertThat(actualStyling.labelFace())
                 .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_25);
         }
 
@@ -215,11 +241,13 @@ final class ClusterLabelStylingSnapshotTests {
     @Nested
     class ResolveForTracing {
 
+        // The styling is the one the overlay's outlines were traced under, carried by identity:
+        // a snapshot re-reading the theme for itself could style the names under knobs the
+        // outlines beneath them were not traced under.
         @Test
         void carriesTheTracedOwnersTheHandedStylingAndTheViewsReading() {
-            // The styling is the one the overlay's outlines were traced under, carried by identity:
-            // a snapshot re-reading the theme for itself could style the names under knobs the
-            // outlines beneath them were not traced under.
+
+            // ARRANGE
             var ownerBySystemKey = Map.of(
                 buildCellKey("corvus"),
                 new SystemOwner(SPOTLIT_OWNER_ID, new ColourPair(Color.BLUE, Color.DARK_GRAY)));
@@ -227,32 +255,37 @@ final class ClusterLabelStylingSnapshotTests {
             var mapStyling = buildStyling();
             var reading = OwnerReadingFake.createAnsweringNothing();
 
-            var styling = ClusterLabelStylingSnapshot.resolveForTracing(
+            // ACT
+            var actualStyling = ClusterLabelStylingSnapshot.resolveForTracing(
                 ownerBySystemKey,
                 mapStyling,
                 reading,
-                ContentInputs.createEmpty(),
+                FULL_NAME_INPUTS,
                 false,
                 LABEL_FACE);
 
-            assertThat(styling.ownerBySystemKey())
+            // ASSERT
+            assertThat(actualStyling.ownerBySystemKey())
                 .isSameAs(ownerBySystemKey);
-            assertThat(styling.paints().getStyling())
+            assertThat(actualStyling.paints().getStyling())
                 .isSameAs(mapStyling);
-            assertThat(styling.paints().getReading())
+            assertThat(actualStyling.paints().getReading())
                 .isSameAs(reading);
-            assertThat(styling.labelFace())
+            assertThat(actualStyling.labelFace())
                 .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
         }
 
+        // The diagnostic traces owners with nobody spotlit, so a pick carried through would
+        // recede every owner but one around a spotlight it does not paint - while the names are
+        // still spelled the way the player asked.
         @Test
         void dropsThePickButKeepsTheNameFormat() {
-            // The diagnostic traces owners with nobody spotlit, so a pick carried through would
-            // recede every owner but one around a spotlight it does not paint - while the names are
-            // still spelled the way the player asked.
+
+            // ARRANGE
             var spotlightPicks = buildSpotlightPicks();
 
-            var styling = ClusterLabelStylingSnapshot.resolveForTracing(
+            // ACT
+            var actualStyling = ClusterLabelStylingSnapshot.resolveForTracing(
                 Map.of(),
                 buildStyling(),
                 OwnerReadingFake.createAnsweringNothing(),
@@ -260,9 +293,10 @@ final class ClusterLabelStylingSnapshotTests {
                 false,
                 LABEL_FACE);
 
-            assertThat(styling.paints().getContentInputs().isFiltering())
+            // ASSERT
+            assertThat(actualStyling.paints().getContentInputs().isFiltering())
                 .isFalse();
-            assertThat(styling.paints().getContentInputs().nameFormat())
+            assertThat(actualStyling.paints().getContentInputs().nameFormat())
                 .isEqualTo(spotlightPicks.nameFormat());
         }
 
@@ -302,21 +336,30 @@ final class ClusterLabelStylingSnapshotTests {
     @Nested
     class CreateFitInputs {
 
+        // The fit clusters cells by the key it is handed, so the owner tier hands it the owner
+        // ID its fills fuse by, and the names trace as the fills do.
         @Test
         void cutsTheClustersByOwnerId() {
-            // The fit clusters cells by the key it is handed, so the owner tier hands it the owner
-            // ID its fills fuse by, and the names trace as the fills do.
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
 
-            assertThat(fitInputs.ownerKeyBySystemKey())
-                .isEqualTo(Map.of(buildCellKey("corvus"), SPOTLIT_OWNER_ID));
+            // ARRANGE
+            var snapshot = buildTracedSnapshot(FULL_NAME_INPUTS, false);
+            var expectedOwnerKeys = Map.of(buildCellKey("corvus"), SPOTLIT_OWNER_ID);
+
+            // ACT
+            var actualOwnerKeys = snapshot.createFitInputs().ownerKeyBySystemKey();
+
+            // ASSERT
+            assertThat(actualOwnerKeys)
+                .isEqualTo(expectedOwnerKeys);
         }
 
+        // A filtered build fuses the spotlit cells under one synthetic key, so the fit has to be
+        // handed that key rather than the selected owner's ID, or the solid and contested
+        // clusters would merge under one name the fills keep apart.
         @Test
         void cutsAProductionBuildBySpotlightKeyWhereItsFillsFuseByOne() {
-            // A filtered build fuses the spotlit cells under one synthetic key, so the fit has to be
-            // handed that key rather than the selected owner's ID, or the solid and contested
-            // clusters would merge under one name the fills keep apart.
+
+            // ARRANGE
             var spotlitOwner = SpotlitOwners.createSpotlitOwner(new ColourPair(Color.BLUE, Color.DARK_GRAY));
             var snapshot = ClusterLabelStylingSnapshot.resolveFrom(
                 buildClusters(
@@ -326,8 +369,11 @@ final class ClusterLabelStylingSnapshotTests {
                 LABEL_FACE);
 
             var expectedOwnerKeys = Map.of(buildCellKey("corvus"), spotlitOwner.ownerId());
+
+            // ACT
             var actualOwnerKeys = snapshot.createFitInputs().ownerKeyBySystemKey();
 
+            // ASSERT
             assertThat(actualOwnerKeys)
                 .isEqualTo(expectedOwnerKeys);
         }
@@ -338,7 +384,7 @@ final class ClusterLabelStylingSnapshotTests {
         void loadsNoFontUntilTheResolversAreAsked() {
 
             // ARRANGE
-            var snapshot = buildTracedSnapshot(ContentInputs.createEmpty(), false);
+            var snapshot = buildTracedSnapshot(FULL_NAME_INPUTS, false);
 
             try (var fontsMock = mockStatic(LazyFontCache.class)) {
 
@@ -356,7 +402,7 @@ final class ClusterLabelStylingSnapshotTests {
         void loadsTheFaceTheFitHandsOverOnceTheResolversAreAsked() {
 
             // ARRANGE
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
+            var fitInputs = buildTracedSnapshot(FULL_NAME_INPUTS, false).createFitInputs();
 
             try (var fontsMock = mockStatic(LazyFontCache.class)) {
 
@@ -376,7 +422,7 @@ final class ClusterLabelStylingSnapshotTests {
         void shadesEachOwnerByTheSnapshotsOwnPaints() {
 
             // ARRANGE
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
+            var fitInputs = buildTracedSnapshot(FULL_NAME_INPUTS, false).createFitInputs();
             var expectedColour = Color.BLUE;
 
             try (var fontsMock = mockStatic(LazyFontCache.class)) {
@@ -397,9 +443,14 @@ final class ClusterLabelStylingSnapshotTests {
         @Test
         void carriesTheFaceTheSnapshotSettled() {
 
-            var fitInputs = buildTracedSnapshot(ContentInputs.createEmpty(), false).createFitInputs();
+            // ARRANGE
+            var snapshot = buildTracedSnapshot(FULL_NAME_INPUTS, false);
 
-            assertThat(fitInputs.labelFace())
+            // ACT
+            var actualLabelFace = snapshot.createFitInputs().labelFace();
+
+            // ASSERT
+            assertThat(actualLabelFace)
                 .isEqualTo(LABEL_FACE);
         }
 
@@ -409,7 +460,7 @@ final class ClusterLabelStylingSnapshotTests {
         void wantsAFitWhereTheSnapshotDoes() {
 
             // ARRANGE
-            var snapshot = buildTracedSnapshot(ContentInputs.createEmpty(), true);
+            var snapshot = buildTracedSnapshot(FULL_NAME_INPUTS, true);
 
             // ACT
             var actualIsFitWanted = snapshot.createFitInputs().isFitWanted();
@@ -424,7 +475,7 @@ final class ClusterLabelStylingSnapshotTests {
         void wantsNoFitWhereTheSnapshotDoesNot() {
 
             // ARRANGE
-            var snapshot = buildTracedSnapshot(ContentInputs.createEmpty(), false);
+            var snapshot = buildTracedSnapshot(FULL_NAME_INPUTS, false);
 
             // ACT
             var actualIsFitWanted = snapshot.createFitInputs().isFitWanted();

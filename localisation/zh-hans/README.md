@@ -407,7 +407,7 @@ So a word of one axis never stands in for another:
 | border | 边界 | the plain word; the outer and inner borders add 国界 and 省界 |
 | border gore | 边界地狱 | the players' word for tangled borders |
 | band path (the ring a cell's band would run along, as its dev overlay draws it) | 色带路径 | 色带, the band, with 路径, a path: the way a band would go round its cell |
-| border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
+| border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | 边界, a border, with 描绘, to draw a line along an outline: the overlay draws each border as each stage traced it |
 | cell | 单元 | one system's area on the map, never a UI control |
 | cluster (a run of one owner's systems, and the name drawn over it) | 区域 | a region, since the run reads as one area on the map |
 | fill | 填充 | the usual graphics word |
@@ -497,6 +497,7 @@ The words for filling the empty space between systems one faction dominates.
 | anchor overlay (the dev overlay showing each name's fitted line) | 锚点叠加层 | 锚点, an anchor, the point a name is fixed to, with 叠加层, an overlay |
 | bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
 | band layout (which side of the nebulae each sub-layer paints) | 分层布局 | 分层, set out in layers, with 布局, a layout; kept apart from 星云绘制顺序, the player's setting it is read from |
+| base view (what an owner map stands on: its draw lists, the debug overlay, or the placeholder) | 基础画面 | 基础, a base, with 画面, a picture on screen; not 视图, which is a political map view |
 | batch (the systems marked since a frame, re-derived together) | 批次 | the plain word for a batch; kept apart from 绘制批次, a draw run |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
@@ -512,6 +513,7 @@ The words for filling the empty space between systems one faction dominates.
 | compositor (what stacks an owner map's sub-layers into one picture) | 合成器 | the usual graphics word for what puts layers together into one picture |
 | debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
 | default (the answer a layer names unless its rule needs another) | 默认 | the plain word; kept apart from 默认值, a setting's default value |
+| draw lists (everything a build hands the renderer to paint) | 绘制内容 | 绘制, to draw, with 内容, the contents: what there is to draw |
 | draw record (what one cell draws, baked at rebuild) | 绘制记录 | 绘制, to draw, with 记录, a record |
 | draw run (vertices drawn in one GL call) | 绘制批次 | 绘制, to draw, with 批次, a batch |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
@@ -527,6 +529,7 @@ The words for filling the empty space between systems one faction dominates.
 | holding rule (the rule a layer decides who holds a system by) | 持有规则 | 持有, to hold, with 规则, a rule |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | lane rule (a line dividing an anchor overlay's band between a name's lines) | 行间分隔线 | 行间, between lines of text, with 分隔线, a dividing line; kept apart from 行数, a count of lines, which the rule does not show |
+| live (read as a value stands at the moment it is asked, not a copy taken earlier) | 实时 | the plain word for something happening as it is asked |
 | map (a collection of values looked up by key) | 映射表 | the usual computing word for a key-value map; kept apart from 地图, the map on screen |
 | marked (a system a change flagged to be re-derived) | 已标记 | 已, already, with 标记, to mark |
 | mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
@@ -537,6 +540,7 @@ The words for filling the empty space between systems one faction dominates.
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
 | phase (one part of a profiled loop's turn) | 环节 | a link in a process; kept apart from 阶段, a smoothing stage |
+| placeholder (the base view standing before any build completes, drawing nothing) | 占位画面 | 占位, holding a place, with 画面 as in 基础画面: the picture standing in until a build lands |
 | placement (where a fit put one cluster's name) | 落点 | 落, to land, with 点, a point: where the name came down |
 | plan (a band's runs, before they are laid round its ring) | 计划 | the plain word for a plan |
 | plan rules (the lengths a band's runs are laid at) | 计划规则 | 计划, a band's plan, with 规则, rules |
@@ -544,6 +548,7 @@ The words for filling the empty space between systems one faction dominates.
 | port (the interface a feature's own code reaches the game through) | 端口 | the usual word for a port in a ports-and-adapters design |
 | prefix (the part of a profiling row's name before its first dot) | 前缀 | the plain computing word |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
+| projection (a view showing one part of each entry of another collection) | 投影 | the usual computing word for a view over part of each record |
 | rank (a bloc's place in a mechanic's order) | 排名 | the plain word for a place in a ranking |
 | re-derive (working one system's answer out again) | 重新解析 | 重新, again, with 解析, to resolve |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |

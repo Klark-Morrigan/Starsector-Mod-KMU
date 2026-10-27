@@ -92,69 +92,86 @@ final class SpotlightPreviewHighlightRendererTests {
         @Test
         void lightsTheHoveredOwnersSystemsInThatOwnersOwnShade() {
 
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isTrue();
-            assertThat(paint.colour())
+            assertThat(actualPaint.colour())
                 .isEqualTo(OWNER_BRIGHT_COLOUR);
         }
 
+        // The resting state of every frame the player is not on the picker, and so the answer
+        // this has to reach without reading a theme or walking a sector.
         @Test
         void lightsNothingWhenThePointerIsOnNoRow() {
-            // The resting state of every frame the player is not on the picker, and so the answer
-            // this has to reach without reading a theme or walking a sector.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // A row is under the pointer and the tier paints, but the walk found that owner in no
+        // system - so there is nothing on the map the preview could trace.
         @Test
         void lightsNothingWhenTheHoveredOwnerIsPresentNowhere() {
-            // A row is under the pointer and the tier paints, but the walk found that owner in no
-            // system - so there is nothing on the map the preview could trace.
+
+            // ARRANGE
             var view = stubViewFinding(OwnerPresenceIndex.EMPTY);
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // The hover is read under the view the frame painted, not under whichever scope last
+        // reported one. An owner ID means what the view that surfaced it says it means, and the
+        // systems behind it are that view's answer - so a preview crossing a view switch would
+        // light one view's set over another view's map.
         @Test
         void lightsNothingForAHoverReportedUnderAnotherViewsScope() {
-            // The hover is read under the view the frame painted, not under whichever scope last
-            // reported one. An owner ID means what the view that surfaced it says it means, and the
-            // systems behind it are that view's answer - so a preview crossing a view switch would
-            // light one view's set over another view's map.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
 
             FilterHoverSlot
                 .resolveHoverSlotIn(machinery)
                 .recordHoveredId(createScopeOfView("other-view"), OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // The view ID is opaque and shared by nobody's agreement, so a foreign layer whose own
+        // picker lists a view under this one's name is a different list: its hovered row names an
+        // owner this view never surfaced, and lighting it would paint that mod's answer here.
         @Test
         void lightsNothingForAHoverReportedByAnotherModsPicker() {
-            // The view ID is opaque and shared by nobody's agreement, so a foreign layer whose own
-            // picker lists a view under this one's name is a different list: its hovered row names an
-            // owner this view never surfaced, and lighting it would paint that mod's answer here.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
 
             FilterHoverSlot
@@ -163,59 +180,56 @@ final class SpotlightPreviewHighlightRendererTests {
                     new PickerScope(MapLayerStoreNamespaces.createStandInNamespace(), VIEW_ID),
                     OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // The same answer the presence bands give such an owner, and for the same reason: an owner
+        // the layer can no longer colour has no shade, and lighting its cells in a stand-in one
+        // would put colour on the map for something the map cannot name.
         @Test
         void lightsNothingWhenTheReadingHasNoShadesForTheHoveredOwner() {
-            // The same answer the presence bands give such an owner, and for the same reason: an owner
-            // the layer can no longer colour has no shade, and lighting its cells in a stand-in one
-            // would put colour on the map for something the map cannot name.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(
                     view,
                     PAINTING_TIER,
                     OwnerReadingFake.createAnsweringNothing(),
                     PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
-        @Test
-        void lightsNothingOverThePlaceholderAFailedBuildStandsBehind() {
-            // The placeholder resolved no reading, so there is no shade to ask it for.
-            var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
-            hover(OWNER_ID);
-
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
-                .resolvePreviewPaint(OwnerMapClusters.createEmpty(view));
-
-            assertThat(paint.isPainting())
-                .isFalse();
-        }
-
+        // The player has set the preview to "No color", which is where this feature is switched
+        // off - there being no gate of its own in front of it.
         @Test
         void lightsNothingWhenTheTierPointsAtNoShade() {
-            // The player has set the preview to "No color", which is where this feature is switched
-            // off - there being no gate of its own in front of it.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(
                     view,
                     ThemeFixtures.NO_HIGHLIGHT,
                     PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
     }

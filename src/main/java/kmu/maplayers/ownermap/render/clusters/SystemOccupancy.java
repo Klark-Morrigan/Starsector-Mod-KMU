@@ -9,7 +9,10 @@ import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,14 +44,11 @@ import java.util.Set;
  */
 public final class SystemOccupancy {
 
-    // Who owns each system. A system with no entry is owned by nobody - which is not the same as
-    // nobody living there, and reading it as such is what the inhabited set below exists to stop.
-    private final Map<SystemKey, SystemOwner> ownerBySystemKey;
-
-    // How each owned system fills, for the systems that fill other than solid. Written beside the
-    // owner and only through the same fold, so a system cannot keep a state its owner no longer
-    // draws it in.
-    private final Map<SystemKey, FillState> nonSolidFillStateBySystemKey;
+    // Who owns each system and how its fill draws inside that owner's border. A system with no
+    // entry is owned by nobody - which is not the same as nobody living there, and reading it as
+    // such is what the inhabited set below exists to stop. Only an owned system has an entry, so a
+    // fill state has nowhere to sit on a system nobody owns.
+    private final Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey;
 
     // Every system something stands in, as the owner source counts it.
     private final Set<SystemKey> inhabitedSystemKeys;
@@ -64,17 +64,15 @@ public final class SystemOccupancy {
     private final Set<SystemKey> readableSpotlitPresenceSystemKeys;
 
     private SystemOccupancy(
-            Map<SystemKey, SystemOwner> ownerBySystemKey,
-            Map<SystemKey, FillState> nonSolidFillStateBySystemKey,
+            Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey,
             Set<SystemKey> inhabitedSystemKeys,
             Set<SystemKey> spotlitPresenceSystemKeys) {
 
-        this.ownerBySystemKey = ownerBySystemKey;
-        this.nonSolidFillStateBySystemKey = nonSolidFillStateBySystemKey;
+        this.resolvedOwnerBySystemKey = resolvedOwnerBySystemKey;
         this.inhabitedSystemKeys = inhabitedSystemKeys;
         this.spotlitPresenceSystemKeys = spotlitPresenceSystemKeys;
 
-        readableOwnerBySystemKey = Collections.unmodifiableMap(ownerBySystemKey);
+        readableOwnerBySystemKey = new OwnerProjection(resolvedOwnerBySystemKey);
         readableInhabitedSystemKeys = Collections.unmodifiableSet(inhabitedSystemKeys);
         readableSpotlitPresenceSystemKeys = Collections.unmodifiableSet(spotlitPresenceSystemKeys);
     }
@@ -88,35 +86,37 @@ public final class SystemOccupancy {
      * Insertion-ordered copies, so a walk of any of them runs in the order the pass resolved it
      * rather than in a hash's.
      *
+     * <p>Each owned system takes its fill state beside its owner. A state the owners name for a
+     * system nobody owns is not copied: there is no border for it to draw inside.
+     *
      * @param owners who owns each system and how it fills, every system something stands in, and
      *               where the spotlit owner lives among the unowned ones
      * @return the occupancy, ready to be read and folded
      */
     public static SystemOccupancy createCopyOf(ResolvedOwners owners) {
 
+        var resolvedOwnerBySystemKey = new LinkedHashMap<SystemKey, ResolvedSystemOwner>();
+        var fillStates = owners.fillStates();
+
+        for (var entry : owners.ownerBySystemKey().entrySet()) {
+
+            var systemKey = entry.getKey();
+
+            resolvedOwnerBySystemKey.put(
+                systemKey,
+                new ResolvedSystemOwner(entry.getValue(), fillStates.resolveFillStateOf(systemKey)));
+        }
+
         return new SystemOccupancy(
-            new LinkedHashMap<>(owners.ownerBySystemKey()),
-            new LinkedHashMap<>(owners.fillStates().getNonSolidFillStateBySystemKey()),
+            resolvedOwnerBySystemKey,
             new LinkedHashSet<>(owners.inhabitedSystemKeys()),
             new LinkedHashSet<>(owners.spotlitPresenceSystemKeys()));
     }
 
     /**
-     * An empty occupancy: nobody owns anything, nothing stands anywhere, no pick lives anywhere.
-     *
-     * <p>What a build that never ran carries, and what a build fills in as it resolves. Named here
-     * rather than spelt out as empty collections at each such caller, so "nothing resolved yet" is
-     * one value.
-     *
-     * @return an empty occupancy, ready to be folded into
-     */
-    public static SystemOccupancy createEmpty() {
-        return createCopyOf(ResolvedOwners.createEmpty());
-    }
-
-    /**
      * @return who owns each system, keyed by {@link SystemKey}; a system nobody owns is absent
-     *         rather than present under a null
+     *         rather than present under a null. A live view of the owners the fill states sit
+     *         beside, so the two cannot drift apart
      */
     public Map<SystemKey, SystemOwner> getOwnerBySystemKey() {
         return readableOwnerBySystemKey;
@@ -144,7 +144,8 @@ public final class SystemOccupancy {
         if (systemKey == null) {
             return null;
         }
-        return ownerBySystemKey.get(systemKey);
+        // The unowned answer names nobody, which is what an absent entry means.
+        return readResolvedOwnerOf(systemKey).owner();
     }
 
     /**
@@ -155,13 +156,7 @@ public final class SystemOccupancy {
      * @return its owner and fill state; {@link ResolvedSystemOwner#UNOWNED} where nobody owns it
      */
     public ResolvedSystemOwner readResolvedOwnerOf(SystemKey systemKey) {
-
-        var owner = ownerBySystemKey.get(systemKey);
-        return owner == null
-            ? ResolvedSystemOwner.UNOWNED
-            : new ResolvedSystemOwner(
-                owner,
-                SystemFillStates.resolveFillStateIn(nonSolidFillStateBySystemKey, systemKey));
+        return resolvedOwnerBySystemKey.getOrDefault(systemKey, ResolvedSystemOwner.UNOWNED);
     }
 
     /**
@@ -173,7 +168,14 @@ public final class SystemOccupancy {
      * @return the state each system fills in; solid for any system not named
      */
     public SystemFillStates snapshotFillStates() {
-        return SystemFillStates.createOf(nonSolidFillStateBySystemKey);
+
+        var fillStateBySystemKey = new LinkedHashMap<SystemKey, FillState>();
+
+        for (var entry : resolvedOwnerBySystemKey.entrySet()) {
+            fillStateBySystemKey.put(entry.getKey(), entry.getValue().fillState());
+        }
+
+        return SystemFillStates.createOf(fillStateBySystemKey);
     }
 
     /**
@@ -225,7 +227,7 @@ public final class SystemOccupancy {
     public Set<SystemKey> selectUnownedSystemKeysAmong(Set<SystemKey> candidateSystemKeys) {
         // The owner side's own rule rather than a copy of it, so the source that resolves the
         // whole sector and this fold cannot come to disagree about what "unowned" means.
-        return SystemOwner.selectUnownedSystemKeysAmong(ownerBySystemKey, candidateSystemKeys);
+        return SystemOwner.selectUnownedSystemKeysAmong(readableOwnerBySystemKey, candidateSystemKeys);
     }
 
     /**
@@ -246,12 +248,11 @@ public final class SystemOccupancy {
     public void recordOwnerOf(SystemKey systemKey, ResolvedSystemOwner resolved) {
 
         if (resolved.owner() == null) {
-            ownerBySystemKey.remove(systemKey);
-        } else {
-            ownerBySystemKey.put(systemKey, resolved.owner());
-        }
+            resolvedOwnerBySystemKey.remove(systemKey);
 
-        SystemFillStates.recordFillStateIn(nonSolidFillStateBySystemKey, systemKey, resolved.fillState());
+        } else {
+            resolvedOwnerBySystemKey.put(systemKey, resolved);
+        }
     }
 
     /**
@@ -287,5 +288,81 @@ public final class SystemOccupancy {
         return isMember
             ? systemKeys.add(systemKey)
             : systemKeys.remove(systemKey);
+    }
+
+    // The owner half of each resolved owner, as a live read-only map. A projection rather than a
+    // second map kept beside the first, so no write can move an owner without its fill state. A
+    // write through it throws, as AbstractMap's and the iterator's own do.
+    private static final class OwnerProjection
+            extends AbstractMap<SystemKey, SystemOwner> {
+
+        private final Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey;
+        private final Set<Map.Entry<SystemKey, SystemOwner>> ownerEntries = new OwnerEntries();
+
+        OwnerProjection(Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey) {
+            this.resolvedOwnerBySystemKey = resolvedOwnerBySystemKey;
+        }
+
+        // Answered off the map itself rather than AbstractMap's walk of the entries, so a lookup
+        // stays a hash probe inside the per-cell loops that make it.
+        @Override
+        public boolean containsKey(Object key) {
+            return resolvedOwnerBySystemKey.containsKey(key);
+        }
+
+        @Override
+        public Set<Map.Entry<SystemKey, SystemOwner>> entrySet() {
+            return ownerEntries;
+        }
+
+        @Override
+        public SystemOwner get(Object key) {
+
+            var resolved = resolvedOwnerBySystemKey.get(key);
+            return resolved == null
+                ? null
+                : resolved.owner();
+        }
+
+        @Override
+        public int size() {
+            return resolvedOwnerBySystemKey.size();
+        }
+
+        // Each entry paired with its owner alone, in the order the resolved owners hold them.
+        private final class OwnerEntries
+                extends AbstractSet<Map.Entry<SystemKey, SystemOwner>> {
+
+            @Override
+            public Iterator<Map.Entry<SystemKey, SystemOwner>> iterator() {
+
+                var resolvedEntries = resolvedOwnerBySystemKey
+                    .entrySet()
+                    .iterator();
+
+                return new Iterator<>() {
+
+                    @Override
+                    public boolean hasNext() {
+                        return resolvedEntries.hasNext();
+                    }
+
+                    @Override
+                    public Map.Entry<SystemKey, SystemOwner> next() {
+
+                        var resolvedEntry = resolvedEntries.next();
+
+                        return new SimpleImmutableEntry<>(
+                            resolvedEntry.getKey(),
+                            resolvedEntry.getValue().owner());
+                    }
+                };
+            }
+
+            @Override
+            public int size() {
+                return resolvedOwnerBySystemKey.size();
+            }
+        }
     }
 }

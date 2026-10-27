@@ -19,6 +19,16 @@ public final class SystemOccupancyFixtures {
     }
 
     /**
+     * An occupancy holding nothing: nobody owns anything, nothing stands anywhere, no pick lives
+     * anywhere.
+     *
+     * @return the empty occupancy, ready to be folded into
+     */
+    public static SystemOccupancy createEmptyOccupancy() {
+        return SystemOccupancy.createCopyOf(ResolvedOwners.createEmpty());
+    }
+
+    /**
      * An occupancy copied out of the stated owners, inhabited systems and spotlit presence, every
      * owned system filling solid.
      *

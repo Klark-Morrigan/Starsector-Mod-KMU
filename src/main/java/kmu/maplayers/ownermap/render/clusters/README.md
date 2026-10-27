@@ -215,6 +215,11 @@ That is what the refresh redraws a cell on.
 Held as loose collections instead,
 they would be kept from moving by the caller's good manners alone.
 
+The owner and the fill state are one entry,
+a `ResolvedSystemOwner` held only for a system somebody owns,
+so a fill state has nowhere to sit on a system nobody owns.
+The owner map the grouping and the labels read is a live projection of those entries rather than a second map kept beside them.
+
 ## Borders against empty space
 
 Every border edge is shaped the same way,
@@ -361,9 +366,9 @@ so the two can never be two samplings.
 Held here rather than built by each stage,
 because the paints remember every answer,
 and the full build and every batch after it then share one memo rather than resolving each owner again.
-`wasBuilt` is its answer to whether a build ran under it at all:
-the placeholder a failed first build stands behind resolved no reading,
-so the incremental refresh and the picker preview ask it before reaching for one.
+Every value of it comes from a build that ran:
+what stands before the first build completes is a placeholder view holding no clusters at all,
+so no reader has to ask whether a reading was resolved.
 
 ## The split fill: solid, hatched, unfilled
 

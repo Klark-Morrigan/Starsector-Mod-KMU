@@ -156,12 +156,11 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     // cannot colour is one neither surface paints.
     private Color resolveShadeOf(OwnerMapClusters clusters, String ownerId) {
 
-        // The placeholder a failed first build stands behind resolved no reading, and an owner with no
-        // reading to ask has no shade to burn.
-        var buildInputs = clusters.getBuildInputs();
-        var palette = buildInputs.wasBuilt()
-            ? buildInputs.getViewReading().reading().resolvePalette(ownerId)
-            : null;
+        var palette = clusters
+            .getBuildInputs()
+            .getViewReading()
+            .reading()
+            .resolvePalette(ownerId);
 
         return palette == null
             ? null

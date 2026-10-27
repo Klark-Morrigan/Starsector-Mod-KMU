@@ -70,92 +70,6 @@ final class SystemFillStatesTests {
     }
 
     @Nested
-    class RecordFillStateIn {
-
-        // A holder folding one system at a time lists only what is not solid, as this type does, so
-        // a system that went back to solid leaves the map rather than staying named.
-        @Test
-        void dropsASystemThatNowFillsSolid() {
-
-            // ARRANGE
-            var nonSolidFillStateBySystemKey = new LinkedHashMap<SystemKey, FillState>();
-
-            nonSolidFillStateBySystemKey.put(SYSTEM, FillState.HATCHED);
-
-            // ACT
-            SystemFillStates.recordFillStateIn(nonSolidFillStateBySystemKey, SYSTEM, FillState.SOLID);
-
-            // ASSERT
-            assertThat(nonSolidFillStateBySystemKey)
-                .isEmpty();
-        }
-
-        @Test
-        void namesASystemThatNowFillsOtherThanSolid() {
-
-            // ARRANGE
-            var nonSolidFillStateBySystemKey = new LinkedHashMap<SystemKey, FillState>();
-
-            nonSolidFillStateBySystemKey.put(SYSTEM, FillState.HATCHED);
-
-            // ACT
-            SystemFillStates.recordFillStateIn(nonSolidFillStateBySystemKey, SYSTEM, FillState.UNFILLED);
-
-            // ASSERT
-            assertThat(nonSolidFillStateBySystemKey)
-                .containsExactly(Map.entry(SYSTEM, FillState.UNFILLED));
-        }
-    }
-
-    @Nested
-    class ResolveFillStateIn {
-
-        @Test
-        void returnsSolidForASystemTheMapDoesNotName() {
-
-            // ARRANGE
-            var nonSolidFillStateBySystemKey = Map.of(OTHER_SYSTEM, FillState.HATCHED);
-
-            // ACT
-            var actualFillState = SystemFillStates.resolveFillStateIn(nonSolidFillStateBySystemKey, SYSTEM);
-
-            // ASSERT
-            assertThat(actualFillState)
-                .isEqualTo(FillState.SOLID);
-        }
-
-        @Test
-        void returnsTheStateTheMapNames() {
-
-            // ARRANGE
-            var nonSolidFillStateBySystemKey = Map.of(SYSTEM, FillState.UNFILLED);
-
-            // ACT
-            var actualFillState = SystemFillStates.resolveFillStateIn(nonSolidFillStateBySystemKey, SYSTEM);
-
-            // ASSERT
-            assertThat(actualFillState)
-                .isEqualTo(FillState.UNFILLED);
-        }
-
-        // An immutable map refuses a null key outright, so a cell with no star of its own has to be
-        // answered before the map is asked.
-        @Test
-        void returnsSolidForACellWithNoStarOfItsOwn() {
-
-            // ARRANGE
-            var nonSolidFillStateBySystemKey = Map.of(SYSTEM, FillState.UNFILLED);
-
-            // ACT
-            var actualFillState = SystemFillStates.resolveFillStateIn(nonSolidFillStateBySystemKey, null);
-
-            // ASSERT
-            assertThat(actualFillState)
-                .isEqualTo(FillState.SOLID);
-        }
-    }
-
-    @Nested
     class ResolveFillStateOf {
 
         @Test
@@ -201,7 +115,8 @@ final class SystemFillStatesTests {
         }
 
         // A null system has no per-system fill state, so it fills solid with the rest of the
-        // cluster rather than probing the map with a null key.
+        // cluster rather than probing the map with a null key, which the immutable map it holds
+        // would refuse outright.
         @Test
         void returnsSolidForACellWithNoStarOfItsOwn() {
 

@@ -9,7 +9,6 @@ import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
@@ -28,6 +27,7 @@ import org.mockito.MockedStatic;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInertInputs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -62,7 +62,7 @@ final class FullOwnerMapRebuildTests {
 
     // What every rebuild here is keyed by. No case turns on the values, the ledger being stood in for.
     private static final ViewKey VIEW_KEY = new ViewKey(0, "view", 0);
-    private static final ContentKey CONTENT_KEY = new ContentKey(VIEW_KEY, ContentInputs.createEmpty());
+    private static final ContentKey CONTENT_KEY = new ContentKey(VIEW_KEY, createInertInputs());
     private static final OwnersKey OWNERS_KEY = new OwnersKey(VIEW_KEY, null);
 
     // A decision owing a recut and everything after it.

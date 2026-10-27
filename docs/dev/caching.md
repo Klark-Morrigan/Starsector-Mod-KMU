@@ -368,8 +368,13 @@ Why that is a slot rather than one behaviour is
 
 It is also where rebuild faults are contained:
 a failing rebuild or fold is logged once rather than per frame,
-owes the next frame the full rebuild,
-and installs an empty placeholder so the renderer never dereferences a null draw list.
+and owes the next frame the full rebuild.
+The renderer paints whichever base view stands,
+a sealed `BuiltView`:
+the production draw lists,
+the debug overlay,
+or the placeholder that stands before the first build completes and draws nothing.
+So a failed first build leaves nothing null for the renderer to reach.
 A failing rebuild would be retried anyway,
 since it advances no cached revision.
 A failing fold would not:
@@ -787,9 +792,9 @@ in increasing cost:
    the stale set is drained and only those systems and their neighbours are re-derived and re-shaped,
    with the two affected owners' cluster groups rebuilt.
    A layer taking the full rebuild drains the set and owes path 3 to the next frame instead.
-   So does a map that cannot take a fold:
-   the debug overlay's,
-   or a failed build's placeholder.
+   So does a view that cannot take a fold:
+   the debug overlay,
+   or the placeholder standing before any build completes.
    A spotlight is no such map:
    the batch re-derives a marked system as the spotlit build painted it.
    Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/MarkedSystemRederive.java)'s

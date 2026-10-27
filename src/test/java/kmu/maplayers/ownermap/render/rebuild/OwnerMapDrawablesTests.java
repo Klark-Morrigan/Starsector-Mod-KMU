@@ -11,7 +11,6 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchorFitInputs;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
@@ -19,6 +18,7 @@ import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInputsSpellingNames;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -52,14 +54,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins what the drawables keeping the built draw lists answer about them: whether anything stands, whether
- * a per-system change can be folded into it, what a rebuild left for the render to paint, that the
- * two base views are never both standing, and that releasing it leaves nothing behind.
+ * Pins what the drawables keeping the built draw lists answer about them: which base view stands
+ * after each build, whether a per-system change can be folded into it, what a rebuild left for the
+ * render to paint, and that releasing it leaves nothing behind.
  *
- * <p>Building the production view needs a live sector and is the integration tests'. The debug
- * overlay's build is held here, because what it does to the drawables is the whole of its effect: it
- * replaces the other view rather than drawing over it, so a build that left both standing would
- * paint one of them for a reason no reader could name. Its own tracing is stood in for.
+ * <p>Building the production view needs a live sector and is the integration tests'; here its
+ * builders are stood in for. The debug overlay's build is held here too, because what it does to the
+ * drawables is the whole of its effect: it replaces the other view rather than drawing over it. Its
+ * own tracing is stood in for.
  */
 final class OwnerMapDrawablesTests {
 
@@ -89,7 +91,36 @@ final class OwnerMapDrawablesTests {
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
 
     @Nested
+    class GetBuiltView {
+
+        // The renderer finds a view that draws nothing before the first build, rather than a null
+        // it would dereference.
+        @Test
+        void answersThePlaceholderBeforeAnythingHasBeenBuilt() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+
+            // ACT
+            var actualBuiltView = drawables.getBuiltView();
+
+            // ASSERT
+            assertThat(actualBuiltView)
+                .isSameAs(BuiltView.PLACEHOLDER);
+        }
+    }
+
+    @Nested
     class HasNothingBuilt {
+
+        // The builders a production rebuild drives, stood in for: all this asks is what the
+        // drawables make of a build that ran.
+        private final StaticSeams seams = new StaticSeams();
+
+        @AfterEach
+        void closeSeams() {
+            seams.closeEverySeam();
+        }
 
         // What makes a first frame owe a build whatever the revisions happen to say.
         @Test
@@ -107,12 +138,16 @@ final class OwnerMapDrawablesTests {
         }
 
         @Test
-        void answersNoOnceAPlaceholderStands() {
+        void answersNoOnceTheProductionViewStands() {
 
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
 
-            drawables.ensureClustersNonNull(viewMock);
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
+                buildRebuildReading(false));
 
             // ACT
             var actualHasNothingBuilt = drawables.hasNothingBuilt();
@@ -121,68 +156,29 @@ final class OwnerMapDrawablesTests {
             assertThat(actualHasNothingBuilt)
                 .isFalse();
         }
-    }
 
-    @Nested
-    class EnsureClustersNonNull {
-
-        // A rebuild that threw before completing leaves the draw lists null, which the renderer
-        // would dereference. The placeholder makes the render a harmless no-op until a later
-        // frame's retry succeeds.
+        // Released drawables are back to the first frame's state, so a machinery rebuilt on them
+        // would owe a build.
         @Test
-        void installsAnEmptyPlaceholderForTheRenderToFind() {
+        void answersYesOnceEverythingBuiltIsReleased() {
 
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
 
-            // ACT
-            drawables.ensureClustersNonNull(viewMock);
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
+                buildRebuildReading(false));
 
-            // ASSERT
-            assertThat(drawables.getClusters())
-                .isNotNull();
-            assertThat(drawables.getClusters().getStyledCellByCellKey())
-                .isEmpty();
-        }
-
-        // Called on every caught rebuild, so it must not replace a good build with an empty one
-        // when a later frame throws.
-        @Test
-        void keepsTheDrawListsAlreadyStanding() {
-
-            // ARRANGE
-            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
-
-            drawables.ensureClustersNonNull(viewMock);
-
-            var standingClusters = drawables.getClusters();
+            drawables.disposeAll();
 
             // ACT
-            drawables.ensureClustersNonNull(viewMock);
+            var actualHasNothingBuilt = drawables.hasNothingBuilt();
 
             // ASSERT
-            assertThat(drawables.getClusters())
-                .isSameAs(standingClusters);
-        }
-    }
-
-    @Nested
-    class IsDebug {
-
-        @Test
-        void answersNoWhileTheProductionViewIsTheBuiltOne() {
-
-            // ARRANGE
-            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
-
-            drawables.ensureClustersNonNull(viewMock);
-
-            // ACT
-            var actualIsDebug = drawables.isDebug();
-
-            // ASSERT
-            assertThat(actualIsDebug)
-                .isFalse();
+            assertThat(actualHasNothingBuilt)
+                .isTrue();
         }
     }
 
@@ -206,27 +202,21 @@ final class OwnerMapDrawablesTests {
             seams.closeEverySeam();
         }
 
-        // The invariant the render path picks a base view by: exactly one of the two is non-null
-        // once anything has been built. Posed over a production view already standing, since a
-        // frame that flips the dev toggle is exactly that frame.
+        // The view the render path paints is the overlay the trace answered, in place of whatever
+        // stood before.
         @Test
-        void replacesTheProductionViewRatherThanDrawingOverIt() {
+        void standsOnTheOverlayItTraced() {
 
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
-
-            drawables.ensureClustersNonNull(viewMock);
+            var expectedBuiltView = new BuiltView.Debug(TRACED_OVERLAY);
 
             // ACT
             traceBordersThrough(drawables);
 
             // ASSERT
-            assertThat(drawables.getBorderStageOverlay())
-                .isSameAs(TRACED_OVERLAY);
-            assertThat(drawables.getClusters())
-                .isNull();
-            assertThat(drawables.isDebug())
-                .isTrue();
+            assertThat(drawables.getBuiltView())
+                .isEqualTo(expectedBuiltView);
         }
 
         // The overlay traces the borders the map would draw, so it asks the layer for owners
@@ -379,10 +369,10 @@ final class OwnerMapDrawablesTests {
     }
 
     @Nested
-    class CanFoldOwnerChanges {
+    class FindFoldableStandingMap {
 
-        // The builders a production rebuild drives, stood in for: what each builds is pinned where
-        // it lives, and all this asks is what the drawables make of a build that ran.
+        // The builders a rebuild drives, stood in for: what each builds is pinned where it lives,
+        // and all this asks is what the drawables make of a build that ran.
         private final StaticSeams seams = new StaticSeams();
 
         @AfterEach
@@ -393,46 +383,54 @@ final class OwnerMapDrawablesTests {
         // There is nothing to patch, so the frame's marks are drained and dropped rather than
         // folded into draw lists that do not exist.
         @Test
-        void refusesBeforeAnythingHasBeenBuilt() {
+        void findsNothingBeforeAnythingHasBeenBuilt() {
 
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
 
             // ACT
-            var actualCanFold = drawables.canFoldOwnerChanges();
+            var actualStandingMap = drawables.findFoldableStandingMap(CELL_GEOMETRY);
 
             // ASSERT
-            assertThat(actualCanFold)
-                .isFalse();
+            assertThat(actualStandingMap)
+                .isEmpty();
         }
 
         // A build that ran resolved the theme, the categories and the reading a marked system is
-        // styled against, which is all a fold needs.
+        // styled against, which is all a fold needs. The map handed out is over that build's own
+        // draw lists and the cells it was shaped from.
         @Test
-        void allowsOverAProductionBuild() {
+        void findsTheProductionBuildOverTheGivenCells() {
 
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var clusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
 
             buildProductionThrough(
                 seams,
                 drawables,
-                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
+                clusters,
                 buildRebuildReading(false));
 
             // ACT
-            var actualCanFold = drawables.canFoldOwnerChanges();
+            var actualStandingMap = drawables.findFoldableStandingMap(CELL_GEOMETRY);
 
             // ASSERT
-            assertThat(actualCanFold)
-                .isTrue();
+            assertThat(actualStandingMap)
+                .hasValueSatisfying(standingMap -> {
+
+                    assertThat(standingMap.getClusters())
+                        .isSameAs(clusters);
+                    assertThat(standingMap.getCellGeometry())
+                        .isSameAs(CELL_GEOMETRY);
+                });
         }
 
         // A spotlight keys the cells to something other than their plain owners, and the fold still
         // takes it: the batch re-derives each marked system under the spotlight the build was
         // painted under.
         @Test
-        void allowsOverASpotlitProductionBuild() {
+        void findsASpotlitProductionBuild() {
 
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
@@ -448,29 +446,37 @@ final class OwnerMapDrawablesTests {
                 buildRebuildReading(false));
 
             // ACT
-            var actualCanFold = drawables.canFoldOwnerChanges();
+            var actualStandingMap = drawables.findFoldableStandingMap(CELL_GEOMETRY);
 
             // ASSERT
-            assertThat(actualCanFold)
-                .isTrue();
+            assertThat(actualStandingMap)
+                .isPresent();
         }
 
-        // The placeholder resolved no theme, no categories and no reading, so a marked system
-        // folded into it would be styled against nothing at all.
+        // The overlay replaced the draw lists a fold would patch, so a marked system has nothing to
+        // fold into and the frame owes the rebuild.
         @Test
-        void refusesThePlaceholderAFailedBuildStandsBehind() {
+        void findsNothingUnderTheDebugOverlay() {
 
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
 
-            drawables.ensureClustersNonNull(viewMock);
+            openStylingSeams(seams);
+
+            seams.openSeam(ClusterAnchorsBuilder.class);
+            seams
+                .openSeam(DebugBorderTracingBuilder.class)
+                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()))
+                .thenReturn(TRACED_OVERLAY);
+
+            drawables.rebuildBorderTracingOverlay(buildRebuildReading(false));
 
             // ACT
-            var actualCanFold = drawables.canFoldOwnerChanges();
+            var actualStandingMap = drawables.findFoldableStandingMap(CELL_GEOMETRY);
 
             // ASSERT
-            assertThat(actualCanFold)
-                .isFalse();
+            assertThat(actualStandingMap)
+                .isEmpty();
         }
     }
 
@@ -484,6 +490,28 @@ final class OwnerMapDrawablesTests {
         @AfterEach
         void closeSeams() {
             seams.closeEverySeam();
+        }
+
+        // The view the render path paints is the draw lists the build answered, in place of whatever
+        // stood before.
+        @Test
+        void standsOnTheDrawListsItBuilt() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var clusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
+            var expectedBuiltView = new BuiltView.Production(clusters);
+
+            // ACT
+            buildProductionThrough(
+                seams,
+                drawables,
+                clusters,
+                buildRebuildReading(false));
+
+            // ASSERT
+            assertThat(drawables.getBuiltView())
+                .isEqualTo(expectedBuiltView);
         }
 
         // The build keeps the overlay as the rebuild sampled it, so a batch folding into the build
@@ -547,6 +575,15 @@ final class OwnerMapDrawablesTests {
     @Nested
     class DescribeBuiltCounts {
 
+        // The builders a production rebuild drives, stood in for: all this asks is what the
+        // drawables say of a build that ran.
+        private final StaticSeams seams = new StaticSeams();
+
+        @AfterEach
+        void closeSeams() {
+            seams.closeEverySeam();
+        }
+
         // What the render will paint, so a wrong or empty render can be confirmed against what was
         // built.
         @Test
@@ -556,7 +593,28 @@ final class OwnerMapDrawablesTests {
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
             var expectedCounts = "styledCells=0";
 
-            drawables.ensureClustersNonNull(viewMock);
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
+                buildRebuildReading(false));
+
+            // ACT
+            var actualCounts = drawables.describeBuiltCounts();
+
+            // ASSERT
+            assertThat(actualCounts)
+                .isEqualTo(expectedCounts);
+        }
+
+        // The first render can fire before any build completes, and its line says so rather than
+        // reporting a count of nothing.
+        @Test
+        void namesThePlaceholderBeforeAnythingHasBeenBuilt() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var expectedCounts = "nothingBuilt";
 
             // ACT
             var actualCounts = drawables.describeBuiltCounts();
@@ -570,6 +628,15 @@ final class OwnerMapDrawablesTests {
     @Nested
     class DisposeAll {
 
+        // The builders a production rebuild drives, stood in for: all this asks is what the
+        // drawables keep of a build once released.
+        private final StaticSeams seams = new StaticSeams();
+
+        @AfterEach
+        void closeSeams() {
+            seams.closeEverySeam();
+        }
+
         // What a sector removed mid-session leaves behind if this does nothing: the cached names each
         // own a GL buffer, so the drop is what frees them rather than leaving them to LazyLib's
         // finalizer sweep.
@@ -579,16 +646,18 @@ final class OwnerMapDrawablesTests {
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
 
-            drawables.ensureClustersNonNull(viewMock);
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
+                buildRebuildReading(false));
 
             // ACT
             drawables.disposeAll();
 
             // ASSERT
-            assertThat(drawables.getClusters())
-                .isNull();
-            assertThat(drawables.getBorderStageOverlay())
-                .isNull();
+            assertThat(drawables.getBuiltView())
+                .isSameAs(BuiltView.PLACEHOLDER);
             assertThat(drawables.getClusterAnchors())
                 .isEmpty();
             assertThat(drawables.getOwnerLabels())
@@ -607,8 +676,8 @@ final class OwnerMapDrawablesTests {
             drawables.disposeAll();
 
             // ASSERT
-            assertThat(drawables.getClusters())
-                .isNull();
+            assertThat(drawables.getBuiltView())
+                .isSameAs(BuiltView.PLACEHOLDER);
             assertThat(drawables.getOwnerLabels())
                 .isEmpty();
         }
@@ -622,7 +691,7 @@ final class OwnerMapDrawablesTests {
             CELL_GEOMETRY,
             WALK,
             viewReading,
-            ContentInputs.createEmpty(),
+            createInputsSpellingNames(OwnerNameFormatChoice.FULL),
             isAnchorOverlayShown);
     }
 

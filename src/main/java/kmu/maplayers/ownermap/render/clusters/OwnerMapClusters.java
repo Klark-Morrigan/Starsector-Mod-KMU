@@ -13,7 +13,6 @@ import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ import java.util.Map;
  * <p>Two things live here, and the type keeps them apart. The built map is live: the
  * {@link PaintedCellStore} and the styled-cluster-group map are written through by the refresh,
  * which replaces just the cells and owners an owner change touched; the {@link SystemOccupancy}
- * is folded by the same refresh as what stands in a system comes and goes, its three facts
+ * is folded by the same refresh as what stands in a system comes and goes, its four facts
  * mutable together behind one type's folds so no pass can bring one up to date and leave a cell
  * drawn from two readings of the sector; and the cluster index is re-derived whenever the
  * holding moves. The {@link OwnerMapBuildInputs} beside them are fixed once the build ends and
@@ -74,8 +73,8 @@ public final class OwnerMapClusters
     private final OwnerMapBuildInputs buildInputs;
 
     // Which contiguous cluster each system sits in, re-derived by reindexClusters whenever the
-    // owner map changes. Seeded empty so a build that never indexes (and the empty placeholder)
-    // still answers a lookup rather than tripping over a null.
+    // owner map changes. Seeded empty so a build that never indexes still answers a lookup rather
+    // than tripping over a null.
     private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
 
     // The last owner whose loops were flattened for a cursor read, and what came out. One entry
@@ -89,19 +88,6 @@ public final class OwnerMapClusters
 
         this.occupancy = occupancy;
         this.buildInputs = buildInputs;
-    }
-
-    // An empty placeholder for the render path to fall back on after a failed first build: the
-    // two draw lists are empty so the render is a harmless no-op, and the next frame's retry
-    // replaces it with a real build before any incremental pass - which needs the theme - can
-    // run, so the placeholder inputs are never read. It carries the active view (the one being
-    // drawn when the build failed) rather than naming a concrete view, keeping this model
-    // view-agnostic.
-    public static OwnerMapClusters createEmpty(OwnerPaintedView view) {
-
-        return new OwnerMapClusters(
-            SystemOccupancy.createEmpty(),
-            OwnerMapBuildInputs.createEmpty(view));
     }
 
     /**

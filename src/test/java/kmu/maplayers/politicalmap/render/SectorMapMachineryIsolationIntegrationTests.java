@@ -33,6 +33,7 @@ import java.util.List;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.render.rebuild.OwnerMapCacheReads.readProductionClustersOf;
 import static kmu.maplayers.politicalmap.refresh.MarketRefreshFixtures.mockMarketInSystem;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -547,14 +548,14 @@ final class SectorMapMachineryIsolationIntegrationTests {
         // What the cache last drew, without asking it to draw again - for a case claiming a sector
         // nobody touched still holds what it held.
         private OwnerMapClusters readTerritories() {
-            return cache.getClusters();
+            return readProductionClustersOf(cache);
         }
 
         private OwnerMapClusters rebuild() {
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
-            return cache.getClusters();
+            return readProductionClustersOf(cache);
         }
     }
 }

@@ -12,13 +12,13 @@ import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
@@ -37,6 +37,8 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInputsSpellingNames;
+import static kmu.maplayers.ownermap.render.clusters.SystemOccupancyFixtures.createEmptyOccupancy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -46,8 +48,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the built map state the renderer paints and the incremental refresh edits:
- * that the empty fallback is a harmless no-op the render path can lean on after a failed
- * first build, that {@link OwnerMapClusters#isEmpty} tracks either draw list, that an owner
+ * that {@link OwnerMapClusters#isEmpty} tracks either draw list, that an owner
  * baking no group is dropped rather than left painting what it lost, and that the two snapshots
  * handed in - the live occupancy and the inputs the build was baked under - are the two handed
  * back, with the global tier the emission reads coming off the retained theme.
@@ -65,46 +66,6 @@ final class OwnerMapClustersTests {
 
     // A second cell, for the case that needs one of each form.
     private static final SystemKey LONE_CELL = buildCellKey("lone");
-
-    @Nested
-    class CreateEmpty {
-
-        // Both draw lists empty, so the render is a no-op and isEmpty short-circuits the GL state
-        // push; the retained inputs are neutral placeholders the next frame's real build replaces
-        // before any incremental pass reads them.
-        @Test
-        void yieldsAnEmptyNoOpFallback() {
-
-            // ARRANGE
-            // A stand-in view so this model test names no concrete view: the clusters only carry the
-            // view for the incremental re-shape to read back, so any OwnerPaintedView serves.
-            var viewMock = mock(OwnerPaintedView.class);
-
-            // ACT
-            var actualClusters = OwnerMapClusters.createEmpty(viewMock);
-
-            // ASSERT
-            assertThat(actualClusters.isEmpty())
-                .isTrue();
-
-            assertThat(actualClusters.getStyledCellByCellKey())
-                .isEmpty();
-            assertThat(actualClusters.getStyledClusterGroupByOwnerId())
-                .isEmpty();
-            assertThat(actualClusters.getOccupancy().getOwnerBySystemKey())
-                .isEmpty();
-            assertThat(actualClusters.getOccupancy().getInhabitedSystemKeys())
-                .isEmpty();
-            assertThat(actualClusters.getOccupancy().getSpotlitPresenceSystemKeys())
-                .isEmpty();
-
-            // The placeholder inputs' own stand-ins are OwnerMapBuildInputs' to pin; read back here
-            // only to prove the fallback carries the view it was built for, which is the one thing
-            // about them a later frame reads.
-            assertThat(actualClusters.getBuildInputs().getViewReading().view())
-                .isSameAs(viewMock);
-        }
-    }
 
     @Nested
     class IsEmpty {
@@ -174,7 +135,7 @@ final class OwnerMapClustersTests {
             var expectedGlobalStyle = renderStyle.global();
 
             var clusters = new OwnerMapClusters(
-                SystemOccupancy.createEmpty(),
+                createEmptyOccupancy(),
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         renderStyle,
@@ -187,7 +148,7 @@ final class OwnerMapClustersTests {
                         mock(OwnerPaintedView.class),
                         OwnerReadingFake.createAnsweringNothing(),
                         new OwnerSourceFake()),
-                    ContentInputs.createEmpty(),
+                    createInputsSpellingNames(OwnerNameFormatChoice.FULL),
                     false));
 
             clusters.getPaintedCells().putPaintedCell(
@@ -427,8 +388,8 @@ final class OwnerMapClustersTests {
         void handBackTheTwoSnapshotsHandedIn() {
 
             // ARRANGE
-            var occupancy = SystemOccupancy.createEmpty();
-            var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
+            var occupancy = createEmptyOccupancy();
+            var buildInputs = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()).getBuildInputs();
 
             // ACT
             var actualClusters = new OwnerMapClusters(occupancy, buildInputs);
@@ -455,8 +416,8 @@ final class OwnerMapClustersTests {
         void standsTheBuilderUpOnTheBuildsPaintsAndLiveOccupancy() {
 
             // ARRANGE
-            var occupancy = SystemOccupancy.createEmpty();
-            var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
+            var occupancy = createEmptyOccupancy();
+            var buildInputs = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()).getBuildInputs();
             var clusters = new OwnerMapClusters(occupancy, buildInputs);
             var actualArguments = new ArrayList<List<?>>();
 
@@ -491,8 +452,8 @@ final class OwnerMapClustersTests {
         void standsTheBuilderUpOnTheBuildsPaintsAndCurrentFillStatesOverTheGivenCells() {
 
             // ARRANGE
-            var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
-            var clusters = new OwnerMapClusters(SystemOccupancy.createEmpty(), buildInputs);
+            var buildInputs = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()).getBuildInputs();
+            var clusters = new OwnerMapClusters(createEmptyOccupancy(), buildInputs);
 
             clusters
                 .getOccupancy()

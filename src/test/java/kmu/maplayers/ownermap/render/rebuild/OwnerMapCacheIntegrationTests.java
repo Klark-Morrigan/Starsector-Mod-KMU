@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.render.rebuild.OwnerMapCacheReads.readProductionClustersOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalMatchers.not;
@@ -58,8 +59,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 /**
- * Pins the cache's guarantees that hold outside a running game: a rebuild that throws leaves
- * something safe to draw and is retried on the next frame, a fold that throws owes the next frame
+ * Pins the cache's guarantees that hold outside a running game: a rebuild that throws leaves the
+ * view that stood before it and is retried on the next frame, a fold that throws owes the next frame
  * the rebuild, releasing the cache drops everything it
  * built for its sector, the debug toggle picks which of the two views a rebuild builds, and a frame
  * owing no rebuild hands the systems marked since to the layer's strategy and owes the next frame a
@@ -125,10 +126,10 @@ final class OwnerMapCacheIntegrationTests {
     @Nested
     class RefreshDrawLists {
 
-        // No sector, so the rebuild throws part way through. The renderer must still find a draw
-        // list rather than dereference a null one, and the next frame retries.
+        // No sector, so the first rebuild throws part way through. The placeholder still stands, so
+        // the renderer finds a view that draws nothing, and the next frame retries.
         @Test
-        void installsAnEmptyPlaceholderWhenTheRebuildThrows() {
+        void leavesThePlaceholderStandingWhenTheFirstRebuildThrows() {
 
             // ARRANGE
             var cache = buildCacheOver(machinery);
@@ -144,10 +145,8 @@ final class OwnerMapCacheIntegrationTests {
             }
 
             // ASSERT
-            assertThat(cache.getClusters())
-                .isNotNull();
-            assertThat(cache.getClusters().getStyledCellByCellKey())
-                .isEmpty();
+            assertThat(cache.getBuiltView())
+                .isSameAs(BuiltView.PLACEHOLDER);
         }
 
         // A thrown rebuild advances no baseline, so the frame after it builds again rather than
@@ -169,11 +168,11 @@ final class OwnerMapCacheIntegrationTests {
             cache.refreshDrawLists(VIEW, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters())
+            assertThat(readProductionClustersOf(cache))
                 .isSameAs(builtClusters);
         }
 
-        // The placeholder a failed build leaves resolved nothing a fold could patch, so a mark over it
+        // The placeholder a failed first build leaves holds nothing a fold could patch, so a mark over it
         // owes the rebuild whatever the strategy: the strategy that would fold it is never asked, and
         // the rebuild reads the mark for itself.
         @Test
@@ -230,7 +229,7 @@ final class OwnerMapCacheIntegrationTests {
         }
 
         // The overlay replaces the production view outright rather than drawing over it, so the
-        // builder of the other view is never asked and its draw lists are left null.
+        // builder of the other view is never asked.
         @Test
         void buildsTheBorderTracingOverlayInPlaceOfTheDrawListsUnderTheDebugToggle() {
 
@@ -239,17 +238,14 @@ final class OwnerMapCacheIntegrationTests {
             traceBordersForDebug();
 
             var cache = buildCacheOver(emptySectorMachinery);
+            var expectedBuiltView = new BuiltView.Debug(debugOverlay);
 
             // ACT
             cache.refreshDrawLists(VIEW, SCREEN);
 
             // ASSERT
-            assertThat(cache.isDebug())
-                .isTrue();
-            assertThat(cache.getBorderStageOverlay())
-                .isSameAs(debugOverlay);
-            assertThat(cache.getClusters())
-                .isNull();
+            assertThat(cache.getBuiltView())
+                .isEqualTo(expectedBuiltView);
 
             productionBuilderMock.verifyNoInteractions();
         }
@@ -263,17 +259,14 @@ final class OwnerMapCacheIntegrationTests {
             openEverySeamARebuildReaches(builtClusters);
 
             var cache = buildCacheOver(emptySectorMachinery);
+            var expectedBuiltView = new BuiltView.Production(builtClusters);
 
             // ACT
             cache.refreshDrawLists(VIEW, SCREEN);
 
             // ASSERT
-            assertThat(cache.isDebug())
-                .isFalse();
-            assertThat(cache.getClusters())
-                .isSameAs(builtClusters);
-            assertThat(cache.getBorderStageOverlay())
-                .isNull();
+            assertThat(cache.getBuiltView())
+                .isEqualTo(expectedBuiltView);
 
             debugBuilderMock.verifyNoInteractions();
         }
@@ -621,26 +614,18 @@ final class OwnerMapCacheIntegrationTests {
         void dropsTheDrawListsBuiltForItsSector() {
 
             // ARRANGE
-            var cache = buildCacheOver(machinery);
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
-            try (var settingsMock = mockStatic(KmuLunaSettings.class);
-                    var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
-                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+            var cache = buildCacheOver(emptySectorMachinery);
 
-                cache.refreshDrawLists(viewMock, SCREEN);
-            }
-
-            assertThat(cache.getClusters())
-                .isNotNull();
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             // ACT
             cache.disposeCachedState();
 
             // ASSERT
-            assertThat(cache.getClusters())
-                .isNull();
-            assertThat(cache.getBorderStageOverlay())
-                .isNull();
+            assertThat(cache.getBuiltView())
+                .isSameAs(BuiltView.PLACEHOLDER);
             assertThat(cache.getClusterAnchors())
                 .isEmpty();
             assertThat(cache.getOwnerLabels())
@@ -659,8 +644,8 @@ final class OwnerMapCacheIntegrationTests {
             cache.disposeCachedState();
 
             // ASSERT
-            assertThat(cache.getClusters())
-                .isNull();
+            assertThat(cache.getBuiltView())
+                .isSameAs(BuiltView.PLACEHOLDER);
             assertThat(cache.getOwnerLabels())
                 .isEmpty();
         }

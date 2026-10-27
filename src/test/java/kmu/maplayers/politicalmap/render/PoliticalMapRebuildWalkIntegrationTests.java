@@ -40,6 +40,7 @@ import java.util.function.Consumer;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.render.rebuild.OwnerMapCacheReads.readProductionClustersOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -306,7 +307,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getOccupancy().getInhabitedSystemKeys())
+            assertThat(readProductionClustersOf(cache).getOccupancy().getInhabitedSystemKeys())
                 .containsExactlyInAnyOrder(ALPHA_CELL, BETA_CELL);
         }
 
@@ -331,7 +332,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             // ASSERT
-            var actualTerritories = cache.getClusters();
+            var actualTerritories = readProductionClustersOf(cache);
 
             // The cut: the revealed system is drawn, so it has a cell to paint at all.
             assertThat(actualTerritories.getStyledCellByCellKey())
@@ -371,7 +372,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getStyledCellByCellKey())
+            assertThat(readProductionClustersOf(cache).getStyledCellByCellKey())
                 .containsKey(BETA_CELL)
                 .doesNotContainKey(ALPHA_CELL);
         }
@@ -394,7 +395,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getStyledCellByCellKey())
+            assertThat(readProductionClustersOf(cache).getStyledCellByCellKey())
                 .containsKeys(ANCHORED_ALPHA_CELL, BETA_CELL)
                 .doesNotContainKey(TWIN_CELL);
         }
@@ -419,7 +420,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getStyledCellByCellKey())
+            assertThat(readProductionClustersOf(cache).getStyledCellByCellKey())
                 .containsKeys(ALPHA_CELL, BETA_CELL);
         }
 
@@ -465,7 +466,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getStyledCellByCellKey())
+            assertThat(readProductionClustersOf(cache).getStyledCellByCellKey())
                 .containsKeys(ALPHA_CELL, BETA_CELL)
                 .doesNotContainKey(GAMMA_CELL);
         }

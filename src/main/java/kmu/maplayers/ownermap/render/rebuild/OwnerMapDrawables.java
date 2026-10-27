@@ -8,8 +8,6 @@ import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
-import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
-import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
@@ -20,6 +18,7 @@ import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -31,19 +30,13 @@ import java.util.function.Supplier;
  * and knows, for each, which builder makes it from which inputs. A rebuild is then
  * {@link FullOwnerMapRebuild} naming the stages in order and this running them, and neither has to
  * know the other's bookkeeping.
- *
- * <p>Exactly one of the two base views is non-null once anything has been built: the debug
- * border-tracing overlay replaces the production draw lists outright rather than drawing over them.
  */
 final class OwnerMapDrawables {
 
-    // The built draw lists plus the holding and style inputs an incremental re-shape needs.
-    // Null until the first build.
-    private OwnerMapClusters clusters;
-
-    // The debug border-tracing overlay, built instead of the clusters above while the "debug
-    // border tracing" dev toggle is on.
-    private ClusterBorderStageOverlay borderStageOverlay;
+    // The base view standing: the production draw lists, the debug border-tracing overlay built
+    // in their place while the "debug border tracing" dev toggle is on, or the placeholder until
+    // the first build completes.
+    private BuiltView builtView = BuiltView.PLACEHOLDER;
 
     // The cluster-label placements and what they were fitted under, held here rather than by
     // either view above so they draw over whichever is live - turning border tracing on must not
@@ -71,14 +64,9 @@ final class OwnerMapDrawables {
         this.labelFaceSource = labelFaceSource;
     }
 
-    /** @return the built production draw lists, or null while the debug overlay has replaced them */
-    public OwnerMapClusters getClusters() {
-        return clusters;
-    }
-
-    /** @return the built debug border-tracing overlay, or null in the normal (non-debug) view */
-    public ClusterBorderStageOverlay getBorderStageOverlay() {
-        return borderStageOverlay;
+    /** @return the base view standing, which the renderer paints by case */
+    public BuiltView getBuiltView() {
+        return builtView;
     }
 
     /** @return the cluster-label placements, drawn over whichever base view is live */
@@ -92,42 +80,33 @@ final class OwnerMapDrawables {
     }
 
     /**
-     * @return whether the debug border-tracing overlay is the built view - the one branch the
-     *         renderer needs to pick which base view to paint
-     */
-    public boolean isDebug() {
-        return borderStageOverlay != null;
-    }
-
-    /**
-     * @return whether neither view has been built yet, which is what makes a first frame owe a
-     *         build whatever the revisions happen to say
+     * @return whether only the placeholder stands, which is what makes a first frame owe a build
+     *         whatever the revisions happen to say
      */
     public boolean hasNothingBuilt() {
-        return clusters == null && borderStageOverlay == null;
+
+        return builtView.selectByCase(
+            clusters -> false,
+            borderStageOverlay -> false,
+            () -> true);
     }
 
     /**
-     * @return whether a per-system owner change can be folded into the standing clusters: the
-     *         production view is built - by a build that ran, not the placeholder a failed one
-     *         stands behind. A filtered build folds like any other, the batch re-deriving each
-     *         marked system under the spotlight the build was painted under
-     */
-    public boolean canFoldOwnerChanges() {
-
-        return clusters != null
-            && clusters.getBuildInputs().wasBuilt();
-    }
-
-    /**
-     * The standing map as one value, for the incremental refresh that patches it in place and for
-     * the production rebuild's own name and band stages, which the refresh runs too.
+     * The standing map a per-system owner change folds into, where one can.
+     *
+     * <p>Only the production view takes a fold. The debug overlay replaced the draw lists a fold
+     * would patch, and the placeholder has none. A filtered build folds like any other, the batch
+     * re-deriving each marked system under the spotlight the build was painted under.
      *
      * @param cellGeometry the cells the standing draw lists were shaped from
-     * @return the parts the refresh reads and writes
+     * @return the parts the refresh reads and writes, or empty where no production view stands
      */
-    public StandingOwnerMap toStandingMap(RevisedCellGeometry cellGeometry) {
-        return new StandingOwnerMap(clusters, standingAnchors, ownerLabels, cellGeometry);
+    public Optional<StandingOwnerMap> findFoldableStandingMap(RevisedCellGeometry cellGeometry) {
+
+        return builtView.selectByCase(
+            clusters -> Optional.of(createStandingMapOver(clusters, cellGeometry)),
+            borderStageOverlay -> Optional.empty(),
+            Optional::empty);
     }
 
     /**
@@ -136,23 +115,10 @@ final class OwnerMapDrawables {
      */
     public String describeBuiltCounts() {
 
-        return borderStageOverlay != null
-            ? "debugBaseLoops=" + borderStageOverlay.baseLoops().size()
-            : "styledCells=" + clusters.getStyledCellByCellKey().size();
-    }
-
-    /**
-     * Guards the render path after a failed first build: a rebuild that threw before completing can
-     * leave the draw lists null, which the renderer would dereference. An empty placeholder makes
-     * the render a harmless no-op until a later frame's retry succeeds.
-     *
-     * @param view the view the placeholder is built under
-     */
-    public void ensureClustersNonNull(OwnerPaintedView view) {
-
-        if (clusters == null) {
-            clusters = OwnerMapClusters.createEmpty(view);
-        }
+        return builtView.selectByCase(
+            clusters -> "styledCells=" + clusters.getStyledCellByCellKey().size(),
+            borderStageOverlay -> "debugBaseLoops=" + borderStageOverlay.baseLoops().size(),
+            () -> "nothingBuilt");
     }
 
     /**
@@ -170,8 +136,7 @@ final class OwnerMapDrawables {
         ownerLabels.clear();
         standingAnchors.discardAnchors();
 
-        clusters = null;
-        borderStageOverlay = null;
+        builtView = BuiltView.PLACEHOLDER;
     }
 
     /**
@@ -199,12 +164,10 @@ final class OwnerMapDrawables {
         var owners = viewReading.source().resolveOwners(rebuildReading.walk(), null);
         var styling = readStylingOf(rebuildReading);
 
-        borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
+        builtView = new BuiltView.Debug(DebugBorderTracingBuilder.buildDebugDrawables(
             rebuildReading.cellGeometry().cells(),
             owners,
-            styling);
-
-        clusters = null;
+            styling));
 
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
@@ -243,18 +206,18 @@ final class OwnerMapDrawables {
             rebuildReading.contentInputs(),
             rebuildReading.isAnchorOverlayShown());
 
-        clusters = OwnerMapBuilder.buildClusters(
+        var clusters = OwnerMapBuilder.buildClusters(
             rebuildReading.cellGeometry().cells(),
             buildInputs,
             owners);
 
-        borderStageOverlay = null;
+        builtView = new BuiltView.Production(clusters);
 
         // The names and the bands through the stages a batch folding into this build runs too, so
         // the two paths fit and bake one map alike. The cells go over carrying the revision they
         // stand at rather than the live signal read at the top - the two agree here, and only the
         // pair is true of the geometry in hand.
-        var standingMap = toStandingMap(rebuildReading.cellGeometry());
+        var standingMap = createStandingMapOver(clusters, rebuildReading.cellGeometry());
 
         standingMap.fitNamesIn(labelFaceSource.get());
 
@@ -281,6 +244,15 @@ final class OwnerMapDrawables {
      */
     public void rebuildLabels(boolean areNamesDrawn) {
         LabelsBuilder.rebuildLabels(ownerLabels, standingAnchors, areNamesDrawn);
+    }
+
+    // The standing map as one value, for the incremental refresh that patches it in place and for
+    // the production rebuild's own name and band stages, which the refresh runs too.
+    private StandingOwnerMap createStandingMapOver(
+            OwnerMapClusters clusters,
+            RevisedCellGeometry cellGeometry) {
+
+        return new StandingOwnerMap(clusters, standingAnchors, ownerLabels, cellGeometry);
     }
 
     // The paint scheme one rebuild styles everything it builds from, read once here for whichever

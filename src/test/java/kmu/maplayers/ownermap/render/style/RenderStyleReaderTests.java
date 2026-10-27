@@ -8,7 +8,7 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
-import kmu.maplayers.ownermap.ContentInputs;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.settings.KmuOwnerMapGeometrySettings;
 import kmu.settings.KmuOwnerMapHighlightSettings;
 import kmu.settings.KmuOwnerMapStyleSettings;
@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInputsSpellingNames;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -68,6 +70,7 @@ final class RenderStyleReaderTests {
         @Test
         void gathersEverySectorWideKnobIntoOneTier() {
 
+            // ARRANGE
             try (var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
                     var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class);
                     var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
@@ -117,21 +120,23 @@ final class RenderStyleReaderTests {
                     .when(KmuOwnerMapStyleSettings::getOwnerMapPresenceLightening)
                     .thenReturn(PRESENCE_LIGHTENING);
 
-                var global = RenderStyleReader.readGlobalStyle();
+                // ACT
+                var actualGlobal = RenderStyleReader.readGlobalStyle();
 
+                // ASSERT
                 // The pattern whole, since the three are cut with together and a knob threaded
                 // into a neighbouring slot is what asserting them one at a time would miss.
-                assertThat(global.hatch().pattern())
+                assertThat(actualGlobal.hatch().pattern())
                     .isEqualTo(new HatchPattern(HATCH_SPACING, HATCH_ANGLE, HATCH_JOIN_TOLERANCE));
 
                 // Both halves of the stroke at once, since the width the player set is only the
                 // stroke they asked for if it arrives at the quality they set as well.
-                assertThat(global.hatch().stroke())
+                assertThat(actualGlobal.hatch().stroke())
                     .isEqualTo(new GlLineHatchStroke(GlLineQuality.ALIASED, HATCH_WIDTH_FRACTION));
 
-                var cornerRounding = global.borderSmoothing().cornerRounding();
+                var cornerRounding = actualGlobal.borderSmoothing().cornerRounding();
 
-                assertThat(global.borderSmoothing().spikeSanding().shouldSandSpikes())
+                assertThat(actualGlobal.borderSmoothing().spikeSanding().shouldSandSpikes())
                     .isTrue();
 
                 assertThat(cornerRounding.shouldRoundCorners())
@@ -143,21 +148,21 @@ final class RenderStyleReaderTests {
                 assertThat(cornerRounding.chamferAngleRadians())
                     .isEqualTo(CHAMFER_ANGLE);
 
-                assertThat(global.desaturationDarkening())
+                assertThat(actualGlobal.desaturationDarkening())
                     .isEqualTo(DESATURATION_DARKENING);
 
                 // Distinct from the darkening beside it: the two are adjacent doubles on the
                 // record, so equal stand-ins would let a transposed pair read as correct.
-                assertThat(global.presenceLightening())
+                assertThat(actualGlobal.presenceLightening())
                     .isEqualTo(PRESENCE_LIGHTENING);
-                assertThat(global.hoverHighlight().glow().opacity())
+                assertThat(actualGlobal.hoverHighlight().glow().opacity())
                     .isEqualTo(HOVER_GLOW_OPACITY);
 
                 // Distinct from the cursor tier's for the reason the two strengths above are
                 // distinct from each other: the two tiers are the same record in adjacent slots,
                 // so equal stand-ins would let a transposed pair read as correct. Read off the
                 // wash rather than the halo, the preview tier carrying no halo of its own.
-                assertThat(global.previewHighlight().wash().fillOpacity())
+                assertThat(actualGlobal.previewHighlight().wash().fillOpacity())
                     .isEqualTo(PREVIEW_WASH_OPACITY);
             }
         }
@@ -167,6 +172,8 @@ final class RenderStyleReaderTests {
         // aliased whatever the player set would pass every other assertion in this class.
         @Test
         void strokesTheHatchSmoothedWhenTheSmoothingKnobIsOn() {
+
+            // ARRANGE
             // The tier gathers three sections, so the two this case says nothing about are still
             // opened: a settings read outside a mock has no LunaLib to answer it.
             try (var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
@@ -180,9 +187,11 @@ final class RenderStyleReaderTests {
                     .when(KmuOwnerMapGeometrySettings::getOwnerMapHatchWidthFraction)
                     .thenReturn(HATCH_WIDTH_FRACTION);
 
-                var global = RenderStyleReader.readGlobalStyle();
+                // ACT
+                var actualGlobal = RenderStyleReader.readGlobalStyle();
 
-                assertThat(global.hatch().stroke())
+                // ASSERT
+                assertThat(actualGlobal.hatch().stroke())
                     .isEqualTo(new GlLineHatchStroke(GlLineQuality.SMOOTHED, HATCH_WIDTH_FRACTION));
             }
         }
@@ -200,6 +209,7 @@ final class RenderStyleReaderTests {
         @Test
         void landsEachKnobInTheSubRecordOfThePassThatReadsIt() {
 
+            // ARRANGE
             try (var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class)) {
 
                 // The two gates differ, so a gate threaded into the other pass's sub-record reads
@@ -226,26 +236,28 @@ final class RenderStyleReaderTests {
                     .when(KmuOwnerMapGeometrySettings::getOwnerMapBorderChamferAngleRadians)
                     .thenReturn(CHAMFER_ANGLE);
 
-                var smoothing = RenderStyleReader.readBorderSmoothingStyle();
+                // ACT
+                var actualSmoothing = RenderStyleReader.readBorderSmoothingStyle();
 
+                // ASSERT
                 // Both passes' shape belongs on one profile - that is what lets them work from a
                 // single value - but each knob belongs to the half of it the pass that reads the
                 // knob is handed. The split is where a field could be threaded into the wrong
                 // sub-record and still compile, so both halves are named here.
-                assertThat(smoothing.spikeSanding().shouldSandSpikes())
+                assertThat(actualSmoothing.spikeSanding().shouldSandSpikes())
                     .isTrue();
-                assertThat(smoothing.spikeSanding().spikeHeight())
+                assertThat(actualSmoothing.spikeSanding().spikeHeight())
                     .isEqualTo(SPIKE_HEIGHT);
-                assertThat(smoothing.spikeSanding().spikeAngleRadians())
+                assertThat(actualSmoothing.spikeSanding().spikeAngleRadians())
                     .isEqualTo(SPIKE_ANGLE);
 
-                assertThat(smoothing.cornerRounding().shouldRoundCorners())
+                assertThat(actualSmoothing.cornerRounding().shouldRoundCorners())
                     .isFalse();
-                assertThat(smoothing.cornerRounding().cornerRadius())
+                assertThat(actualSmoothing.cornerRounding().cornerRadius())
                     .isEqualTo(CORNER_RADIUS);
-                assertThat(smoothing.cornerRounding().cornerSegments())
+                assertThat(actualSmoothing.cornerRounding().cornerSegments())
                     .isEqualTo(CORNER_SEGMENTS);
-                assertThat(smoothing.cornerRounding().chamferAngleRadians())
+                assertThat(actualSmoothing.cornerRounding().chamferAngleRadians())
                     .isEqualTo(CHAMFER_ANGLE);
             }
         }
@@ -268,6 +280,7 @@ final class RenderStyleReaderTests {
         @Test
         void threadsEachHoverSettingIntoItsMatchingSlot() {
 
+            // ARRANGE
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
                 highlightSettingsMock
@@ -298,27 +311,29 @@ final class RenderStyleReaderTests {
                     .when(KmuOwnerMapHighlightSettings::getOwnerMapHoverWashOutlineWidth)
                     .thenReturn(WASH_OUTLINE_WIDTH);
 
-                var hover = RenderStyleReader.readHoverHighlightStyle();
+                // ACT
+                var actualHover = RenderStyleReader.readHoverHighlightStyle();
 
-                assertThat(hover.colour())
+                // ASSERT
+                assertThat(actualHover.colour())
                     .isEqualTo(OwnerPaletteSlot.SECONDARY);
 
-                assertThat(hover.glow().opacity())
+                assertThat(actualHover.glow().opacity())
                     .isEqualTo(GLOW_OPACITY);
-                assertThat(hover.glow().width())
+                assertThat(actualHover.glow().width())
                     .isEqualTo(GLOW_WIDTH);
-                assertThat(hover.glow().layers())
+                assertThat(actualHover.glow().layers())
                     .isEqualTo(GLOW_LAYERS);
-                assertThat(hover.glow().pulseStrength())
+                assertThat(actualHover.glow().pulseStrength())
                     .isEqualTo(GLOW_PULSE_STRENGTH);
-                assertThat(hover.glow().pulsePeriodSeconds())
+                assertThat(actualHover.glow().pulsePeriodSeconds())
                     .isEqualTo(GLOW_PULSE_PERIOD);
 
-                assertThat(hover.wash().fillOpacity())
+                assertThat(actualHover.wash().fillOpacity())
                     .isEqualTo(WASH_OPACITY);
-                assertThat(hover.wash().outlineOpacity())
+                assertThat(actualHover.wash().outlineOpacity())
                     .isEqualTo(WASH_OUTLINE_OPACITY);
-                assertThat(hover.wash().outlineWidth())
+                assertThat(actualHover.wash().outlineWidth())
                     .isEqualTo(WASH_OUTLINE_WIDTH);
             }
         }
@@ -334,6 +349,7 @@ final class RenderStyleReaderTests {
         @Test
         void threadsEachPreviewSettingIntoItsMatchingSlot() {
 
+            // ARRANGE
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
                 highlightSettingsMock
@@ -343,12 +359,14 @@ final class RenderStyleReaderTests {
                     .when(KmuOwnerMapHighlightSettings::getOwnerMapPreviewWashOpacity)
                     .thenReturn(WASH_OPACITY);
 
-                var preview = RenderStyleReader.readPreviewHighlightStyle();
+                // ACT
+                var actualPreview = RenderStyleReader.readPreviewHighlightStyle();
 
-                assertThat(preview.colour())
+                // ASSERT
+                assertThat(actualPreview.colour())
                     .isEqualTo(OwnerPaletteSlot.PRIMARY);
 
-                assertThat(preview.wash().fillOpacity())
+                assertThat(actualPreview.wash().fillOpacity())
                     .isEqualTo(WASH_OPACITY);
             }
         }
@@ -359,14 +377,20 @@ final class RenderStyleReaderTests {
         @Test
         void tracesLitRegionsAtItsOwnFixedWeights() {
 
+            // ARRANGE
+            var expectedOutlineOpacity = 0.9;
+            var expectedOutlineWidth = 0.5;
+
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
-                var preview = RenderStyleReader.readPreviewHighlightStyle();
+                // ACT
+                var actualPreview = RenderStyleReader.readPreviewHighlightStyle();
 
-                assertThat(preview.wash().outlineOpacity())
-                    .isEqualTo(0.9);
-                assertThat(preview.wash().outlineWidth())
-                    .isEqualTo(0.5);
+                // ASSERT
+                assertThat(actualPreview.wash().outlineOpacity())
+                    .isEqualTo(expectedOutlineOpacity);
+                assertThat(actualPreview.wash().outlineWidth())
+                    .isEqualTo(expectedOutlineWidth);
             }
         }
 
@@ -375,11 +399,14 @@ final class RenderStyleReaderTests {
         @Test
         void carriesNoHalo() {
 
+            // ARRANGE
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
-                var preview = RenderStyleReader.readPreviewHighlightStyle();
+                // ACT
+                var actualPreview = RenderStyleReader.readPreviewHighlightStyle();
 
-                assertThat(preview.glow())
+                // ASSERT
+                assertThat(actualPreview.glow())
                     .isEqualTo(HoverGlowStyle.NO_GLOW);
             }
         }
@@ -390,6 +417,9 @@ final class RenderStyleReaderTests {
 
         @Test
         void carriesTheGlobalTierAndTheCategoriesTheLayerDeclares() {
+
+            // ARRANGE
+            var expectedDesaturationDarkening = 0.3;
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class);
                     var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
@@ -409,17 +439,19 @@ final class RenderStyleReaderTests {
                     ElementStyle.NOT_DRAWN,
                     INNER_WIDTH);
 
-                var contentInputs = ContentInputs.createEmpty();
+                var contentInputs = createInputsSpellingNames(OwnerNameFormatChoice.FULL);
                 var categoriesMock = mock(OwnerCategories.class);
 
                 when(categoriesMock.readCategoryStyles(contentInputs))
                     .thenReturn(Map.of(StandInCategoryFake.OWNED, declaredStyle));
 
-                var renderStyle = RenderStyleReader.readRenderStyle(categoriesMock, contentInputs);
+                // ACT
+                var actualRenderStyle = RenderStyleReader.readRenderStyle(categoriesMock, contentInputs);
 
-                assertThat(renderStyle.global().desaturationDarkening())
-                    .isEqualTo(0.3);
-                assertThat(renderStyle.categories())
+                // ASSERT
+                assertThat(actualRenderStyle.global().desaturationDarkening())
+                    .isEqualTo(expectedDesaturationDarkening);
+                assertThat(actualRenderStyle.categories())
                     .containsExactly(entry(StandInCategoryFake.OWNED, declaredStyle));
             }
         }

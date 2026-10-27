@@ -17,12 +17,10 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.render.MapFrameCache;
-import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
-import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.settings.KmuLunaSettings;
 
 import org.apache.log4j.Logger;
@@ -128,31 +126,24 @@ public final class OwnerMapCache
         this.fullRebuild = new FullOwnerMapRebuild(machinery, seedRule, drawables, ledger);
     }
 
-    /** @return the built production draw lists, or null while the debug overlay has replaced them */
-    public OwnerMapClusters getClusters() {
-        return drawables.getClusters();
+    /** @return the base view standing this frame, which the renderer paints by case */
+    public BuiltView getBuiltView() {
+        return drawables.getBuiltView();
     }
 
     /**
      * @return the production draw lists as the shapes a cursor read tests against - null while the
-     *         debug overlay has replaced them, which the read parks on
+     *         debug overlay has replaced them or nothing has been built, which the read parks on
      */
     @Override
     public MapHoverTargets resolveHoverTargets() {
-        return drawables.getClusters();
-    }
 
-    /** @return the built debug border-tracing overlay, or null in the normal (non-debug) view */
-    public ClusterBorderStageOverlay getBorderStageOverlay() {
-        return drawables.getBorderStageOverlay();
-    }
-
-    /**
-     * @return whether the debug border-tracing overlay is the built view this frame - the one branch the
-     *         renderer needs to pick which base view to paint
-     */
-    public boolean isDebug() {
-        return drawables.isDebug();
+        return drawables
+            .getBuiltView()
+            .selectByCase(
+                clusters -> clusters,
+                borderStageOverlay -> null,
+                () -> null);
     }
 
     /** @return the cluster-label placements, drawn over whichever base view is live */
@@ -191,7 +182,8 @@ public final class OwnerMapCache
      * Brings the cached draw lists in line with the active view, rebuilding only the stale half.
      * Guarded because it runs every frame the map is open: a fault is recorded once (not per frame),
      * and the catch owes the next frame the full rebuild rather than the overlay going permanently
-     * stale, plus installs an empty placeholder so the renderer never dereferences a null draw list.
+     * stale. Whatever view stood before the fault keeps drawing, and before any build that is the
+     * placeholder, which draws nothing.
      *
      * <p>The debt is what makes a thrown fold retry. Its batch was drained and the standing owners
      * dropped before it threw, and no revision moves for either, so without the debt the next frame
@@ -218,7 +210,6 @@ public final class OwnerMapCache
                 runtimeException);
 
             ledger.recordRebuildOwed();
-            drawables.ensureClustersNonNull(view);
         }
     }
 
@@ -228,8 +219,8 @@ public final class OwnerMapCache
     // settings alone, so it runs first and most frames stop at it.
     private void rebuildStaleHalves(OwnerPaintedView view, ScreenMemoryScope memoryScope) {
 
-        // Both views null means neither has been built for this sector, so the frame forces the
-        // build whatever the keys say.
+        // The placeholder standing means no build has completed for this sector, so the frame
+        // forces the build whatever the keys say.
         var staleHalves = ledger.decideWhatIsStale(view, memoryScope, drawables.hasNothingBuilt());
         if (staleHalves.staleness() == Staleness.NOTHING) {
 
@@ -253,8 +244,9 @@ public final class OwnerMapCache
 
     // Nothing stale enough to rebuild, so the systems the board marked since are the layer's
     // strategy's: folded into the standing map, or owed to the next frame's full rebuild. A
-    // standing map that cannot take a fold - the static debug overlay, or a failed build's
-    // placeholder - owes the rebuild whatever the strategy, since nothing else would show the change.
+    // view that cannot take a fold - the static debug overlay, or the placeholder standing before
+    // any build completes - owes the rebuild whatever the strategy, since nothing else would show
+    // the change.
     //
     // The drain happens here rather than inside the strategy, and before either branch is chosen,
     // because this cache is what holds the board: a strategy is handed the standing map and names
@@ -281,9 +273,10 @@ public final class OwnerMapCache
         // a full rebuild that has to read it for itself.
         fullRebuild.dropStandingOwners();
 
-        var outcome = drawables.canFoldOwnerChanges()
-            ? foldMarkedSystems(staleHalves, staleSystemKeys)
-            : MarkedSystemsOutcome.REBUILD_OWED;
+        var outcome = drawables
+            .findFoldableStandingMap(fullRebuild.getCellGeometry())
+            .map(standingMap -> foldMarkedSystems(staleHalves, standingMap, staleSystemKeys))
+            .orElse(MarkedSystemsOutcome.REBUILD_OWED);
 
         if (outcome == MarkedSystemsOutcome.REBUILD_OWED) {
 
@@ -304,13 +297,14 @@ public final class OwnerMapCache
     // is walked are one sector's.
     private MarkedSystemsOutcome foldMarkedSystems(
             StaleHalves staleHalves,
+            StandingOwnerMap standingMap,
             Set<SystemKey> staleSystemKeys) {
 
         return refreshStrategy.refreshMarkedSystems(
             SectorWalk.openOver(
                 machinery.resolveSector(),
                 staleHalves.cellCut().visibilityRules()),
-            drawables.toStandingMap(fullRebuild.getCellGeometry()),
+            standingMap,
             staleSystemKeys);
     }
 

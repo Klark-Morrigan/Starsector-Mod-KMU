@@ -48,46 +48,6 @@ public record MapStyling(
     ColourPair desaturationPalette,
     ColourPair presencePalette) {
 
-    // The shade every slot of the placeholder below holds. A bare mid grey rather than a layer's
-    // unowned shade: the placeholder stands in for a build that never got as far as reading a
-    // sector, so there is no reading to take a colour from - and nothing paints from it either
-    // way. Named apart from the neutral this record's own slot carries, which is a real reading of
-    // a real layer and must not be confused with a stand-in for the absence of one.
-    private static final Color PLACEHOLDER_COLOUR = Color.GRAY;
-
-    // All three of the placeholder's palettes, at that one shade in both slots. One value shared
-    // between them rather than three equal pairs, since none is ever read and a second would only
-    // invite a reader to hunt for the difference between them.
-    private static final ColourPair PLACEHOLDER_PALETTE =
-        new ColourPair(PLACEHOLDER_COLOUR, PLACEHOLDER_COLOUR);
-
-    /**
-     * The inert scheme a build that never resolved a theme carries - the fallback the render path
-     * falls back on after a failed first build.
-     *
-     * <p>Every value in it is a stand-in that is never read. The null theme is the honest record
-     * of the failure (no theme was resolved), and the render path skips an empty overlay before it
-     * would reach the global tier; the null trace and categories say the same of the knobs and the
-     * layer's declaration, which nothing traces or classifies against without a theme to index. The
-     * palettes are there because the slots must hold something, not because anything paints them.
-     *
-     * <p>Named here rather than spelt out by the caller for the same reason
-     * {@code ContentInputs.createEmpty()} is: "no scheme yet" is one value every such pass shares,
-     * and a caller assembling it by hand is choosing six stand-ins that only look arbitrary until
-     * one of them turns out not to be.
-     *
-     * @return the placeholder scheme
-     */
-    public static MapStyling createEmpty() {
-        return new MapStyling(
-            null,
-            null,
-            null,
-            PLACEHOLDER_PALETTE,
-            PLACEHOLDER_PALETTE,
-            PLACEHOLDER_PALETTE);
-    }
-
     /**
      * The paint scheme one build styles everything from: the whole theme read once through the
      * single reader seam for the layer's own categories, the border trace, the reading's unowned

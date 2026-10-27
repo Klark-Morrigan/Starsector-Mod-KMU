@@ -27,10 +27,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what the retained inputs answer for themselves: that the empty placeholder carries the
- * view it was built for over inert stand-ins and says it was never built, that the constructor
- * threads each snapshot into its matching accessor, and that the paints it holds are resolved over
- * its own reading, picks and scheme rather than any handed in beside them.
+ * Pins what the retained inputs answer for themselves: that the constructor threads each snapshot
+ * into its matching accessor, and that the paints it holds are resolved over its own reading, picks
+ * and scheme rather than any handed in beside them.
  *
  * <p>How a paint is resolved and remembered is
  * {@link kmu.maplayers.ownermap.render.style.MapPaintsTests}'s; what belongs here is that the
@@ -50,57 +49,15 @@ final class OwnerMapBuildInputsTests {
         new ColourPair(Color.GREEN, Color.YELLOW);
 
     @Nested
-    class CreateEmpty {
-
-        @Test
-        void carriesTheViewOverInertStandIns() {
-
-            var viewMock = mock(OwnerPaintedView.class);
-            var inputs = OwnerMapBuildInputs.createEmpty(viewMock);
-
-            // The view is the one thing a later frame reads off the placeholder - which panel a
-            // fallback was drawn for - so it is the view it was built for rather than a stand-in.
-            assertThat(inputs.getViewReading().view())
-                .isSameAs(viewMock);
-
-            // The empty fallback is never a filtered build, so it selects no owner and recedes
-            // nothing; the scheme's own stand-ins are MapStyling's to pin, read back here only to
-            // prove no slot is left null.
-            assertThat(inputs.getContentInputs().isFiltering())
-                .isFalse();
-            assertThat(inputs.getStyling().neutralPalette())
-                .isNotNull();
-        }
-
-        // A build that never ran sampled no overlay, and a fold is never let into the placeholder,
-        // so the inert answer is the overlay off.
-        @Test
-        void showsNoAnchorOverlay() {
-
-            // ARRANGE
-            var viewMock = mock(OwnerPaintedView.class);
-
-            // ACT
-            var actualIsAnchorOverlayShown = OwnerMapBuildInputs
-                .createEmpty(viewMock)
-                .isAnchorOverlayShown();
-
-            // ASSERT
-            assertThat(actualIsAnchorOverlayShown)
-                .isFalse();
-        }
-    }
-
-    @Nested
     class Accessors {
 
         // The overlay is handed in on, so the getter is told from a constant answering false by
-        // the placeholder's case above.
+        // the case below.
         @Test
         void returnEachConstructorInputInItsMatchingSlot() {
 
             // ARRANGE
-            var styling = MapStyling.createEmpty();
+            var styling = buildStyling();
             var viewReading = new ViewReading(
                 mock(OwnerPaintedView.class),
                 OwnerReadingFake.createAnsweringNothing(),
@@ -127,38 +84,35 @@ final class OwnerMapBuildInputsTests {
             assertThat(inputs.isAnchorOverlayShown())
                 .isTrue();
         }
-    }
 
-    @Nested
-    class WasBuilt {
-
+        // The other half of the case above, so a getter answering a constant cannot pass both.
         @Test
-        void refusesThePlaceholderAFailedBuildStandsBehind() {
+        void returnTheAnchorOverlayHandedInOff() {
 
-            assertThat(OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class)).wasBuilt())
-                .isFalse();
-        }
-
-        @Test
-        void acceptsInputsCarryingAReading() {
-
+            // ARRANGE
             var inputs = buildInputsUnder(
                 OwnerReadingFake.createAnsweringNothing(),
                 ContentInputsFixtures.createInertInputs());
 
-            assertThat(inputs.wasBuilt())
-                .isTrue();
+            // ACT
+            var actualIsAnchorOverlayShown = inputs.isAnchorOverlayShown();
+
+            // ASSERT
+            assertThat(actualIsAnchorOverlayShown)
+                .isFalse();
         }
     }
 
     @Nested
     class Paints {
 
+        // The paints a build's cells and cluster groups draw in are resolved over the reading and
+        // picks this build was baked under - so the reading is asked with exactly the inputs' other
+        // snapshot, and the adjustment it answers is the one the owner draws under.
         @Test
         void resolvesOverTheInputsOwnReadingAndPicks() {
-            // The paints a build's cells and cluster groups draw in are resolved over the reading
-            // and picks this build was baked under - so the reading is asked with exactly the
-            // inputs' other snapshot, and the adjustment it answers is the one the owner draws under.
+
+            // ARRANGE
             var expectedAdjustment = new ElementStyleAdjustment(0.5, false);
             var contentInputs = ContentInputsFixtures.createInertInputs();
             var readingMock = mock(OwnerReading.class);
@@ -169,46 +123,66 @@ final class OwnerMapBuildInputsTests {
                 .thenReturn(StandInCategoryFake.OWNED);
 
             var inputs = buildInputsUnder(readingMock, contentInputs);
+
+            // ACT
             var actualPaint = inputs.getPaints().resolveOwnerPaintOf(OWNER);
 
+            // ASSERT
             assertThat(actualPaint.adjustment())
                 .isSameAs(expectedAdjustment);
+
             verify(readingMock)
                 .resolveStyleAdjustment(OWNER_ID, contentInputs);
         }
 
+        // The shades and the trace a stage reads off the paints are the inputs' own, so a cell
+        // re-shaped by a later batch is styled by the scheme its neighbours were.
         @Test
         void resolvesAgainstTheInputsOwnStyling() {
-            // The shades and the trace a stage reads off the paints are the inputs' own, so a cell
-            // re-shaped by a later batch is styled by the scheme its neighbours were.
-            var inputs = buildInputsUnder(
-                OwnerReadingFake.createAnsweringNothing(),
-                ContentInputsFixtures.createInertInputs());
 
+            // ARRANGE
+            var styling = buildStyling();
+            var inputs = new OwnerMapBuildInputs(
+                styling,
+                new ViewReading(
+                    mock(OwnerPaintedView.class),
+                    OwnerReadingFake.createAnsweringNothing(),
+                    new OwnerSourceFake()),
+                ContentInputsFixtures.createInertInputs(),
+                false);
+
+            // ACT
             var actualStyling = inputs.getPaints().getStyling();
 
+            // ASSERT
             assertThat(actualStyling)
-                .isSameAs(inputs.getStyling());
+                .isSameAs(styling);
         }
     }
 
-    // Inputs over a real theme, KMU's own layers' categories and a distinct desaturation palette,
-    // so a paint resolved through them names which of the record's own shades it took.
+    // Inputs over the scheme below, so a paint resolved through them names which of the record's
+    // own shades it took.
     private static OwnerMapBuildInputs buildInputsUnder(
             OwnerReading reading,
             ContentInputs contentInputs) {
 
         return new OwnerMapBuildInputs(
-            new MapStyling(
-                OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
-                    OwnerMapClusterFixtures.createInertCategoryStyle()),
-                OwnerMapClusterFixtures.BORDER_TRACE,
-                OwnerCategoriesFake.SHARED_FAKE,
-                OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                DESATURATION_PALETTE,
-                OwnerMapClusterFixtures.NEUTRAL_PALETTE),
+            buildStyling(),
             new ViewReading(mock(OwnerPaintedView.class), reading, new OwnerSourceFake()),
             contentInputs,
             false);
+    }
+
+    // A scheme over a real theme, KMU's own layers' categories and a distinct desaturation palette.
+    private static MapStyling buildStyling() {
+
+        return new MapStyling(
+            OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
+                OwnerMapClusterFixtures.createInertCategoryStyle()),
+            OwnerMapClusterFixtures.BORDER_TRACE,
+            OwnerCategoriesFake.SHARED_FAKE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+            DESATURATION_PALETTE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE);
     }
 }

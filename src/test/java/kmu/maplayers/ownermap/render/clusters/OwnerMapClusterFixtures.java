@@ -38,6 +38,8 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInputsSpellingNames;
+import static kmu.maplayers.ownermap.render.clusters.SystemOccupancyFixtures.createEmptyOccupancy;
 
 import static org.mockito.Mockito.mock;
 
@@ -335,7 +337,7 @@ public final class OwnerMapClusterFixtures {
             OwnerReading reading) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createEmpty(),
+            createEmptyOccupancy(),
             new OwnerMapBuildInputs(
                 new MapStyling(
                     renderStyle,
@@ -345,7 +347,7 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
                 new ViewReading(view, reading, new OwnerSourceFake()),
-                ContentInputs.createEmpty(),
+                createInputsSpellingNames(OwnerNameFormatChoice.FULL),
                 false)); // No anchor overlay.
     }
 

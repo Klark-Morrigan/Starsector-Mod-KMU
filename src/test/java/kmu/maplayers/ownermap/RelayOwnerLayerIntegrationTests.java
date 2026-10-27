@@ -75,6 +75,7 @@ import java.util.Set;
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.ownermap.render.rebuild.OwnerMapCacheReads.readProductionClustersOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -252,13 +253,16 @@ final class RelayOwnerLayerIntegrationTests {
         @Test
         void fusesTheRelayPairIntoOneBodyUnderItsOwnerKey() {
 
+            // ARRANGE
+            var expectedClusterCount = 1;
+
             // ACT
             var clusters = buildRelayMap();
             var actualRelayGroup = clusters.getStyledClusterGroupByOwnerId().get(RELAY);
 
             // ASSERT
             assertThat(actualRelayGroup.clusters())
-                .hasSize(1);
+                .hasSize(expectedClusterCount);
         }
 
         // A fused cell's seam paints from the same reading as its body's fill and border.
@@ -391,7 +395,7 @@ final class RelayOwnerLayerIntegrationTests {
             cache.refreshDrawLists(relayViewMock, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getOccupancy().getOwnerBySystemKey())
+            assertThat(readProductionClustersOf(cache).getOccupancy().getOwnerBySystemKey())
                 .extractingFromEntries(entry -> entry.getKey().systemId(), entry -> entry.getValue().ownerId())
                 .containsExactlyInAnyOrder(
                     tuple(RELAY_WEST, RELAY),
@@ -430,7 +434,7 @@ final class RelayOwnerLayerIntegrationTests {
             cache.refreshDrawLists(relayViewMock, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getStyledCellByCellKey().keySet())
+            assertThat(readProductionClustersOf(cache).getStyledCellByCellKey().keySet())
                 .extracting(SystemKey::systemId)
                 .containsExactlyInAnyOrder(RELAY_WEST, RELAY_EAST);
         }
@@ -455,9 +459,9 @@ final class RelayOwnerLayerIntegrationTests {
             wholeSectorCache.refreshDrawLists(wholeSectorViewMock, SCREEN);
 
             // ASSERT
-            assertThat(relayCache.getClusters().getStyledClusterGroupByOwnerId().keySet())
+            assertThat(readProductionClustersOf(relayCache).getStyledClusterGroupByOwnerId().keySet())
                 .containsExactlyInAnyOrder(RELAY, NO_RELAY);
-            assertThat(wholeSectorCache.getClusters().getStyledClusterGroupByOwnerId().keySet())
+            assertThat(readProductionClustersOf(wholeSectorCache).getStyledClusterGroupByOwnerId().keySet())
                 .containsExactly(WHOLE_SECTOR);
         }
 
@@ -470,10 +474,11 @@ final class RelayOwnerLayerIntegrationTests {
             // ARRANGE
             var machinery = new SectorMapMachinery(relaySectorMock);
             var cache = buildCacheOver(machinery, OwnerMapRefreshStrategy.INCREMENTAL);
+            var expectedWalkCount = 1;
 
             cache.refreshDrawLists(relayViewMock, SCREEN);
 
-            var standingClusters = cache.getClusters();
+            var standingClusters = readProductionClustersOf(cache);
 
             relaySourceFake.buildRelayIn(DARK_SYSTEM);
             machinery.resolveRefreshBoard().markSystemGroupingStale(buildCellKey(DARK_SYSTEM));
@@ -482,12 +487,12 @@ final class RelayOwnerLayerIntegrationTests {
             cache.refreshDrawLists(relayViewMock, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters())
+            assertThat(readProductionClustersOf(cache))
                 .isSameAs(standingClusters);
-            assertThat(cache.getClusters().getOccupancy().readOwnerOf(buildCellKey(DARK_SYSTEM)).ownerId())
+            assertThat(readProductionClustersOf(cache).getOccupancy().readOwnerOf(buildCellKey(DARK_SYSTEM)).ownerId())
                 .isEqualTo(RELAY);
             assertThat(relaySourceFake.walks)
-                .hasSize(1);
+                .hasSize(expectedWalkCount);
         }
 
         // The full walk folds nothing, so the marked system reaches the map through the full rebuild
@@ -498,6 +503,7 @@ final class RelayOwnerLayerIntegrationTests {
             // ARRANGE
             var machinery = new SectorMapMachinery(relaySectorMock);
             var cache = buildCacheOver(machinery, OwnerMapRefreshStrategy.FULL_REBUILD);
+            var expectedWalkCount = 2;
 
             cache.refreshDrawLists(relayViewMock, SCREEN);
 
@@ -509,10 +515,10 @@ final class RelayOwnerLayerIntegrationTests {
             cache.refreshDrawLists(relayViewMock, SCREEN);
 
             // ASSERT
-            assertThat(cache.getClusters().getOccupancy().readOwnerOf(buildCellKey(DARK_SYSTEM)).ownerId())
+            assertThat(readProductionClustersOf(cache).getOccupancy().readOwnerOf(buildCellKey(DARK_SYSTEM)).ownerId())
                 .isEqualTo(RELAY);
             assertThat(relaySourceFake.walks)
-                .hasSize(2);
+                .hasSize(expectedWalkCount);
         }
 
         // A cache over this sector's own machinery, drawing no names and seeding under the given

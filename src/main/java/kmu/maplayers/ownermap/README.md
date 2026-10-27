@@ -190,9 +190,9 @@ and each has a name a log line can print.
 A filtered map folds like any other.
 The source re-derives a marked system as the spotlit build painted it,
 so a spotlight owes no rebuild per colony change.
-What still owes one is a standing map that cannot take a fold -
-the debug overlay's,
-or a failed build's placeholder -
+What still owes one is a standing view that cannot take a fold -
+the debug overlay,
+or the placeholder standing before any build completes -
 whatever the layer chose.
 
 Two other parts are slots in the same sense:

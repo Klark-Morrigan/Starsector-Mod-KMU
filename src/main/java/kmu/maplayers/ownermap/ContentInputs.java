@@ -83,33 +83,12 @@ public record ContentInputs(
     }
 
     /**
-     * The inert reading a build that sampled nothing carries - the placeholder the render path
-     * falls back on after a failed first build, where no stage got far enough to read a
-     * preference.
-     *
-     * <p>Named here rather than spelt out by each such caller for the reason
-     * {@code MapStyling.createEmpty} is: "nothing sampled yet" is one value every such pass
-     * shares, and the defaults it holds only look arbitrary until one of them turns out not to be.
-     *
-     * @return the inert reading: nothing spotlighted, nothing receded, full names, no outline
-     */
-    public static ContentInputs createEmpty() {
-        return new ContentInputs(
-            null,
-            ElementStyleAdjustment.NONE,
-            ElementStyleAdjustment.NONE,
-            OwnerNameFormatChoice.FULL,
-            false);
-    }
-
-    /**
      * This same reading with the spotlight dropped, for a pass that paints the whole sector
      * whatever the picker holds - resolving real owners and receding nothing behind a
      * spotlight.
      *
-     * <p>Dropped rather than replaced with {@link #createEmpty()}, because such a pass is still
-     * subject to every other pick: it draws the names the player asked for, in the format they
-     * asked for.
+     * <p>Only the spotlight is dropped, because such a pass is still subject to every other pick:
+     * it draws the names the player asked for, in the format they asked for.
      *
      * @return this reading with no owner spotlighted and no filter recede
      */

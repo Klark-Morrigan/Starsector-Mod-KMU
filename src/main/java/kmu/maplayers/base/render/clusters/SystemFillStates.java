@@ -47,57 +47,13 @@ public final class SystemFillStates {
         var nonSolidFillStateBySystemKey = new LinkedHashMap<SystemKey, FillState>();
 
         for (var entry : fillStateBySystemKey.entrySet()) {
-            recordFillStateIn(nonSolidFillStateBySystemKey, entry.getKey(), entry.getValue());
+
+            if (entry.getValue() != FillState.SOLID) {
+                nonSolidFillStateBySystemKey.put(entry.getKey(), entry.getValue());
+            }
         }
 
         return new SystemFillStates(Collections.unmodifiableMap(nonSolidFillStateBySystemKey));
-    }
-
-    /**
-     * Writes one system's state into a map holding only the systems that fill other than solid:
-     * solid drops the system, any other state names it.
-     *
-     * <p>The write rule of this type, for a holder that keeps its own map because it folds states
-     * one system at a time. Stated here once, so that holder and this type cannot come to disagree
-     * about which states a map lists.
-     *
-     * @param nonSolidFillStateBySystemKey the map to write into, listing no solid system
-     * @param systemKey                    the system to record
-     * @param fillState                    the state it draws in now
-     */
-    public static void recordFillStateIn(
-            Map<SystemKey, FillState> nonSolidFillStateBySystemKey,
-            SystemKey systemKey,
-            FillState fillState) {
-
-        if (fillState == FillState.SOLID) {
-            nonSolidFillStateBySystemKey.remove(systemKey);
-
-        } else {
-            nonSolidFillStateBySystemKey.put(systemKey, fillState);
-        }
-    }
-
-    /**
-     * Reads one system's state out of a map holding only the systems that fill other than solid.
-     *
-     * <p>The read rule of this type, for the holder {@link #recordFillStateIn} writes for. A cell
-     * with no star of its own has no per-system fill state, so it fills solid with the rest of its
-     * cluster rather than probing the map with a null key.
-     *
-     * @param nonSolidFillStateBySystemKey the map to read, listing no solid system
-     * @param systemKey                    the system a member cell draws as, or null for a cell with
-     *                                     no star of its own
-     * @return the state it draws in; solid for any system not named
-     */
-    public static FillState resolveFillStateIn(
-            Map<SystemKey, FillState> nonSolidFillStateBySystemKey,
-            SystemKey systemKey) {
-
-        if (systemKey == null) {
-            return FillState.SOLID;
-        }
-        return nonSolidFillStateBySystemKey.getOrDefault(systemKey, FillState.SOLID);
     }
 
     /**
@@ -144,12 +100,19 @@ public final class SystemFillStates {
     }
 
     /**
-     * The state one system draws in, by {@link #resolveFillStateIn}'s rule.
+     * The state one system draws in.
+     *
+     * <p>A cell with no star of its own has no per-system fill state, so it fills solid with the
+     * rest of its cluster rather than probing the map with a null key.
      *
      * @param systemKey the system a member cell draws as, or null for a cell with no star of its own
      * @return the state it draws in; solid for any system not named
      */
     public FillState resolveFillStateOf(SystemKey systemKey) {
-        return resolveFillStateIn(nonSolidFillStateBySystemKey, systemKey);
+
+        if (systemKey == null) {
+            return FillState.SOLID;
+        }
+        return nonSolidFillStateBySystemKey.getOrDefault(systemKey, FillState.SOLID);
     }
 }

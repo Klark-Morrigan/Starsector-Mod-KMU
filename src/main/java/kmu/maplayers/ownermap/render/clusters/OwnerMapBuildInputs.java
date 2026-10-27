@@ -1,7 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapStyling;
@@ -55,28 +54,6 @@ public final class OwnerMapBuildInputs {
         paints = new MapPaints(styling, viewReading.reading(), contentInputs);
     }
 
-    /**
-     * The inert inputs a build that never ran carries - what the empty placeholder the render path
-     * falls back on after a failed first build is built under.
-     *
-     * <p>Each snapshot's own placeholder, named by the record that owns it, plus no reading, no
-     * source and no overlay. It carries the active view rather than naming a concrete one, keeping
-     * the model view-agnostic. The null reading and source are the honest record of a build
-     * that never resolved either, and {@link #wasBuilt()} is what every reader that would reach them
-     * asks first.
-     *
-     * @param view the view being drawn when the build failed
-     * @return the placeholder inputs
-     */
-    public static OwnerMapBuildInputs createEmpty(OwnerPaintedView view) {
-
-        return new OwnerMapBuildInputs(
-            MapStyling.createEmpty(),
-            new ViewReading(view, null, null),
-            ContentInputs.createEmpty(),
-            false);
-    }
-
     /** @return the sidebar picks the build sampled, as its paints hold them */
     public ContentInputs getContentInputs() {
         return paints.getContentInputs();
@@ -100,20 +77,5 @@ public final class OwnerMapBuildInputs {
     /** @return whether the diagnostic anchor overlay was on when the build sampled it */
     public boolean isAnchorOverlayShown() {
         return isAnchorOverlayShown;
-    }
-
-    /**
-     * Whether a build actually ran under these inputs, rather than these being the placeholder a
-     * failed first build stands behind - which resolved no theme, no categories and no reading, so
-     * nothing may be styled, folded or coloured against it.
-     *
-     * <p>Asked of the reading rather than of any one drawn part, because a real build can draw
-     * nothing at all and still be one a later change may fold into.
-     *
-     * @return true for the inputs of a build that ran
-     */
-    public boolean wasBuilt() {
-
-        return viewReading.reading() != null;
     }
 }

@@ -65,7 +65,7 @@
 - **`NexerelinAlliances.resolveFactionAlliancesIn(SectorAPI)`**：以 `FactionAllianceSource` 的方式给出实时联盟成员关系。Nexerelin 只为正在运行的游戏保存一套联盟，因此不会查询传入的星域。
 - **`MapStyling.resolveUnownedStyle(boolean)`**：无所有者单元所用的样式，使地图填充与边界描绘以同一方式查找它。
 - **`MapPaints`**：一次构建的绘制方式，基于该构建的绘制方案、所有者读取和采样的选择。它给出所有者与无所有者单元的绘制方式，以及区域名称着色所依据的样式决定 `resolveOwnerStyleDecisionOf(String)`，每个都在解析后即记住。需要绘制的步骤直接接受它，而不是整个构建；`OwnerMapBuildInputs.getPaints()` 给出构建自身的那一个。
-- **`SystemFillStates`**：每个星系的填充状态，列出每个以斜线或不填充绘制的星系，其余星系一律为实色填充。`recordFillStateIn(Map, SystemKey, FillState)` 和 `resolveFillStateIn(Map, SystemKey)` 把同一规则用于持有者逐星系并入的映射表。
+- **`SystemFillStates`**：每个星系的填充状态，列出每个以斜线或不填充绘制的星系，其余星系一律为实色填充。
 - **`SectorWalk.openOver(SectorAPI, MapVisibilityRules)`**：基于星域新建索引的一次扫描，重建与批次各自在开始时打开一次。
 - **`SystemOccupancy.readOwnerOfMembers(CellGrouping, List)`**：一个区域组所含单元的所有者。
 - **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
@@ -86,6 +86,7 @@
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及调用时其中记录的每个星系的填充状态。
 - **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**：逐星系给出聚焦下的争夺，重建会对每个星系询问它。
 - **`ClaimAugmentedSystemHolderResolver`**：*势力*和*联盟*视图的持有规则，先看争夺，仅当争夺未让任何集团持有该星系时才读取宣称。
+- **`BuiltView`**：所有者地图所依据的基础画面，是一个密封类型，分为携带绘制内容的 `Production`、携带边界描绘叠加层的 `Debug`，以及 `PLACEHOLDER`：首次构建完成前一直使用的占位画面，不绘制任何东西。读取方通过 `selectByCase(Function, Function, Supplier)` 或 `runByCase(Consumer, Consumer, Runnable)` 写出全部三种情况，`OwnerMapCache.getBuiltView()` 给出当前的那一个。
 - **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。
 
 #### 修复
@@ -197,7 +198,9 @@
 | `CellRingPathCache` 的 `findRingPathOf(SystemKey)`、`putRingPath(SystemKey, RingPath)` 和 `dropRingPathOf(SystemKey)` | `findRingPathOf(SystemKey, RibbonPathInset)`：单元为每种描绘位置各保存一条环线。写入归色带自身所有 |
 | `PaintedCellStore` 的 `getRibbonByCellKey()`、`getRibbonPathByCellKey()`、`getRingPathCache()`、`putCellRibbon(SystemKey, CellRibbon)` 和 `putCellRibbonPath(SystemKey, CellRibbonPath)` | 移到 `PaintedCellStore.getRibbonStore()` 给出的 `base.ribbon.CellRibbonStore` 上，其 `dropRingFittedWorkOf(SystemKey)` 一并清除单元的色带、色带路径和环线 |
 | `OwnerMapBuildInputs`，基于绘制方案、视图读取、选择和两个填充集合的记录类型 | 改为不可继承的类，基于绘制方案、视图读取、选择和锚点叠加层是否显示，持有构建的 `MapPaints`，只与自身相等。读取方法为 `getStyling()`、`getViewReading()`、`getContentInputs()`、`isAnchorOverlayShown()` 和 `getPaints()`。填充状态归 `SystemOccupancy`，由批次逐星系并入 |
-| `SystemOccupancy.createCopyOf(Map, Set, Set)` 和 `recordOwnerOf(SystemKey, SystemOwner)` | `createCopyOf(ResolvedOwners)` 和 `recordOwnerOf(SystemKey, ResolvedSystemOwner)`：每个星系的填充状态与其所有者一同记录 |
+| `SystemOccupancy.createCopyOf(Map, Set, Set)` 和 `recordOwnerOf(SystemKey, SystemOwner)` | `createCopyOf(ResolvedOwners)` 和 `recordOwnerOf(SystemKey, ResolvedSystemOwner)`：每个有所有者的星系，其所有者与填充状态作为一个 `ResolvedSystemOwner` 一同记录，因此无所有者的星系上不会留有填充状态。`getOwnerBySystemKey()` 是这些所有者的实时投影 |
+| `OwnerMapCache.getClusters()`、`getBorderStageOverlay()` 和 `isDebug()`，前两者在对应画面未构建时为 null | `getBuiltView()`，即当前的 `BuiltView`，因此读取方无法取到调试叠加层或占位画面并不持有的绘制内容 |
+| `OwnerMapClusters.createEmpty(OwnerPaintedView)`、`OwnerMapBuildInputs.createEmpty(OwnerPaintedView)` 和 `wasBuilt()`、`MapStyling.createEmpty()`、`ContentInputs.createEmpty()` 以及 `SystemOccupancy.createEmpty()` | 已移除：首次构建完成前，缓存使用不持有任何区域的 `BuiltView.PLACEHOLDER`，因此每次构建的输入都来自一次实际完成的构建 |
 | 给出 `SystemOwner` 的 `SystemOwnerResolve.resolveOwnerOf(StarSystemAPI)` 和 `SystemHolderResolve.resolveHolderIn(StarSystemAPI)` | 改为给出 `ResolvedSystemOwner`，使已标记星系在重建会以斜线或不填充绘制的地方同样如此绘制 |
 | `SystemHolderResolveSource.openResolveOver(HolderPass)` 和 `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `SystemHolderResolverSource.openResolverOver(HolderPass, String)`，在现有构建所聚焦的集团下打开：聚焦中的地图会并入已标记星系，而不是为此重建一次。`DominanceSystemHolderResolver.openResolverUnder(HolderPass, Optional)` 接受调用方在本次计算上打开的 `BlocSpotlight` |
 | 只按争夺给出结果的 `DominancePaintedView.resolveSystemHolderResolveSource()` | `ClaimAugmentedSystemHolderResolver.createSourceReadingThrough(ClaimReaderSource)`，基于视图自身的宣称读取器 |
