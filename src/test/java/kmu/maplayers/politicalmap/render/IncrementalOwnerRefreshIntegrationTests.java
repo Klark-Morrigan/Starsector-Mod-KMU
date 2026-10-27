@@ -287,48 +287,59 @@ final class IncrementalOwnerRefreshIntegrationTests {
             seams.closeEverySeam();
         }
 
+        // The system no holder ever accounted for: nobody held it before and somebody holds it
+        // now, so the cell goes from empty backdrop to a bloc's territory and owes a band it
+        // never had.
         @Test
         void drawsWhatARebuildWouldWhenASystemTakesItsFirstColony() {
-            // The system no holder ever accounted for: nobody held it before and somebody holds it
-            // now, so the cell goes from empty backdrop to a bloc's territory and owes a band it
-            // never had.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(FRONTIER_SYSTEM, buildColony(piratesMock, FRONTIER_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
         }
 
+        // The other end of the same move: the holder entry goes, the system leaves the inhabited
+        // set, and the cell falls back to the empty backdrop - a different category, a different
+        // paint, and no band at all.
         @Test
         void drawsWhatARebuildWouldWhenASystemLosesItsLastColony() {
-            // The other end of the same move: the holder entry goes, the system leaves the
-            // inhabited set, and the cell falls back to the empty backdrop - a different category,
-            // a different paint, and no band at all.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(DYING_SYSTEM);
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, DYING_SYSTEM);
         }
 
+        // The flip, which is the one move that reaches past the marked system's own cell: the edge
+        // it shares with the core turns from a same-bloc seam into a national border, and the edge
+        // it shares with the dying system turns the other way.
         @Test
         void drawsWhatARebuildWouldWhenASystemChangesHands() {
-            // The flip, which is the one move that reaches past the marked system's own cell: the
-            // edge it shares with the core turns from a same-bloc seam into a national border, and
-            // the edge it shares with the dying system turns the other way.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, BORDER_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
         }
 
+        // The band's own case, and the arm no switch can reach: the holder is unmoved and the fill
+        // says exactly what it said before, while the band goes from one bloc's tally to a contest.
+        // Nothing but the band reports it, so a batch that re-derived the holder and left the count
+        // alone would look right everywhere else.
         @Test
         void drawsWhatARebuildWouldWhenARivalArrivesInAHeldSystem() {
-            // The band's own case, and the arm no switch can reach: the holder is unmoved and the
-            // fill says exactly what it said before, while the band goes from one bloc's tally to
-            // a contest. Nothing but the band reports it, so a batch that re-derived the holder
-            // and left the count alone would look right everywhere else.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(
@@ -336,36 +347,43 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 buildColony(hegemonyMock, CORE_COLONY_SIZE),
                 buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
         }
 
+        // The commonest event of all - a colony resize that leaves the same winner, the same
+        // settlement and the same count - so the map must come back exactly as it was. It is not a
+        // no-op path: the marked system's band is re-baked whatever happened, and this is what says
+        // the band it lays is the band it replaced.
         @Test
         void drawsWhatARebuildWouldWhenAColonyGrowsAndNothingMoves() {
-            // The commonest event of all - a colony resize that leaves the same winner, the same
-            // settlement and the same count - so the map must come back exactly as it was. It is
-            // not a no-op path: the marked system's band is re-baked whatever happened, and this
-            // is what says the band it lays is the band it replaced.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(CORE_SYSTEM, buildColony(hegemonyMock, GROWN_CORE_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
         }
 
+        // One map carried through a system's whole life, compared against a rebuild at every step
+        // of it - which is the arrangement production actually runs: the cache holds one map for
+        // the session and folds batch after batch into it, where every case above starts from a map
+        // just rebuilt. So this is the only case that can catch a refresh that is right once and
+        // wrong the second time - a fold that half-updates something, leaving a map each individual
+        // comparison accepts and the next one builds on.
+        //
+        // The first comparison marks nothing. It asserts what every case here rests on and none of
+        // them states: that two rebuilds of one sector agree, so a difference found after a fold is
+        // the fold's and not the rebuild's.
         @Test
         void drawsWhatARebuildWouldAtEveryStepOfASystemsLife() {
-            // One map carried through a system's whole life, compared against a rebuild at every
-            // step of it - which is the arrangement production actually runs: the cache holds one
-            // map for the session and folds batch after batch into it, where every case above
-            // starts from a map just rebuilt. So this is the only case that can catch a refresh
-            // that is right once and wrong the second time - a fold that half-updates something,
-            // leaving a map each individual comparison accepts and the next one builds on.
-            //
-            // The first comparison marks nothing. It asserts what every case here rests on and
-            // none of them states: that two rebuilds of one sector agree, so a difference found
-            // after a fold is the fold's and not the rebuild's.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap);
 
             // Settled: nobody held it, somebody does now.
@@ -394,18 +412,21 @@ final class IncrementalOwnerRefreshIntegrationTests {
             assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
         }
 
+        // The same walk over a system with neighbours on both sides, which is what the frontier's
+        // own life cannot reach: every step here re-shapes a ring rather than one cell, re-indexes
+        // the clusters, and rebuilds two blocs' territories - and does it to a map the previous step
+        // already re-shaped. A re-shape that left a neighbour holding an edge from the step before
+        // would survive any single fold and show here.
+        //
+        // The border system carries one colony throughout, the same size each time: what moves is
+        // who owns it, so nothing but the holder can account for a difference.
         @Test
         void drawsWhatARebuildWouldAtEveryStepOfAMiddleSystemsFlips() {
-            // The same walk over a system with neighbours on both sides, which is what the
-            // frontier's own life cannot reach: every step here re-shapes a ring rather than one
-            // cell, re-indexes the clusters, and rebuilds two blocs' territories - and does it to
-            // a map the previous step already re-shaped. A re-shape that left a neighbour holding
-            // an edge from the step before would survive any single fold and show here.
-            //
-            // The border system carries one colony throughout, the same size each time: what
-            // moves is who owns it, so nothing but the holder can account for a difference.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap);
 
             // Sold to the neighbour on its right: the seam with the core hardens into a national
@@ -434,18 +455,21 @@ final class IncrementalOwnerRefreshIntegrationTests {
             assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
         }
 
+        // All three moves in one drain, which is what a fleet action or an economy tick actually
+        // delivers. The flip's re-shape ring reaches a system whose own colonies moved in the same
+        // batch, so the two redraws have to compose rather than each arriving at the map the other
+        // has already left behind.
         @Test
         void drawsWhatARebuildWouldWhenOneBatchMovesAllThree() {
-            // All three moves in one drain, which is what a fleet action or an economy tick
-            // actually delivers. The flip's re-shape ring reaches a system whose own colonies
-            // moved in the same batch, so the two redraws have to compose rather than each
-            // arriving at the map the other has already left behind.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, BORDER_COLONY_SIZE));
             placeColoniesIn(DYING_SYSTEM);
             placeColoniesIn(FRONTIER_SYSTEM, buildColony(piratesMock, FRONTIER_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(
                 standingMap,
                 BORDER_SYSTEM,
@@ -510,10 +534,12 @@ final class IncrementalOwnerRefreshIntegrationTests {
         @Test
         void drawsWhatARebuildWouldAtEveryStepOfThePicksLifeInASystemUnderASpotlight() {
 
+            // ARRANGE
             spotlightBloc(TRITACHYON);
 
             var standingMap = buildMapByFullRebuild();
 
+            // ACT, ASSERT
             // Arrived beside a heavier holder: spotlit and hatched.
             placeColoniesIn(
                 BORDER_SYSTEM,
@@ -545,7 +571,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
         private static ResolvedSystemOwner readStandingAnswerOf(StandingOwnerMap standingMap, String systemId) {
 
             return standingMap
-                .clusters()
+                .getClusters()
                 .getOccupancy()
                 .readResolvedOwnerOf(buildCellKey(systemId));
         }
@@ -577,10 +603,10 @@ final class IncrementalOwnerRefreshIntegrationTests {
             // comes back in two orders. Named rather than taken over the whole comparison,
             // because a band's runs are a draw order and two bands laying the same runs in
             // different orders are two different bands.
-            assertThat(readDrawnMap(standingMap.clusters()))
+            assertThat(readDrawnMap(standingMap.getClusters()))
                 .usingRecursiveComparison()
                 .ignoringCollectionOrderInFields("inhabitedSystemKeys", "spotlitPresenceSystemKeys")
-                .isEqualTo(readDrawnMap(buildMapByFullRebuild().clusters()));
+                .isEqualTo(readDrawnMap(buildMapByFullRebuild().getClusters()));
         }
 
         // A walk of the sector as it stands, under the player's live visibility rules - what the

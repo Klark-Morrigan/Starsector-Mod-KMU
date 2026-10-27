@@ -18,8 +18,6 @@ import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
-import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.ArrayList;
@@ -124,7 +122,8 @@ final class OwnerMapDrawables {
     }
 
     /**
-     * The standing map as one value, for the incremental refresh that patches it in place.
+     * The standing map as one value, for the incremental refresh that patches it in place and for
+     * the production rebuild's own name and band stages, which the refresh runs too.
      *
      * @param cellGeometry the cells the standing draw lists were shaped from
      * @return the parts the refresh reads and writes
@@ -265,16 +264,13 @@ final class OwnerMapDrawables {
 
         borderStageOverlay = null;
 
-        // The cells go over carrying the revision they stand at rather than the live
-        // signal read at the top - the two agree here, and only the pair is true of the
-        // geometry in hand. The standing placements go in whole beside it, which is what
-        // lets the rebuild keep the ones whose clusters this pass has not moved.
-        ClusterAnchorsBuilder.rebuildClusterAnchors(
-            standingAnchors,
-            cellGeometry,
-            ClusterLabelStylingSnapshot
-                .resolveFrom(clusters, labelFaceSource.get())
-                .createFitInputs());
+        // The names and the bands through the stages a batch folding into this build runs too, so
+        // the two paths fit and bake one map alike. The cells go over carrying the revision they
+        // stand at rather than the live signal read at the top - the two agree here, and only the
+        // pair is true of the geometry in hand.
+        var standingMap = toStandingMap(cellGeometry);
+
+        standingMap.fitNamesIn(labelFaceSource.get());
 
         // The bands come last, after the names have places, because they are laid around
         // them: a band is cut by the room the names take, so baking one before the fit
@@ -285,13 +281,8 @@ final class OwnerMapDrawables {
         // Baked over this rebuild's own walk rather than one of its own: the bake runs in the same
         // frame the fills were painted in, so a fresh walk could only report the same sector at the
         // cost of walking it again.
-        CellRibbonsBaker
-            .createForPass(
-                clusters,
-                cellGeometry.cells(),
-                walk,
-                standingAnchors,
-                RibbonBakeSettings.readFromLunaSettings())
+        standingMap
+            .createRibbonsBakerOver(walk)
             .bakeAllCellRibbons();
     }
 

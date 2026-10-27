@@ -51,67 +51,125 @@ final class PaintedCellStoreTests {
         @Test
         void recordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
 
+            // ARRANGE
             var store = new PaintedCellStore();
             var paintedCell = buildPaintedCellOn(buildSquareRing());
 
+            // ACT
             store.putPaintedCell(SYSTEM_CELL, paintedCell);
 
+            // ASSERT
             assertThat(store.getStyledCellByCellKey())
                 .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(store.getStyledCellByCellKey()
-                .get(SYSTEM_CELL)).isSameAs(paintedCell.styledCell());
+            assertThat(store.getStyledCellByCellKey().get(SYSTEM_CELL))
+                .isSameAs(paintedCell.styledCell());
 
             assertThat(store.getFillPolygonByCellKey())
                 .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(store.getFillPolygonByCellKey()
-                .get(SYSTEM_CELL)).isSameAs(paintedCell.paintedExtent());
+            assertThat(store.getFillPolygonByCellKey().get(SYSTEM_CELL))
+                .isSameAs(paintedCell.paintedExtent());
         }
 
+        // The drift the paired write exists to prevent: a re-shaped cell must not keep answering the
+        // cursor with the extent it had before it was re-shaped.
         @Test
         void replacesBothHalvesWhenACellIsReshaped() {
-            // The drift the paired write exists to prevent: a re-shaped cell must not keep
-            // answering the cursor with the extent it had before it was re-shaped.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
 
             var reshaped = buildPaintedCellOn(buildTriangleRing());
 
+            // ACT
             store.putPaintedCell(SYSTEM_CELL, reshaped);
 
+            // ASSERT
             assertThat(store.getStyledCellByCellKey().get(SYSTEM_CELL))
                 .isSameAs(reshaped.styledCell());
             assertThat(store.getFillPolygonByCellKey().get(SYSTEM_CELL))
                 .isSameAs(reshaped.paintedExtent());
         }
 
+        // A band is triangles fitted to one particular ring, so a re-shaped cell keeping its band
+        // would draw the last shape's stripe inside this shape's cell. The band pass lays a fresh one
+        // afterwards; what must not survive is the old one.
         @Test
         void dropsTheBandLaidInsideTheShapeItReplaces() {
-            // A band is triangles fitted to one particular ring, so a re-shaped cell keeping its
-            // band would draw the last shape's stripe inside this shape's cell. The band pass
-            // lays a fresh one afterwards; what must not survive is the old one.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
             store.getRibbonStore().putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
+
+            // ACT
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
 
+            // ASSERT
             assertThat(store.getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
 
+        // The diagnostic goes with the band for the same reason the band goes: a path traced in the
+        // last shape drawn over this one would report the overlay's own staleness as the cell's
+        // geometry, which is the one thing a diagnostic must not do.
         @Test
         void dropsTheBandPathTracedInsideTheShapeItReplaces() {
-            // The diagnostic goes with the band for the same reason the band goes: a path traced
-            // in the last shape drawn over this one would report the overlay's own staleness as
-            // the cell's geometry, which is the one thing a diagnostic must not do.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
             store.getRibbonStore().putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
+
+            // ACT
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
 
+            // ASSERT
             assertThat(store.getRibbonStore().getRibbonPathByCellKey())
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class PutOrRemovePaintedCell {
+
+        @Test
+        void recordsACellThatBakedARecord() {
+
+            // ARRANGE
+            var store = new PaintedCellStore();
+            var paintedCell = buildPaintedCellOn(buildSquareRing());
+
+            // ACT
+            store.putOrRemovePaintedCell(SYSTEM_CELL, paintedCell);
+
+            // ASSERT
+            assertThat(store.getStyledCellByCellKey().get(SYSTEM_CELL))
+                .isSameAs(paintedCell.styledCell());
+            assertThat(store.getFillPolygonByCellKey().get(SYSTEM_CELL))
+                .isSameAs(paintedCell.paintedExtent());
+        }
+
+        // A cell re-shaped into nothing puts no ink down, so the record it had must go rather than
+        // go on drawing the shape it lost.
+        @Test
+        void dropsACellThatBakedNoRecord() {
+
+            // ARRANGE
+            var store = new PaintedCellStore();
+
+            store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
+
+            // ACT
+            store.putOrRemovePaintedCell(SYSTEM_CELL, null);
+
+            // ASSERT
+            assertThat(store.getStyledCellByCellKey())
+                .isEmpty();
+            assertThat(store.getFillPolygonByCellKey())
                 .isEmpty();
         }
     }
@@ -119,15 +177,20 @@ final class PaintedCellStoreTests {
     @Nested
     class RemovePaintedCell {
 
+        // A cell that draws nothing can be hovered no more than it can be seen, so the shape must go
+        // with the draw record rather than linger as a phantom hit cluster.
         @Test
         void dropsTheDrawRecordAndItsShapeTogether() {
-            // A cell that draws nothing can be hovered no more than it can be seen, so the
-            // shape must go with the draw record rather than linger as a phantom hit cluster.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
+
+            // ACT
             store.removePaintedCell(SYSTEM_CELL);
 
+            // ASSERT
             assertThat(store.getStyledCellByCellKey())
                 .isEmpty();
             assertThat(store.getFillPolygonByCellKey())
@@ -137,42 +200,56 @@ final class PaintedCellStoreTests {
         @Test
         void leavesEveryOtherCellStanding() {
 
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(DROPPED_CELL, buildPaintedCellOn(buildSquareRing()));
             store.putPaintedCell(KEPT_CELL, buildPaintedCellOn(buildTriangleRing()));
+
+            // ACT
             store.removePaintedCell(DROPPED_CELL);
 
+            // ASSERT
             assertThat(store.getStyledCellByCellKey())
                 .containsOnlyKeys(KEPT_CELL);
             assertThat(store.getFillPolygonByCellKey())
                 .containsOnlyKeys(KEPT_CELL);
         }
 
+        // A band is drawn inside a cell, so a cell that stops drawing takes its band with it -
+        // otherwise a dropped cell keeps painting a floating stripe of triangles.
         @Test
         void dropsThePresenceBandWithTheCell() {
-            // A band is drawn inside a cell, so a cell that stops drawing takes its band with it -
-            // otherwise a dropped cell keeps painting a floating stripe of triangles.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
             store.getRibbonStore().putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
+
+            // ACT
             store.removePaintedCell(SYSTEM_CELL);
 
+            // ASSERT
             assertThat(store.getRibbonStore().getRibbonByCellKey())
                 .isEmpty();
         }
 
+        // A path is a ring around a cell, so a cell that stops drawing leaves the overlay marking out
+        // a shape nothing paints any more.
         @Test
         void dropsTheBandPathWithTheCell() {
-            // A path is a ring around a cell, so a cell that stops drawing leaves the overlay
-            // marking out a shape nothing paints any more.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
             store.getRibbonStore().putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
+
+            // ACT
             store.removePaintedCell(SYSTEM_CELL);
 
+            // ASSERT
             assertThat(store.getRibbonStore().getRibbonPathByCellKey())
                 .isEmpty();
         }
@@ -181,13 +258,16 @@ final class PaintedCellStoreTests {
     @Nested
     class GetStyledCellByCellKey {
 
+        // Every write has to go through the store, which is what tells the parted lists that the
+        // cells moved: a record put straight into the map would leave the emission drawing the cells
+        // as they stood before it.
         @Test
         void refusesAWriteThatBypassesTheStore() {
-            // Every write has to go through the store, which is what tells the parted lists that
-            // the cells moved: a record put straight into the map would leave the emission drawing
-            // the cells as they stood before it.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
+            // ACT, ASSERT
             assertThatThrownBy(() -> store
                     .getStyledCellByCellKey()
                     .put(SYSTEM_CELL, FUSED_CELL))
@@ -201,6 +281,7 @@ final class PaintedCellStoreTests {
         @Test
         void listsTheFusedCellsInTheOrderTheyWereRecorded() {
 
+            // ARRANGE
             var store = new PaintedCellStore();
             var secondFusedCell = new StyledCell.FusedCell(new float[0], null, 0f);
 
@@ -208,45 +289,66 @@ final class PaintedCellStoreTests {
             store.putPaintedCell(DROPPED_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
             store.putPaintedCell(KEPT_CELL, new PaintedCell(secondFusedCell, buildSquareRing()));
 
-            assertThat(store.getFusedCells())
+            // ACT
+            var actualFusedCells = store.getFusedCells();
+
+            // ASSERT
+            assertThat(actualFusedCells)
                 .containsExactly(FUSED_CELL, secondFusedCell);
         }
 
+        // The emission reads the cells several times a frame and only a rebuild writes, so a fresh
+        // parting per read would be the per-frame work this list exists to save.
         @Test
         void keepsTheSameListWhileNoCellIsWritten() {
-            // The emission reads the cells several times a frame and only a rebuild writes, so a
-            // fresh parting per read would be the per-frame work this list exists to save.
+
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
 
-            assertThat(store.getFusedCells())
-                .isSameAs(store.getFusedCells());
+            // ACT
+            var actualFirstFusedCells = store.getFusedCells();
+            var actualSecondFusedCells = store.getFusedCells();
+
+            // ASSERT
+            assertThat(actualSecondFusedCells)
+                .isSameAs(actualFirstFusedCells);
         }
 
         @Test
         void partsTheCellsAgainAfterAWrite() {
 
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
             store.getFusedCells();
             store.putPaintedCell(SYSTEM_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
 
-            assertThat(store.getFusedCells())
+            // ACT
+            var actualFusedCells = store.getFusedCells();
+
+            // ASSERT
+            assertThat(actualFusedCells)
                 .isEmpty();
         }
 
         @Test
         void partsTheCellsAgainAfterARemoval() {
 
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
             store.getFusedCells();
             store.removePaintedCell(SYSTEM_CELL);
 
-            assertThat(store.getFusedCells())
+            // ACT
+            var actualFusedCells = store.getFusedCells();
+
+            // ASSERT
+            assertThat(actualFusedCells)
                 .isEmpty();
         }
     }
@@ -257,25 +359,35 @@ final class PaintedCellStoreTests {
         @Test
         void listsOnlyTheLoneCells() {
 
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
             store.putPaintedCell(KEPT_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
 
-            assertThat(store.getLoneCells())
+            // ACT
+            var actualLoneCells = store.getLoneCells();
+
+            // ASSERT
+            assertThat(actualLoneCells)
                 .containsExactly(LONE_CELL_RECORD);
         }
 
         @Test
         void partsTheCellsAgainAfterAWrite() {
 
+            // ARRANGE
             var store = new PaintedCellStore();
 
             store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
             store.getLoneCells();
             store.putPaintedCell(SYSTEM_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
 
-            assertThat(store.getLoneCells())
+            // ACT
+            var actualLoneCells = store.getLoneCells();
+
+            // ASSERT
+            assertThat(actualLoneCells)
                 .containsExactly(LONE_CELL_RECORD);
         }
     }

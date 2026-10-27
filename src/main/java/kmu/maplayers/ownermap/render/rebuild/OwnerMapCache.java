@@ -3,7 +3,6 @@ package kmu.maplayers.ownermap.render.rebuild;
 import com.fs.starfarer.api.Global;
 
 import kmlib.logging.SessionWarning;
-import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.FontAtlas;
 
@@ -308,8 +307,8 @@ public final class OwnerMapCache
             Set<SystemKey> staleSystemKeys) {
 
         return refreshStrategy.refreshMarkedSystems(
-            new SectorWalk(
-                new SectorPassIndex(machinery.resolveSector()),
+            SectorWalk.openOver(
+                machinery.resolveSector(),
                 staleHalves.cellCut().visibilityRules()),
             drawables.toStandingMap(fullRebuild.getCellGeometry()),
             staleSystemKeys);

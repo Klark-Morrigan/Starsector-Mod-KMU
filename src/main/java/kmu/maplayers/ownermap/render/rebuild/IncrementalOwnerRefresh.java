@@ -10,22 +10,16 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeInset;
-import kmu.maplayers.base.labels.LabelsBuilder;
-import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.ClusterGroupBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
-import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
-import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
-import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -80,8 +74,8 @@ public final class IncrementalOwnerRefresh {
     private IncrementalOwnerRefresh(StandingOwnerMap standingMap, SectorWalk walk) {
 
         this.standingMap = standingMap;
-        this.clusters = standingMap.clusters();
-        this.geometryCache = standingMap.cellGeometry().cells();
+        this.clusters = standingMap.getClusters();
+        this.geometryCache = standingMap.getCellGeometry().cells();
         this.walk = walk;
 
         cellBuilder = clusters.createPaintedCellBuilder();
@@ -218,37 +212,11 @@ public final class IncrementalOwnerRefresh {
 
         rebuildAffectedClusterGroups(cellGrouping, disturbance);
 
-        // A flip can split or merge clusters (a lost system severs one, a gained
-        // one bridges two), so the whole placement list is re-derived off the updated
-        // owners rather than the touched owners' anchors being patched alone. What that
-        // costs is settled by the matching inside the rebuild, not here: a cluster the flip
-        // re-partitioned no longer matches any standing placement and is searched again,
-        // while every cluster it left alone is carried over - which is why naming the
-        // affected owners would buy nothing this does not already get. The name labels then rebuild
-        // from the placements so a renamed or relocated cluster's name follows.
-        //
-        // Named off the build's own owner reading rather than a fresh one, and measured in the face the
-        // standing names were fitted in, so the names this batch re-fits read exactly as the ones it
-        // carries over. Whether a fit is wanted comes off the same build, so this batch fits only
-        // where the standing build was baked with the names or the anchor overlay on.
-        var standingAnchors = standingMap.standingAnchors();
-        var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
-            standingAnchors,
-            standingMap.cellGeometry(),
-            ClusterLabelStylingSnapshot
-                .resolveFrom(clusters, standingAnchors.getFitFingerprint().labelFace())
-                .createFitInputs());
-
-        // The name choice off the standing map rather than off the preference: this fold edits the
-        // build already on screen, so whether its labels draw is what that build was baked under. A
-        // live read here would mint or drop labels for a pick no cell of the standing map was
-        // shaped for, without the rebuild that pick is owed.
-        LabelsBuilder.rebuildLabels(
-            standingMap.ownerLabels(),
-            standingAnchors,
-            clusters.getBuildInputs().getContentInputs().nameFormat().areNamesDrawn());
-
-        return nameDisturbance;
+        // A flip can split or merge clusters (a lost system severs one, a gained one bridges two),
+        // so the names are re-fitted over the updated owners and the labels re-minted from them.
+        // Naming the affected owners would buy nothing: the fit carries over every cluster the
+        // flip left alone.
+        return standingMap.refitNames();
     }
 
     // What a batch with no flip owes its owners: each owner whose system moved fill state re-traces
@@ -266,7 +234,8 @@ public final class IncrementalOwnerRefresh {
     // Rebuilds the cluster group of each owner the batch named. Only the owners a flip or a refill
     // touched can have changed shape or fill; every other owner's rings trace unchanged cells, so
     // they are left as-is. An owner's members are the cells it draws, so they are grouped from the
-    // cells here to match what buildClusterGroup traces.
+    // cells here to match what the full build traces. An owner that lost its last member is
+    // dropped, so its fill and border stop drawing.
     //
     // The builder is made here rather than with the batch, since only a batch that flipped or
     // refilled something traces an owner at all - and made after the folds, so it fills each owner
@@ -287,7 +256,7 @@ public final class IncrementalOwnerRefresh {
 
         for (var ownerId : disturbance.getAffectedOwnerIds()) {
 
-            rebuildClusterGroupInPlace(
+            clusters.rebuildClusterGroupOf(
                 groupBuilder,
                 cellGrouping,
                 ownerId,
@@ -295,8 +264,8 @@ public final class IncrementalOwnerRefresh {
         }
     }
 
-    // One bake of the named cells' bands, which every batch ends on. Held in one place because a
-    // second copy of the pass construction could bake from a different snapshot of the same map.
+    // One bake of the named cells' bands, which every batch ends on, through the pass the full
+    // rebuild bakes through.
     //
     // Baked off the batch's own walk of the sector. The batch is one frame's work and the sector
     // cannot move within it, so a walk opened here could only report what that one already holds,
@@ -305,13 +274,8 @@ public final class IncrementalOwnerRefresh {
     // planned over it.
     private void bakeBandsOf(Collection<SystemKey> cellKeys) {
 
-        CellRibbonsBaker
-            .createForPass(
-                clusters,
-                geometryCache,
-                walk,
-                standingMap.standingAnchors(),
-                RibbonBakeSettings.readFromLunaSettings())
+        standingMap
+            .createRibbonsBakerOver(walk)
             .bakeCellRibbonsOf(cellKeys);
     }
 
@@ -376,29 +340,8 @@ public final class IncrementalOwnerRefresh {
             cellGrouping.resolveDrawnSystemKeyOf(cellKey),
             shaped);
 
-        if (painted == null) {
-            clusters.getPaintedCells().removePaintedCell(cellKey);
-
-        } else {
-            clusters.getPaintedCells().putPaintedCell(cellKey, painted);
-        }
-    }
-
-    // Rebuilds (or drops) one owner's cluster group entry from its current members. An
-    // owner that lost its last member, or whose cluster no longer yields drawable
-    // geometry, is removed so its fill and border stop drawing.
-    private void rebuildClusterGroupInPlace(
-            ClusterGroupBuilder groupBuilder,
-            CellGrouping cellGrouping,
-            String ownerId,
-            List<SystemKey> memberCellKeys) {
-
-        var clusterGroup = memberCellKeys == null || memberCellKeys.isEmpty()
-            ? null
-            : groupBuilder.buildClusterGroup(
-                clusters.getOccupancy().readOwnerOfMembers(cellGrouping, memberCellKeys),
-                memberCellKeys);
-
-        clusters.putStyledClusterGroup(ownerId, clusterGroup);
+        clusters
+            .getPaintedCells()
+            .putOrRemovePaintedCell(cellKey, painted);
     }
 }

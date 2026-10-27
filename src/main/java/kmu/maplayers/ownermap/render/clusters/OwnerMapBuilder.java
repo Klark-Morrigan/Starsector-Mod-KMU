@@ -230,9 +230,9 @@ public final class OwnerMapBuilder {
                 cellGrouping.resolveDrawnSystemKeyOf(entry.getKey()),
                 entry.getValue());
 
-            if (painted != null) {
-                clusters.getPaintedCells().putPaintedCell(entry.getKey(), painted);
-            }
+            clusters
+                .getPaintedCells()
+                .putOrRemovePaintedCell(entry.getKey(), painted);
         }
     }
 
@@ -258,12 +258,11 @@ public final class OwnerMapBuilder {
 
             for (var entry : cellGrouping.groupCellKeysByOwner().entrySet()) {
 
-                var memberCellKeys = entry.getValue();
-                var owner = clusters.getOccupancy().readOwnerOfMembers(cellGrouping, memberCellKeys);
-
-                clusters.putStyledClusterGroup(
+                clusters.rebuildClusterGroupOf(
+                    groupBuilder,
+                    cellGrouping,
                     entry.getKey(),
-                    groupBuilder.buildClusterGroup(owner, memberCellKeys));
+                    entry.getValue());
             }
         }
     }

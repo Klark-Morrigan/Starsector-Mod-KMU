@@ -491,6 +491,7 @@ So a word of one axis never stands in for another:
 | compositor (what stacks an owner map's sub-layers into one picture) | 合成器 | the usual graphics word for what puts layers together into one picture |
 | debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
 | default (the answer a layer names unless its rule needs another) | 默认 | the plain word; kept apart from 默认值, a setting's default value |
+| draw record (what one cell draws, baked at rebuild) | 绘制记录 | 绘制, to draw, with 记录, a record |
 | draw run (vertices drawn in one GL call) | 绘制批次 | 绘制, to draw, with 批次, a batch |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | enum, constant (a type whose values are a closed set of named constants, and one of them) | 枚举, 常量 | the usual Java words for both |
@@ -499,6 +500,7 @@ So a word of one axis never stands in for another:
 | fitted box (the box a name's fit reserved) | 拟合框 | 拟合, a fit, with 框, a box |
 | fold (bringing a batch into the map on screen in place) | 并入 | 并, together, with 入, into: merged into what already stands |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
+| full rebuild (the whole map worked out again, against a batch's fold) | 完整重建 | 完整, whole, with [重建](#in-the-changelog-the-map-and-its-controls), a rebuild |
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
 | holding rule (the rule a layer decides who holds a system by) | 持有规则 | 持有, to hold, with 规则, a rule |

@@ -175,8 +175,8 @@ final class FullOwnerMapRebuild {
         //
         // Discarded with the rebuild. A kept one would draw the next rebuild off the sector this
         // one saw, which is the change a rebuild exists to show.
-        var walk = new SectorWalk(
-            new SectorPassIndex(sector),
+        var walk = SectorWalk.openOver(
+            sector,
             staleHalves.cellCut().visibilityRules());
 
         var isCellCutStale = staleHalves

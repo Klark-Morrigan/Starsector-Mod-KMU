@@ -250,6 +250,36 @@ public final class OwnerMapClusters
     }
 
     /**
+     * Traces one owner's cluster group from its members and records it, or drops the owner where it
+     * has no members left.
+     *
+     * <p>The one statement of how an owner's group is rebuilt, for the full build tracing every
+     * owner and a batch re-tracing the owners it touched, so the two cannot trace one owner
+     * differently. An owner whose members are gone draws nothing and is not traced at all.
+     *
+     * @param groupBuilder   the builder this pass traces its owners by, as
+     *                       {@link #createClusterGroupBuilder} answers it
+     * @param cellGrouping   how the drawn cells group under the current owners, as
+     *                       {@link #resolveCellGroupingOver} answers it
+     * @param ownerId        the owner's ID, as the grouping keys it
+     * @param memberCellKeys the cells the owner draws, or null or empty where it draws none
+     */
+    public void rebuildClusterGroupOf(
+            ClusterGroupBuilder groupBuilder,
+            CellGrouping cellGrouping,
+            String ownerId,
+            List<SystemKey> memberCellKeys) {
+
+        var clusterGroup = memberCellKeys == null || memberCellKeys.isEmpty()
+            ? null
+            : groupBuilder.buildClusterGroup(
+                occupancy.readOwnerOfMembers(cellGrouping, memberCellKeys),
+                memberCellKeys);
+
+        putStyledClusterGroup(ownerId, clusterGroup);
+    }
+
+    /**
      * Records one owner's cluster group, or drops the owner where it bakes none.
      *
      * <p>The write path for the map, rather than each caller choosing between a put and a remove: an

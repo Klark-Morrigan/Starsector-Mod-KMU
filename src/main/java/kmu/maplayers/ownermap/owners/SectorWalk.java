@@ -57,6 +57,21 @@ public final class SectorWalk {
     }
 
     /**
+     * Opens a walk of one sector under the rules its cells were cut under, as a rebuild and a batch
+     * each open one where they begin.
+     *
+     * <p>The index is made here rather than by each opener, so a walk is always over an index of its
+     * own: one shared with a previous walk would answer from the sector that walk saw.
+     *
+     * @param sector          the sector to walk
+     * @param visibilityRules the rules the cells were cut under
+     * @return a walk over a fresh index of that sector
+     */
+    public static SectorWalk openOver(SectorAPI sector, MapVisibilityRules visibilityRules) {
+        return new SectorWalk(new SectorPassIndex(sector), visibilityRules);
+    }
+
+    /**
      * @return the one walk of each system every reader shares
      */
     public SectorPassIndex sectorIndex() {

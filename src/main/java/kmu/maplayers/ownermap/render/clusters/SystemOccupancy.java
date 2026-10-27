@@ -161,7 +161,7 @@ public final class SystemOccupancy {
             ? ResolvedSystemOwner.UNOWNED
             : new ResolvedSystemOwner(
                 owner,
-                nonSolidFillStateBySystemKey.getOrDefault(systemKey, FillState.SOLID));
+                SystemFillStates.resolveFillStateIn(nonSolidFillStateBySystemKey, systemKey));
     }
 
     /**
@@ -251,11 +251,7 @@ public final class SystemOccupancy {
             ownerBySystemKey.put(systemKey, resolved.owner());
         }
 
-        if (resolved.fillState() == FillState.SOLID) {
-            nonSolidFillStateBySystemKey.remove(systemKey);
-        } else {
-            nonSolidFillStateBySystemKey.put(systemKey, resolved.fillState());
-        }
+        SystemFillStates.recordFillStateIn(nonSolidFillStateBySystemKey, systemKey, resolved.fillState());
     }
 
     /**

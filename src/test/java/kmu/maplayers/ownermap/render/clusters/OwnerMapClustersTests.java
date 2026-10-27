@@ -41,6 +41,8 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the built map state the renderer paints and the incremental refresh edits:
@@ -218,6 +220,73 @@ final class OwnerMapClustersTests {
                 .containsExactlyEntriesOf(Map.of("owner", styledClusterGroup));
             assertThat(actualGlobalStyle)
                 .isSameAs(expectedGlobalStyle);
+        }
+    }
+
+    @Nested
+    class RebuildClusterGroupOf {
+
+        // The owner is read off the occupancy through the members, as the full build and a batch
+        // both trace it, and what the builder bakes is recorded under the owner's ID.
+        @Test
+        void tracesTheMembersUnderTheirOwnerAndRecordsTheGroup() {
+
+            // ARRANGE
+            var clusters = buildOwnedBy(Map.of("A", "hegemony"));
+            var cellGrouping = clusters.resolveCellGroupingOver(buildDrawnSystemKeys(Map.of("A", "A")));
+            var memberCellKeys = List.of(buildCellKey("A"));
+            var clusterGroup = buildAnyStyledClusterGroup();
+            var groupBuilderMock = mock(ClusterGroupBuilder.class);
+
+            when(groupBuilderMock.buildClusterGroup(readOwnerOf("hegemony"), memberCellKeys))
+                .thenReturn(clusterGroup);
+
+            // ACT
+            clusters.rebuildClusterGroupOf(groupBuilderMock, cellGrouping, "hegemony", memberCellKeys);
+
+            // ASSERT
+            assertThat(clusters.getStyledClusterGroupByOwnerId())
+                .containsExactlyEntriesOf(Map.of("hegemony", clusterGroup));
+        }
+
+        // An owner that lost its last member draws nothing, so the group it had goes and nothing is
+        // traced for it.
+        @Test
+        void dropsAnOwnerLeftWithNoMembersWithoutTracingIt() {
+
+            // ARRANGE
+            var clusters = buildDrawablesWith(Map.of(), Map.of("hegemony", buildAnyStyledClusterGroup()));
+            var cellGrouping = clusters.resolveCellGroupingOver(Map.of());
+            var groupBuilderMock = mock(ClusterGroupBuilder.class);
+
+            // ACT
+            clusters.rebuildClusterGroupOf(groupBuilderMock, cellGrouping, "hegemony", List.of());
+
+            // ASSERT
+            assertThat(clusters.getStyledClusterGroupByOwnerId())
+                .isEmpty();
+
+            verifyNoInteractions(groupBuilderMock);
+        }
+
+        // A batch asks after every owner it touched, and the grouping names no members at all for an
+        // owner that holds nothing any more.
+        @Test
+        void dropsAnOwnerTheGroupingNamesNoMembersFor() {
+
+            // ARRANGE
+            var clusters = buildDrawablesWith(Map.of(), Map.of("hegemony", buildAnyStyledClusterGroup()));
+            var cellGrouping = clusters.resolveCellGroupingOver(Map.of());
+            var groupBuilderMock = mock(ClusterGroupBuilder.class);
+
+            // ACT
+            clusters.rebuildClusterGroupOf(groupBuilderMock, cellGrouping, "hegemony", null);
+
+            // ASSERT
+            assertThat(clusters.getStyledClusterGroupByOwnerId())
+                .isEmpty();
+
+            verifyNoInteractions(groupBuilderMock);
         }
     }
 

@@ -132,6 +132,27 @@ public final class PaintedCellStore {
     }
 
     /**
+     * Records one cell's draw record, or drops the cell where it bakes none.
+     *
+     * <p>The write path for a freshly baked cell, rather than each caller choosing between a put and
+     * a remove: a cell that bakes no record puts no ink down, and a record left standing for it would
+     * go on drawing the shape it lost.
+     *
+     * @param cellKey     the cell this record is for
+     * @param paintedCell its draw record and the ring it was built from, or null where the cell
+     *                    contributes nothing
+     */
+    public void putOrRemovePaintedCell(SystemKey cellKey, PaintedCell paintedCell) {
+
+        if (paintedCell == null) {
+            removePaintedCell(cellKey);
+
+        } else {
+            putPaintedCell(cellKey, paintedCell);
+        }
+    }
+
+    /**
      * Drops one cell entirely - it draws nothing, so it can be hovered over no more than it can be
      * seen.
      *
