@@ -46,6 +46,7 @@ so read both for the full picture.
     - [Systems](#systems)
     - [Scoring](#scoring)
     - [Drawing](#drawing)
+    - [The void between systems](#the-void-between-systems)
     - [The sidebar](#the-sidebar)
     - [In the changelog: the map and its controls](#in-the-changelog-the-map-and-its-controls)
     - [In the changelog: code](#in-the-changelog-code)
@@ -250,6 +251,7 @@ which every KM mod's shares.
 | English | 简体中文 | Note |
 | --- | --- | --- |
 | Arrange Map Layers | 排列地图图层 | 排列, to put in order, before 地图图层 |
+| Diplomatic Map | 外交地图 | 外交, diplomacy, with 地图 as in 政治地图, since it is a layer |
 | info-layer | 信息图层 | from 图层: a layer that shows information |
 | load a save | 读取存档 | from vanilla's 读取最近的存档 |
 | map layers | 地图图层 | also drawn on the intel screen's map, hence 地图 rather than 星图 |
@@ -423,6 +425,24 @@ So a word of one axis never stands in for another:
 | ring (the loop inside a cell's border a band runs along) | 环线 | a closed loop line, as a ring road is; not 圆环, which says round, while a cell's ring follows its polygon; kept apart from 边界, the border itself |
 | solid fill | 实色填充 | 实色, solid colour, before 填充, a fill |
 
+#### The void between systems
+
+The words for filling the empty space between systems one faction dominates.
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| base of operations (where a faction's fleets set out from) | 行动基地 | 行动, operations, with 基地, vanilla's word for a base, as in 军事基地 |
+| bubbly (the map's look where every system is a round cell of its own) | 泡泡状; de-bubblify is 不再像一堆泡泡 | 泡泡, bubbles, the plain picture of round cells side by side |
+| foothold (a faction's colony in a system) | 立足点 | a place to stand on, the usual word for a foothold |
+| fringe (the space beyond the sector's outermost systems) | 边缘地带 | 边缘, the edge, with 地带, a zone |
+| gap (empty space between cells that no cell reaches) | 空隙 | the plain word for a gap between things |
+| out-of-game renderer (the tool the fill is prototyped in) | 游戏外渲染器 | 游戏外, outside the game, with KMLib's 渲染器, a renderer |
+| sector fixture (a sector's data extracted from a save, as a player reads it) | 星域数据快照 | vanilla's 星域 with 数据快照, a data snapshot; kept apart from KMLib's 夹具, the test word, which a player cannot read |
+| shipping lane | 航道 | the plain word for a lane ships keep to |
+| starless void (hyperspace with no star system in it) | 无星虚空 | 无星, starless, with 虚空, the void |
+| wedge (a narrow empty space between two adjacent cells) | 楔形缝隙 | 楔形, wedge-shaped, with 缝隙, a narrow gap; kept apart from 空隙, a wider gap |
+| zone of control (what a cell stands for: the space a faction's foothold reaches) | 控制区 | 控制, control, with 区, a zone, the wargame word; not 势力范围, whose 势力 reads as a faction; kept apart from 主导, dominance |
+
 #### The sidebar
 
 | English | 简体中文 | Note |
@@ -506,6 +526,7 @@ So a word of one axis never stands in for another:
 | holding rule (the rule a layer decides who holds a system by) | 持有规则 | 持有, to hold, with 规则, a rule |
 | instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | lane rule (a line dividing an anchor overlay's band between a name's lines) | 行间分隔线 | 行间, between lines of text, with 分隔线, a dividing line; kept apart from 行数, a count of lines, which the rule does not show |
+| map (a collection of values looked up by key) | 映射表 | the usual computing word for a key-value map; kept apart from 地图, the map on screen |
 | marked (a system a change flagged to be re-derived) | 已标记 | 已, already, with 标记, to mark |
 | mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
@@ -607,10 +628,12 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 
 | English | 简体中文 | Note |
 | --- | --- | --- |
+| Cell geometry (a Map - Dev section) | 单元几何 | 单元, a cell, with 几何, geometry |
 | dev settings | 开发设置 | from the Dev tabs, 开发 |
 | Nebula draw order (and its Territory fills, Borders, Presence bands, Faction names) | 星云绘制顺序 (领土填充, 边界, 存在色带, 势力名称) | 星云 with 绘制顺序, the order things are drawn in; the four names are the [drawing](#drawing) words for what each one moves |
 | opacity | 不透明度 | the usual graphics word |
 | profiling | 性能分析 | 性能, performance, with 分析, analysis: the usual computing word |
+| Territory reach (how far a cell extends into empty space) | 领土范围 | 领土, territory, with 范围, the extent it reaches |
 | thickness, width | 粗细, 宽度 | the usual words for a line's weight and a span's width |
 | Visibility overrides (SPOILERS) | 可见性覆盖（剧透） | 覆盖, to override, after 可见性; 剧透, the usual word for a spoiler |
 
