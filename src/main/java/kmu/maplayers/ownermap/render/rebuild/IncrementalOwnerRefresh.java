@@ -114,9 +114,10 @@ public final class IncrementalOwnerRefresh {
         var markedSystemKeys = selectDrawnSystemKeys(staleSystemKeys);
 
         var buildInputs = clusters.getBuildInputs();
+        var spotlitOwnerId = buildInputs.getContentInputs().selectedOwnerId();
         var ownerResolver = buildInputs.getViewReading().source().openSystemResolver(
             walk,
-            buildInputs.getContentInputs().selectedOwnerId());
+            spotlitOwnerId);
 
         var disturbance = MarkedSystemRederive.rederiveMarkedSystems(
             clusters,
@@ -125,7 +126,20 @@ public final class IncrementalOwnerRefresh {
             ownerResolver,
             markedSystemKeys);
 
-        redrawDisturbedCells(markedSystemKeys, disturbance);
+        var rebakedBandCount = redrawDisturbedCells(markedSystemKeys, disturbance);
+
+        // Under which pick and which rules the batch re-derived, beside what it found: a cell that
+        // repaints wrong is read against the spotlight and the rules it was re-derived under. The
+        // strategy is named although only one strategy runs this, so the line reads alone.
+        LOG.debug("Owner map folded marked systems; strategy=" + OwnerMapRefreshStrategy.INCREMENTAL
+            + " spotlit=" + (spotlitOwnerId == null ? "none" : spotlitOwnerId)
+            + " marked=" + markedSystemKeys.size()
+            + " " + disturbance.describeChangeCounts()
+            + " namesRefitted=" + disturbance.hasFlips()
+            + " redrawnCells=" + disturbance.getCellKeysToRedraw().size()
+            + " rebuiltOwners=" + disturbance.getAffectedOwnerIds().size()
+            + " rebakedBands=" + rebakedBandCount
+            + " rules=" + ownerResolver.describeSampledRules());
     }
 
     // The marked systems that draw a cell, in the order they were marked.
@@ -160,7 +174,9 @@ public final class IncrementalOwnerRefresh {
     // are re-traced off the owners the batch named for the same reason: a system can go from solid
     // to unfilled with its owner and its border where they were. What the flips still decide is the
     // clustering and the names, both of which follow a border having moved.
-    private void redrawDisturbedCells(
+    //
+    // Answers how many bands it re-baked, for the batch's line.
+    private int redrawDisturbedCells(
             Set<SystemKey> markedSystemKeys,
             StaleOwnerMapDisturbance disturbance) {
 
@@ -189,11 +205,7 @@ public final class IncrementalOwnerRefresh {
 
         bakeBandsOf(cellKeysToBake);
 
-        LOG.debug("Owner map owners updated incrementally; marked="
-            + markedSystemKeys.size()
-            + " redrawnCells=" + disturbance.getCellKeysToRedraw().size()
-            + " rebuiltOwners=" + disturbance.getAffectedOwnerIds().size()
-            + " rebakedBands=" + cellKeysToBake.size());
+        return cellKeysToBake.size();
     }
 
     // What a flip owes beyond the cells themselves: the cluster index and the two sides'

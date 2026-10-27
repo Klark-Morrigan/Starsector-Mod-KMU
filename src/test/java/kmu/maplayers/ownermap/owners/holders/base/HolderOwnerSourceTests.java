@@ -558,6 +558,25 @@ final class HolderOwnerSourceTests {
             assertThat(actualIsPresent)
                 .isTrue();
         }
+
+        // The tier cannot name a layer's rules, so the batch's line reads them through the resolver;
+        // the habitation half samples nothing, so the layer's own resolver is the whole answer.
+        @Test
+        void answersTheRulesTheLayersResolverSampled() {
+
+            // ARRANGE
+            holderResolverSourceFake.recordSampledRules("layer rules");
+
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), null);
+
+            // ACT
+            var actualRules = resolver.describeSampledRules();
+
+            // ASSERT
+            assertThat(actualRules)
+                .isEqualTo("layer rules");
+        }
     }
 
     @Nested

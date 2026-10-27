@@ -186,6 +186,33 @@ final class ClaimAugmentedSystemHolderResolverTests {
         }
     }
 
+    @Nested
+    class DescribeSampledRules {
+
+        // The claim half samples no live rule, so the batch's line names the contest's weighting
+        // rule; answering the default here would hide the rule the batch re-derived under.
+        @Test
+        void answersTheContestsRules() {
+
+            // ARRANGE
+            var heldResolverMock = mock(SystemHolderResolver.class);
+
+            when(heldResolverMock.describeSampledRules())
+                .thenReturn("contest rules");
+
+            contestMock
+                .when(() -> DominanceSystemHolderResolver.openResolverUnder(same(pass), same(HEGEMONY_SPOTLIGHT)))
+                .thenReturn(heldResolverMock);
+
+            // ACT
+            var actualRules = openUnderTheSpotlight().describeSampledRules();
+
+            // ASSERT
+            assertThat(actualRules)
+                .isEqualTo("contest rules");
+        }
+    }
+
     // The resolver a batch opens under the spotlight, through this suite's source.
     private SystemHolderResolver openUnderTheSpotlight() {
 

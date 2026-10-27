@@ -219,12 +219,38 @@ public final class OwnerMapClusterFixtures {
             Set<String> inhabitedSystemIds,
             Set<String> spotlitPresenceSystemIds) {
 
+        return createClustersSpotlighting(
+            selectedOwnerId,
+            ownerBySystemId,
+            inhabitedSystemIds,
+            spotlitPresenceSystemIds,
+            new OwnerSourceFake());
+    }
+
+    /**
+     * The same spotlit clusters retaining a stated owner source, for a case about a batch folding
+     * into a spotlit build.
+     *
+     * @param selectedOwnerId          the spotlighted owner's ID
+     * @param ownerBySystemId          who holds each system
+     * @param inhabitedSystemIds       every system something stands in
+     * @param spotlitPresenceSystemIds the settled systems the pick lives in that nobody holds
+     * @param ownerSource              the source the build retains
+     * @return a live clusters, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersSpotlighting(
+            String selectedOwnerId,
+            Map<String, SystemOwner> ownerBySystemId,
+            Set<String> inhabitedSystemIds,
+            Set<String> spotlitPresenceSystemIds,
+            OwnerSource ownerSource) {
+
         return createClustersUnder(
             ContentInputsFixtures.createInputsSpotlighting(selectedOwnerId),
             buildKeyedValues(ownerBySystemId),
             buildKeyedSystemKeys(inhabitedSystemIds),
             buildKeyedSystemKeys(spotlitPresenceSystemIds),
-            new OwnerSourceFake());
+            ownerSource);
     }
 
     /**

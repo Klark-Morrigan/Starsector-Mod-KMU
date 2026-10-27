@@ -521,6 +521,7 @@ The words for filling the empty space between systems one faction dominates.
 | fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | fitted box (the box a name's fit reserved) | 拟合框 | 拟合, a fit, with 框, a box |
+| flip (a marked system changing owner) | 易手 | the plain word for changing hands, as the colony axis already uses it |
 | fold (bringing a batch into the map on screen in place) | 并入 | 并, together, with 入, into: merged into what already stands |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
 | full rebuild (the whole map worked out again, against a batch's fold) | 完整重建 | 完整, whole, with [重建](#in-the-changelog-the-map-and-its-controls), a rebuild |
@@ -553,13 +554,17 @@ The words for filling the empty space between systems one faction dominates.
 | re-derive (working one system's answer out again) | 重新解析 | 重新, again, with 解析, to resolve |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | reading (one way of taking the room a name takes: its fitted box or its drawn words) | 读法 | 读, to read, with 法, a way; kept apart from 读取, the act of reading something off |
+| refill (a marked system's fill state moving under the owner it had) | 填充变化 | 填充, a fill, with 变化, a change |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
 | refresh strategy (what a frame owing no rebuild does with marked systems) | 刷新策略 | 刷新, to refresh, with 策略, a strategy: a choice of how something is done |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
+| release (what a cache drops when the machinery holding it goes) | 释放 | the usual computing word for giving held memory back |
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
 | reset hook (a call that empties held state back to its start) | 重置钩子 | 重置, to reset, with 钩子, a hook, the usual computing word for a call others attach to |
 | resolver (a function answering one value per owner, such as a name's shade) | 解析函数 | 解析, to resolve, with 函数, a function |
 | resolver (the object a batch re-derives its marked systems through) | 解析器 | 解析, to resolve, with 器, the usual suffix for a thing that does a job; kept apart from 解析函数, a function answering per owner |
+| restyle (a marked system's cell drawing differently while its owner stays) | 样式变化 | 样式, a style, with 变化, a change |
+| sample (reading a live input once, for a whole rebuild or batch) | 采样 | the usual word for taking one reading of something that moves |
 | sealed type (a type whose every case is named where it is declared) | 密封类型 | the usual Java word, 密封, sealed |
 | seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |

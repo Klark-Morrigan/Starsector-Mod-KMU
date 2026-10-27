@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,6 +28,8 @@ public final class SystemHolderResolverSourceFake implements SystemHolderResolve
     private final Map<String, ResolvedSystemOwner> holderBySystemId = new LinkedHashMap<>();
     private final List<HolderPass> passesOpenedOver = new ArrayList<>();
     private final List<String> spotlitBlocIdsOpenedUnder = new ArrayList<>();
+
+    private String sampledRules = SystemOwnerResolver.NO_SAMPLED_RULES;
 
     /**
      * Every pass a batch opened a resolver over, in the order it opened them.
@@ -56,6 +59,15 @@ public final class SystemHolderResolverSourceFake implements SystemHolderResolve
         holderBySystemId.put(systemId, holder);
     }
 
+    /**
+     * States the rules every resolver this source hands out describes itself as having sampled.
+     *
+     * @param sampledRules what the resolvers answer for their sampled rules
+     */
+    public void recordSampledRules(String sampledRules) {
+        this.sampledRules = sampledRules;
+    }
+
     @Override
     public SystemHolderResolver openResolverOver(HolderPass pass, String spotlitBlocId) {
 
@@ -75,6 +87,11 @@ public final class SystemHolderResolverSourceFake implements SystemHolderResolve
             return holderBySystemId.getOrDefault(
                 SystemKey.readKeyOf(system).systemId(),
                 ResolvedSystemOwner.UNOWNED);
+        }
+
+        @Override
+        public String describeSampledRules() {
+            return sampledRules;
         }
     }
 }

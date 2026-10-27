@@ -83,11 +83,12 @@
 - **`Label.applyFade(float)`**：只在地图的不透明度变化时为文字重新着色。
 - **`OwnerMapRefreshStrategy`**：无需重建的帧如何处理此后被标记的星系，由图层声明。它是只有两个常量的枚举：默认的 `INCREMENTAL` 把它们并入屏幕上的地图；`FULL_REBUILD` 把它们留给下一帧的重建，供某一星系的结果会随未被标记的星系而变化的规则使用；结果为 `MarkedSystemsOutcome`。
 - **`ResolvedSystemOwner`**：单个星系的所有者及其填充状态，即所有者来源和持有规则逐星系给出的结果。
+- **`SystemOwnerResolver.describeSampledRules()`** 和 **`SystemHolderResolver.describeSampledRules()`**：解析器打开时采样的实时规则，写在它所服务的批次的日志行上。未采样任何规则的解析器给出默认的 `SystemOwnerResolver.NO_SAMPLED_RULES`。
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及调用时其中记录的每个星系的填充状态。
 - **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**：逐星系给出聚焦下的争夺，重建会对每个星系询问它。
 - **`ClaimAugmentedSystemHolderResolver`**：*势力*和*联盟*视图的持有规则，先看争夺，仅当争夺未让任何集团持有该星系时才读取宣称。
 - **`BuiltView`**：所有者地图所依据的基础画面，是一个密封类型，分为携带绘制内容的 `Production`、携带边界描绘叠加层的 `Debug`，以及 `PLACEHOLDER`：首次构建完成前一直使用的占位画面，不绘制任何东西。读取方通过 `selectByCase(Function, Function, Supplier)` 或 `runByCase(Consumer, Consumer, Runnable)` 写出全部三种情况，`OwnerMapCache.getBuiltView()` 给出当前的那一个。
-- **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。
+- **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。叠加层缓存在构建时说明其刷新策略，并说明一批已标记星系为何未被并入，以及释放时丢弃了什么。已并入批次的日志行写明被聚焦的所有者、易手、填充变化和样式变化的次数、是否重新拟合了名称，以及重新解析所依的规则。
 
 #### 修复
 

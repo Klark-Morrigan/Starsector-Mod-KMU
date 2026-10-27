@@ -84,11 +84,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`Label.applyFade(float)`**: recolours the string only when the map's alpha moved.
 - **`OwnerMapRefreshStrategy`**: what a frame owing no rebuild does with the systems marked since, which a layer states. An enum of two constants: `INCREMENTAL`, the default, folds them into the map on screen, and `FULL_REBUILD` leaves them to the next frame's rebuild, for a rule whose answer for one system moves with systems nobody marked; the answer is a `MarkedSystemsOutcome`.
 - **`ResolvedSystemOwner`**: one system's owner and fill state, the per-system answer an owner source and a holder rule give.
+- **`SystemOwnerResolver.describeSampledRules()`** and **`SystemHolderResolver.describeSampledRules()`**: the live rules a resolver sampled when it opened, written on the line of the batch it serves. A resolver that sampled none answers `SystemOwnerResolver.NO_SAMPLED_RULES`, the default.
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** and **`snapshotFillStates()`**: one system's owner with its fill state, and every system's fill state as the occupancy holds them at the call.
 - **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**: the spotlit contest one system at a time, which a rebuild asks of every system.
 - **`ClaimAugmentedSystemHolderResolver`**: the *Factions* and *Alliances* views' holding rule, the contest first and the claim only where the contest leaves a system unheld.
 - **`BuiltView`**: the base view an owner map stands on, sealed over `Production`, carrying the draw lists, `Debug`, carrying the border-tracing overlay, and `PLACEHOLDER`, which stands until the first build completes and draws nothing. A reader states all three cases through `selectByCase(Function, Function, Supplier)` or `runByCase(Consumer, Consumer, Runnable)`, and `OwnerMapCache.getBuiltView()` answers the one standing.
-- **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views.
+- **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views. The overlay cache states its refresh strategy when it is built, why a batch of marked systems went unfolded, and what its release dropped. A folded batch's line names its spotlit owner, its flips, refills and restyles, whether it re-fitted the names, and the rules it was re-derived under.
 
 #### Fixed
 

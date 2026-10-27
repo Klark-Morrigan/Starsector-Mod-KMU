@@ -6,6 +6,7 @@ import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmlib.testfixtures.statics.StaticSeams;
@@ -1127,6 +1128,37 @@ public final class IncrementalOwnerRefreshTests {
                 .thenReturn(buildKeyedValues(Map.of(DISTANT_SYSTEM, DISTANT_SITE)));
 
             ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
+        }
+
+        // A cell that repaints wrong is read against the batch that repainted it, so the batch's one
+        // line names the strategy, the pick it re-derived under, each kind of change it found and the
+        // rules its resolver sampled.
+        @Test
+        void writesOneLineNamingTheSpotlitOwnerTheChangesAndTheRules() {
+
+            // ARRANGE
+            var clusters = OwnerMapClusterFixtures.createClustersSpotlighting(
+                HEGEMONY,
+                buildOwnersOf(Map.of(FLIPPED_SYSTEM, HEGEMONY, NEIGHBOUR_SYSTEM, HEGEMONY)),
+                Set.of(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM),
+                Set.of(),
+                ownerSourceFake);
+            var expectedLine = "Owner map folded marked systems; strategy=INCREMENTAL spotlit=hegemony marked=1"
+                + " flips=1 refills=0 restyles=0 namesRefitted=true redrawnCells=2 rebuiltOwners=2"
+                + " rebakedBands=2 rules=sampled rules";
+
+            ownerSourceFake.answerSampledRules("sampled rules");
+            stateOwnerOf(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            markStale(FLIPPED_SYSTEM);
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                IncrementalOwnerRefresh.class,
+                () -> applyTo(clusters));
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
         }
 
         // The cell builder the batch stood up, which every cell it re-shaped was baked by. One per

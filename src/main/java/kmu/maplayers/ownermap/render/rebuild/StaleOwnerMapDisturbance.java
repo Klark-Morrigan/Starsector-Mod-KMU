@@ -34,15 +34,17 @@ final class StaleOwnerMapDisturbance {
     // than a hash's.
     private final Set<String> affectedOwnerIds = new LinkedHashSet<>();
 
-    // Whether any system changed hands, which is what moves a border and so what the clustering
-    // and the names follow. Apart from the owners above, since a refill rebuilds an owner's group
-    // and moves no border.
-    private boolean hasFlips;
-
     // The cells this batch obliges to redraw: each flipped system and every neighbour whose
     // shared edge flipped between a same-owner seam and a cluster border, plus each system
     // whose cell draws in a different style than it did.
     private final Set<SystemKey> cellKeysToRedraw = new LinkedHashSet<>();
+
+    // How many of each kind of change the batch recorded, for the line the batch writes. The flips
+    // also decide the work: a flip is what moves a border, and so what the clustering and the names
+    // follow, while a refill rebuilds an owner's group and moves no border.
+    private int flipCount;
+    private int refillCount;
+    private int restyleCount;
 
     /** @return the owners whose cluster group must rebuild, in first-recorded order */
     Set<String> getAffectedOwnerIds() {
@@ -64,7 +66,15 @@ final class StaleOwnerMapDisturbance {
      */
     boolean hasFlips() {
 
-        return hasFlips;
+        return flipCount > 0;
+    }
+
+    /** @return how many flips, refills and restyles the batch recorded, for the batch's line */
+    String describeChangeCounts() {
+
+        return "flips=" + flipCount
+            + " refills=" + refillCount
+            + " restyles=" + restyleCount;
     }
 
     /**
@@ -92,7 +102,7 @@ final class StaleOwnerMapDisturbance {
             affectedOwnerIds.add(newOwner.ownerId());
         }
 
-        hasFlips = true;
+        flipCount++;
         cellKeysToRedraw.add(systemKey);
         cellKeysToRedraw.addAll(neighbourSystemKeys);
     }
@@ -109,6 +119,7 @@ final class StaleOwnerMapDisturbance {
      */
     void recordRefill(SystemOwner owner) {
 
+        refillCount++;
         affectedOwnerIds.add(owner.ownerId());
     }
 
@@ -124,6 +135,7 @@ final class StaleOwnerMapDisturbance {
      */
     void recordRestyle(SystemKey systemKey) {
 
+        restyleCount++;
         cellKeysToRedraw.add(systemKey);
     }
 }

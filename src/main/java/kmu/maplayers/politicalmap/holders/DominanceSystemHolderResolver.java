@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.holders;
 
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.BlocSpotlight;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
@@ -7,6 +9,7 @@ import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolver;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
+import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 
 import java.util.Optional;
 
@@ -41,20 +44,44 @@ public final class DominanceSystemHolderResolver {
 
         var dominancePass = DominancePass.readRulesFromLunaSettings(pass);
 
-        return spotlight
-            .map(openedSpotlight -> openSpotlitResolver(dominancePass, openedSpotlight))
-            .orElseGet(() -> openPlainResolver(dominancePass));
+        var contest = spotlight
+            .map(openedSpotlight -> openSpotlitContest(dominancePass, openedSpotlight))
+            .orElseGet(() -> openPlainContest(dominancePass));
+
+        return new RuleDescribingResolver(contest, dominancePass.rules());
     }
 
     // Off filter each system goes to its single dominant holder, filled solid: with nobody spotlit
     // there is no presence to hatch.
-    private static SystemHolderResolver openPlainResolver(DominancePass pass) {
+    private static SystemHolderResolver openPlainContest(DominancePass pass) {
 
         return system -> ResolvedSystemOwner.createSolidlyFilledBy(
             SectorPolitics.resolveDominantHolder(system, pass));
     }
 
-    private static SystemHolderResolver openSpotlitResolver(DominancePass pass, BlocSpotlight spotlight) {
+    private static SystemHolderResolver openSpotlitContest(DominancePass pass, BlocSpotlight spotlight) {
         return system -> FilteredPolitics.resolveFilteredHolderIn(system, pass, spotlight);
+    }
+
+    /**
+     * Either contest, carrying the weighting rule it was opened under so the batch's line can name it.
+     *
+     * @param contest the contest the resolver asks of each system
+     * @param rules   the weighting rule sampled when the resolver opened
+     */
+    private record RuleDescribingResolver(
+        SystemHolderResolver contest,
+        DominanceRules rules)
+            implements SystemHolderResolver {
+
+        @Override
+        public ResolvedSystemOwner resolveHolderIn(StarSystemAPI system) {
+            return contest.resolveHolderIn(system);
+        }
+
+        @Override
+        public String describeSampledRules() {
+            return rules.toString();
+        }
     }
 }

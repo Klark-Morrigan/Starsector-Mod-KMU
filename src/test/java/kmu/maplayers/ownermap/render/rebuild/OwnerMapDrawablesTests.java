@@ -625,6 +625,56 @@ final class OwnerMapDrawablesTests {
         }
     }
 
+    // The debug arm is pinned through the cache, whose unfolded line names the overlay standing.
+    @Nested
+    class DescribeBuiltViewKind {
+
+        // The builders a production rebuild drives, stood in for: all this asks is what the
+        // drawables say of a build that ran.
+        private final StaticSeams seams = new StaticSeams();
+
+        @AfterEach
+        void closeSeams() {
+            seams.closeEverySeam();
+        }
+
+        // The view a batch can fold into, which the release line names beside its counts.
+        @Test
+        void namesTheProductionView() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
+                buildRebuildReading(false));
+
+            // ACT
+            var actualKind = drawables.describeBuiltViewKind();
+
+            // ASSERT
+            assertThat(actualKind)
+                .isEqualTo("production");
+        }
+
+        // A release before any build drops nothing, and the line says so rather than naming a view.
+        @Test
+        void namesThePlaceholderBeforeAnythingHasBeenBuilt() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+
+            // ACT
+            var actualKind = drawables.describeBuiltViewKind();
+
+            // ASSERT
+            assertThat(actualKind)
+                .isEqualTo("placeholder");
+        }
+    }
+
     @Nested
     class DisposeAll {
 

@@ -368,7 +368,11 @@ Why that is a slot rather than one behaviour is
 
 It is also where rebuild faults are contained:
 a failing rebuild or fold is logged once rather than per frame,
+each under a warning of its own,
 and owes the next frame the full rebuild.
+The fold catches its own throw,
+since only it holds the batch it dropped,
+and its warning names how many marked systems went.
 The renderer paints whichever base view stands,
 a sealed `BuiltView`:
 the production draw lists,

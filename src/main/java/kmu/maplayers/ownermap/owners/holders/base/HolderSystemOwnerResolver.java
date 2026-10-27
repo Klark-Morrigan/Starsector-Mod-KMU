@@ -53,4 +53,10 @@ final class HolderSystemOwnerResolver implements SystemOwnerResolver {
 
         return HolderInhabitation.isBlocPresentIn(pass, spotlitBlocId, system);
     }
+
+    @Override
+    public String describeSampledRules() {
+
+        return holderResolver.describeSampledRules();
+    }
 }

@@ -81,4 +81,11 @@ public final class ClaimAugmentedSystemHolderResolver
             ? held
             : new ResolvedSystemOwner(claimingHolder, FillState.UNFILLED);
     }
+
+    // The claim half samples no live rule of its own, so the held half's rules are the whole answer.
+    @Override
+    public String describeSampledRules() {
+
+        return heldResolver.describeSampledRules();
+    }
 }

@@ -26,6 +26,7 @@ import kmu.settings.KmuLunaSettings;
 import org.apache.log4j.Logger;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -103,6 +104,10 @@ public final class OwnerMapCache
     // failure would otherwise flood the log, and the second line says nothing the first did not.
     private final SessionWarning rebuildFaultWarning = new SessionWarning(LOG);
 
+    // Apart from the rebuild's warning because a thrown fold means something else: the batch it
+    // dropped. One shared warning would let a rebuild fault silence the news of a fold fault.
+    private final SessionWarning foldFaultWarning = new SessionWarning(LOG);
+
     /**
      * @param machinery       the machinery installed on the sector this cache draws
      * @param bodyPreferences the drawing layer's body preferences, which every rebuild samples its
@@ -124,6 +129,10 @@ public final class OwnerMapCache
         this.refreshStrategy = refreshStrategy;
         this.ledger = new OwnerMapBuildLedger(machinery, bodyPreferences);
         this.fullRebuild = new FullOwnerMapRebuild(machinery, seedRule, drawables, ledger);
+
+        // The strategy decides what every marked batch costs, so the log states it once up front
+        // rather than leaving a reader to infer it from which batch lines appear.
+        LOG.debug("Owner map cache built; strategy=" + refreshStrategy);
     }
 
     /** @return the base view standing this frame, which the renderer paints by case */
@@ -174,8 +183,17 @@ public final class OwnerMapCache
     @Override
     public void disposeCachedState() {
 
+        // Described before the release, which leaves nothing to count.
+        var releasedState = "view=" + drawables.describeBuiltViewKind()
+            + " " + drawables.describeBuiltCounts()
+            + " labels=" + drawables.getOwnerLabels().size()
+            + " anchors=" + drawables.getClusterAnchors().size()
+            + " cells=" + fullRebuild.getCellGeometry().cells().getCellEdgesByCellKey().size();
+
         drawables.disposeAll();
         fullRebuild.discardCells();
+
+        LOG.debug("Owner map cache released; " + releasedState);
     }
 
     /**
@@ -185,11 +203,8 @@ public final class OwnerMapCache
      * stale. Whatever view stood before the fault keeps drawing, and before any build that is the
      * placeholder, which draws nothing.
      *
-     * <p>The debt is what makes a thrown fold retry. Its batch was drained and the standing owners
-     * dropped before it threw, and no revision moves for either, so without the debt the next frame
-     * would owe nothing and the map would keep the old owner. The marks are not kept for a second
-     * fold: a fold that threw over a batch would throw over it again, and the full rebuild reads
-     * every system for itself.
+     * <p>A thrown fold does not reach this catch: the fold catches its own throw, since only the
+     * fold holds the batch it dropped, and owes the rebuild the same way.
      *
      * @param view        the view being painted, whose rules the rebuild builds under
      * @param memoryScope the screen being painted for, whose panel holds every sidebar preference the
@@ -273,15 +288,16 @@ public final class OwnerMapCache
         // a full rebuild that has to read it for itself.
         fullRebuild.dropStandingOwners();
 
-        var outcome = drawables
-            .findFoldableStandingMap(fullRebuild.getCellGeometry())
-            .map(standingMap -> foldMarkedSystems(staleHalves, standingMap, staleSystemKeys))
-            .orElse(MarkedSystemsOutcome.REBUILD_OWED);
+        var standingMap = drawables.findFoldableStandingMap(fullRebuild.getCellGeometry());
+        var unfoldedReason = standingMap.isPresent()
+            ? foldMarkedSystems(staleHalves, standingMap.get(), staleSystemKeys)
+            : Optional.of(drawables.describeBuiltViewKind() + " standing");
 
-        if (outcome == MarkedSystemsOutcome.REBUILD_OWED) {
+        if (unfoldedReason.isPresent()) {
 
             LOG.debug("Owner map left " + staleSystemKeys.size()
-                + " marked system(s) unfolded; next frame rebuilds");
+                + " marked system(s) unfolded; reason=" + unfoldedReason.get()
+                + "; next frame rebuilds");
 
             ledger.recordRebuildOwed();
             return;
@@ -290,22 +306,45 @@ public final class OwnerMapCache
         announceDrawListsRebuilt();
     }
 
-    // Hands the batch to the layer's strategy. The standing map goes in whole: a re-fit leaves its
-    // own placements and rules in it, and a frame that re-fits nothing leaves both alone, since the
-    // placements it did not touch are still described by the rules already recorded for them. The
-    // batch's walk is opened here, beside the sector it is taken from, so what is drained and what
-    // is walked are one sector's.
-    private MarkedSystemsOutcome foldMarkedSystems(
+    // Hands the batch to the layer's strategy, and answers why it went unfolded - empty where it
+    // folded. The standing map goes in whole: a re-fit leaves its own placements and rules in it,
+    // and a frame that re-fits nothing leaves both alone, since the placements it did not touch are
+    // still described by the rules already recorded for them. The batch's walk is opened here,
+    // beside the sector it is taken from, so what is drained and what is walked are one sector's.
+    //
+    // A fold that throws is caught here rather than by the frame's boundary, because only here is
+    // the batch it dropped in hand. Its batch was drained and the standing owners dropped before it
+    // threw, and no revision moves for either, so the debt the caller records is what makes the
+    // next frame rebuild rather than keep the old owner. The marks are not kept for a second fold:
+    // a fold that threw over a batch would throw over it again, and the full rebuild reads every
+    // system for itself.
+    private Optional<String> foldMarkedSystems(
             StaleHalves staleHalves,
             StandingOwnerMap standingMap,
             Set<SystemKey> staleSystemKeys) {
 
-        return refreshStrategy.refreshMarkedSystems(
-            SectorWalk.openOver(
-                machinery.resolveSector(),
-                staleHalves.cellCut().visibilityRules()),
-            standingMap,
-            staleSystemKeys);
+        try {
+
+            var outcome = refreshStrategy.refreshMarkedSystems(
+                SectorWalk.openOver(
+                    machinery.resolveSector(),
+                    staleHalves.cellCut().visibilityRules()),
+                standingMap,
+                staleSystemKeys);
+
+            return outcome == MarkedSystemsOutcome.FOLDED
+                ? Optional.empty()
+                : Optional.of("strategy " + refreshStrategy);
+
+        } catch (RuntimeException foldFailure) {
+
+            foldFaultWarning.warnOnce(
+                "Owner map fold failed; dropped " + staleSystemKeys.size()
+                    + " marked system(s), next frame owes the full rebuild",
+                foldFailure);
+
+            return Optional.of("fold threw");
+        }
     }
 
     // The face this sector's labels are fitted in, off this cache's own machinery rather than the

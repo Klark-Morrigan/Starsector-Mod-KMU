@@ -255,6 +255,45 @@ final class StaleOwnerMapDisturbanceTests {
         }
     }
 
+    @Nested
+    class DescribeChangeCounts {
+
+        // The batch's line is what tells a reader which kind of change drove a redraw, so a quiet
+        // batch has to read as nothing changed rather than as no line.
+        @Test
+        void countsNothingBeforeAnythingIsRecorded() {
+
+            // ARRANGE
+            var disturbance = new StaleOwnerMapDisturbance();
+
+            // ACT
+            var actualCounts = disturbance.describeChangeCounts();
+
+            // ASSERT
+            assertThat(actualCounts)
+                .isEqualTo("flips=0 refills=0 restyles=0");
+        }
+
+        // Each kind is counted on its own, and a restyle recorded twice for one system - its
+        // inhabitation and the spotlit presence both moved - counts twice, since both changes ran.
+        @Test
+        void countsEachKindAsRecorded() {
+
+            // ARRANGE
+            var disturbance = new StaleOwnerMapDisturbance();
+
+            // ACT
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildOwnerOf(HEGEMONY));
+            disturbance.recordRefill(buildOwnerOf(TRITACHYON));
+            disturbance.recordRestyle(RESTYLED_SYSTEM);
+            disturbance.recordRestyle(RESTYLED_SYSTEM);
+
+            // ASSERT
+            assertThat(disturbance.describeChangeCounts())
+                .isEqualTo("flips=1 refills=1 restyles=2");
+        }
+    }
+
     // Only the owner ID is read here, so the shades are inert placeholders.
     private static SystemOwner buildOwnerOf(String ownerId) {
         return new SystemOwner(ownerId, new ColourPair(Color.GRAY, Color.GRAY));

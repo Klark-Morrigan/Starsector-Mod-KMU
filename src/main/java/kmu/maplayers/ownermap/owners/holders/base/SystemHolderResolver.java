@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 
 /**
  * Who holds any single system, and how its fill draws, under the rule a layer painting holders
@@ -33,4 +34,15 @@ public interface SystemHolderResolver {
      *         holds it and the cell draws unowned
      */
     ResolvedSystemOwner resolveHolderIn(StarSystemAPI system);
+
+    /**
+     * The live rules this resolver sampled when it opened, which the holder source hands on as its
+     * own {@link SystemOwnerResolver#describeSampledRules}.
+     *
+     * @return the sampled rules in readable form; {@link SystemOwnerResolver#NO_SAMPLED_RULES} for a
+     *         resolver that sampled none
+     */
+    default String describeSampledRules() {
+        return SystemOwnerResolver.NO_SAMPLED_RULES;
+    }
 }

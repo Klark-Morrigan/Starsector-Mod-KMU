@@ -23,6 +23,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
  */
 public interface SystemOwnerResolver {
 
+    /** What {@link #describeSampledRules} answers for a resolver that sampled no live rule. */
+    String NO_SAMPLED_RULES = "none";
+
     /**
      * Who paints one star system, and how its fill draws, under whatever rule the layer paints by.
      *
@@ -57,4 +60,18 @@ public interface SystemOwnerResolver {
      * @return true when the spotlit owner is present in the system; always false off spotlight
      */
     boolean isSpotlitOwnerPresentIn(StarSystemAPI system);
+
+    /**
+     * The live rules this resolver sampled when it opened, for the line the batch writes.
+     *
+     * <p>A batch can re-derive a system under a rule the player has moved since the standing build,
+     * and the log is the only place that shows which rule the batch used. The tier cannot name a
+     * layer's rules, so the resolver describes them.
+     *
+     * @return the sampled rules in readable form; {@link #NO_SAMPLED_RULES} for a resolver that
+     *         sampled none
+     */
+    default String describeSampledRules() {
+        return NO_SAMPLED_RULES;
+    }
 }

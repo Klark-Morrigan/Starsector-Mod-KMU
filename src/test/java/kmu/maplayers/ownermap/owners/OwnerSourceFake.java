@@ -28,7 +28,8 @@ import java.util.Set;
  * otherwise. The per-system answers - who owns a system and how it fills, whether anything stands in
  * it, whether the spotlit owner lives there - are stated per system ID, an unstated owner answering
  * nobody and an unstated inhabitation answering whatever {@link #answerEverySystemInhabited} last
- * set. The band planner plans nothing unless a case hands one over.
+ * set. The band planner plans nothing unless a case hands one over, and the resolvers sampled no
+ * rules unless a case states some.
  */
 public final class OwnerSourceFake
         implements OwnerSource {
@@ -47,6 +48,7 @@ public final class OwnerSourceFake
     private ResolvedOwners resolvedOwners = ResolvedOwners.createEmpty();
     private boolean isInhabitedUnlessStated;
     private SystemRibbonPlanner ribbonPlanner = system -> RibbonPlan.NONE;
+    private String sampledRules = SystemOwnerResolver.NO_SAMPLED_RULES;
 
     /**
      * A source answering a stated whole-sector resolution, for a case about what a build does with
@@ -115,6 +117,16 @@ public final class OwnerSourceFake
      */
     public void answerRibbonPlanner(SystemRibbonPlanner planner) {
         ribbonPlanner = planner;
+    }
+
+    /**
+     * States the rules every per-system resolver this source opens describes itself as having
+     * sampled, ahead of the default of none.
+     *
+     * @param rules what the resolvers answer for their sampled rules
+     */
+    public void answerSampledRules(String rules) {
+        sampledRules = rules;
     }
 
     /**
@@ -212,6 +224,11 @@ public final class OwnerSourceFake
         @Override
         public boolean isSpotlitOwnerPresentIn(StarSystemAPI system) {
             return spotlitPresenceSystemIds.contains(readIdOf(system));
+        }
+
+        @Override
+        public String describeSampledRules() {
+            return sampledRules;
         }
     }
 }

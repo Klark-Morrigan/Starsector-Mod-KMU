@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.rebuild;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.faces.SettledFaces;
@@ -64,7 +65,8 @@ import static org.mockito.Mockito.times;
  * the rebuild, releasing the cache drops everything it
  * built for its sector, the debug toggle picks which of the two views a rebuild builds, and a frame
  * owing no rebuild hands the systems marked since to the layer's strategy and owes the next frame a
- * rebuild where it folds nothing.
+ * rebuild where it folds nothing. The log says which of those a frame did and why: a batch left
+ * unfolded costs a whole rebuild, and the line is the only place its reason lands.
  *
  * <p>The cache runs with its real drawables, ledger and full rebuild, over a sector listing no
  * systems, since what is pinned is how the four agree about a frame. Every builder either view is
@@ -556,6 +558,100 @@ final class OwnerMapCacheIntegrationTests {
                 () -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()),
                 times(2));
         }
+
+        // A batch left unfolded costs the next frame a whole rebuild, so the line has to say which
+        // of the reasons it was: here the layer chose the full walk.
+        @Test
+        void namesTheStrategyOnTheUnfoldedLineWhenTheStrategyOwedTheRebuild() {
+
+            // ARRANGE
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+
+            var cache = buildCacheOver(emptySectorMachinery, OwnerMapRefreshStrategy.FULL_REBUILD);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+
+            // ACT
+            var logFake = captureTheFrameLogOf(cache);
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(
+                    "Owner map left 1 marked system(s) unfolded; reason=strategy FULL_REBUILD; next frame rebuilds");
+        }
+
+        // The overlay leaves nothing to fold into whatever the strategy, which the line names so the
+        // rebuilds under the debug toggle are not read as the strategy's.
+        @Test
+        void namesTheDebugOverlayOnTheUnfoldedLineWhileItStands() {
+
+            // ARRANGE
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            traceBordersForDebug();
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+
+            // ACT
+            var logFake = captureTheFrameLogOf(cache);
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(
+                    "Owner map left 1 marked system(s) unfolded; reason=debugOverlay standing; next frame rebuilds");
+        }
+
+        // The batch a thrown fold dropped is gone from the board, so its warning is the only place
+        // that says how many systems the next frame's rebuild has to show.
+        @Test
+        void warnsHowManyMarkedSystemsAThrownFoldDropped() {
+
+            // ARRANGE
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            throwFromEveryFold();
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+
+            // ACT
+            var logFake = captureTheFrameLogOf(cache);
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(
+                    "Owner map fold failed; dropped 1 marked system(s), next frame owes the full rebuild",
+                    "Owner map left 1 marked system(s) unfolded; reason=fold threw; next frame rebuilds");
+            assertThat(logFake.getThrowables())
+                .singleElement()
+                .extracting(Throwable::getMessage)
+                .isEqualTo("fold fails");
+        }
+    }
+
+    @Nested
+    class Constructor {
+
+        // The strategy decides what every later batch costs, and nothing else in the log states it.
+        @Test
+        void statesItsStrategyWhenBuilt() {
+
+            // ARRANGE
+            var expectedLine = "Owner map cache built; strategy=FULL_REBUILD";
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(
+                OwnerMapCache.class,
+                () -> buildCacheOver(emptySectorMachinery, OwnerMapRefreshStrategy.FULL_REBUILD));
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
+        }
     }
 
     @Nested
@@ -649,6 +745,27 @@ final class OwnerMapCacheIntegrationTests {
             assertThat(cache.getOwnerLabels())
                 .isEmpty();
         }
+
+        // The release is the last thing a sector's map does, so its line is what says the sector's
+        // draw lists and GL buffers went with it - counted before they go.
+        @Test
+        void writesWhatItReleased() {
+
+            // ARRANGE
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+
+            var cache = buildCacheOver(emptySectorMachinery);
+            var expectedLine = "Owner map cache released; view=production styledCells=0 labels=0 anchors=0 cells=0";
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ACT
+            var logFake = LogAppenderFake.captureLogOf(OwnerMapCache.class, cache::disposeCachedState);
+
+            // ASSERT
+            assertThat(logFake.getMessages())
+                .containsExactly(expectedLine);
+        }
     }
 
     // A cache over the given machinery, drawing under the layer's test keys, seeding a cell for every
@@ -679,6 +796,14 @@ final class OwnerMapCacheIntegrationTests {
             Map.of(),
             Set.of(),
             Set.of());
+    }
+
+    // What the cache wrote over one frame, the frame a case acts on.
+    private static LogAppenderFake captureTheFrameLogOf(OwnerMapCache cache) {
+
+        return LogAppenderFake.captureLogOf(
+            OwnerMapCache.class,
+            () -> cache.refreshDrawLists(VIEW, SCREEN));
     }
 
     // How many times the cache over the empty sector announced a rebuild of what it draws.

@@ -14,6 +14,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
+import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins which contest a batch re-derives a marked system by: the plain one with no spotlight, filled
@@ -147,5 +149,56 @@ final class DominanceSystemHolderResolverTests {
 
             plainContestMock.verifyNoInteractions();
         }
+    }
+
+    @Nested
+    class DescribeSampledRules {
+
+        // A batch's line names the weighting rule it re-derived under, which is the one the
+        // resolver sampled as it opened - off filter as much as under it.
+        @Test
+        void answersTheRulesSampledOffFilter() {
+
+            // ARRANGE
+            stateTheSampledRules();
+
+            // ACT
+            var actualRules = DominanceSystemHolderResolver
+                .openResolverUnder(pass, Optional.empty())
+                .describeSampledRules();
+
+            // ASSERT
+            assertThat(actualRules)
+                .isEqualTo("sampled rules");
+        }
+
+        // The spotlit contest is the other arm the resolver can open, and it was sampled the same way.
+        @Test
+        void answersTheRulesSampledUnderTheSpotlight() {
+
+            // ARRANGE
+            stateTheSampledRules();
+
+            // ACT
+            var actualRules = DominanceSystemHolderResolver
+                .openResolverUnder(pass, Optional.of(HEGEMONY_SPOTLIGHT))
+                .describeSampledRules();
+
+            // ASSERT
+            assertThat(actualRules)
+                .isEqualTo("sampled rules");
+        }
+    }
+
+    // The rule the stood-in pass carries, described by a fixed string so the case does not pin the
+    // record's own text.
+    private void stateTheSampledRules() {
+
+        var rulesMock = mock(DominanceRules.class);
+
+        when(rulesMock.toString())
+            .thenReturn("sampled rules");
+        when(dominancePassMock.rules())
+            .thenReturn(rulesMock);
     }
 }

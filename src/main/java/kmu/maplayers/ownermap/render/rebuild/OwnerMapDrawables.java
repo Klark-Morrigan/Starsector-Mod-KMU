@@ -110,6 +110,18 @@ final class OwnerMapDrawables {
     }
 
     /**
+     * @return which base view stands, for the lines that say why a batch went unfolded and what a
+     *         release dropped
+     */
+    public String describeBuiltViewKind() {
+
+        return builtView.selectByCase(
+            clusters -> "production",
+            borderStageOverlay -> "debugOverlay",
+            () -> "placeholder");
+    }
+
+    /**
      * @return what the last rebuild left for the render to paint, in the terms of whichever view
      *         it built
      */
