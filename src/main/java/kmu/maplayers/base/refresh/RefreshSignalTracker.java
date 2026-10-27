@@ -45,7 +45,7 @@ public final class RefreshSignalTracker {
      *
      * @return the raised signals' IDs, separated by commas, or a word for none
      */
-    public String describeRaisesSinceTheLastReading() {
+    public String drainRaisesSinceTheLastReading() {
 
         var revisionsNow = RefreshSignalRevisions.readRevisionsOf(board, tracedSignals);
         var raisedSince = revisionsNow.describeSignalsRaisedSince(revisionsAtLastReading);

@@ -96,7 +96,7 @@ final class OwnerMapBuildLedger {
      *                          sector moved under
      * @return whether the standing owners may be painted over rather than read afresh
      */
-    public boolean canReuseStandingOwners(
+    boolean canReuseStandingOwners(
             StaleHalves staleHalves,
             boolean hasStandingOwners,
             Set<SystemKey> staleSystemKeys) {
@@ -119,7 +119,7 @@ final class OwnerMapBuildLedger {
      *                        whatever the keys say
      * @return the decision, carrying every sampled input the rebuild it may owe has to build under
      */
-    public StaleHalves decideWhatIsStale(
+    StaleHalves decideWhatIsStale(
             OwnerPaintedView view,
             ScreenMemoryScope memoryScope,
             boolean hasNothingBuilt) {
@@ -159,7 +159,7 @@ final class OwnerMapBuildLedger {
      * @param staleHalves the decision the recut is being taken under
      * @return the transition, naming the never-cut state where nothing has been cut yet
      */
-    public String describeCellCutTransition(StaleHalves staleHalves) {
+    String describeCellCutTransition(StaleHalves staleHalves) {
         return "from " + lastCellCut + " to " + staleHalves.cellCut();
     }
 
@@ -169,7 +169,7 @@ final class OwnerMapBuildLedger {
      *
      * @param staleHalves the decision the cut was taken under
      */
-    public void recordCellsCut(StaleHalves staleHalves) {
+    void recordCellsCut(StaleHalves staleHalves) {
         lastCellCut = staleHalves.cellCut();
     }
 
@@ -179,7 +179,7 @@ final class OwnerMapBuildLedger {
      *
      * @param staleHalves the decision the rebuild was taken under
      */
-    public void recordContentRebuilt(StaleHalves staleHalves) {
+    void recordContentRebuilt(StaleHalves staleHalves) {
 
         lastContentKey = staleHalves.contentKey();
         isRebuildOwed = false;
@@ -189,7 +189,7 @@ final class OwnerMapBuildLedger {
      * Records that the next frame owes a full rebuild that reads the sector for itself: the systems
      * marked since the last drain were dropped rather than folded, or the frame threw part way.
      */
-    public void recordRebuildOwed() {
+    void recordRebuildOwed() {
         isRebuildOwed = true;
     }
 
@@ -199,7 +199,7 @@ final class OwnerMapBuildLedger {
      *
      * @param staleHalves the decision the owners were resolved under
      */
-    public void recordOwnersResolved(StaleHalves staleHalves) {
+    void recordOwnersResolved(StaleHalves staleHalves) {
         lastOwnersKey = staleHalves.ownersKey();
     }
 

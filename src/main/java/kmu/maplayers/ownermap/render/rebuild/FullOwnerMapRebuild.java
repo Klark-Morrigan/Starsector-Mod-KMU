@@ -208,7 +208,7 @@ final class FullOwnerMapRebuild {
                 + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + isCellCutStale
                 + " ownersReused=" + wereOwnersReused
-                + " signalsRaised=" + signalTracker.describeRaisesSinceTheLastReading());
+                + " signalsRaised=" + signalTracker.drainRaisesSinceTheLastReading());
         }
     }
 

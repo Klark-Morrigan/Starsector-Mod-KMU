@@ -21,7 +21,7 @@ class RefreshSignalTrackerTests {
     private final MapLayerRefreshBoard board = new MapLayerRefreshBoard();
 
     @Nested
-    class DescribeRaisesSinceTheLastReading {
+    class DrainRaisesSinceTheLastReading {
 
         @Test
         void namesATracedSignalRaisedSinceConstruction() {
@@ -30,7 +30,7 @@ class RefreshSignalTrackerTests {
 
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
 
-            assertThat(tracker.describeRaisesSinceTheLastReading())
+            assertThat(tracker.drainRaisesSinceTheLastReading())
                 .isEqualTo(MapLayerCommonRefreshSignal.FILTER.getId());
         }
 
@@ -39,7 +39,7 @@ class RefreshSignalTrackerTests {
 
             var tracker = buildTrackerOf(MapLayerCommonRefreshSignal.FILTER);
 
-            assertThat(tracker.describeRaisesSinceTheLastReading())
+            assertThat(tracker.drainRaisesSinceTheLastReading())
                 .isEqualTo(NO_SIGNALS_RAISED);
         }
 
@@ -50,9 +50,9 @@ class RefreshSignalTrackerTests {
             var tracker = buildTrackerOf(MapLayerCommonRefreshSignal.FILTER);
 
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
-            tracker.describeRaisesSinceTheLastReading();
+            tracker.drainRaisesSinceTheLastReading();
 
-            assertThat(tracker.describeRaisesSinceTheLastReading())
+            assertThat(tracker.drainRaisesSinceTheLastReading())
                 .isEqualTo(NO_SIGNALS_RAISED);
         }
 
@@ -64,7 +64,7 @@ class RefreshSignalTrackerTests {
 
             board.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
-            assertThat(tracker.describeRaisesSinceTheLastReading())
+            assertThat(tracker.drainRaisesSinceTheLastReading())
                 .isEqualTo(NO_SIGNALS_RAISED);
         }
 
@@ -75,7 +75,7 @@ class RefreshSignalTrackerTests {
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
 
             assertThat(buildTrackerOf(MapLayerCommonRefreshSignal.FILTER)
-                    .describeRaisesSinceTheLastReading())
+                    .drainRaisesSinceTheLastReading())
                 .isEqualTo(NO_SIGNALS_RAISED);
         }
 
@@ -91,7 +91,7 @@ class RefreshSignalTrackerTests {
 
             // The traced order rather than the order they were raised in, so one line read every
             // pass reads the same way every pass.
-            assertThat(tracker.describeRaisesSinceTheLastReading())
+            assertThat(tracker.drainRaisesSinceTheLastReading())
                 .isEqualTo(MapLayerCommonRefreshSignal.FILTER.getId()
                     + "," + MapLayerCommonRefreshSignal.MAP_STYLE.getId());
         }

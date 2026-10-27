@@ -550,6 +550,7 @@ The words for filling the empty space between systems one faction dominates.
 | prefix (the part of a profiling row's name before its first dot) | 前缀 | the plain computing word |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
 | projection (a view showing one part of each entry of another collection) | 投影 | the usual computing word for a view over part of each record |
+| raise (a signal moving on a sector's refresh board) | 触发 | the usual computing word for setting off an event |
 | rank (a bloc's place in a mechanic's order) | 排名 | the plain word for a place in a ranking |
 | re-derive (working one system's answer out again) | 重新解析 | 重新, again, with 解析, to resolve |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
@@ -576,6 +577,7 @@ The words for filling the empty space between systems one faction dominates.
 | take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
 | trace (finding a cell's ring at an inset) | 描绘 | to draw a line along an outline, the word border tracing already takes |
+| tracker (what names the signals raised since it was last asked) | 追踪器 | 追踪, to track, with 器, the usual suffix for a thing that does a job |
 | verdict (whether the anchor overlay shows a line as accepted, rejected or unbiased) | 判定 | the plain word for a ruling on something |
 | walk (going round a cell's ring once) | 遍历 | the usual computing word for visiting every part of something; kept apart from 扫描, a sweep of the sector |
 

@@ -26,7 +26,7 @@ import java.util.Optional;
  * <p>Which of the two contests a resolver asks is settled when it opens, so no system asked of it
  * tests for a spotlight again.
  */
-public final class DominanceSystemHolderResolver {
+final class DominanceSystemHolderResolver {
 
     private DominanceSystemHolderResolver() {
     }
@@ -40,7 +40,7 @@ public final class DominanceSystemHolderResolver {
      *                  off filter
      * @return the walk's resolver
      */
-    public static SystemHolderResolver openResolverUnder(HolderPass pass, Optional<BlocSpotlight> spotlight) {
+    static SystemHolderResolver openResolverUnder(HolderPass pass, Optional<BlocSpotlight> spotlight) {
 
         var dominancePass = DominancePass.readRulesFromLunaSettings(pass);
 

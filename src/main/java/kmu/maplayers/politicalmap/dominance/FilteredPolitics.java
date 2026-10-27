@@ -46,7 +46,7 @@ public final class FilteredPolitics {
      * mode keys every system's draw off. Decided purely from the system's per-bloc footprints,
      * free of economy and faction types.
      */
-    public enum SelectedBlocPresence {
+    enum SelectedBlocPresence {
 
         /** The selected bloc holds the system outright: drawn solid, at full strength. */
         DOMINATES,
@@ -56,6 +56,36 @@ public final class FilteredPolitics {
 
         /** The selected bloc owns nothing here: the real dominant holder draws, receded. */
         ABSENT
+    }
+
+    /**
+     * Resolves one system's presence-aware holder: the selected bloc under the spotlit key where it
+     * is present - hatched when it is present but dominated - and otherwise the system's real
+     * dominant holder unchanged, which the style layer recedes since its key is not the spotlight's.
+     *
+     * <p>Each inhabited system resolves to one {@link SystemOwner} the geometry clusters by, but
+     * every system the selected bloc is present in carries the one spotlit key (and the bloc's
+     * palette) instead of the real winner, so the bloc survives where it loses and its whole
+     * footprint fuses into one territory. The hatching is the only place the dominant/contested
+     * split lives, since both share a key. A system with no owned markets is nobody's, exactly as off
+     * filter, and the filter fills every owned system, so nothing comes back unfilled.
+     *
+     * @param system    the system to resolve; null yields nobody
+     * @param pass      the weighting rule, colony rule, grouping, and sector walk this resolve runs
+     *                  under; a pass whose sector has no economy yields nobody
+     * @param spotlight the spotlight opened over this pass
+     * @return the system's holder and fill state; {@link ResolvedSystemOwner#UNOWNED} for a system
+     *         holding no folded market
+     */
+    public static ResolvedSystemOwner resolveFilteredHolderIn(
+            StarSystemAPI system,
+            DominancePass pass,
+            BlocSpotlight spotlight) {
+
+        if (system == null || !pass.canReadEconomy()) {
+            return ResolvedSystemOwner.UNOWNED;
+        }
+        return resolveHolder(system, pass, spotlight);
     }
 
     /**
@@ -89,7 +119,7 @@ public final class FilteredPolitics {
      *                          same field the fills were
      * @return where the selected bloc stands in this system
      */
-    public static SelectedBlocPresence classifySelectedBlocPresence(
+    static SelectedBlocPresence classifySelectedBlocPresence(
             Map<String, MarketFootprint> footprintByBlocId,
             Set<String> presentBlocIds,
             String selectedBlocId,
@@ -106,36 +136,6 @@ public final class FilteredPolitics {
         return selectedBlocId.equals(dominantBlocId)
             ? SelectedBlocPresence.DOMINATES
             : SelectedBlocPresence.PRESENT_BUT_DOMINATED;
-    }
-
-    /**
-     * Resolves one system's presence-aware holder: the selected bloc under the spotlit key where it
-     * is present - hatched when it is present but dominated - and otherwise the system's real
-     * dominant holder unchanged, which the style layer recedes since its key is not the spotlight's.
-     *
-     * <p>Each inhabited system resolves to one {@link SystemOwner} the geometry clusters by, but
-     * every system the selected bloc is present in carries the one spotlit key (and the bloc's
-     * palette) instead of the real winner, so the bloc survives where it loses and its whole
-     * footprint fuses into one territory. The hatching is the only place the dominant/contested
-     * split lives, since both share a key. A system with no owned markets is nobody's, exactly as off
-     * filter, and the filter fills every owned system, so nothing comes back unfilled.
-     *
-     * @param system    the system to resolve; null yields nobody
-     * @param pass      the weighting rule, colony rule, grouping, and sector walk this resolve runs
-     *                  under; a pass whose sector has no economy yields nobody
-     * @param spotlight the spotlight opened over this pass
-     * @return the system's holder and fill state; {@link ResolvedSystemOwner#UNOWNED} for a system
-     *         holding no folded market
-     */
-    public static ResolvedSystemOwner resolveFilteredHolderIn(
-            StarSystemAPI system,
-            DominancePass pass,
-            BlocSpotlight spotlight) {
-
-        if (system == null || !pass.canReadEconomy()) {
-            return ResolvedSystemOwner.UNOWNED;
-        }
-        return resolveHolder(system, pass, spotlight);
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where

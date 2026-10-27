@@ -65,17 +65,17 @@ final class OwnerMapDrawables {
     }
 
     /** @return the base view standing, which the renderer paints by case */
-    public BuiltView getBuiltView() {
+    BuiltView getBuiltView() {
         return builtView;
     }
 
     /** @return the cluster-label placements, drawn over whichever base view is live */
-    public List<ClusterAnchor> getClusterAnchors() {
+    List<ClusterAnchor> getClusterAnchors() {
         return standingAnchors.getAnchors();
     }
 
     /** @return the cached owner-name labels */
-    public List<Label> getOwnerLabels() {
+    List<Label> getOwnerLabels() {
         return ownerLabels;
     }
 
@@ -83,7 +83,7 @@ final class OwnerMapDrawables {
      * @return whether only the placeholder stands, which is what makes a first frame owe a build
      *         whatever the revisions happen to say
      */
-    public boolean hasNothingBuilt() {
+    boolean hasNothingBuilt() {
 
         return builtView.selectByCase(
             clusters -> false,
@@ -101,7 +101,7 @@ final class OwnerMapDrawables {
      * @param cellGeometry the cells the standing draw lists were shaped from
      * @return the parts the refresh reads and writes, or empty where no production view stands
      */
-    public Optional<StandingOwnerMap> findFoldableStandingMap(RevisedCellGeometry cellGeometry) {
+    Optional<StandingOwnerMap> findFoldableStandingMap(RevisedCellGeometry cellGeometry) {
 
         return builtView.selectByCase(
             clusters -> Optional.of(createStandingMapOver(clusters, cellGeometry)),
@@ -113,7 +113,7 @@ final class OwnerMapDrawables {
      * @return which base view stands, for the lines that say why a batch went unfolded and what a
      *         release dropped
      */
-    public String describeBuiltViewKind() {
+    String describeBuiltViewKind() {
 
         return builtView.selectByCase(
             clusters -> "production",
@@ -125,7 +125,7 @@ final class OwnerMapDrawables {
      * @return what the last rebuild left for the render to paint, in the terms of whichever view
      *         it built
      */
-    public String describeBuiltCounts() {
+    String describeBuiltCounts() {
 
         return builtView.selectByCase(
             clusters -> "styledCells=" + clusters.getStyledCellByCellKey().size(),
@@ -141,7 +141,7 @@ final class OwnerMapDrawables {
      * of what they were fitted under, since a statement of the rules this sector's labels were made
      * under must not outlive the labels.
      */
-    public void disposeAll() {
+    void disposeAll() {
 
         LabelsBuilder.disposeAll(ownerLabels);
 
@@ -167,7 +167,7 @@ final class OwnerMapDrawables {
      * @param rebuildReading the cells to trace, the walk the source reads over, and the view, picks
      *                       and overlay the rebuild sampled
      */
-    public void rebuildBorderTracingOverlay(RebuildReading rebuildReading) {
+    void rebuildBorderTracingOverlay(RebuildReading rebuildReading) {
 
         var viewReading = rebuildReading.viewReading();
 
@@ -210,7 +210,7 @@ final class OwnerMapDrawables {
      *                       or kept from the one before it - which of the two is the caller's call,
      *                       being a question about what moved since
      */
-    public void rebuildClustersAndBands(RebuildReading rebuildReading, ResolvedOwners owners) {
+    void rebuildClustersAndBands(RebuildReading rebuildReading, ResolvedOwners owners) {
 
         var buildInputs = new OwnerMapBuildInputs(
             readStylingOf(rebuildReading),
@@ -254,7 +254,7 @@ final class OwnerMapDrawables {
      * @param areNamesDrawn whether names are showing at all - the rebuild's own sampling of the
      *                      preference, so what is minted matches what was fitted
      */
-    public void rebuildLabels(boolean areNamesDrawn) {
+    void rebuildLabels(boolean areNamesDrawn) {
         LabelsBuilder.rebuildLabels(ownerLabels, standingAnchors, areNamesDrawn);
     }
 

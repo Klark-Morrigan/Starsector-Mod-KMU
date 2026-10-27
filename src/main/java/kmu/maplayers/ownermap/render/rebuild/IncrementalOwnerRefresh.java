@@ -46,7 +46,7 @@ import java.util.Set;
  * what varies between stages, which is what the batch found disturbed; threading the map through
  * each of them instead would leave every signature restating what none of them chooses.
  */
-public final class IncrementalOwnerRefresh {
+final class IncrementalOwnerRefresh {
 
     private static final Logger LOG = Global.getLogger(IncrementalOwnerRefresh.class);
 
@@ -94,7 +94,7 @@ public final class IncrementalOwnerRefresh {
     // the view afresh: that source carries the one sampling of the layer's live inputs every
     // neighbour was painted under, so a refreshed cell lands the owner a full rebuild of the same
     // moment would have.
-    public static void applyStaleOwnerUpdates(
+    static void applyStaleOwnerUpdates(
             SectorWalk walk,
             StandingOwnerMap standingMap,
             Set<SystemKey> staleSystemKeys) {

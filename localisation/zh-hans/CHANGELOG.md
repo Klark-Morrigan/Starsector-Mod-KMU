@@ -133,7 +133,7 @@
 | `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`：它不读取任何 Nexerelin 类型 |
 | `kmu.ui.context` 和 `kmu.ui.geometry.KmuUiSize` | `kmu.conditions.ui.context` 和 `kmu.conditions.ui.picker.render.KmuUiSize`，位于它们唯一服务的功能中。`kmu.ui` 已移除 |
 | `KmuStringKeys` 的字符串 ID | `kmu.util` 中每个读取方一个键类：`KmuMapStringKeys`、`KmuOwnerMapStringKeys`、`KmuPoliticalMapStringKeys` 和 `KmuMarketConditionStringKeys`。`KmuStringKeys` 保留字符串类别、`get(String)`、`format(String, Object...)` 和 LunaLib 设置的一对键 |
-| `ownermap.render` 中的 `OwnerMapCache`、`IncrementalOwnerRefresh` 和 `StandingOwnerMap` | `ownermap.render.rebuild`，与每帧所依的判断和刷新策略放在一起。`ownermap.render` 保留合成器、决定各子图层绘于星云之上或之下的分层布局和 `OwnerMapLayerRenderer` |
+| `ownermap.render` 中的 `OwnerMapCache` 和 `StandingOwnerMap` | `ownermap.render.rebuild`，与每帧所依的判断和刷新策略放在一起。`ownermap.render` 保留合成器、决定各子图层绘于星云之上或之下的分层布局和 `OwnerMapLayerRenderer` |
 
 构建禁止 `kmu.maplayers.base` 导入 `kmu.mods`，禁止 `kmu.conditions` 与 `kmu.maplayers` 相互导入，并禁止 `kmu.settings` 和 `kmu.util` 导入这两个功能。
 
@@ -157,6 +157,7 @@
 | `OwnerPresence` 的 `marketCount`，连同 `marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`、`stakeCount()`、`hasStakes()` 和 `stakeLengthUnits()`。所有者地图的核心不使用 *holder* 和 *market* 二词，构建会确保这一点 |
 | `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`：它为集团排名 |
 | `SystemOwnerResolve`、`SystemHolderResolve`、`SystemHolderResolveSource`、`DominanceSystemHolderResolve` 和 `ClaimSystemHolderResolve`，以及 `OwnerSource.openSystemResolve(SectorWalk, String)`、`openResolveOver` 和 `HolderPaintedView.resolveSystemHolderResolveSource()` | 各名称中的 `Resolve` 换为 `Resolver`：解析器是批次重新解析其已标记星系所用的对象 |
+| `RefreshSignalTracker.describeRaisesSinceTheLastReading()` | `drainRaisesSinceTheLastReading()`：每次询问都会推进追踪器，因此每次触发只报告一次 |
 
 ##### 接缝
 
@@ -185,6 +186,7 @@
 | `HolderProvider`、`HolderPaintedView.resolveHolderProvider()`、`DefaultHolderProvider`、`ClaimsHolderProvider` 和 `ClaimAugmentedHolderProvider` | 已移除：视图只通过 `resolveSystemHolderResolverSource()` 逐星系给出一次其持有规则。重建通过 `HolderResolution.collectOver(HolderPass, SystemHolderResolver)` 对每个星系询问它，因此重建与批次不会把同一星系画得不同。*宣称*视图的规则是 `ClaimSystemHolderResolver`，*势力*和*联盟*视图的规则是 `ClaimAugmentedSystemHolderResolver` |
 | `SectorPolitics.resolveDominantHolderBySystemKey(HolderPass)` 和 `resolveDominantHolderBySystemKey(DominancePass)`，以及 `SectorClaims.resolveClaimingHolderBySystemKey(HolderPass, ClaimReader)` | 已移除：`SectorPolitics.resolveDominantHolder(StarSystemAPI, DominancePass)` 和 `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` 给出单个星系的结果，由 `HolderResolution.collectOver` 询问每个星系 |
 | `FilteredPolitics.resolveFilteredHolder(HolderPass, String)` 和 `resolveFilteredHolder(DominancePass, String)`，没有选择时给出空的持有结果 | 已移除：`resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)` 在调用方打开的聚焦下给出单个星系的结果。没有选择时调用方改用普通争夺 |
+| 公开的 `FilteredPolitics.SelectedBlocPresence` 和 `classifySelectedBlocPresence(Map, Set, String, HolderRankingRules)` | 改为包私有：聚焦下的星系通过 `resolveFilteredHolderIn` 解析 |
 | `FilteredClaims.resolveFilteredClaims(HolderPass, ClaimReader, String)` | `FilteredClaimReader.openOver(HolderPass, ClaimReaderSource, Optional)`，再对每个星系调用 `resolveClaimIn(StarSystemAPI)`。`FilteredClaims` 已移除 |
 | `ArrangementDialogMapCover`、`CodexMapCover`、`ModalDialogMapCover` 和 `kmu.mods.console.ConsoleMapCover` | 一个 `ScreenClaimMapCover`，读取 `ScreenClaim.isScreenClaimed()` |
 | 自行组合可选 Mod 遮挡的 `MapCoverReader.createForLiveScreen()` | `MapCoverReader.registerOptionalModCovers(List)`，由 `MapLayers` 以已安装 Mod 的遮挡调用 |
@@ -203,9 +205,10 @@
 | `OwnerMapCache.getClusters()`、`getBorderStageOverlay()` 和 `isDebug()`，前两者在对应画面未构建时为 null | `getBuiltView()`，即当前的 `BuiltView`，因此读取方无法取到调试叠加层或占位画面并不持有的绘制内容 |
 | `OwnerMapClusters.createEmpty(OwnerPaintedView)`、`OwnerMapBuildInputs.createEmpty(OwnerPaintedView)` 和 `wasBuilt()`、`MapStyling.createEmpty()`、`ContentInputs.createEmpty()` 以及 `SystemOccupancy.createEmpty()` | 已移除：首次构建完成前，缓存使用不持有任何区域的 `BuiltView.PLACEHOLDER`，因此每次构建的输入都来自一次实际完成的构建 |
 | 给出 `SystemOwner` 的 `SystemOwnerResolve.resolveOwnerOf(StarSystemAPI)` 和 `SystemHolderResolve.resolveHolderIn(StarSystemAPI)` | 改为给出 `ResolvedSystemOwner`，使已标记星系在重建会以斜线或不填充绘制的地方同样如此绘制 |
-| `SystemHolderResolveSource.openResolveOver(HolderPass)` 和 `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `SystemHolderResolverSource.openResolverOver(HolderPass, String)`，在现有构建所聚焦的集团下打开：聚焦中的地图会并入已标记星系，而不是为此重建一次。`DominanceSystemHolderResolver.openResolverUnder(HolderPass, Optional)` 接受调用方在本次计算上打开的 `BlocSpotlight` |
+| `SystemHolderResolveSource.openResolveOver(HolderPass)` 和 `DominanceSystemHolderResolve.openResolveOver(HolderPass)` | `SystemHolderResolverSource.openResolverOver(HolderPass, String)`，在现有构建所聚焦的集团下打开：聚焦中的地图会并入已标记星系，而不是为此重建一次。`DominanceSystemHolderResolver` 改为包私有：由 `ClaimAugmentedSystemHolderResolver` 打开 |
 | 只按争夺给出结果的 `DominancePaintedView.resolveSystemHolderResolveSource()` | `ClaimAugmentedSystemHolderResolver.createSourceReadingThrough(ClaimReaderSource)`，基于视图自身的宣称读取器 |
 | `OwnerMapCache(SectorMapMachinery, OwnerMapBodyPreferences, CellSeedRule)` 和 `OwnerMapLayerRenderer.createForLiveScreen(SectorMapMachinery, String, MapLayerViewRegistry, OwnerMapBodyPreferences, OwnerMapPreviewHighlight, MapLayerHoverGates, Supplier, CellSeedRule)` | 各自另需一个 `OwnerMapRefreshStrategy` |
+| 公开的 `IncrementalOwnerRefresh` | 改为 `ownermap.render.rebuild` 中的包私有类型：批次通过 `OwnerMapRefreshStrategy.INCREMENTAL` 并入 |
 | `HolderResolution` 与 `ResolvedOwners` 的 `contestedSystemKeys` 和 `unfilledSystemKeys`，以及 `FillSplit.splitMembersByFillState(CellGrouping, List, Set, Set)` 和 `FillSplit.classifyFillState(SystemKey, Set, Set)` | 合为一个 `SystemFillStates fillStates`，因此不会有星系同时以斜线和不填充绘制。拆分改为接受它：`splitMembersByFillState(CellGrouping, List, SystemFillStates)`；单个星系的状态由 `resolveFillStateOf(SystemKey)` 给出 |
 | `ClusterLabelStylingSnapshot(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)` | `ClusterLabelStylingSnapshot(Map, MapPaints, FontAtlas, boolean)`：正式构建的快照携带构建自身的绘制方式，因此名称按其填充所依据的同一样式决定着色。最后一个组件为是否需要拟合，`resolveFrom` 依据构建的名称与锚点叠加层给出 |
 | `OwnerMapClusters.reindexClusters(Map, Map)` | `reindexClusters(Map, CellGrouping)`，基于调用方刚组成的分组 |

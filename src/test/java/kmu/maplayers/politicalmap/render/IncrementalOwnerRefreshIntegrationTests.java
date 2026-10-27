@@ -50,8 +50,8 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
-import kmu.maplayers.ownermap.render.rebuild.IncrementalOwnerRefresh;
 import kmu.maplayers.ownermap.render.rebuild.IncrementalOwnerRefreshTests;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.ownermap.render.rebuild.StandingOwnerMap;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
@@ -583,13 +583,17 @@ final class IncrementalOwnerRefreshIntegrationTests {
         // The refresh runs first because the rebuild it is compared against is taken from the
         // sector as it stands after the fold: one built ahead of the fold would be compared against
         // a map that had not yet accounted for the marks.
+        //
+        // Folded through the incremental strategy, the door the cache folds through: the refresh
+        // behind it is the rebuild package's own, and this suite lives beside the political views
+        // it paints under.
         private void assertRefreshDrawsWhatARebuildWould(
                 StandingOwnerMap standingMap,
                 String... markedSystemIds) {
 
             staleSystemKeys.addAll(buildCellKeys(markedSystemIds));
 
-            IncrementalOwnerRefresh.applyStaleOwnerUpdates(
+            OwnerMapRefreshStrategy.INCREMENTAL.refreshMarkedSystems(
                 openWalkOverTheSector(),
                 standingMap,
                 staleSystemKeys);
