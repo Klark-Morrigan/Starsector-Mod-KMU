@@ -111,6 +111,7 @@ final class OwnerMapBuilderIntegrationTests {
         @Test
         void bakesEachCellAsTheCellBuilderStoodUpAloneBakesIt() {
 
+            // ARRANGE
             var geometryCache = buildFiveCells();
 
             var grouping = SystemOwner.mapCellGrouping(
@@ -135,8 +136,10 @@ final class OwnerMapBuilderIntegrationTests {
                     cellBuilder.buildPaintedCell(entry.getKey(), entry.getValue()));
             }
 
+            // ACT
             var actualClusters = buildClustersOver(geometryCache);
 
+            // ASSERT
             assertThat(actualClusters.getStyledCellByCellKey())
                 .containsOnlyKeys(expectedCellByCellKey.keySet());
 
@@ -155,6 +158,7 @@ final class OwnerMapBuilderIntegrationTests {
         @Test
         void tracesEachOwnerAsTheGroupBuilderStoodUpAloneTracesIt() {
 
+            // ARRANGE
             var geometryCache = buildFiveCells();
 
             var grouping = SystemOwner.mapCellGrouping(
@@ -175,8 +179,10 @@ final class OwnerMapBuilderIntegrationTests {
                 TRITACHYON_OWNER,
                 buildCellKeys(RIVAL_SYSTEM));
 
+            // ACT
             var actualClusters = buildClustersOver(geometryCache);
 
+            // ASSERT
             assertThat(actualClusters.getStyledClusterGroupByOwnerId().get(HEGEMONY))
                 .usingRecursiveComparison()
                 .isEqualTo(expectedHegemonyGroup);
@@ -186,13 +192,18 @@ final class OwnerMapBuilderIntegrationTests {
                 .isEqualTo(expectedTritachyonGroup);
         }
 
+        // One entry per owner rather than per system: the two Hegemony systems fuse into the single
+        // cluster group their shared key groups them into.
         @Test
         void keysEachOwnersClusterGroupByItsGroupingKey() {
-            // One entry per owner rather than per system: the two Hegemony systems fuse into the
-            // single cluster group their shared key groups them into.
+
+            // ARRANGE
             var geometryCache = buildFiveCells();
+
+            // ACT
             var actualClusters = buildClustersOver(geometryCache);
 
+            // ASSERT
             assertThat(actualClusters.getStyledClusterGroupByOwnerId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
 
@@ -200,11 +211,12 @@ final class OwnerMapBuilderIntegrationTests {
                 .hasSize(1);
         }
 
+        // The rival's cell is grouped but carries no edges, so its owner traces no frontier - and is
+        // absent rather than mapped to null, since every reader of the map paints what it finds.
         @Test
         void leavesOutAnOwnerThatBakesNothing() {
-            // The rival's cell is grouped but carries no edges, so its owner traces no frontier -
-            // and is absent rather than mapped to null, since every reader of the map paints what
-            // it finds.
+
+            // ARRANGE
             var geometryCacheMock = mock(CellGeometryCache.class);
 
             when(geometryCacheMock.getCellEdgesByCellKey())
@@ -217,8 +229,10 @@ final class OwnerMapBuilderIntegrationTests {
                     RIVAL_SYSTEM,
                     RIVAL_SYSTEM)));
 
+            // ACT
             var actualClusters = buildClustersOver(geometryCacheMock);
 
+            // ASSERT
             assertThat(actualClusters.getStyledClusterGroupByOwnerId())
                 .containsOnlyKeys(HEGEMONY);
         }
@@ -229,13 +243,16 @@ final class OwnerMapBuilderIntegrationTests {
 
         var sourceFake = new OwnerSourceFake();
 
-        return OwnerMapBuilder.buildClusters(
-            geometryCache,
+        var buildInputs = new OwnerMapBuildInputs(
+            STYLING,
             new ViewReading(new OwnerPaintedViewFake(sourceFake), READING, sourceFake),
             CONTENT_INPUTS,
-            false,
-            OWNERS,
-            STYLING);
+            false);
+
+        return OwnerMapBuilder.buildClusters(
+            geometryCache,
+            buildInputs,
+            OWNERS);
     }
 
     // The five squares, each drawing as its own star. The held system and its neighbour share the

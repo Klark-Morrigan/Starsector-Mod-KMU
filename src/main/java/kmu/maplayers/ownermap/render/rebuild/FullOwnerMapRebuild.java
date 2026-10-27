@@ -19,7 +19,6 @@ import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
 import kmu.maplayers.base.refresh.RefreshSignalTracker;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
@@ -231,18 +230,20 @@ final class FullOwnerMapRebuild {
         // what the fold is for - where a drain after the build would discard it on the assumption
         // that the build had read everything, an assumption reused owners do not meet.
         var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
-        var contentInputs = staleHalves.contentKey().contentInputs();
         var wereOwnersReused = false;
 
-        // The view's two answers about its owners, resolved once for this rebuild under one
-        // sampling of whatever it reads live, and handed to every stage below.
-        var viewReading = view.resolveViewReading(walk.sector());
-
-        // Sampled once beside the sidebar preferences and carried, for the same reason they are:
-        // the overlay decides whether the names are fitted, and a batch folding into this build
-        // after it has to fit under what the build was baked under. Flipping it is a KMU setting
-        // change, so it forces the rebuild that samples it afresh.
-        var isAnchorOverlayShown = KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors();
+        var rebuildReading = new RebuildReading(
+            cellGeometry,
+            walk,
+            // The view's two answers about its owners, resolved once for this rebuild under one
+            // sampling of whatever it reads live.
+            view.resolveViewReading(walk.sector()),
+            staleHalves.contentKey().contentInputs(),
+            // Sampled once beside the sidebar preferences and carried, for the same reason they
+            // are: a batch folding into this build after it has to fit the names under what the
+            // build was baked under. Flipping it is a KMU setting change, so it forces the rebuild
+            // that samples it afresh.
+            KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors());
 
         // Build one view or the other, never both: the debug overlay replaces the normal
         // render, so in debug mode the production draw lists are not built at all, and the
@@ -250,12 +251,7 @@ final class FullOwnerMapRebuild {
         // revision the content key holds and forces this rebuild - which is what swaps the two.
         if (KmuOwnerMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
 
-            drawables.rebuildBorderTracingOverlay(
-                cellGeometry,
-                walk,
-                viewReading,
-                contentInputs,
-                isAnchorOverlayShown);
+            drawables.rebuildBorderTracingOverlay(rebuildReading);
 
             // The overlay read owners for itself and drops what was marked, so nothing standing
             // can be trusted to say who owns what once it has run.
@@ -265,15 +261,17 @@ final class FullOwnerMapRebuild {
 
             wereOwnersReused = rebuildProductionView(
                 staleHalves,
-                viewReading,
-                isAnchorOverlayShown,
-                walk,
+                rebuildReading,
                 staleSystemKeys);
         }
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
         // what is minted matches what was fitted.
-        drawables.rebuildLabels(contentInputs.nameFormat().areNamesDrawn());
+        drawables.rebuildLabels(
+            rebuildReading
+                .contentInputs()
+                .nameFormat()
+                .areNamesDrawn());
         ledger.recordContentRebuilt(staleHalves);
 
         return wereOwnersReused;
@@ -284,12 +282,9 @@ final class FullOwnerMapRebuild {
     // afresh, and reports which for the line the rebuild writes.
     private boolean rebuildProductionView(
             StaleHalves staleHalves,
-            ViewReading viewReading,
-            boolean isAnchorOverlayShown,
-            SectorWalk walk,
+            RebuildReading rebuildReading,
             Set<SystemKey> staleSystemKeys) {
 
-        var contentInputs = staleHalves.contentKey().contentInputs();
         var wereOwnersReused = ledger.canReuseStandingOwners(
             staleHalves,
             standingOwners != null,
@@ -298,19 +293,13 @@ final class FullOwnerMapRebuild {
         if (!wereOwnersReused) {
 
             standingOwners = OwnerMapBuilder.resolveOwners(
-                viewReading.source(),
-                walk,
-                contentInputs);
+                rebuildReading.viewReading().source(),
+                rebuildReading.walk(),
+                rebuildReading.contentInputs());
             ledger.recordOwnersResolved(staleHalves);
         }
 
-        drawables.rebuildClustersAndBands(
-            cellGeometry,
-            walk,
-            viewReading,
-            contentInputs,
-            isAnchorOverlayShown,
-            standingOwners);
+        drawables.rebuildClustersAndBands(rebuildReading, standingOwners);
 
         return wereOwnersReused;
     }

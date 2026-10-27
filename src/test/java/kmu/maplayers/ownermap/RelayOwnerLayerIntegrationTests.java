@@ -44,6 +44,7 @@ import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
@@ -592,16 +593,19 @@ final class RelayOwnerLayerIntegrationTests {
         var contentInputs = ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL);
 
         // The styling read once for the rebuild, as the drawables read it.
-        return OwnerMapBuilder.buildClusters(
-            geometryCacheMock,
-            viewReading,
-            contentInputs,
-            false,
-            owners,
+        var buildInputs = new OwnerMapBuildInputs(
             MapStyling.readFromLunaSettings(
                 viewMock.resolveCategories(),
                 viewReading.reading(),
-                contentInputs));
+                contentInputs),
+            viewReading,
+            contentInputs,
+            false);
+
+        return OwnerMapBuilder.buildClusters(
+            geometryCacheMock,
+            buildInputs,
+            owners);
     }
 
     // That map's names, fitted the way a production rebuild fits them.

@@ -46,6 +46,7 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
@@ -638,16 +639,19 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 MapLayerScreens.MAP_SCOPE);
 
             // The rebuild's one reading of the styling, taken as the plugin's cache takes it.
-            var territories = OwnerMapBuilder.buildClusters(
-                cellsMock,
-                viewReading,
-                contentInputs,
-                false,
-                OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs),
+            var buildInputs = new OwnerMapBuildInputs(
                 MapStyling.readFromLunaSettings(
                     viewReading.view().resolveCategories(),
                     viewReading.reading(),
-                    contentInputs));
+                    contentInputs),
+                viewReading,
+                contentInputs,
+                false);
+
+            var territories = OwnerMapBuilder.buildClusters(
+                cellsMock,
+                buildInputs,
+                OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs));
 
             var standingAnchors = new StandingClusterAnchors();
             var ownerLabels = new ArrayList<Label>();

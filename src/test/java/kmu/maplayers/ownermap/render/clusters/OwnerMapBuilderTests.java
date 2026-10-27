@@ -44,8 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what a build hands down and what it keeps: the walk it was given, at the source the owners
- * are asked of, and the view's reading and styling it was handed, retained whole for every stage
- * after it.
+ * are asked of, and the build inputs it was handed, retained whole for every stage after it.
  *
  * <p>Two halves, because a rebuild has two. The owners are a reading of the sector, asked of the
  * layer's source on a row of their own; the build paints over whatever owners it is handed, from
@@ -233,53 +232,23 @@ final class OwnerMapBuilderTests {
         }
 
         // The fills, borders and seams are styled off the build inputs and the labels off the
-        // snapshot taken from them, and a batch re-derives through the source beside it - so the
-        // reading retained here is the very one the owners were resolved beside.
+        // snapshot taken from them, and a batch re-derives through the source and fits under the
+        // overlay beside them - so the inputs retained here are the very ones the rebuild sampled.
         @Test
-        void retainsTheHandedReadingWhole() {
+        void retainsTheHandedBuildInputsWhole() {
 
             // ARRANGE
-            var viewReading = buildReadingOver(new OwnerSourceFake());
+            var buildInputs = buildInputsOver(buildReadingOver(new OwnerSourceFake()));
 
             // ACT
-            var actualClusters = buildClustersOver(viewReading, ResolvedOwners.createEmpty());
+            var actualClusters = OwnerMapBuilder.buildClusters(
+                new CellGeometryCache(),
+                buildInputs,
+                ResolvedOwners.createEmpty());
 
             // ASSERT
-            assertThat(actualClusters.getBuildInputs().getViewReading())
-                .isSameAs(viewReading);
-        }
-
-        // The rebuild reads its styling once for everything it builds, so the scheme the incremental
-        // refresh and the names read back is the very one it was handed.
-        @Test
-        void retainsTheHandedStylingWhole() {
-
-            // ARRANGE
-            var viewReading = buildReadingOver(new OwnerSourceFake());
-
-            // ACT
-            var actualClusters = buildClustersOver(viewReading, ResolvedOwners.createEmpty());
-
-            // ASSERT
-            assertThat(actualClusters.getBuildInputs().getStyling())
-                .isSameAs(STYLING);
-        }
-
-        // A batch folding into the build later fits its names under what the build was baked under,
-        // so the overlay the rebuild sampled has to ride onto the build's inputs.
-        @Test
-        void retainsTheSampledAnchorOverlay() {
-
-            // ARRANGE
-            var viewReading = buildReadingOver(new OwnerSourceFake());
-
-            // ACT
-            var actualClusters = buildClustersOver(viewReading, ResolvedOwners.createEmpty());
-            var actualIsAnchorOverlayShown = actualClusters.getBuildInputs().isAnchorOverlayShown();
-
-            // ASSERT
-            assertThat(actualIsAnchorOverlayShown)
-                .isTrue();
+            assertThat(actualClusters.getBuildInputs())
+                .isSameAs(buildInputs);
         }
 
         // The number the shaping stage's duration is read against. Nothing is shaped over an empty
@@ -304,18 +273,25 @@ final class OwnerMapBuilderTests {
                 .isEqualTo(expectedTag);
         }
 
-        // A build over no geometry under the shared picks, overlay and styling, differing per case in
-        // the reading and the owners alone. The overlay is sampled on, so a build dropping it reads
-        // as the placeholder's off.
+        // A build over no geometry under the shared picks and styling, differing per case in the
+        // reading and the owners alone.
         private static OwnerMapClusters buildClustersOver(ViewReading viewReading, ResolvedOwners owners) {
 
             return OwnerMapBuilder.buildClusters(
                 new CellGeometryCache(),
+                buildInputsOver(viewReading),
+                owners);
+        }
+
+        // The inputs every build here is handed: the shared picks and styling beside the case's own
+        // reading, with the overlay on.
+        private static OwnerMapBuildInputs buildInputsOver(ViewReading viewReading) {
+
+            return new OwnerMapBuildInputs(
+                STYLING,
                 viewReading,
                 UNFILTERED_INPUTS,
-                true,
-                owners,
-                STYLING);
+                true);
         }
     }
 

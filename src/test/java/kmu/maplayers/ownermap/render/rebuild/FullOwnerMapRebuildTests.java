@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
@@ -30,7 +31,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -223,10 +223,6 @@ final class FullOwnerMapRebuildTests {
 
             verify(drawablesMock, times(2)).rebuildClustersAndBands(
                 any(),
-                any(),
-                any(),
-                any(),
-                anyBoolean(),
                 same(resolvedOwners));
         }
 
@@ -272,6 +268,54 @@ final class FullOwnerMapRebuildTests {
                 any(),
                 eq(true),
                 any());
+        }
+
+        // The cells and the picks go over as the rebuild holds them, so the view is built over the
+        // cut the ledger was told of and under the picks the decision was taken on.
+        @Test
+        void handsTheProductionViewTheCellsItStandsAtAndThePicksItWasDecidedOn() {
+
+            // ARRANGE
+            var expectedCellGeometry = rebuild.getCellGeometry();
+            var expectedContentInputs = CONTENT_KEY.contentInputs();
+            var rebuildReadingCaptor = ArgumentCaptor.forClass(RebuildReading.class);
+
+            // ACT
+            rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
+
+            // ASSERT
+            verify(drawablesMock).rebuildClustersAndBands(
+                rebuildReadingCaptor.capture(),
+                any());
+
+            assertThat(rebuildReadingCaptor.getValue().cellGeometry())
+                .isSameAs(expectedCellGeometry);
+            assertThat(rebuildReadingCaptor.getValue().contentInputs())
+                .isSameAs(expectedContentInputs);
+        }
+
+        // The overlay is sampled once beside the picks and handed on, so the view the toggle swaps in
+        // fits its names under the same sampling the production view would have.
+        @Test
+        void handsTheBorderTracingOverlayTheAnchorOverlayItSampled() {
+
+            // ARRANGE
+            var rebuildReadingCaptor = ArgumentCaptor.forClass(RebuildReading.class);
+
+            diagnosticsSettingsMock
+                .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
+                .thenReturn(true);
+
+            traceBordersForDebug();
+
+            // ACT
+            rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
+
+            // ASSERT
+            verify(drawablesMock).rebuildBorderTracingOverlay(rebuildReadingCaptor.capture());
+
+            assertThat(rebuildReadingCaptor.getValue().isAnchorOverlayShown())
+                .isTrue();
         }
 
         // The line is what tells a rebuild that recut the cells from one that only repainted them.

@@ -23,6 +23,7 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -47,7 +48,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -196,7 +196,7 @@ final class OwnerMapCacheIntegrationTests {
             // ASSERT
             incrementalRefreshMock.verifyNoInteractions();
             productionBuilderMock.verify(
-                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any()),
                 times(2));
         }
 
@@ -222,7 +222,7 @@ final class OwnerMapCacheIntegrationTests {
 
             // ASSERT
             productionBuilderMock.verify(
-                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any()),
                 times(2));
             productionBuilderMock.verify(
                 () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
@@ -317,10 +317,7 @@ final class OwnerMapCacheIntegrationTests {
             // ASSERT
             productionBuilderMock.verify(() -> OwnerMapBuilder.buildClusters(
                 any(),
-                any(),
-                any(),
-                eq(true),
-                any(),
+                argThat(OwnerMapBuildInputs::isAnchorOverlayShown),
                 any()));
         }
 
@@ -491,7 +488,7 @@ final class OwnerMapCacheIntegrationTests {
 
             // ASSERT
             productionBuilderMock.verify(
-                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any()),
                 times(2));
             productionBuilderMock.verify(
                 () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
@@ -538,7 +535,7 @@ final class OwnerMapCacheIntegrationTests {
 
             // ASSERT
             productionBuilderMock.verify(
-                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()),
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any()),
                 times(2));
         }
 
@@ -712,7 +709,7 @@ final class OwnerMapCacheIntegrationTests {
     private void throwFromTheFirstProductionBuild(OwnerMapClusters builtClusters) {
 
         productionBuilderMock
-            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()))
+            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any()))
             .thenThrow(new IllegalStateException("first build fails"))
             .thenReturn(builtClusters);
     }
@@ -760,7 +757,7 @@ final class OwnerMapCacheIntegrationTests {
 
         productionBuilderMock = seams.openSeam(OwnerMapBuilder.class);
         productionBuilderMock
-            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()))
+            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any()))
             .thenReturn(builtClusters);
 
         // A holding rather than the seam's null, since a null is what the cache reads as nothing

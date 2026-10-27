@@ -20,6 +20,7 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -45,7 +46,6 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
@@ -370,12 +370,9 @@ final class OwnerMapDrawablesTests {
 
             openStylingSeams(seams);
 
-            drawables.rebuildBorderTracingOverlay(
-                CELL_GEOMETRY,
-                WALK,
+            drawables.rebuildBorderTracingOverlay(buildRebuildReading(
                 new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), ownerSource),
-                ContentInputs.createEmpty(),
-                isAnchorOverlayShown);
+                isAnchorOverlayShown));
 
             return builderMock;
         }
@@ -421,7 +418,7 @@ final class OwnerMapDrawablesTests {
                 seams,
                 drawables,
                 OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()),
-                false);
+                buildRebuildReading(false));
 
             // ACT
             var actualCanFold = drawables.canFoldOwnerChanges();
@@ -448,7 +445,7 @@ final class OwnerMapDrawablesTests {
                     Map.of(),
                     Set.of(),
                     Set.of()),
-                false);
+                buildRebuildReading(false));
 
             // ACT
             var actualCanFold = drawables.canFoldOwnerChanges();
@@ -497,22 +494,53 @@ final class OwnerMapDrawablesTests {
             // ARRANGE
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
             var clusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
+            var buildInputsCaptor = ArgumentCaptor.forClass(OwnerMapBuildInputs.class);
 
             // ACT
             var builderMock = buildProductionThrough(
                 seams,
                 drawables,
                 clusters,
-                true);
+                buildRebuildReading(true));
 
             // ASSERT
             builderMock.verify(() -> OwnerMapBuilder.buildClusters(
                 any(),
-                any(),
-                any(),
-                eq(true),
-                any(),
+                buildInputsCaptor.capture(),
                 any()));
+
+            assertThat(buildInputsCaptor.getValue().isAnchorOverlayShown())
+                .isTrue();
+        }
+
+        // The view's reading and the picks are the rebuild's one sampling of each, so the owners the
+        // build is handed were resolved under the very reading and spotlight it paints by.
+        @Test
+        void handsTheBuildTheRebuildsOwnViewReadingAndPicks() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var clusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
+            var buildInputsCaptor = ArgumentCaptor.forClass(OwnerMapBuildInputs.class);
+            var rebuildReading = buildRebuildReading(false);
+
+            // ACT
+            var builderMock = buildProductionThrough(
+                seams,
+                drawables,
+                clusters,
+                rebuildReading);
+
+            // ASSERT
+            builderMock.verify(() -> OwnerMapBuilder.buildClusters(
+                any(),
+                buildInputsCaptor.capture(),
+                any()));
+
+            assertThat(buildInputsCaptor.getValue().getViewReading())
+                .isSameAs(rebuildReading.viewReading());
+            assertThat(buildInputsCaptor.getValue().getContentInputs())
+                .isSameAs(rebuildReading.contentInputs());
         }
     }
 
@@ -586,19 +614,40 @@ final class OwnerMapDrawablesTests {
         }
     }
 
+    // A rebuild's reading over the empty cut and the stood-in walk, with the empty picks and the
+    // given view reading and sampled overlay.
+    private static RebuildReading buildRebuildReading(ViewReading viewReading, boolean isAnchorOverlayShown) {
+
+        return new RebuildReading(
+            CELL_GEOMETRY,
+            WALK,
+            viewReading,
+            ContentInputs.createEmpty(),
+            isAnchorOverlayShown);
+    }
+
+    // The same over a view reading answering nothing of note, for a case about what the drawables do
+    // with the reading rather than what the view answers.
+    private RebuildReading buildRebuildReading(boolean isAnchorOverlayShown) {
+
+        return buildRebuildReading(
+            new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
+            isAnchorOverlayShown);
+    }
+
     // Builds the production view over stood-in builders, the one handing back the given clusters,
     // and hands back the build's seam for a case reading what it was asked.
-    private MockedStatic<OwnerMapBuilder> buildProductionThrough(
+    private static MockedStatic<OwnerMapBuilder> buildProductionThrough(
             StaticSeams seams,
             OwnerMapDrawables drawables,
             OwnerMapClusters clusters,
-            boolean isAnchorOverlayShown) {
+            RebuildReading rebuildReading) {
 
         openStylingSeams(seams);
 
         var builderMock = seams.openSeam(OwnerMapBuilder.class);
         builderMock
-            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), anyBoolean(), any(), any()))
+            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any()))
             .thenReturn(clusters);
 
         seams.openSeam(ClusterAnchorsBuilder.class);
@@ -612,13 +661,7 @@ final class OwnerMapDrawablesTests {
             .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
             .thenReturn(mock(CellRibbonsBaker.class));
 
-        drawables.rebuildClustersAndBands(
-            CELL_GEOMETRY,
-            WALK,
-            new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
-            ContentInputs.createEmpty(),
-            isAnchorOverlayShown,
-            ResolvedOwners.createEmpty());
+        drawables.rebuildClustersAndBands(rebuildReading, ResolvedOwners.createEmpty());
 
         return builderMock;
     }

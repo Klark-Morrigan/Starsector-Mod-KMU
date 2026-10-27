@@ -16,7 +16,6 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -96,18 +95,39 @@ public final class HolderOwnerSource
         var profiler = ActiveProfiler.resolveProfiler();
         var pass = openPassOver(walk);
         var resolution = resolveHolders(profiler, pass, spotlitOwnerId);
-        var inhabitedSystemKeys = measureInhabitedScan(profiler, pass);
+
+        // What stands in each system, read once for the whole pass. Independent of the holding and
+        // deliberately so: the holding answers who this layer gives a system to, and a rule that
+        // admits only some markets leaves inhabited systems with no holder, for reasons the layer's
+        // own holding rule sets. Only this read tells those apart from empty space.
+        var inhabitedSystemKeys = measureSystemScan(
+            profiler,
+            FIND_INHABITED_SECTION,
+            () -> HolderInhabitation.readInhabitedSystemKeys(pass));
+
+        // Where the spotlit bloc is living outside anything this holding attributed to it, so the
+        // factionless cells over its own colonies are spared the recede. Asked only of the inhabited
+        // systems the holding left out: a rule that leaves settled systems unheld can leave the
+        // bloc's own colonies there, and this read is what spares their cells. A rule that resolves
+        // holding through a filtered resolve already keys every system the bloc is present in, so
+        // its leftovers are systems the bloc is absent from and the read comes back empty.
+        var unownedSystemKeys = SystemOwner.selectUnownedSystemKeysAmong(
+            resolution.ownerBySystemKey(),
+            inhabitedSystemKeys);
+
+        var spotlitPresenceSystemKeys = measureSystemScan(
+            profiler,
+            FIND_SPOTLIT_PRESENCE_SECTION,
+            () -> HolderInhabitation.findSpotlitPresenceSystemKeys(
+                pass,
+                spotlitOwnerId,
+                unownedSystemKeys));
 
         return new ResolvedOwners(
             resolution.ownerBySystemKey(),
             resolution.fillStates(),
             inhabitedSystemKeys,
-            measureSpotlitPresenceScan(
-                profiler,
-                pass,
-                spotlitOwnerId,
-                resolution.ownerBySystemKey(),
-                inhabitedSystemKeys));
+            spotlitPresenceSystemKeys);
     }
 
     @Override
@@ -169,41 +189,6 @@ public final class HolderOwnerSource
 
             return resolution;
         }
-    }
-
-    // What stands in each system, read once for the whole pass. Independent of the holding and
-    // deliberately so: the holding answers who this layer gives a system to, and a rule that admits
-    // only some markets leaves inhabited systems with no holder, for reasons the layer's own holding
-    // rule sets. Only this read tells those apart from empty space.
-    private static Set<SystemKey> measureInhabitedScan(Profiler profiler, HolderPass pass) {
-
-        return measureSystemScan(
-            profiler,
-            FIND_INHABITED_SECTION,
-            () -> HolderInhabitation.readInhabitedSystemKeys(pass));
-    }
-
-    // Where the spotlit bloc is living outside anything this holding attributed to it, so the
-    // factionless cells over its own colonies are spared the recede. Asked only of the inhabited
-    // systems the holding left out: a rule that leaves settled systems unheld can leave the bloc's
-    // own colonies there, and this read is what spares their cells. A rule that resolves holding
-    // through a filtered resolve already keys every system the bloc is present in, so its leftovers
-    // are systems the bloc is absent from and the read comes back empty for the cost of the set
-    // arithmetic.
-    private static Set<SystemKey> measureSpotlitPresenceScan(
-            Profiler profiler,
-            HolderPass pass,
-            String spotlitOwnerId,
-            Map<SystemKey, SystemOwner> ownerBySystemKey,
-            Set<SystemKey> inhabitedSystemKeys) {
-
-        return measureSystemScan(
-            profiler,
-            FIND_SPOTLIT_PRESENCE_SECTION,
-            () -> HolderInhabitation.findSpotlitPresenceSystemKeys(
-                pass,
-                spotlitOwnerId,
-                SystemOwner.selectUnownedSystemKeysAmong(ownerBySystemKey, inhabitedSystemKeys)));
     }
 
     // One profiled sector scan yielding a set of system keys, naming what it selected on the call.

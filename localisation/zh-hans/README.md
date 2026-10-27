@@ -501,6 +501,7 @@ The words for filling the empty space between systems one faction dominates.
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
 | call tag (the words a profiled call is written with) | 调用标签 | 调用, a call, with 标签, a tag, KMLib's word for a command's tags |
+| caller (the code that calls a method) | 调用方 | 调用, to call, with 方, a party: the side making the call |
 | carry over (a fit keeping a standing name rather than searching again) | 沿用 | the plain word for carrying something on, as settings and saves carry over |
 | carve (taking the names and a cell's narrow places off a band's ring) | 裁切 | the plain word for cutting something away |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |

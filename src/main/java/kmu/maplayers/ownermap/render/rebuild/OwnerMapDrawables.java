@@ -9,12 +9,10 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
-import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
@@ -189,26 +187,20 @@ final class OwnerMapDrawables {
      * names it moved is dropped: this view replaces the production draw lists outright, so nothing
      * is laid around the names for a moved one to oblige.
      *
-     * @param cellGeometry         the cells to trace, carrying the cut they stand at
-     * @param walk                 the rebuild's walk of the sector, which the source reads over
-     * @param viewReading          the view the overlay is traced under, with its reading and source
-     * @param contentInputs        the sidebar preferences the rebuild sampled
-     * @param isAnchorOverlayShown whether the anchor overlay is shown, as the rebuild sampled it
+     * @param rebuildReading the cells to trace, the walk the source reads over, and the view, picks
+     *                       and overlay the rebuild sampled
      */
-    public void rebuildBorderTracingOverlay(
-            RevisedCellGeometry cellGeometry,
-            SectorWalk walk,
-            ViewReading viewReading,
-            ContentInputs contentInputs,
-            boolean isAnchorOverlayShown) {
+    public void rebuildBorderTracingOverlay(RebuildReading rebuildReading) {
+
+        var viewReading = rebuildReading.viewReading();
 
         // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
         // map has rather than one pick's footprint.
-        var owners = viewReading.source().resolveOwners(walk, null);
-        var styling = readStylingOf(viewReading, contentInputs);
+        var owners = viewReading.source().resolveOwners(rebuildReading.walk(), null);
+        var styling = readStylingOf(rebuildReading);
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
-            cellGeometry.cells(),
+            rebuildReading.cellGeometry().cells(),
             owners,
             styling);
 
@@ -216,14 +208,14 @@ final class OwnerMapDrawables {
 
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
-            cellGeometry,
+            rebuildReading.cellGeometry(),
             ClusterLabelStylingSnapshot
                 .resolveForTracing(
                     owners.ownerBySystemKey(),
                     styling,
                     viewReading.reading(),
-                    contentInputs,
-                    isAnchorOverlayShown,
+                    rebuildReading.contentInputs(),
+                    rebuildReading.isAnchorOverlayShown(),
                     labelFaceSource.get())
                 .createFitInputs());
     }
@@ -237,30 +229,24 @@ final class OwnerMapDrawables {
      * the condition it shares this reading on: a band counted under another sampling of the view's
      * live inputs would plan against owners the fills never drew.
      *
-     * @param cellGeometry         the cells to shape, carrying the cut they stand at
-     * @param walk                 the rebuild's one walk of the sector
-     * @param viewReading          the view the clusters are built under, with its reading and source
-     * @param contentInputs        the sidebar preferences the rebuild sampled
-     * @param isAnchorOverlayShown whether the anchor overlay is shown, as the rebuild sampled it
-     * @param owners               who owns what and who is where, resolved over the walk by this
-     *                             rebuild or kept from the one before it - which of the two is the
-     *                             caller's call, being a question about what moved since
+     * @param rebuildReading the cells to shape, the rebuild's one walk of the sector, and the view,
+     *                       picks and overlay the rebuild sampled
+     * @param owners         who owns what and who is where, resolved over the walk by this rebuild
+     *                       or kept from the one before it - which of the two is the caller's call,
+     *                       being a question about what moved since
      */
-    public void rebuildClustersAndBands(
-            RevisedCellGeometry cellGeometry,
-            SectorWalk walk,
-            ViewReading viewReading,
-            ContentInputs contentInputs,
-            boolean isAnchorOverlayShown,
-            ResolvedOwners owners) {
+    public void rebuildClustersAndBands(RebuildReading rebuildReading, ResolvedOwners owners) {
+
+        var buildInputs = new OwnerMapBuildInputs(
+            readStylingOf(rebuildReading),
+            rebuildReading.viewReading(),
+            rebuildReading.contentInputs(),
+            rebuildReading.isAnchorOverlayShown());
 
         clusters = OwnerMapBuilder.buildClusters(
-            cellGeometry.cells(),
-            viewReading,
-            contentInputs,
-            isAnchorOverlayShown,
-            owners,
-            readStylingOf(viewReading, contentInputs));
+            rebuildReading.cellGeometry().cells(),
+            buildInputs,
+            owners);
 
         borderStageOverlay = null;
 
@@ -268,7 +254,7 @@ final class OwnerMapDrawables {
         // the two paths fit and bake one map alike. The cells go over carrying the revision they
         // stand at rather than the live signal read at the top - the two agree here, and only the
         // pair is true of the geometry in hand.
-        var standingMap = toStandingMap(cellGeometry);
+        var standingMap = toStandingMap(rebuildReading.cellGeometry());
 
         standingMap.fitNamesIn(labelFaceSource.get());
 
@@ -282,7 +268,7 @@ final class OwnerMapDrawables {
         // frame the fills were painted in, so a fresh walk could only report the same sector at the
         // cost of walking it again.
         standingMap
-            .createRibbonsBakerOver(walk)
+            .createRibbonsBakerOver(rebuildReading.walk())
             .bakeAllCellRibbons();
     }
 
@@ -299,11 +285,13 @@ final class OwnerMapDrawables {
 
     // The paint scheme one rebuild styles everything it builds from, read once here for whichever
     // view it builds, so the fills or outlines and the names over them share one reading.
-    private static MapStyling readStylingOf(ViewReading viewReading, ContentInputs contentInputs) {
+    private static MapStyling readStylingOf(RebuildReading rebuildReading) {
+
+        var viewReading = rebuildReading.viewReading();
 
         return MapStyling.readFromLunaSettings(
             viewReading.view().resolveCategories(),
             viewReading.reading(),
-            contentInputs);
+            rebuildReading.contentInputs());
     }
 }
