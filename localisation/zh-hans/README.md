@@ -528,7 +528,6 @@ The words for filling the empty space between systems one faction dominates.
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
 | holding rule (the rule a layer decides who holds a system by) | 持有规则 | 持有, to hold, with 规则, a rule |
-| instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | lane rule (a line dividing an anchor overlay's band between a name's lines) | 行间分隔线 | 行间, between lines of text, with 分隔线, a dividing line; kept apart from 行数, a count of lines, which the rule does not show |
 | live (read as a value stands at the moment it is asked, not a copy taken earlier) | 实时 | the plain word for something happening as it is asked |
 | map (a collection of values looked up by key) | 映射表 | the usual computing word for a key-value map; kept apart from 地图, the map on screen |
