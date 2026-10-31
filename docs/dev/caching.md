@@ -580,9 +580,12 @@ and carries it on from its last reading while the cursor stays there.
 
 The halo's candidate loops are kept too.
 [`OwnerMapHoverHighlightSource`](../../src/main/java/kmu/maplayers/ownermap/render/hover/OwnerMapHoverHighlightSource.java)
-flattens the hovered owner's border loops once
+flattens an owner's border loops once
 and keeps the list while that owner's cluster group stands,
 because the highlight memoises its halo on the list's identity.
+It keeps one list per owner,
+since a previewed set spans the cells of several holders
+and asks after each of them every frame.
 The compositor and the picker preview each keep one source per build through KMLib's `IdentityMemo`,
 so the kept list lasts from one frame to the next.
 

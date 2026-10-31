@@ -193,6 +193,39 @@ final class OwnerMapHoverHighlightSourceTests {
                 .isSameAs(actualFirstLoops);
         }
 
+        // A previewed set asks after the holders of all its cells every frame. Asking after a
+        // second owner must not evict the first owner's list, or every cell of a set held by
+        // several owners would miss the highlight's memo on every frame.
+        @Test
+        void keepsEachOwnersListWhileTheAsksMoveBetweenOwners() {
+
+            // ARRANGE
+            var rival = new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY));
+            var clusters = fillClusters(
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of("A", OWNER, "B", rival)),
+                Map.of(
+                    "A", buildSquare(10, 10, 80),
+                    "B", buildSquare(510, 10, 80)),
+                buildClusterGroupWithLoops(List.of(buildSquareRun(0, 0, 100))));
+
+            clusters
+                .getStyledClusterGroupByOwnerId()
+                .put(rival.ownerId(), buildClusterGroupWithLoops(List.of(buildSquareRun(500, 0, 100))));
+
+            var source = readSourceOf(clusters);
+
+            // ACT
+            var actualFirstLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            source.resolveCandidateFrontierLoopsOf(buildCellKey("B"));
+
+            var actualReturningLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualReturningLoops)
+                .isSameAs(actualFirstLoops);
+        }
+
         // The other half of retaining an answer: an incremental refresh replaces an owner's group
         // wholesale when a neighbour flips, and a retained list that outlived it would halo a
         // frontier the map is no longer drawing.

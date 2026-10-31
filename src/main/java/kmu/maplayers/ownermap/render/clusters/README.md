@@ -278,7 +278,7 @@ while producing a record that says nothing about what an owner is.
 The cursor's candidate loops are not kept here.
 They are a hover concern,
 so `OwnerMapHoverHighlightSource` flattens an owner's bodies into the one list the highlight hit-tests against
-and keeps it per cluster group;
+and keeps one per owner while its cluster group stands;
 [the caching notes](../../../../../../../../docs/dev/caching.md#hover-lookups) say why.
 
 ### `PaintedCellStore`: what one cell carries

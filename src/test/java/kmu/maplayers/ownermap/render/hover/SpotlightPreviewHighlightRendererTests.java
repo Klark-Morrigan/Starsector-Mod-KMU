@@ -65,6 +65,11 @@ final class SpotlightPreviewHighlightRendererTests {
     private static final String OWNER_ID = "hegemony";
     private static final String PRESENT_SYSTEM_ID = "corvus";
 
+    // A rival, and a system it holds where the previewed owner is also present, for the set that
+    // spans two holders.
+    private static final String RIVAL_ID = "tritachyon";
+    private static final String RIVAL_HELD_SYSTEM_ID = "hybrasil";
+
     // The previewed owner's own two authored shades, distinct so a case can say which slot the tier
     // pointed at rather than only that some colour came back.
     private static final Color OWNER_BRIGHT_COLOUR = Color.RED;
@@ -247,7 +252,34 @@ final class SpotlightPreviewHighlightRendererTests {
             hover(OWNER_ID);
 
             var clusters = buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID);
-            holdCellByTheOwner(clusters, PRESENT_SYSTEM_ID);
+            holdCellBy(clusters, PRESENT_SYSTEM_ID, OWNER_ID);
+
+            var renderer = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE);
+
+            // ACT
+            var actualFirstPaint = renderer.resolvePreviewPaint(clusters);
+            var actualSecondPaint = renderer.resolvePreviewPaint(clusters);
+
+            // ASSERT
+            assertThat(actualFirstPaint.highlight())
+                .isNotSameAs(HoverHighlight.NONE);
+            assertThat(actualSecondPaint.highlight())
+                .isSameAs(actualFirstPaint.highlight());
+        }
+
+        // A previewed owner is lit in systems its rivals hold, so one set can span several holders.
+        // The assembly reads each cell's holder's loops in turn every frame, and only loops kept per
+        // holder come back the same while the frame stands.
+        @Test
+        void keepsOneHighlightForASetHeldBySeveralOwners() {
+
+            // ARRANGE
+            var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID, RIVAL_HELD_SYSTEM_ID));
+            hover(OWNER_ID);
+
+            var clusters = buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID, RIVAL_HELD_SYSTEM_ID);
+            holdCellBy(clusters, PRESENT_SYSTEM_ID, OWNER_ID);
+            holdCellBy(clusters, RIVAL_HELD_SYSTEM_ID, RIVAL_ID);
 
             var renderer = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE);
 
@@ -263,11 +295,11 @@ final class SpotlightPreviewHighlightRendererTests {
         }
     }
 
-    // Hands the cell to the previewed owner and gives that owner a traced border, so the assembly
-    // reads the owner's loops for it rather than the empty answer an unheld cell gives.
-    private static void holdCellByTheOwner(OwnerMapClusters clusters, String cellId) {
+    // Hands the cell to the given owner and gives that owner a traced border, so the assembly reads
+    // the owner's loops for it rather than the empty answer an unheld cell gives.
+    private static void holdCellBy(OwnerMapClusters clusters, String cellId, String ownerId) {
 
-        var owner = new SystemOwner(OWNER_ID, new ColourPair(OWNER_BRIGHT_COLOUR, OWNER_DARK_COLOUR));
+        var owner = new SystemOwner(ownerId, new ColourPair(OWNER_BRIGHT_COLOUR, OWNER_DARK_COLOUR));
 
         clusters
             .getOccupancy()
@@ -275,7 +307,7 @@ final class SpotlightPreviewHighlightRendererTests {
 
         clusters
             .getStyledClusterGroupByOwnerId()
-            .put(OWNER_ID, OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of(List.of(buildSquareRun()))));
+            .put(ownerId, OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of(List.of(buildSquareRun()))));
     }
 
     // The scope the sidebar's picker reports a hovered row under: a view's ID under this mod's own

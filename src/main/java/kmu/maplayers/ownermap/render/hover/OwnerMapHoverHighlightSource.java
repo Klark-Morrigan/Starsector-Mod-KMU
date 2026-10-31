@@ -11,6 +11,7 @@ import kmu.maplayers.ownermap.render.style.MapPalettes;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,10 +40,14 @@ public final class OwnerMapHoverHighlightSource implements HoverHighlightSource 
     // The draw lists the frame painted, which every answer here is read from.
     private final OwnerMapClusters clusters;
 
-    // The loops last flattened, keyed on the owner's cluster group. A rebuild or an incremental
-    // refresh replaces that group wholesale rather than editing it, so a group that still matches
-    // is geometry that has not moved. One entry, because the cursor is over one cell at a time.
-    private final IdentityMemo<StyledClusterGroup, List<float[]>> candidateLoopsMemo = new IdentityMemo<>();
+    // Each owner's loops as last flattened, keyed on that owner's cluster group. A rebuild or an
+    // incremental refresh replaces a group wholesale rather than editing it, so a group that still
+    // matches is geometry that has not moved. One memo per owner rather than one in all, because a
+    // previewed set asks after the holders of all its cells every frame, and a single entry would
+    // evict one holder's loops for the next and miss on every cell. The source lives for one build,
+    // so the map holds at most that build's owners.
+    private final Map<String, IdentityMemo<StyledClusterGroup, List<float[]>>> candidateLoopsMemoByOwnerId =
+        new HashMap<>();
 
     /**
      * @param clusters the draw lists the frame painted
@@ -81,9 +86,11 @@ public final class OwnerMapHoverHighlightSource implements HoverHighlightSource 
         // body this cell sits in would mean deciding here which body that is - the containment
         // question the highlight already answers to pick its loop, and answering it twice by two
         // rules is how a halo comes to trace a frontier the cursor is not inside.
-        return candidateLoopsMemo.resolveValue(
-            clusterGroup,
-            OwnerMapHoverHighlightSource::flattenBorderLoopsOf);
+        // The memo is made through a lambda that captures nothing, so a frame that finds it
+        // allocates nothing.
+        return candidateLoopsMemoByOwnerId
+            .computeIfAbsent(owner.ownerId(), ownerId -> new IdentityMemo<>())
+            .resolveValue(clusterGroup, OwnerMapHoverHighlightSource::flattenBorderLoopsOf);
     }
 
     @Override
