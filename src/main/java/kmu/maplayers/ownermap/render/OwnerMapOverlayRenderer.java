@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.cache.memo.IdentityMemo;
+
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.MapLayerHoverGates;
@@ -83,19 +85,20 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // since the answer follows a setting the player can move between frames.
     private final Supplier<OwnerMapBandLayout> bandLayoutSource;
 
+    // The anchor overlay packed into its draw runs, keyed on the placements it was packed from. The
+    // cache hands over a new list with every pass, so the overlay is packed once per pass rather
+    // than walked afresh every frame it is on.
+    private final IdentityMemo<List<ClusterAnchor>, ClusterAnchorRuns> anchorRunsMemo = new IdentityMemo<>();
+
+    // The highlight's view of the draw lists, keyed on the clusters it reads. Kept while the cache
+    // holds the same clusters, so a frame with the cursor on the map allocates nothing for it and
+    // the loops the source retains survive from one frame to the next.
+    private final IdentityMemo<OwnerMapClusters, OwnerMapHoverHighlightSource> hoverHighlightSourceMemo =
+        new IdentityMemo<>();
+
     // Diagnostic: ensures the first map render logs exactly once, so a map that draws nothing can
     // be told from one whose render never fired.
     private boolean hasLoggedFirstRender;
-
-    // The anchor overlay packed into its draw runs, and the placements it was packed from. Kept
-    // while the cache holds the same placements, which hands over a new list with every pass, so
-    // the overlay is packed once per pass rather than walked afresh every frame it is on.
-    private ClusterAnchorRuns anchorRuns = ClusterAnchorRuns.NONE;
-    private List<ClusterAnchor> packedAnchors = List.of();
-
-    // The highlight's view of the draw lists, kept while the cache holds the same clusters, so a
-    // frame with the cursor on the map allocates nothing for it.
-    private OwnerMapHoverHighlightSource hoverHighlightSource;
 
     /**
      * @param cache            the draw lists every band is emitted from, made for the same sector's
@@ -151,7 +154,9 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         // being empty): the placements are also built for the owner names, so the list can be
         // non-empty while the debug overlay is off.
         if (isPaintingFills && KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
-            ClusterAnchorRenderer.renderOnMap(resolveAnchorRuns(cache.getClusterAnchors()), mapFrame);
+            ClusterAnchorRenderer.renderOnMap(
+                anchorRunsMemo.resolveValue(cache.getClusterAnchors(), ClusterAnchorRuns::packAnchorRuns),
+                mapFrame);
         }
 
         // Only the production view has bands. The debug overlay replaced the draw lists the bands
@@ -229,34 +234,10 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     private void renderHoverHighlight(OwnerMapClusters clusters, MapFrame mapFrame) {
 
         hoverHighlightRenderer.renderCursorHighlightOnMap(
-            resolveHoverHighlightSource(clusters),
+            hoverHighlightSourceMemo.resolveValue(clusters, OwnerMapHoverHighlightSource::new),
             clusters.getGlobalStyle().hoverHighlight(),
             hoverState.getHover(),
             mapFrame);
-    }
-
-    // The source over these clusters: the one held while they are the ones drawn, a new one after a
-    // rebuild replaced them.
-    private OwnerMapHoverHighlightSource resolveHoverHighlightSource(OwnerMapClusters clusters) {
-
-        if (hoverHighlightSource == null || hoverHighlightSource.clusters() != clusters) {
-            hoverHighlightSource = new OwnerMapHoverHighlightSource(clusters);
-        }
-
-        return hoverHighlightSource;
-    }
-
-    // The runs packed from these placements: the ones held while they are the ones standing, fresh
-    // ones after a pass replaced them.
-    private ClusterAnchorRuns resolveAnchorRuns(List<ClusterAnchor> anchors) {
-
-        if (anchors != packedAnchors) {
-
-            anchorRuns = ClusterAnchorRuns.packAnchorRuns(anchors);
-            packedAnchors = anchors;
-        }
-
-        return anchorRuns;
     }
 
     // The per-cell presence bands, and the debug overlay explaining them straight after: the path

@@ -1,13 +1,16 @@
 package kmu.maplayers.ownermap.render.hover;
 
+import kmlib.cache.memo.IdentityMemo;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.hover.HoverHighlightSource;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,14 +29,27 @@ import java.util.Map;
  * them per owner - which of them encloses this particular cell is a geometric question, and one
  * the highlight pass answers for itself.
  *
- * <p>A value over one frame's clusters rather than a long-lived collaborator: the draw lists
- * are replaced wholesale by a rebuild, and wrapping the current ones per frame is what lets the
- * highlight's memoisation compare by identity and notice when they have moved on.
- *
- * @param clusters the draw lists the frame painted
+ * <p>A holder keeps one source per build and makes a new one when a rebuild replaces the draw
+ * lists. The source retains the loops it last flattened, and the highlight memoises its resolved
+ * halo on the identity of that list, so a source made afresh per frame would re-clip the wash
+ * sixty times a second while the cursor sits still.
  */
-public record OwnerMapHoverHighlightSource(
-    OwnerMapClusters clusters) implements HoverHighlightSource {
+public final class OwnerMapHoverHighlightSource implements HoverHighlightSource {
+
+    // The draw lists the frame painted, which every answer here is read from.
+    private final OwnerMapClusters clusters;
+
+    // The loops last flattened, keyed on the owner's cluster group. A rebuild or an incremental
+    // refresh replaces that group wholesale rather than editing it, so a group that still matches
+    // is geometry that has not moved. One entry, because the cursor is over one cell at a time.
+    private final IdentityMemo<StyledClusterGroup, List<float[]>> candidateLoopsMemo = new IdentityMemo<>();
+
+    /**
+     * @param clusters the draw lists the frame painted
+     */
+    public OwnerMapHoverHighlightSource(OwnerMapClusters clusters) {
+        this.clusters = clusters;
+    }
 
     @Override
     public Map<SystemKey, List<double[]>> getFillPolygonByCellKey() {
@@ -52,11 +68,22 @@ public record OwnerMapHoverHighlightSource(
         if (owner == null) {
             return List.of();
         }
+
+        var clusterGroup = clusters
+            .getStyledClusterGroupByOwnerId()
+            .get(owner.ownerId());
+
+        if (clusterGroup == null) {
+            return List.of();
+        }
+
         // Every loop the owner strokes anywhere, across all of its bodies. Handing over only the
         // body this cell sits in would mean deciding here which body that is - the containment
         // question the highlight already answers to pick its loop, and answering it twice by two
         // rules is how a halo comes to trace a frontier the cursor is not inside.
-        return clusters.listCandidateBorderLoopsOf(owner.ownerId());
+        return candidateLoopsMemo.resolveValue(
+            clusterGroup,
+            OwnerMapHoverHighlightSource::flattenBorderLoopsOf);
     }
 
     @Override
@@ -67,5 +94,17 @@ public record OwnerMapHoverHighlightSource(
             paintSelection,
             clusters.getOccupancy().readOwnerOf(cellKey),
             clusters.getBuildInputs().getStyling().readNeutralColour());
+    }
+
+    // The group's loops, outer rings and enclaves alike, in cluster order.
+    private static List<float[]> flattenBorderLoopsOf(StyledClusterGroup clusterGroup) {
+
+        var loops = new ArrayList<float[]>();
+
+        for (var cluster : clusterGroup.clusters()) {
+            loops.addAll(cluster.listLoops());
+        }
+
+        return loops;
     }
 }

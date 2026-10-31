@@ -275,13 +275,11 @@ What is the layer's is entirely upstream of it -
 which is why `ClusterGroupBuilder` keeps its name
 while producing a record that says nothing about what an owner is.
 
-It also answers the cursor's candidate-loop read,
-flattening an owner's bodies into the one list the highlight hit-tests against -
-and retaining it,
-because the highlight memoises its resolved halo on that list's identity
-and a fresh list per frame would re-clip the wash sixty times a second.
-The retained answer is keyed on the owner's cluster group by identity,
-so a refresh that replaces the group recomputes once and a refresh that does not costs nothing.
+The cursor's candidate loops are not kept here.
+They are a hover concern,
+so `OwnerMapHoverHighlightSource` flattens an owner's bodies into the one list the highlight hit-tests against
+and keeps it per cluster group;
+[the caching notes](../../../../../../../../docs/dev/caching.md#hover-lookups) say why.
 
 ### `PaintedCellStore`: what one cell carries
 

@@ -15,7 +15,6 @@ import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,13 +75,6 @@ public final class OwnerMapClusters
     // owner map changes. Seeded empty so a build that never indexes still answers a lookup rather
     // than tripping over a null.
     private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
-
-    // The last owner whose loops were flattened for a cursor read, and what came out. One entry
-    // because the cursor is over one cell at a time; see listCandidateBorderLoopsOf for why the
-    // result has to be retained at all rather than rebuilt per ask.
-    private String candidateLoopsOwnerId;
-    private StyledClusterGroup candidateLoopsClusterGroup;
-    private List<float[]> candidateLoops = List.of();
 
     public OwnerMapClusters(SystemOccupancy occupancy, OwnerMapBuildInputs buildInputs) {
 
@@ -285,46 +277,6 @@ public final class OwnerMapClusters
         } else {
             styledClusterGroupByOwnerId.put(ownerId, clusterGroup);
         }
-    }
-
-    /**
-     * Every loop one owner strokes, across all of its bodies, as the flat candidate list a cursor
-     * read is answered from.
-     *
-     * <p>Retained rather than rebuilt per ask, and that is the whole reason this is a method here
-     * instead of a loop at the call site: the highlight memoises its resolved halo against the
-     * identity of the list it was handed, so a fresh list each frame would miss that memo and
-     * re-clip and re-tessellate the wash sixty times a second while the cursor sits still. One
-     * entry is enough, because the cursor is over one cell at a time.
-     *
-     * <p>The retained answer is keyed on the owner's own cluster group by identity: a rebuild or
-     * an incremental refresh replaces that group wholesale rather than editing it, so a group
-     * that still matches is geometry that has not moved.
-     *
-     * @param ownerId the owner to answer for
-     * @return its loops, outer ring and enclaves alike, in cluster order; empty when the owner
-     *         drew none or is not on the map
-     */
-    public List<float[]> listCandidateBorderLoopsOf(String ownerId) {
-
-        var clusterGroup = styledClusterGroupByOwnerId.get(ownerId);
-        if (clusterGroup == null) {
-            return List.of();
-        }
-
-        if (!ownerId.equals(candidateLoopsOwnerId) || clusterGroup != candidateLoopsClusterGroup) {
-
-            var loops = new ArrayList<float[]>();
-
-            for (var cluster : clusterGroup.clusters()) {
-                loops.addAll(cluster.listLoops());
-            }
-
-            candidateLoopsOwnerId = ownerId;
-            candidateLoopsClusterGroup = clusterGroup;
-            candidateLoops = loops;
-        }
-        return candidateLoops;
     }
 
     /**

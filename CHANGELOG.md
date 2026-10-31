@@ -262,6 +262,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `ClusterAnchorPlacement`, `ClusterPartition`, `FontToleranceAnnouncement`, `LabelSlantPreference` and `ClusterLabelSubject`, public, with `ClusterLabelResolvers.resolveLabelSubjectFor(ClusterIdentity)`, `ClusterAnchor.copyWithColour(Color)` and `ClusterAnchor.mapAnchorsByIdentity(List)` | Package-private: a layer fits its names through `ClusterAnchorsBuilder.rebuildClusterAnchors` alone |
 | `Label`, a record with `text()`, `baseColour()`, `hangX()`, `hangY()` and `slantDegrees()` | A final class with `getText()`, `getHangX()`, `getHangY()` and `getSlantDegrees()`. The base colour is the label's own |
 | `StandingClusterAnchors.getAnchors()`, one read-only view over a list edited in place | A new immutable list with every pass, so work derived from one pass can tell by identity whether its pass still stands |
+| `OwnerMapClusters.listCandidateBorderLoopsOf(String)`, and `OwnerMapHoverHighlightSource`, a record with `clusters()` | Gone from `OwnerMapClusters`: the loops the hover highlight reads are a hover concern. `OwnerMapHoverHighlightSource` is a final class that flattens an owner's loops into one list and keeps it while the owner's cluster group stands, so a holder keeps one source per build, as the compositor and `SpotlightPreviewHighlightRenderer` do through KMLib's `IdentityMemo` |
 
 ##### Moved to KMLib
 

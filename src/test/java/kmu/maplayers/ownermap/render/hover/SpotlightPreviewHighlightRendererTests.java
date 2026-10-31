@@ -6,6 +6,7 @@ import kmlib.colour.ColourPair;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.KmuMod;
+import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.MapLayerStoreNamespaces;
@@ -18,6 +19,8 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
+import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
@@ -232,6 +235,47 @@ final class SpotlightPreviewHighlightRendererTests {
             assertThat(actualPaint.isPainting())
                 .isFalse();
         }
+
+        // The assembly compares each cell's loops by identity, so the source it reads them through
+        // has to outlive the frame. One made per frame flattens the loops afresh, and the whole set
+        // is re-tessellated sixty times a second while the pointer rests on one row.
+        @Test
+        void keepsOneHighlightWhileTheFrameStands() {
+
+            // ARRANGE
+            var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
+            hover(OWNER_ID);
+
+            var clusters = buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID);
+            holdCellByTheOwner(clusters, PRESENT_SYSTEM_ID);
+
+            var renderer = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE);
+
+            // ACT
+            var actualFirstPaint = renderer.resolvePreviewPaint(clusters);
+            var actualSecondPaint = renderer.resolvePreviewPaint(clusters);
+
+            // ASSERT
+            assertThat(actualFirstPaint.highlight())
+                .isNotSameAs(HoverHighlight.NONE);
+            assertThat(actualSecondPaint.highlight())
+                .isSameAs(actualFirstPaint.highlight());
+        }
+    }
+
+    // Hands the cell to the previewed owner and gives that owner a traced border, so the assembly
+    // reads the owner's loops for it rather than the empty answer an unheld cell gives.
+    private static void holdCellByTheOwner(OwnerMapClusters clusters, String cellId) {
+
+        var owner = new SystemOwner(OWNER_ID, new ColourPair(OWNER_BRIGHT_COLOUR, OWNER_DARK_COLOUR));
+
+        clusters
+            .getOccupancy()
+            .recordOwnerOf(buildCellKey(cellId), ResolvedSystemOwner.createSolidlyFilledBy(owner));
+
+        clusters
+            .getStyledClusterGroupByOwnerId()
+            .put(OWNER_ID, OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of(List.of(buildSquareRun()))));
     }
 
     // The scope the sidebar's picker reports a hovered row under: a view's ID under this mod's own
@@ -290,6 +334,15 @@ final class SpotlightPreviewHighlightRendererTests {
             new double[] {100, 0},
             new double[] {100, 100},
             new double[] {0, 100});
+    }
+
+    // A border loop round that square, as the baked [x, y, x, y, ...] run a cluster keeps it in.
+    private static float[] buildSquareRun() {
+        return new float[] {
+            -10, -10,
+            110, -10,
+            110, 110,
+            -10, 110};
     }
 
     // A view whose walk found the stated presence, under the ID the hover is scoped by. The picker
