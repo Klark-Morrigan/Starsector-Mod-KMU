@@ -647,8 +647,7 @@ the emission drawing each form in a pass of its own.
 keyed on the scope and a revision the caller supplies.
 A body build runs twice a frame (render and hit-test),
 so without a memo every picker would re-resolve its list several times a frame.
-It is KMLib's (`kmlib.starsector.ui.widgets.lists`),
-like the picker it feeds;
+It is KMLib's (`kmlib.cache.memo`);
 [KMLib's caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) file it as an invalidation primitive rather than a cache,
 since what it holds,
 when it goes stale,

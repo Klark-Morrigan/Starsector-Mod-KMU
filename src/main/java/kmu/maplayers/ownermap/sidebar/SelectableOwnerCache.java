@@ -1,7 +1,7 @@
 package kmu.maplayers.ownermap.sidebar;
 
+import kmlib.cache.memo.RevisionMemo;
 import kmlib.starsector.systems.SystemKey;
-import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
 import kmu.maplayers.base.machinery.InstalledMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachinery;

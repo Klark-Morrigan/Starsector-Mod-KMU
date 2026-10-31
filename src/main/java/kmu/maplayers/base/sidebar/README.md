@@ -269,9 +269,9 @@ The picker itself is not here at all -
 `SelectableListItem`
 (an ID, a label, a crest, and whether the row reads back),
 `ListPickerStore`,
-`RevisionMemo`,
 and the sort and column model behind them
 (`ListSortMode`, `ListSortModes`, `ListSort`, `ListPicker`, `SortDirection`, `ListColumns`, and the two selector controls) are KMLib's (`kmlib.starsector.ui.widgets.lists`),
+with `RevisionMemo` from `kmlib.cache.memo` holding the resolved list,
 since a sortable,
 column-laid,
 spotlight-picking list knows nothing about a map.
