@@ -42,7 +42,7 @@ import java.util.Optional;
  * <p>The market-inferred claims that make up most of what is painted move with the colonies behind
  * them, and a colony change already marks its system stale - through the refresh listeners, or the
  * staleness poll's holder diff where no event fires. Explicit claim-flag flips have no live
- * fingerprint, so a flag-only claim change waits until something else marks that system stale or
+ * revision, so a flag-only claim change waits until something else marks that system stale or
  * the map is rebuilt.
  */
 public final class ClaimsView

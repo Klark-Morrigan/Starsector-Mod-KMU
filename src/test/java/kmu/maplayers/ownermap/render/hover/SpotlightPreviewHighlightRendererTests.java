@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.render.hover;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.colour.ColourPair;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
@@ -38,6 +39,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -379,6 +381,7 @@ final class SpotlightPreviewHighlightRendererTests {
 
     // A view whose walk found the stated presence, under the ID the hover is scoped by. The picker
     // half of its read is empty: the preview reads only where an owner was found, never the rows.
+    // It samples nothing live, so the picker memo serves one walk for the whole case.
     //
     // Stubbed through doReturn because the seam answers a wildcarded read, which a when() stub
     // would have to name the captured item type of.
@@ -388,6 +391,9 @@ final class SpotlightPreviewHighlightRendererTests {
 
         when(viewMock.getId())
             .thenReturn(VIEW_ID);
+
+        when(viewMock.readContentRevisions(any()))
+            .thenReturn(RevisionStamp.EMPTY);
 
         doReturn(new OwnerPickerRead<>(ListPicker.empty(), presenceIndex))
             .when(viewMock)

@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.render.rebuild;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -53,10 +54,10 @@ final class OwnerMapBuildLedgerTests {
     // A cell reach no default lands on, so a recut seen after it is the reach's doing.
     private static final double MOVED_CELL_RADIUS = 1234.0;
 
-    // A view content revision that, with the settings revision one higher, folds to the same
-    // Objects.hash as both at zero: the fold weighs the settings revision 961 (31 squared) times the
-    // view's content revision.
-    private static final int HASH_COLLIDING_VIEW_CONTENT_REVISION = -961;
+    // Two readings of a view's revisions that fold to one int under the Objects.hash polynomial:
+    // 31 * (31 + 0) + 31 and 31 * (31 + 1) + 0 are both 992.
+    private static final RevisionStamp FOLD_COLLIDING_VIEW_REVISIONS = RevisionStamp.of(0, 31);
+    private static final RevisionStamp OTHER_FOLD_COLLIDING_VIEW_REVISIONS = RevisionStamp.of(1, 0);
 
     // The screen each decision is taken for. A stand-in rather than one of the two live screens:
     // nothing here turns on which panel the frame was prepared for.
@@ -72,7 +73,7 @@ final class OwnerMapBuildLedgerTests {
     private int settingsRevision;
 
     // Any view: what the ledger answers turns on what moved, never on who is painting. One per
-    // case, because a case moving its fingerprint must not move the next case's.
+    // case, because a case moving its revisions must not move the next case's.
     private OwnerPaintedViewFake viewFake;
     private OwnerMapBuildLedger ledger;
 
@@ -241,8 +242,8 @@ final class OwnerMapBuildLedgerTests {
                 .isEqualTo(expectedStaleness);
         }
 
-        // The view's fingerprint stands for whatever it samples, so a change to one rebuilds
-        // without any setting moving.
+        // The view's revisions stand for whatever it samples, so a change to one rebuilds without
+        // any setting moving.
         @Test
         void owesTheContentWhenTheViewsLiveInputsMove() {
 
@@ -250,7 +251,7 @@ final class OwnerMapBuildLedgerTests {
             var expectedStaleness = Staleness.CONTENT;
 
             decideAndRecordARebuild();
-            viewFake.setContentRevision(1);
+            viewFake.setContentRevisions(RevisionStamp.of(1));
 
             // ACT
             var actualStaleness = decideAfterABuild().staleness();
@@ -260,17 +261,18 @@ final class OwnerMapBuildLedgerTests {
                 .isEqualTo(expectedStaleness);
         }
 
-        // What the map was built from is compared whole, so two readings that differ rebuild
-        // however their values fold. These two fold to one Objects.hash.
+        // What the map was built from is compared whole, the view's revisions included, so two
+        // readings that differ rebuild however their values fold. These two fold to one int under
+        // the Objects.hash polynomial.
         @Test
-        void owesTheContentWhenTheReadingsDifferButTheirHashesCollide() {
+        void owesTheContentWhenTheViewsRevisionsDifferButFoldToOneInt() {
 
             // ARRANGE
             var expectedStaleness = Staleness.CONTENT;
 
+            viewFake.setContentRevisions(FOLD_COLLIDING_VIEW_REVISIONS);
             decideAndRecordARebuild();
-            moveTheSettingsRevision();
-            viewFake.setContentRevision(HASH_COLLIDING_VIEW_CONTENT_REVISION);
+            viewFake.setContentRevisions(OTHER_FOLD_COLLIDING_VIEW_REVISIONS);
 
             // ACT
             var actualStaleness = decideAfterABuild().staleness();

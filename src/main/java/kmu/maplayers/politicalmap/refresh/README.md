@@ -116,8 +116,8 @@ What Nexerelin reports and when is [the Nexerelin notes](../../../../../../../do
 
 `PoliticalMapRefreshSignal` holds the coarse changes only this layer can raise on the shared board,
 alliance membership being the one.
-Every view of this layer folds its revision into its content revision
-(`computeAllianceContentRevision`).
+Every view of this layer answers its revision as its content revisions
+(`readAllianceContentRevisions`).
 The alliances view paints its blocs out of the alliance set;
 the faction and claims views judge their bands' contests against it.
 

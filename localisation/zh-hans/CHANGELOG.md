@@ -262,6 +262,7 @@
 | 带有 `text()`、`baseColour()`、`hangX()`、`hangY()` 和 `slantDegrees()` 的记录 `Label` | 带有 `getText()`、`getHangX()`、`getHangY()` 和 `getSlantDegrees()` 的 final 类。基础颜色归标签自身所有 |
 | `StandingClusterAnchors.getAnchors()`，对一个原地修改的列表的只读视图 | 每次拟合都给出一个新的不可变列表，因此由某次拟合派生的工作可以按对象身份判断该次拟合是否仍然有效 |
 | `OwnerMapClusters.listCandidateBorderLoopsOf(String)`，以及带有 `clusters()` 的记录 `OwnerMapHoverHighlightSource` | 已从 `OwnerMapClusters` 移除：悬停高亮所读的边界线属于悬停。`OwnerMapHoverHighlightSource` 改为不可继承的类，把每个所有者的边界线各展开为一个列表，并在该所有者的区域组不变时保留，因此持有它的一方每次构建只保留一个来源，合成器和 `SpotlightPreviewHighlightRenderer` 都通过 KMLib 的 `IdentityMemo` 这样做 |
+| `OwnerPaintedView.getContentRevision(MapLayerRefreshBoard)` 和 `PoliticalMapRefreshSignal.computeAllianceContentRevision(MapLayerRefreshBoard)`，由视图的修订号合并而成的一个整数 | `readContentRevisions(MapLayerRefreshBoard)` 和 `readAllianceContentRevisions(MapLayerRefreshBoard)`，返回 KMLib 的 `RevisionStamp`；不采样任何实时数据的视图返回 `RevisionStamp.EMPTY`。两次不同的读取可能合并成同一个整数，从而跳过星图的重建和选择器的遍历 |
 
 ##### 移至 KMLib
 

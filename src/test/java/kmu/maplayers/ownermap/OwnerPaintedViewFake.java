@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
+
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
@@ -22,7 +24,7 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
     private final OwnerReadingFake readingFake;
     private final OwnerSource ownerSource;
 
-    private int contentRevision;
+    private RevisionStamp contentRevisions = RevisionStamp.EMPTY;
 
     OwnerPaintedViewFake() {
         this(new OwnerSourceFake());
@@ -50,20 +52,20 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
         return "fake_label";
     }
 
-    // Samples nothing live, so the board it is handed contributes nothing and the fingerprint holds
-    // constant - the "never forces a rebuild on its own" case the seam allows - until a case moves it.
+    // Samples nothing live, so the board it is handed contributes nothing and the stamp stays empty -
+    // the "never forces a rebuild on its own" case the seam allows - until a case moves it.
     @Override
-    public int getContentRevision(MapLayerRefreshBoard board) {
-        return contentRevision;
+    public RevisionStamp readContentRevisions(MapLayerRefreshBoard board) {
+        return contentRevisions;
     }
 
     /**
-     * Moves the fingerprint, as a view whose live inputs changed would.
+     * Moves the revisions, as a view whose live inputs changed would.
      *
-     * @param contentRevision what {@link #getContentRevision} answers from here on
+     * @param contentRevisions what {@link #readContentRevisions} answers from here on
      */
-    public void setContentRevision(int contentRevision) {
-        this.contentRevision = contentRevision;
+    public void setContentRevisions(RevisionStamp contentRevisions) {
+        this.contentRevisions = contentRevisions;
     }
 
     // A fixture layer's categories, so no suite over the tier borrows a real layer's set.

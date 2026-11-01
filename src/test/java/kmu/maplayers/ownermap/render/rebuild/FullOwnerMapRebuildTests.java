@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.rebuild;
 
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.statics.StaticSeams;
@@ -61,7 +62,7 @@ final class FullOwnerMapRebuildTests {
         MapVisibilityRules.BASE);
 
     // What every rebuild here is keyed by. No case turns on the values, the ledger being stood in for.
-    private static final ViewKey VIEW_KEY = new ViewKey(0, "view", 0);
+    private static final ViewKey VIEW_KEY = new ViewKey(0, "view", RevisionStamp.of(0));
     private static final ContentKey CONTENT_KEY = new ContentKey(VIEW_KEY, createInertInputs());
     private static final OwnersKey OWNERS_KEY = new OwnersKey(VIEW_KEY, null);
 
@@ -391,7 +392,7 @@ final class FullOwnerMapRebuildTests {
 
             // ARRANGE
             var expectedTagPart = "content=ContentKey[viewKey=ViewKey[settingsRevision=0, viewId=view, "
-                + "viewContentRevision=0], contentInputs=ContentInputs[selectedOwnerId=null";
+                + "viewContentRevisions=[0]], contentInputs=ContentInputs[selectedOwnerId=null";
 
             // ACT
             var actualTag = recordRebuildTag(CONTENT_ONLY_HALVES);

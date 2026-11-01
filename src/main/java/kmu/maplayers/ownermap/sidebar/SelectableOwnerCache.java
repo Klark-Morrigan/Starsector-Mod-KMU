@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.sidebar;
 
 import kmlib.cache.memo.RevisionMemo;
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.machinery.InstalledMachinery;
@@ -9,7 +10,6 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.settings.KmuLunaSettings;
 
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -107,7 +107,7 @@ public final class SelectableOwnerCache
 
     /**
      * The selected view's picker over this cache's sector under the player's live settings, rebuilt
-     * only when the view or the revision the list depends on has changed since the last call.
+     * only when the view or a revision the list depends on has changed since the last call.
      *
      * @param view the selected view whose owners the picker draws
      * @return the memoised read - the picker and the presence behind it; the same instance while
@@ -120,27 +120,30 @@ public final class SelectableOwnerCache
 
         return ownerCache.resolveValue(
             view.getId(),
-            computeRevision(view),
+            readRevisions(view),
             () -> view.resolveOwnerPickerRead(sector));
     }
 
-    // The revision the memoised list is valid for: the settings (the owner
-    // rules and the visibility settings both move settingsRevision), the view's own live inputs
-    // (its live sources where it samples any; a constant for a view sampling nothing), and the
-    // board's grouping revision, so a system changing hands re-walks the list as the map re-shapes.
-    // The filter selection is absent by design - it changes which owner is lit, never which owners
-    // are listed.
+    // The revisions the memoised list is valid for: the settings (the owner rules and the visibility
+    // settings both move settingsRevision), the board's grouping revision, so a system changing
+    // hands re-walks the list as the map re-shapes, and the view's own live inputs (empty for a view
+    // sampling nothing). The filter selection is absent by design - it changes which owner is lit,
+    // never which owners are listed.
+    //
+    // The view's stamp goes last because its length is the view's: after the two fixed revisions,
+    // no two splits of one sequence can join to the same stamp.
     //
     // Every count is this machinery's board, the same one the walk above takes its sector from:
     // keyed on another sector's counters, a list walked here would never be re-walked when this
     // sector's groups moved, and would be thrown away when another sector's did.
-    private int computeRevision(OwnerPaintedView view) {
+    private RevisionStamp readRevisions(OwnerPaintedView view) {
 
         var board = machinery.resolveRefreshBoard();
 
-        return Objects.hash(
-            KmuLunaSettings.getSettingsRevision(),
-            board.getGroupingRevision(),
-            view.getContentRevision(board));
+        return RevisionStamp
+            .of(
+                KmuLunaSettings.getSettingsRevision(),
+                board.getGroupingRevision())
+            .append(view.readContentRevisions(board));
     }
 }

@@ -202,7 +202,7 @@ What the three views answer alike is stated once,
 on `PoliticalHolderView`,
 which every view of this layer extends:
 
-- the alliance set's revision as the content revision they repaint on;
+- the alliance set's revision as the content revisions they repaint on;
 - the live alliance set as who stands together in a contest,
   whatever a view paints as one bloc;
 - the holder categories;

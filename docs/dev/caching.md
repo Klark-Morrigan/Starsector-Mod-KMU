@@ -11,7 +11,7 @@ The shared library's caches are a separate and much simpler problem
 (font assets and pure derivations, none of which can go stale,
 and the memo the [settled faces](#settled-faces) are held in);
 they are documented in [KMLib's caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md),
-including the `Fingerprints` primitive this document's revision counters fold through.
+including the `RevisionStamp` primitive this document's revision counters are compared through.
 
 ## Index
 
@@ -253,13 +253,13 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | `MapLayerCommonRefreshSignal.DRAW_LISTS` | `MapLayerCommonRefreshSignal` | the overlay cache, after a full rebuild or a fold of marked systems | the hover box's memo |
 | `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh, or a full rebuild where the standing map cannot take one |
 | grouping revision | `MapLayerRefreshBoard` | every system marked into the set above | the sidebar picker memo |
-| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance records differing from the last poll's | every political view's content revision |
+| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance records differing from the last poll's | every political view's content revisions |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | **nothing** - see below |
 | `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/ownermap/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the clusters rebuild, which compares its values with what the standing map was built from |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the clusters rebuild |
-| content revision | each `OwnerPaintedView` | the view's own live inputs, folded via `Fingerprints` off the board it is handed | the clusters rebuild, and the sidebar picker memo |
+| content revisions | each `OwnerPaintedView` | the view's own live inputs, stamped as a `RevisionStamp` off the board it is handed | the clusters rebuild, and the sidebar picker memo |
 
 Three of those deserve their reason stated.
 
@@ -300,19 +300,21 @@ the setters' `board` argument is what carries the "raise on the sector you were 
 so removing the three is a change to four holders' signatures
 rather than a deletion of three enum constants.
 
-The **content revision** is the seam that keeps the shared pipeline from naming any concrete view:
-a view folds its own live inputs into one int,
+The **content revisions** are the seam that keeps the shared pipeline from naming any concrete view:
+a view stamps the revisions of its own live inputs,
 so each invalidates on what it actually reads.
-All three political views fold the alliance revision,
+The stamp keeps every revision rather than folding them into one int,
+since two different readings can fold to one int and skip the rebuild.
+All three political views stamp the alliance revision,
 for different reasons -
 the alliances view because membership decides what it paints,
 the faction and claims views because their bands judge a contest against it -
-while a view that samples nothing live folds no sources and never forces a rebuild on its own.
+while a view that samples nothing live answers the empty stamp and never forces a rebuild on its own.
 The board those counters are read off is an argument,
 since a view is a stateless strategy every sector's machinery shares
 while the counters are one sector's:
 both callers -
-the overlay cache's own fingerprint and the picker memo's key -
+the overlay cache's build ledger and the picker memo's key -
 already hold the machinery being asked about,
 so each names the board it means
 rather than leaving the view to resolve whichever sector is running.
@@ -655,7 +657,7 @@ the emission drawing each form in a pass of its own.
 ### Sidebar pickers
 
 `RevisionMemo` is the memo any layer's sidebar holds its resolved picker in,
-keyed on the scope and a revision the caller supplies.
+keyed on the scope and the revisions the caller supplies.
 A body build runs twice a frame (render and hit-test),
 so without a memo every picker would re-resolve its list several times a frame.
 It is KMLib's (`kmlib.cache.memo`);
@@ -667,17 +669,20 @@ including the discard a consumer calls when whatever the value belonged to is re
 
 [`SelectableOwnerCache`](../../src/main/java/kmu/maplayers/ownermap/sidebar/SelectableOwnerCache.java)
 is the owner-map tier's use of it:
-what it adds is the revision,
+what it adds is the revisions,
 the one thing the memo cannot know.
 What it holds is the selected view's whole `ListPicker` -
 the blocs on offer and the vocabulary that ranks them -
 since a view answers both together and neither means anything without the other.
 Each of its resolves is a full grouped dominance pass over the sector,
 so it is the picker that most needs the memo to hold.
-That revision is the economy-weighting settings,
-the view's own grouping inputs,
-and the board's grouping revision,
-which every system marked stale moves.
+Those revisions are the economy-weighting settings,
+the board's grouping revision,
+which every system marked stale moves,
+and the view's own content revisions,
+in that order:
+the view's stamp varies in length,
+so it goes after the two fixed ones.
 It deliberately **excludes** the filter selection.
 The picker is which blocs are selectable,
 not which one is spotlighted,
@@ -926,8 +931,9 @@ on load and on every settings change.
   A colony event names its own system;
   only a change to the drawn *set* is allowed to invalidate the partition.
 - The per-frame path must stay int compares.
-  Any new live input needs a revision of its own folded into a fingerprint -
-  never a per-frame scan to detect change.
+  Any new live input needs a revision of its own added to a stamp -
+  never a per-frame scan to detect change,
+  and never a fold of several revisions into one int.
   The settled faces and [the hover box](#the-hover-box) are the two stated exceptions.
 - An incremental update must read back the same inputs the full build used,
   and go through the same primitives,
@@ -940,7 +946,7 @@ on load and on every settings change.
 
 - [KMLib caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) -
   the font and glyph caches KMU draws through,
-  and the `Fingerprints` primitive.
+  and the `RevisionStamp` primitive.
 - [Owner-painted map assembly](../../src/main/java/kmu/maplayers/ownermap/README.md) -
   the tier the overlay cache,
   the clusters and the sidebar picker memo live in.

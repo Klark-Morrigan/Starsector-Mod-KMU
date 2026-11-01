@@ -263,6 +263,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `Label`, a record with `text()`, `baseColour()`, `hangX()`, `hangY()` and `slantDegrees()` | A final class with `getText()`, `getHangX()`, `getHangY()` and `getSlantDegrees()`. The base colour is the label's own |
 | `StandingClusterAnchors.getAnchors()`, one read-only view over a list edited in place | A new immutable list with every pass, so work derived from one pass can tell by identity whether its pass still stands |
 | `OwnerMapClusters.listCandidateBorderLoopsOf(String)`, and `OwnerMapHoverHighlightSource`, a record with `clusters()` | Gone from `OwnerMapClusters`: the loops the hover highlight reads are a hover concern. `OwnerMapHoverHighlightSource` is a final class that flattens each owner's loops into one list and keeps it while that owner's cluster group stands, so a holder keeps one source per build, as the compositor and `SpotlightPreviewHighlightRenderer` do through KMLib's `IdentityMemo` |
+| `OwnerPaintedView.getContentRevision(MapLayerRefreshBoard)` and `PoliticalMapRefreshSignal.computeAllianceContentRevision(MapLayerRefreshBoard)`, an int folded from the view's revisions | `readContentRevisions(MapLayerRefreshBoard)` and `readAllianceContentRevisions(MapLayerRefreshBoard)`, answering KMLib's `RevisionStamp`; `RevisionStamp.EMPTY` for a view sampling nothing. Two different readings could fold to one int and skip the map's rebuild and the picker's walk |
 
 ##### Moved to KMLib
 

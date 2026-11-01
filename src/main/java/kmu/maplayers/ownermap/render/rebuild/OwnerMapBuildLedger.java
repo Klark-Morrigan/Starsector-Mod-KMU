@@ -232,7 +232,7 @@ final class OwnerMapBuildLedger {
         return new ViewKey(
             KmuLunaSettings.getSettingsRevision(),
             view.getId(),
-            view.getContentRevision(machinery.resolveRefreshBoard()));
+            view.readContentRevisions(machinery.resolveRefreshBoard()));
     }
 
     // What the cells would be cut from right now. The reachable-set revision alone does not answer

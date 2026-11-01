@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
+
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerReading;
@@ -33,11 +35,11 @@ public interface PoliticalHolderView
      * is not allied with, so membership moving in play must repaint those runs.
      *
      * @param board the refresh board of the sector this ask is about
-     * @return the content fingerprint of the alliance set
+     * @return the stamp of the alliance set's revision
      */
     @Override
-    default int getContentRevision(MapLayerRefreshBoard board) {
-        return PoliticalMapRefreshSignal.computeAllianceContentRevision(board);
+    default RevisionStamp readContentRevisions(MapLayerRefreshBoard board) {
+        return PoliticalMapRefreshSignal.readAllianceContentRevisions(board);
     }
 
     /**

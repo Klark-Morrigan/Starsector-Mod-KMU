@@ -43,9 +43,8 @@ public final class AlliancesView
     // the figure. Independent of the layer's filter recede, so it keeps toggles of its own. The keys
     // are frozen save keys: a rename resets every save's choice.
     //
-    // Not folded into the content revision: the bake samples the toggles with every other
-    // preference and folds them in as values, so a flip that leaves the recede where it was rebuilds
-    // nothing.
+    // Not among the content revisions: the bake samples the toggles with every other preference
+    // and compares them as values, so a flip that leaves the recede where it was rebuilds nothing.
     static final RecedePreferences NON_ALLIED_RECEDE = new RecedePreferences(
         "$kmu_political_alliance_recede_mute",
         "$kmu_political_alliance_recede_desaturate");
