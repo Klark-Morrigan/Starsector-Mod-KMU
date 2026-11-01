@@ -30,7 +30,7 @@ import java.util.Map;
  * them per owner - which of them encloses this particular cell is a geometric question, and one
  * the highlight pass answers for itself.
  *
- * <p>A holder keeps one source per build and makes a new one when a rebuild replaces the draw
+ * <p>A caller keeps one source per build and makes a new one when a rebuild replaces the draw
  * lists. The source retains the loops it last flattened, and the highlight memoises its resolved
  * halo on the identity of that list, so a source made afresh per frame would re-clip the wash
  * sixty times a second while the cursor sits still.
@@ -43,8 +43,8 @@ public final class OwnerMapHoverHighlightSource implements HoverHighlightSource 
     // Each owner's loops as last flattened, keyed on that owner's cluster group. A rebuild or an
     // incremental refresh replaces a group wholesale rather than editing it, so a group that still
     // matches is geometry that has not moved. One memo per owner rather than one in all, because a
-    // previewed set asks after the holders of all its cells every frame, and a single entry would
-    // evict one holder's loops for the next and miss on every cell. The source lives for one build,
+    // previewed set asks after the owners of all its cells every frame, and a single entry would
+    // evict one owner's loops for the next and miss on every cell. The source lives for one build,
     // so the map holds at most that build's owners.
     private final Map<String, IdentityMemo<StyledClusterGroup, List<float[]>>> candidateLoopsMemoByOwnerId =
         new HashMap<>();

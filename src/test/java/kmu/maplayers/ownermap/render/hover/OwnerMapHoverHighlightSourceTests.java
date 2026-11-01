@@ -193,7 +193,7 @@ final class OwnerMapHoverHighlightSourceTests {
                 .isSameAs(actualFirstLoops);
         }
 
-        // A previewed set asks after the holders of all its cells every frame. Asking after a
+        // A previewed set asks after the owners of all its cells every frame. Asking after a
         // second owner must not evict the first owner's list, or every cell of a set held by
         // several owners would miss the highlight's memo on every frame.
         @Test

@@ -68,7 +68,7 @@ final class SpotlightPreviewHighlightRendererTests {
     private static final String PRESENT_SYSTEM_ID = "corvus";
 
     // A rival, and a system it holds where the previewed owner is also present, for the set that
-    // spans two holders.
+    // spans two owners.
     private static final String RIVAL_ID = "tritachyon";
     private static final String RIVAL_HELD_SYSTEM_ID = "hybrasil";
 
@@ -269,9 +269,9 @@ final class SpotlightPreviewHighlightRendererTests {
                 .isSameAs(actualFirstPaint.highlight());
         }
 
-        // A previewed owner is lit in systems its rivals hold, so one set can span several holders.
-        // The assembly reads each cell's holder's loops in turn every frame, and only loops kept per
-        // holder come back the same while the frame stands.
+        // A previewed owner is lit in systems its rivals hold, so one set can span several owners.
+        // The assembly reads each cell's owner's loops in turn every frame, and only loops kept per
+        // owner come back the same while the frame stands.
         @Test
         void keepsOneHighlightForASetHeldBySeveralOwners() {
 
