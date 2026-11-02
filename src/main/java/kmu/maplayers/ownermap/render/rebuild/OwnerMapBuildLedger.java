@@ -63,10 +63,8 @@ final class OwnerMapBuildLedger {
     // unrelated moves.
     private boolean isRebuildOwed;
 
-    // What the cells currently held were cut from: one CellCutInputs rather than the reachable-set
-    // revision alone, because the question asked of its parts is the single one they answer
-    // together - would the cells be cut differently now. Null (not a zero reading) is the never-cut
-    // state, since every reading the record can hold is one the player can actually be under - and
+    // What the cells currently held were cut from (see CellCutInputs for why that is one value).
+    // Null (not a zero reading) is the never-cut state, since every reading the record can hold is one the player can actually be under - and
     // it is what makes a cache's first frame cut, whatever the signal happens to say.
     private CellCutInputs lastCellCut;
 
@@ -235,10 +233,7 @@ final class OwnerMapBuildLedger {
             view.readContentRevisions(machinery.resolveRefreshBoard()));
     }
 
-    // What the cells would be cut from right now. The reachable-set revision alone does not answer
-    // that: the seed inputs and the visibility rules recut every cell without it moving, so they
-    // are read into one CellCutInputs with it and the staleness question is asked of that value
-    // rather than of the signal.
+    // What the cells would be cut from right now (see CellCutInputs).
     //
     // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and the
     // bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave cells cut

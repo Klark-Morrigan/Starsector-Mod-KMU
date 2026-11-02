@@ -101,9 +101,7 @@ final class MarkedSystemRederive {
     // of what the updated owners left unowned.
     private StaleOwnerMapDisturbance rederiveEachMarkedSystem(Set<SystemKey> markedSystemKeys) {
 
-        // Off the batch's own walk rather than a traversal opened here: every read below goes
-        // through that walk, and a second traversal for the systems alone would walk the sector
-        // twice per batch. By key rather than by ID, so a marked system that shares an ID
+        // Off the batch's own walk (see SectorWalk). By key rather than by ID, so a marked system that shares an ID
         // with another is re-derived as itself rather than as whichever of them comes first.
         var systemByKey = walk.sectorIndex().readSystemsByKey();
 

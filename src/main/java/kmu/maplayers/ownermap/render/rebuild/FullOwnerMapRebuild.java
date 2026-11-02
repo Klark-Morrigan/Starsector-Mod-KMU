@@ -89,9 +89,8 @@ final class FullOwnerMapRebuild {
     // never null once the cache exists - and only the number beside them moves, which is why the
     // pair is replaced rather than the cells.
     //
-    // That number counts cuts rather than echoing the reachable-set revision, because the two
-    // are not the same fact: a seed-input or visibility-rule change recuts every cell while that
-    // signal stands still (see CellCutInputs). Anything keying reused work off which cut it was
+    // That number counts cuts rather than echoing the reachable-set revision, which stands still
+    // through some recuts (see CellCutInputs). Anything keying reused work off which cut it was
     // derived against needs a value that moves on every recut, which a counter does by
     // construction - where a fold of the cut's inputs could collide two cuts onto one number and
     // offer work fitted inside cell shapes that are gone.
@@ -152,8 +151,7 @@ final class FullOwnerMapRebuild {
      * Builds under the active view's rules, so a view switch (held in the content key)
      * rebuilds the clusters under the newly-selected view.
      *
-     * <p>A rebuild is a pass, and is read as one: whichever stages run, they run against one reading
-     * of the sector, opened here and handed to each.
+     * <p>Whichever stages run, they run off one {@link SectorWalk}, opened here and handed to each.
      *
      * @param staleHalves this frame's decision, which found the content stale
      * @param view        the view being painted
@@ -164,16 +162,6 @@ final class FullOwnerMapRebuild {
         // reference, so a rebuild cannot name one sector to its cut and another to its fills.
         var sector = machinery.resolveSector();
 
-        // The one walk of that sector this rebuild's stages share: the cell cut, the owners and
-        // the bands each ask every system what it holds, so one walk per system serves all three.
-        // Opened here rather than by each stage, which would have a single rebuild walk the whole
-        // sector three times over.
-        //
-        // Paired with the visibility rules the cut is taken under, so the layer's source reads
-        // each system under the very rule that decided which systems got cells.
-        //
-        // Discarded with the rebuild. A kept one would draw the next rebuild off the sector this
-        // one saw, which is the change a rebuild exists to show.
         var walk = SectorWalk.openOver(
             sector,
             staleHalves.cellCut().visibilityRules());
@@ -304,10 +292,8 @@ final class FullOwnerMapRebuild {
         return wereOwnersReused;
     }
 
-    // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
-    // affected by an access change or a system starting or stopping moving - or every cell, when
-    // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
-    // cache the currently-moving systems so they are left out of the partition (they seed no cell
+    // Brings the geometry cache in line with what the cells are cut from (see CellCutInputs). Feeds
+    // the cache the currently-moving systems so they are left out of the partition (they seed no cell
     // and clip no neighbour), the rebuild's reading of the sector, whose visibility rules put a
     // forced or undiscovered settled system on the drawn set, and the layer's own rule for which of
     // the systems that reading draws seed a cell at all.
@@ -344,9 +330,7 @@ final class FullOwnerMapRebuild {
             cellCut.seedInputs());
 
         // A fresh cut number the moment the cells are recut, whichever input drove it - so work
-        // derived from the previous cut can never read as derived from this one. Counted rather
-        // than taken from the reachable-set revision, which stands still through a seed-input or
-        // visibility-rule recut.
+        // derived from the previous cut can never read as derived from this one.
         cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
 
         ledger.recordCellsCut(staleHalves);

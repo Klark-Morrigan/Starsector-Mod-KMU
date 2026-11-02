@@ -12,9 +12,12 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * One rebuild's walk of the sector and the rules it is read under: what the tier hands a
- * layer's owner source, so whatever reading the source opens shares the walk every other stage
- * of the rebuild is answered from.
+ * One walk of the sector and the rules it is read under, shared by every stage of one rebuild or
+ * one batch. The cell cut, the owners, the per-system answers and the band count each ask every
+ * system what it holds, so one walk per system serves them all. A stage opening its own would walk
+ * the sector again for answers this one already holds, since the sector cannot move within the
+ * frame. It is what the tier hands a layer's owner source, so whatever reading the source opens
+ * shares that walk.
  *
  * <p>The index names no owner rule and no owner - it is the sector's systems and what each
  * holds, walked once. The visibility rules beside it are the substrate's own: what the player may
@@ -25,7 +28,10 @@ import java.util.function.Supplier;
  *
  * <p>It also keeps whatever readings a source opens over it, so the owners, the per-system answers
  * and the band count asked of one walk read one reading between them - and the source stays a
- * stateless set of rules, a reading living exactly as long as the walk it was opened over.
+ * stateless set of rules, a reading living exactly as long as the walk it was opened over. That is
+ * also the condition on sharing a walk: the bands are counted through the source the owners came
+ * from, since a count under another sampling of the view's live inputs would plan against owners
+ * the fills never drew.
  *
  * <p>Opened where a rebuild or a batch begins and discarded with it. A kept one would draw the
  * next rebuild off the sector this one saw, which is the change a rebuild exists to show. Not safe

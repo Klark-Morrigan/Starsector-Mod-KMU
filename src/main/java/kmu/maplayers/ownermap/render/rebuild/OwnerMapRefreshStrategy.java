@@ -64,8 +64,9 @@ public enum OwnerMapRefreshStrategy {
      * Brings the standing map in step with the systems marked since the last frame, or leaves them
      * for a rebuild.
      *
-     * @param walk             a walk of the sector opened for this batch, under the visibility rules
-     *                         the standing cells were cut under
+     * @param walk             a walk of the sector opened for this batch by the cache that drained it,
+     *                         under the visibility rules the standing cells were cut under - see
+     *                         {@link OwnerMapCache}
      * @param standingMap      the map on screen, which a fold edits in place
      * @param markedSystemKeys the systems marked stale, already drained from the board - so a batch
      *                         this does not fold is one only the outcome remembers

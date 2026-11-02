@@ -187,13 +187,11 @@ The strategy is an enum:
 the two fillers are the whole set,
 and each has a name a log line can print.
 
-A filtered map folds like any other.
-The source re-derives a marked system as the spotlit build painted it,
+A filtered map folds like any other,
+because the source re-derives a marked system as the spotlit build painted it,
 so a spotlight owes no rebuild per colony change.
-What still owes one is a standing view that cannot take a fold -
-the debug overlay,
-or the placeholder standing before any build completes -
-whatever the layer chose.
+Which standing maps owe the rebuild whatever the layer chose is
+[the caching notes' second path](../../../../../../docs/dev/caching.md#the-four-rebuild-paths).
 
 Two other parts are slots in the same sense:
 which side of the nebulae each sub-layer paints (`OwnerMapBandLayout`)

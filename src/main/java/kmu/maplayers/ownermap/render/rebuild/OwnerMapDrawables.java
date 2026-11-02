@@ -9,6 +9,7 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
@@ -198,11 +199,8 @@ final class OwnerMapDrawables {
     /**
      * Builds the production view's three stages, driven off the one walk of the sector the
      * rebuild opened: the fills, the names fitted inside the borders they trace, and the bands laid
-     * around wherever those names ended up.
-     *
-     * <p>The bake is counted through the source the owners came from, over the same walk, which is
-     * the condition it shares this reading on: a band counted under another sampling of the view's
-     * live inputs would plan against owners the fills never drew.
+     * around wherever those names ended up. The bands count through the source the owners came
+     * from, which is what sharing the walk asks ({@link SectorWalk}).
      *
      * @param rebuildReading the cells to shape, the rebuild's one walk of the sector, and the view,
      *                       picks and overlay the rebuild sampled
@@ -238,10 +236,6 @@ final class OwnerMapDrawables {
         // would leave it running under a word rather than clear of it. What the fit
         // reports about the names it moved is dropped here: every cell was just rebuilt
         // from nothing, so all of them owe a band whatever the names did.
-        //
-        // Baked over this rebuild's own walk rather than one of its own: the bake runs in the same
-        // frame the fills were painted in, so a fresh walk could only report the same sector at the
-        // cost of walking it again.
         standingMap
             .createRibbonsBakerOver(rebuildReading.walk())
             .bakeAllCellRibbons();

@@ -65,10 +65,8 @@ final class IncrementalOwnerRefresh {
     // factory the full build uses, so a re-shaped cell is built from the values its neighbours were.
     private final PaintedCellBuilder cellBuilder;
 
-    // The batch's one walk of the sector. Every question asked about a marked system - its owner,
-    // whether anybody lives there, the spotlit owner's presence in it, and the counts its band
-    // reports - is answered off this single walk of it, through the source the standing build was
-    // resolved by; a reading opened per system would pay a settings read and a walk for each.
+    // The batch's one walk of the sector, which every question about a marked system and its band
+    // is answered off, through the source the standing build was resolved by (see SectorWalk).
     private final SectorWalk walk;
 
     private IncrementalOwnerRefresh(StandingOwnerMap standingMap, SectorWalk walk) {
@@ -85,10 +83,8 @@ final class IncrementalOwnerRefresh {
     // the placements, and the name labels: re-derive what was marked over one walk of the sector,
     // then redraw whatever that disturbed.
     //
-    // Both the walk and the marked systems arrive from the caller rather than being resolved here.
-    // This entry point is static and is handed the standing map whole, so the batch holds no
-    // machinery to ask either of - and the caller that assembles that map is exactly the one that
-    // does hold it, so what it drains and what it walks are one sector's by construction.
+    // Both the walk and the marked systems arrive from the caller, which holds the machinery this
+    // batch does not (see OwnerMapCache).
     //
     // Who owns a marked system is asked of the source the standing build was resolved by, never of
     // the view afresh: that source carries the one sampling of the layer's live inputs every
@@ -277,13 +273,8 @@ final class IncrementalOwnerRefresh {
     }
 
     // One bake of the named cells' bands, which every batch ends on, through the pass the full
-    // rebuild bakes through.
-    //
-    // Baked off the batch's own walk of the sector. The batch is one frame's work and the sector
-    // cannot move within it, so a walk opened here could only report what that one already holds,
-    // at the cost of walking every system a second time. The bake counts through the same source
-    // the re-derive asked, which is the condition a shared walk has to meet before bands are
-    // planned over it.
+    // rebuild bakes through, off the batch's own walk and the source the re-derive asked (see
+    // SectorWalk).
     private void bakeBandsOf(Collection<SystemKey> cellKeys) {
 
         standingMap

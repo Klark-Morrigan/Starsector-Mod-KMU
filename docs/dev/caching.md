@@ -357,8 +357,8 @@ The geometry's revision is not a field beside the cells but rides with them,
 for the same reason the placements ride with their fingerprint below:
 a revision naming cells other than the ones in hand reads as permission to reuse work fitted inside a partition that has since been recut.
 It **counts cuts** rather than echoing the reachable-set signal,
-since that signal is only one of the three things that recut them -
-see below.
+since that signal is only one of the three things that recut them
+([`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/CellCutInputs.java)).
 
 A frame that owes no rebuild may still have drained systems a change marked,
 and what it does with them is the layer's
@@ -447,20 +447,10 @@ and every farther cell is provably untouched.
 Two seed inputs bypass the diff and force a full reseed,
 because each changes every cell:
 the frontier resolution and the cell reach.
-So do the visibility rules,
-which change *which* systems seed a cell at all.
-
-Those three -
-the reachable-set revision,
-the seed inputs
-and the visibility rules -
-are one value,
-[`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/CellCutInputs.java),
-because the question asked of them is the single one they answer together:
-would the cells be cut differently now.
-Only the first raises a framework signal;
-the other two move without it,
-so a staleness test taken on the signal alone reads a settings recut as no change at all.
+The visibility rules go through the diff,
+since they change *which* systems seed a cell rather than how one is cut.
+When the cells are recut at all is
+[`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/CellCutInputs.java)'s to say.
 
 The cache holds raw cells,
 not shaped outlines.
@@ -814,8 +804,9 @@ in increasing cost:
    So does a view that cannot take a fold:
    the debug overlay,
    or the placeholder standing before any build completes.
-   A spotlight is no such map:
-   the batch re-derives a marked system as the spotlit build painted it.
+   A spotlit map is no such map;
+   why the stock filler can fold one is
+   [the tier's](../../src/main/java/kmu/maplayers/ownermap/README.md#the-rebuild-is-a-slot).
    Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/MarkedSystemRederive.java)'s
    and redrawing what that disturbed is the refresh's,
    so what a change costs is decided apart from what changed.

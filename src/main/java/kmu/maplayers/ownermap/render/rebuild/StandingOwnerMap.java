@@ -32,9 +32,8 @@ import java.util.List;
  * two paths cannot fit or bake one map differently. Only the clusters and the cells are read out,
  * since a batch re-shapes the one within the other.
  *
- * <p>Assembled by the cache keeping these four once its drained batch has something in it, which is the
- * only caller in a position to know: it holds the board the batch came off. A frame that drained
- * nothing - nearly every frame - returns without building one.
+ * <p>Assembled by {@link OwnerMapCache} once its drained batch has something in it; the cache says why
+ * the drain is its own.
  */
 public final class StandingOwnerMap {
 

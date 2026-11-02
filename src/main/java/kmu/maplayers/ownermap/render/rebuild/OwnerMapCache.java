@@ -36,9 +36,8 @@ import java.util.Set;
  * everything the map draws is cached here and rebuilt only when its inputs change.
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the raw cells are built
- * once and cached; they are reseeded only when the reachable-system set changes, the
- * frontier-resolution or cell-reach setting changes (either seeds every cell), or the visibility
- * rules change (they decide which systems seed a cell). The clusters are rebuilt in full when
+ * once and cached, and recut only when what they are cut from moves ({@link CellCutInputs}).
+ * The clusters are rebuilt in full when
  * KMU's LunaLib settings change (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}), when the view switches or samples a different
  * live input, when one of the sidebar preferences the bake reads holds a different value
@@ -53,6 +52,13 @@ import java.util.Set;
  * standing map, or owe the next frame the full rebuild. The full rebuild is the fallback either way
  * - for a strategy that does not fold, for a standing map that cannot take a fold, the debug
  * overlay's or a failed build's, and for a fold that threw.
+ *
+ * <p>The marked systems are drained, and the batch's walk opened, here rather than by the strategy
+ * or the batch, because this cache holds the machinery: a strategy is handed the standing map and
+ * names no sector, so a drain or a walk made there would have to ask the running game which sector
+ * it meant. Made here, what is drained and what is walked are one sector's by construction. The walk
+ * is taken under the visibility rules this frame sampled, which are the ones the standing cells
+ * were cut under, since a frame reaching the strategy owes no recut.
  *
  * <p>Which of those a frame owes is {@link OwnerMapBuildLedger}'s answer, asked first and acted on
  * here: the decision is answerable from revisions and settings alone and nearly every frame stops at
@@ -263,18 +269,12 @@ public final class OwnerMapCache
     // any build completes - owes the rebuild whatever the strategy, since nothing else would show
     // the change.
     //
-    // The drain happens here rather than inside the strategy, and before either branch is chosen,
-    // because this cache is what holds the board: a strategy is handed the standing map and names
-    // no sector, so a drain made there would have to ask the running game whose staleness it was
-    // emptying. Draining unconditionally is what keeps the outcomes equivalent - one folds what it
-    // took, the other drops it and owes the rebuild, and neither leaves a mark standing for the next
-    // frame to find.
+    // The drain comes before either branch is chosen, which is what keeps the outcomes equivalent:
+    // one folds what it took, the other drops it and owes the rebuild, and neither leaves a mark
+    // standing for the next frame to find.
     //
     // Having drained, this is also what answers the frame that owes nothing, which is nearly every
     // frame: it returns before assembling the standing map for a fold that would find nothing in it.
-    //
-    // The batch walks the sector under the visibility rules this frame sampled, which are the rules
-    // the standing cells were cut under: a frame reaching here owes no recut, so the two agree.
     private void refreshMarkedSystems(StaleHalves staleHalves) {
 
         var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
@@ -309,8 +309,7 @@ public final class OwnerMapCache
     // Hands the batch to the layer's strategy, and answers why it went unfolded - empty where it
     // folded. The standing map goes in whole: a re-fit leaves its own placements and rules in it,
     // and a frame that re-fits nothing leaves both alone, since the placements it did not touch are
-    // still described by the rules already recorded for them. The batch's walk is opened here,
-    // beside the sector it is taken from, so what is drained and what is walked are one sector's.
+    // still described by the rules already recorded for them.
     //
     // A fold that throws is caught here rather than by the frame's boundary, because only here is
     // the batch it dropped in hand. Its batch was drained and the standing owners dropped before it
