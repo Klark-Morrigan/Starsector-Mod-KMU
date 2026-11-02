@@ -339,6 +339,15 @@ asked first and acted on:
 the ledger holds what each half was built from and compares this frame's revisions and settings to it,
 which opens no reading of the sector,
 so nearly every frame stops at it.
+It also asks the standing build's owner reading whether each owner it painted still has the shades it was painted in,
+together with the unowned and recede shades
+([`PaintedPalettes`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/PaintedPalettes.java)).
+The shades are baked into what every frame draws and move no revision,
+so this is what redraws the map when the player picks their own colours or a mod recolours a faction.
+It is a getter or two per owner the build painted,
+and is asked before a marked batch folds:
+a frame that sees a moved shade rebuilds the whole map and takes the marks with it,
+rather than repainting one cell in the new shade beside the rest of the owner in the old one.
 It compares whole values by `equals` rather than a hash of them,
 so two readings that differ always rebuild,
 however their values happen to fold.
@@ -352,6 +361,7 @@ and a class holding both put the cheap question and the expensive answer behind 
 The ledger's entries advance only as the full rebuild
 ([`FullOwnerMapRebuild`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/FullOwnerMapRebuild.java))
 reports each stage complete,
+or a fold reports the shades it painted in,
 so a rebuild that threw part way is asked again next frame rather than taken as done.
 The geometry's revision is not a field beside the cells but rides with them,
 for the same reason the placements ride with their fingerprint below:
@@ -791,7 +801,8 @@ Per frame,
 in increasing cost:
 
 1. **Nothing changed** -
-   a few int compares against the cached revisions,
+   a few int compares against the cached revisions
+   and a getter or two per painted owner for its shades,
    no reading of the sector opened at all,
    and the standing draw lists are handed to the renderer.
    This is the overwhelmingly common path,
@@ -847,7 +858,7 @@ in increasing cost:
    the cells the flip re-shaped drop their kept paths with their shapes,
    and every other cell's band is laid along the ring it was already laid along.
 3. **Content changed**
-   (a setting, a sidebar toggle, a view's own live input) -
+   (a setting, a sidebar toggle, a view's own live input, a shade the map was painted in) -
    the clusters are rebuilt in full over the standing geometry.
    The cells are untouched,
    since ownership and styling do not move a border.

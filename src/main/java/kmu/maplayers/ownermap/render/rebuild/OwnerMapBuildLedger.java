@@ -23,11 +23,13 @@ import java.util.Set;
  *
  * <p>Kept apart from the cache that acts on the answer, because the two run at different cadences:
  * nearly every frame the map is open asks this and stops, while a rebuild is the rare frame. The
- * answer comes off revisions, the sidebar picks and settings read again only when LunaLib reports
- * a change, so it opens no reading of the sector.
+ * answer comes off revisions, the sidebar picks, settings read again only when LunaLib reports
+ * a change, and the shades the standing build painted in, asked of its owner reading a few getters
+ * per owner. So it opens no reading of the sector.
  *
- * <p>Its entries advance only when {@link FullOwnerMapRebuild} reports a stage complete, so a
- * rebuild that threw part way is asked again next frame rather than being taken as done.
+ * <p>Its entries advance only when {@link FullOwnerMapRebuild} reports a stage complete, or the
+ * cache a fold, so a rebuild that threw part way is asked again next frame rather than being taken
+ * as done.
  *
  * <p>The board every revision is read off is the machinery's own, so a signal raised in another
  * sector cannot restyle these cells - and a signal raised in this one cannot fail to.
@@ -63,6 +65,11 @@ final class OwnerMapBuildLedger {
     // unrelated moves.
     private boolean isRebuildOwed;
 
+    // The shades the standing build painted in (see PaintedPalettes), which no key above follows.
+    // Null while no production view stands, so nothing is watched: before the first build, and under
+    // the debug overlay, a diagnostic view that takes a recolour at its next rebuild.
+    private PaintedPalettes paintedPalettes;
+
     // What the cells currently held were cut from (see CellCutInputs for why that is one value).
     // Null (not a zero reading) is the never-cut state, since every reading the record can hold is one the player can actually be under - and
     // it is what makes a cache's first frame cut, whatever the signal happens to say.
@@ -86,7 +93,8 @@ final class OwnerMapBuildLedger {
      *
      * <p>They do unless the sector moved under them - a marked system, or a recut, which admits or
      * drops systems - or the rule reading them did, which the owners key holds. Never while
-     * nothing is standing to keep.
+     * nothing is standing to keep, and never once a shade they were painted in has moved: each owner
+     * carries the shades it was resolved in, so painting over it would redraw the old colours.
      *
      * @param staleHalves       this frame's decision
      * @param hasStandingOwners whether owners from an earlier rebuild are held at all
@@ -102,12 +110,14 @@ final class OwnerMapBuildLedger {
         return hasStandingOwners
             && staleSystemKeys.isEmpty()
             && !staleHalves.staleness().isCellCutStale()
-            && staleHalves.ownersKey().equals(lastOwnersKey);
+            && staleHalves.ownersKey().equals(lastOwnersKey)
+            && !hasAnyPaintedPaletteMoved();
     }
 
     /**
-     * What this frame owes, decided off revisions and settings alone so it costs nothing on a
-     * frame that owes nothing - which is nearly all of them.
+     * What this frame owes, decided off revisions, settings and the shades the standing build
+     * painted in, so it costs next to nothing on a frame that owes nothing - which is nearly all of
+     * them.
      *
      * @param view            the view being painted, whose live inputs and spotlight pick are
      *                        folded
@@ -162,6 +172,22 @@ final class OwnerMapBuildLedger {
     }
 
     /**
+     * The shade found moved since the standing build painted in it, for the line a rebuild writes.
+     *
+     * <p>Read before the rebuild records the shades it paints in, for the reason
+     * {@link #describeCellCutTransition} is read before the cut is recorded.
+     *
+     * @return what moved and its two values, or {@link PaintedPalettes#NO_MOVED_PALETTE} where nothing
+     *         has or nothing is watched
+     */
+    String describeMovedPalette() {
+
+        return paintedPalettes == null
+            ? PaintedPalettes.NO_MOVED_PALETTE
+            : paintedPalettes.describeMovedPalette();
+    }
+
+    /**
      * Records that the cells were recut under this frame's decision, so the next frame compares
      * against what they were actually cut from.
      *
@@ -201,10 +227,28 @@ final class OwnerMapBuildLedger {
         lastOwnersKey = staleHalves.ownersKey();
     }
 
+    /**
+     * Records the shades the standing view was painted in, so each frame after asks whether the game
+     * still answers them. Taken after every rebuild, and after every fold, which may paint an owner
+     * the build did not.
+     *
+     * @param paintedPalettes the shades, or null where no production view stands, which leaves
+     *                        nothing watched
+     */
+    void recordPalettesPainted(PaintedPalettes paintedPalettes) {
+        this.paintedPalettes = paintedPalettes;
+    }
+
     // The cells recut when what they would be cut from differs from what they were, and the
     // clusters rebuild over any recut, since every cell they group was reseeded. Short of a recut,
     // the clusters rebuild before the first build, whatever the keys say; on any change to what
-    // they were built from; and after a frame dropped marked systems it could not fold.
+    // they were built from; after a frame dropped marked systems it could not fold; and when a shade
+    // they were painted in moved, which seeds no cell.
+    //
+    // Decided before the cache folds a marked batch, so a frame that sees a moved shade rebuilds the
+    // whole map and drains the marks with it, rather than a batch repainting one cell in the new
+    // shade beside the same owner's other cells still in the old one. The shades are asked last, being the one question
+    // here that costs more than a compare.
     private Staleness decideStaleness(
             CellCutInputs cellCut,
             boolean hasNothingBuilt,
@@ -216,12 +260,20 @@ final class OwnerMapBuildLedger {
 
         if (hasNothingBuilt
                 || isRebuildOwed
-                || !contentKey.equals(lastContentKey)) {
+                || !contentKey.equals(lastContentKey)
+                || hasAnyPaintedPaletteMoved()) {
 
             return Staleness.CONTENT;
         }
 
         return Staleness.NOTHING;
+    }
+
+    // Whether the game now answers a shade other than one the standing build painted in.
+    private boolean hasAnyPaintedPaletteMoved() {
+
+        return paintedPalettes != null
+            && paintedPalettes.hasAnyPaletteMoved();
     }
 
     // The terms both keys share, read off the board of the machinery this ledger belongs to.

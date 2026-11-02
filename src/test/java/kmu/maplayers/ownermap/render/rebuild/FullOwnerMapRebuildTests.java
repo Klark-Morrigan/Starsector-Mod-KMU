@@ -12,6 +12,7 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
@@ -25,6 +26,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
+import java.util.List;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -222,9 +224,10 @@ final class FullOwnerMapRebuildTests {
                 () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
                 times(1));
 
-            verify(drawablesMock, times(2)).rebuildClustersAndBands(
-                any(),
-                same(resolvedOwners));
+            verify(
+                drawablesMock,
+                times(2))
+                    .rebuildClustersAndBands(any(), same(resolvedOwners));
         }
 
         // A marked system is one the sector moved under, so the ledger is asked with the marks in
@@ -265,10 +268,10 @@ final class FullOwnerMapRebuildTests {
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
 
             // ASSERT
-            verify(ledgerMock, never()).canReuseStandingOwners(
-                any(),
-                eq(true),
-                any());
+            verify(
+                ledgerMock,
+                never())
+                    .canReuseStandingOwners(any(), eq(true), any());
         }
 
         // The cells and the picks go over as the rebuild holds them, so the view is built over the
@@ -313,7 +316,8 @@ final class FullOwnerMapRebuildTests {
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
 
             // ASSERT
-            verify(drawablesMock).rebuildBorderTracingOverlay(rebuildReadingCaptor.capture());
+            verify(drawablesMock)
+                .rebuildBorderTracingOverlay(rebuildReadingCaptor.capture());
 
             assertThat(rebuildReadingCaptor.getValue().isAnchorOverlayShown())
                 .isTrue();
@@ -401,6 +405,47 @@ final class FullOwnerMapRebuildTests {
             assertThat(actualTag)
                 .contains(expectedTagPart);
         }
+
+        // A recolour moves no key on the line, so the shade that moved is what says why the map was
+        // redrawn.
+        @Test
+        void tagsTheShadeThatMovedSinceTheLastRebuild() {
+
+            // ARRANGE
+            var expectedTagPart = "paletteMoved=owner hegemony from (1,2,3,255 / 4,5,6,255) to nothing";
+
+            when(ledgerMock.describeMovedPalette())
+                .thenReturn("owner hegemony from (1,2,3,255 / 4,5,6,255) to nothing");
+
+            // ACT
+            var actualTag = recordRebuildTag(CONTENT_ONLY_HALVES);
+
+            // ASSERT
+            assertThat(actualTag)
+                .contains(expectedTagPart);
+        }
+
+        // The shades the view was just painted in are what every later frame compares against, so
+        // the rebuild hands the ledger the drawables' own sample of them.
+        @Test
+        void recordsTheShadesTheBuiltViewWasPaintedIn() {
+
+            // ARRANGE
+            var paintedPalettes = PaintedPalettes.sampleFrom(
+                OwnerReadingFake.createAnsweringNothing(),
+                List.of(),
+                null);
+
+            when(drawablesMock.samplePaintedPalettes())
+                .thenReturn(paintedPalettes);
+
+            // ACT
+            rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
+
+            // ASSERT
+            verify(ledgerMock)
+                .recordPalettesPainted(same(paintedPalettes));
+        }
     }
 
     @Nested
@@ -420,10 +465,10 @@ final class FullOwnerMapRebuildTests {
             rebuild.rebuildWhatIsStale(CONTENT_ONLY_HALVES, VIEW_FAKE);
 
             // ASSERT
-            verify(ledgerMock, never()).canReuseStandingOwners(
-                any(),
-                eq(true),
-                any());
+            verify(
+                ledgerMock,
+                never())
+                    .canReuseStandingOwners(any(), eq(true), any());
         }
     }
 

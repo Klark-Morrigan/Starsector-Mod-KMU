@@ -53,24 +53,88 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheFactionsOwnShades() {
 
+            // ARRANGE
+            var expectedPalette = new ColourPair(BRIGHT, DARK);
+
             var sectorMock = buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK);
 
-            assertThat(new FactionOwnerReading(sectorMock).resolvePalette(HEGEMONY))
-                .isEqualTo(new ColourPair(BRIGHT, DARK));
+            // ACT
+            var actualPalette = new FactionOwnerReading(sectorMock).resolvePalette(HEGEMONY);
+
+            // ASSERT
+            assertThat(actualPalette)
+                .isEqualTo(expectedPalette);
         }
 
         @Test
         void answersNoShadesForAFactionThatIsGone() {
 
-            assertThat(new FactionOwnerReading(mock(SectorAPI.class)).resolvePalette("vanished"))
+            // ACT
+            var actualPalette = new FactionOwnerReading(mock(SectorAPI.class)).resolvePalette("vanished");
+
+            // ASSERT
+            assertThat(actualPalette)
                 .isNull();
         }
 
         @Test
         void answersNoShadesWithoutASector() {
 
-            assertThat(new FactionOwnerReading(null).resolvePalette(HEGEMONY))
+            // ACT
+            var actualPalette = new FactionOwnerReading(null).resolvePalette(HEGEMONY);
+
+            // ASSERT
+            assertThat(actualPalette)
                 .isNull();
+        }
+    }
+
+    @Nested
+    class HasPalette {
+
+        // The shades the build was painted in, still authored on the faction, so the map owes no
+        // redraw.
+        @Test
+        void isTrueForTheShadesTheFactionStillPaintsIn() {
+
+            // ARRANGE
+            var reading = new FactionOwnerReading(buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK));
+
+            // ACT
+            var actualHasPalette = reading.hasPalette(HEGEMONY, new ColourPair(BRIGHT, DARK));
+
+            // ASSERT
+            assertThat(actualHasPalette)
+                .isTrue();
+        }
+
+        // The faction was recoloured since, as setting the player faction's colours does, so the
+        // map has to be redrawn.
+        @Test
+        void isFalseOnceTheFactionIsRecoloured() {
+
+            // ARRANGE
+            var reading = new FactionOwnerReading(buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK));
+
+            // ACT
+            var actualHasPalette = reading.hasPalette(HEGEMONY, new ColourPair(DARK, BRIGHT));
+
+            // ASSERT
+            assertThat(actualHasPalette)
+                .isFalse();
+        }
+
+        // A faction gone from the sector answers no shades, so no shades is what it still paints
+        // in.
+        @Test
+        void isTrueForNoShadesOfAFactionThatIsGone() {
+
+            // ACT
+            var actualHasPalette = new FactionOwnerReading(mock(SectorAPI.class)).hasPalette("vanished", null);
+
+            // ASSERT
+            assertThat(actualHasPalette)
+                .isTrue();
         }
     }
 
@@ -80,35 +144,59 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheLongNameForTheFullFormat() {
 
+            // ARRANGE
+            var expectedName = "The Hegemony";
+
             var reading = new FactionOwnerReading(buildSectorNamingHegemony());
 
-            assertThat(reading.resolveName(HEGEMONY, OwnerNameFormatChoice.FULL))
-                .isEqualTo("The Hegemony");
+            // ACT
+            var actualName = reading.resolveName(HEGEMONY, OwnerNameFormatChoice.FULL);
+
+            // ASSERT
+            assertThat(actualName)
+                .isEqualTo(expectedName);
         }
 
         @Test
         void readsTheShortNameForTheShortFormat() {
 
+            // ARRANGE
+            var expectedName = "Hegemony";
+
             var reading = new FactionOwnerReading(buildSectorNamingHegemony());
 
-            assertThat(reading.resolveName(HEGEMONY, OwnerNameFormatChoice.SHORT))
-                .isEqualTo("Hegemony");
+            // ACT
+            var actualName = reading.resolveName(HEGEMONY, OwnerNameFormatChoice.SHORT);
+
+            // ASSERT
+            assertThat(actualName)
+                .isEqualTo(expectedName);
         }
 
+        // An owner with no faction behind it carries no name; the label fit then sizes its
+        // stand-in band instead of drawing a name.
         @Test
         void answersNoNameWhenTheFactionDoesNotResolve() {
-            // An owner with no faction behind it carries no name; the label fit then sizes its
-            // stand-in band instead of drawing a name.
+
+            // ARRANGE
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
-            assertThat(reading.resolveName("ghost", OwnerNameFormatChoice.FULL))
+            // ACT
+            var actualName = reading.resolveName("ghost", OwnerNameFormatChoice.FULL);
+
+            // ASSERT
+            assertThat(actualName)
                 .isNull();
         }
 
         @Test
         void answersNoNameWithoutASector() {
 
-            assertThat(new FactionOwnerReading(null).resolveName(HEGEMONY, OwnerNameFormatChoice.FULL))
+            // ACT
+            var actualName = new FactionOwnerReading(null).resolveName(HEGEMONY, OwnerNameFormatChoice.FULL);
+
+            // ASSERT
+            assertThat(actualName)
                 .isNull();
         }
     }
@@ -119,25 +207,41 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheFactionsCrest() {
 
+            // ARRANGE
+            var expectedCrestPath = "graphics/hegemony_crest.png";
+
             var sectorMock = buildSectorKnowingHegemony();
 
-            assertThat(new FactionOwnerReading(sectorMock).resolveCrestPath(HEGEMONY))
-                .isEqualTo("graphics/hegemony_crest.png");
+            // ACT
+            var actualCrestPath = new FactionOwnerReading(sectorMock).resolveCrestPath(HEGEMONY);
+
+            // ASSERT
+            assertThat(actualCrestPath)
+                .isEqualTo(expectedCrestPath);
         }
 
         @Test
         void answersNoCrestWhenTheFactionDoesNotResolve() {
 
+            // ARRANGE
             var reading = new FactionOwnerReading(buildSectorKnowingHegemony());
 
-            assertThat(reading.resolveCrestPath("ghost"))
+            // ACT
+            var actualCrestPath = reading.resolveCrestPath("ghost");
+
+            // ASSERT
+            assertThat(actualCrestPath)
                 .isNull();
         }
 
         @Test
         void answersNoCrestWithoutASector() {
 
-            assertThat(new FactionOwnerReading(null).resolveCrestPath(HEGEMONY))
+            // ACT
+            var actualCrestPath = new FactionOwnerReading(null).resolveCrestPath(HEGEMONY);
+
+            // ASSERT
+            assertThat(actualCrestPath)
                 .isNull();
         }
     }
@@ -145,14 +249,22 @@ final class FactionOwnerReadingTests {
     @Nested
     class ResolveStyleAdjustment {
 
+        // Every owner is a lone faction, so there is no figure for a backdrop to sit behind, and
+        // receding would sink the whole sector rather than isolate anything.
         @Test
         void recedesNothingEvenWhenTheBackdropRecedes() {
-            // Every owner is a lone faction, so there is no figure for a backdrop to sit behind, and
-            // receding would sink the whole sector rather than isolate anything.
+
+            // ARRANGE
+            var expectedAdjustment = ElementStyleAdjustment.NONE;
+
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
-            assertThat(reading.resolveStyleAdjustment(HEGEMONY, RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
+            // ACT
+            var actualAdjustment = reading.resolveStyleAdjustment(HEGEMONY, RECEDING_INPUTS);
+
+            // ASSERT
+            assertThat(actualAdjustment)
+                .isEqualTo(expectedAdjustment);
         }
     }
 
@@ -162,39 +274,69 @@ final class FactionOwnerReadingTests {
         @Test
         void placesIndependentSpaceInTheIndependentCategory() {
 
+            // ARRANGE
+            var expectedCategory = HolderCategory.INDEPENDENT;
+
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
-            assertThat(reading.resolveCategory(Factions.INDEPENDENT, ElementStyleAdjustment.NONE))
-                .isEqualTo(HolderCategory.INDEPENDENT);
+            // ACT
+            var actualCategory = reading.resolveCategory(Factions.INDEPENDENT, ElementStyleAdjustment.NONE);
+
+            // ASSERT
+            assertThat(actualCategory)
+                .isEqualTo(expectedCategory);
         }
 
         @Test
         void placesAFactionInTheFactionCategory() {
 
+            // ARRANGE
+            var expectedCategory = HolderCategory.FACTION;
+
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
-            assertThat(reading.resolveCategory(HEGEMONY, ElementStyleAdjustment.NONE))
-                .isEqualTo(HolderCategory.FACTION);
+            // ACT
+            var actualCategory = reading.resolveCategory(HEGEMONY, ElementStyleAdjustment.NONE);
+
+            // ASSERT
+            assertThat(actualCategory)
+                .isEqualTo(expectedCategory);
         }
 
+        // Desaturation means "read as backdrop", so the faction adopts the independent borders
+        // and seams paired with the desaturation palette.
         @Test
         void placesADesaturatedFactionInTheIndependentCategory() {
-            // Desaturation means "read as backdrop", so the faction adopts the independent borders
-            // and seams paired with the desaturation palette.
+
+            // ARRANGE
+            var expectedCategory = HolderCategory.INDEPENDENT;
+
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
-            assertThat(reading.resolveCategory(HEGEMONY, DESATURATED))
-                .isEqualTo(HolderCategory.INDEPENDENT);
+            // ACT
+            var actualCategory = reading.resolveCategory(HEGEMONY, DESATURATED);
+
+            // ASSERT
+            assertThat(actualCategory)
+                .isEqualTo(expectedCategory);
         }
 
+        // Muting only dims the active style; it never moves the category, so a dimmed faction
+        // keeps its faction borders and seams.
         @Test
         void keepsAMerelyMutedFactionInTheFactionCategory() {
-            // Muting only dims the active style; it never moves the category, so a dimmed faction
-            // keeps its faction borders and seams.
+
+            // ARRANGE
+            var expectedCategory = HolderCategory.FACTION;
+
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
-            assertThat(reading.resolveCategory(HEGEMONY, MUTED_ONLY))
-                .isEqualTo(HolderCategory.FACTION);
+            // ACT
+            var actualCategory = reading.resolveCategory(HEGEMONY, MUTED_ONLY);
+
+            // ASSERT
+            assertThat(actualCategory)
+                .isEqualTo(expectedCategory);
         }
     }
 
@@ -204,20 +346,36 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheNeutralFactionsColour() {
 
+            // ARRANGE
+            var expectedColour = new Color(150, 150, 150);
+
             var sectorMock = buildEmptySector();
+
             when(stubKnownFaction(sectorMock, Factions.NEUTRAL).getBaseUIColor())
                 .thenReturn(new Color(150, 150, 150));
 
-            assertThat(new FactionOwnerReading(sectorMock).resolveUnownedColour())
-                .isEqualTo(new Color(150, 150, 150));
+            // ACT
+            var actualColour = new FactionOwnerReading(sectorMock).resolveUnownedColour();
+
+            // ASSERT
+            assertThat(actualColour)
+                .isEqualTo(expectedColour);
         }
 
+        // A grey stand-in rather than a null, so a reading over no sector still paints its
+        // unowned cells.
         @Test
         void fallsBackToGreyWithoutASector() {
-            // A grey stand-in rather than a null, so a reading over no sector still paints its
-            // unowned cells.
-            assertThat(new FactionOwnerReading(null).resolveUnownedColour())
-                .isEqualTo(new Color(128, 128, 128));
+
+            // ARRANGE
+            var expectedColour = new Color(128, 128, 128);
+
+            // ACT
+            var actualColour = new FactionOwnerReading(null).resolveUnownedColour();
+
+            // ASSERT
+            assertThat(actualColour)
+                .isEqualTo(expectedColour);
         }
     }
 
@@ -227,20 +385,35 @@ final class FactionOwnerReadingTests {
         @Test
         void readsIndependentsOwnShades() {
 
+            // ARRANGE
+            var expectedPalette = new ColourPair(BRIGHT, DARK);
+
             var sectorMock = buildSectorShadingFaction(
                 Factions.INDEPENDENT,
                 BRIGHT,
                 DARK);
 
-            assertThat(new FactionOwnerReading(sectorMock).resolveRecedePalette())
-                .isEqualTo(new ColourPair(BRIGHT, DARK));
+            // ACT
+            var actualPalette = new FactionOwnerReading(sectorMock).resolveRecedePalette();
+
+            // ASSERT
+            assertThat(actualPalette)
+                .isEqualTo(expectedPalette);
         }
 
+        // The backdrop still has two shades to darken without a sector to read Independent from.
         @Test
         void fallsBackToGreyShadesWithoutASector() {
-            // The backdrop still has two shades to darken without a sector to read Independent from.
-            assertThat(new FactionOwnerReading(null).resolveRecedePalette())
-                .isEqualTo(new ColourPair(new Color(128, 128, 128), new Color(128, 128, 128)));
+
+            // ARRANGE
+            var expectedPalette = new ColourPair(new Color(128, 128, 128), new Color(128, 128, 128));
+
+            // ACT
+            var actualPalette = new FactionOwnerReading(null).resolveRecedePalette();
+
+            // ASSERT
+            assertThat(actualPalette)
+                .isEqualTo(expectedPalette);
         }
     }
 

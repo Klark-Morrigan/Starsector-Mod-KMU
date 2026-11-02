@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.rebuild;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.cache.revisions.RevisionStamp;
+import kmlib.colour.ColourPair;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -11,7 +12,9 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
@@ -26,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.awt.Color;
+import java.util.List;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -41,9 +46,9 @@ import static org.mockito.Mockito.when;
  * Pins what a frame is decided to owe, what the ledger entries that decision is taken against advance
  * on, and when the standing owners may be painted over rather than read.
  *
- * <p>Nothing here opens a reading of the sector: the decision is answerable from the board and
- * the settings alone, which is the property the class exists to keep, so the sector the machinery
- * is built over is a bare mock nothing reaches. What is stubbed is what no test JVM answers - the
+ * <p>Nothing here opens a reading of the sector: the decision is answerable from the board, the
+ * settings and the standing build's owner reading alone, which is the property the class exists to
+ * keep, so the sector the machinery is built over is a bare mock nothing reaches. What is stubbed is what no test JVM answers - the
  * live LunaLib reads and the per-save picks - through seams that otherwise call the real reads, so
  * a case moves only the one it is about.
  */
@@ -63,6 +68,22 @@ final class OwnerMapBuildLedgerTests {
     // nothing here turns on which panel the frame was prepared for.
     private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
 
+    // The shades a build painted in, and the ones a recolour moves each to.
+    private static final ColourPair HEGEMONY_PALETTE = new ColourPair(
+        new Color(10, 20, 30),
+        new Color(40, 50, 60));
+
+    private static final ColourPair RECOLOURED_PALETTE = new ColourPair(
+        new Color(70, 80, 90),
+        new Color(100, 110, 120));
+
+    private static final Color UNOWNED_COLOUR = new Color(128, 128, 128);
+    private static final Color RECOLOURED_UNOWNED_COLOUR = new Color(90, 90, 90);
+
+    private static final ColourPair RECEDE_PALETTE = new ColourPair(
+        new Color(200, 200, 200),
+        new Color(50, 50, 50));
+
     private MockedStatic<FilterSelection> filterSelectionSeam;
     private MockedStatic<KmuLunaSettings> lunaSettingsSeam;
     private MockedStatic<KmuOwnerMapGeometrySettings> geometrySettingsSeam;
@@ -76,6 +97,10 @@ final class OwnerMapBuildLedgerTests {
     // case, because a case moving its revisions must not move the next case's.
     private OwnerPaintedViewFake viewFake;
     private OwnerMapBuildLedger ledger;
+
+    // The reading a build was painted by. A mock calling the interface's own comparison, so a
+    // recolour is a moved answer from resolvePalette, as it is for a layer that does not override it.
+    private OwnerReading readingMock;
 
     @BeforeEach
     void openSeamsAndBuildTheLedger() {
@@ -104,6 +129,15 @@ final class OwnerMapBuildLedgerTests {
                 nameFormatMock,
                 preferences.uninhabitedOutline(),
                 preferences.filterRecede()));
+
+        readingMock = mock(OwnerReading.class, Mockito.CALLS_REAL_METHODS);
+
+        when(readingMock.resolvePalette(HEGEMONY_ID))
+            .thenReturn(HEGEMONY_PALETTE);
+        when(readingMock.resolveUnownedColour())
+            .thenReturn(UNOWNED_COLOUR);
+        when(readingMock.resolveRecedePalette())
+            .thenReturn(RECEDE_PALETTE);
     }
 
     @AfterEach
@@ -325,7 +359,6 @@ final class OwnerMapBuildLedgerTests {
 
             // ARRANGE
             var expectedStaleness = Staleness.CONTENT;
-
             var rebuilt = decideAndRecordARebuild();
 
             pickNameFormat(OwnerNameFormatChoice.SHORT);
@@ -338,6 +371,82 @@ final class OwnerMapBuildLedgerTests {
                 .isEqualTo(expectedStaleness);
             assertThat(actualHalves.ownersKey())
                 .isEqualTo(rebuilt.ownersKey());
+        }
+
+        // A shade the build painted in is baked into what the frames draw and moves no key, so this
+        // is the only thing that redraws a recoloured owner. An owner's colour seeds no cell.
+        @Test
+        void owesTheContentAloneWhenAPaintedOwnerIsRecoloured() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
+            decideAndRecordARebuildPaintingHegemony();
+            recolourHegemony();
+
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
+        }
+
+        // Every cell nobody owns is painted in this one shade.
+        @Test
+        void owesTheContentAloneWhenTheUnownedShadeMoves() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
+            decideAndRecordARebuildPaintingHegemony();
+
+            when(readingMock.resolveUnownedColour())
+                .thenReturn(RECOLOURED_UNOWNED_COLOUR);
+
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
+        }
+
+        // Every receded owner sinks toward these shades.
+        @Test
+        void owesTheContentAloneWhenTheRecedeShadesMove() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.CONTENT;
+
+            decideAndRecordARebuildPaintingHegemony();
+
+            when(readingMock.resolveRecedePalette())
+                .thenReturn(RECOLOURED_PALETTE);
+
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
+        }
+
+        // Asking the shades is part of nearly every frame, and shades that hold owe it nothing.
+        @Test
+        void owesNothingWhileEveryPaintedShadeHolds() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.NOTHING;
+
+            decideAndRecordARebuildPaintingHegemony();
+
+            // ACT
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
         }
 
         // The ledger's entries advance only as the cache reports each stage complete, which is what lets a
@@ -461,6 +570,106 @@ final class OwnerMapBuildLedgerTests {
             assertThat(actualCanReuse)
                 .isFalse();
         }
+
+        // Each standing owner carries the shades it was resolved in, so painting over it after a
+        // recolour would redraw the old colours.
+        @Test
+        void isFalseWhenAShadeTheOwnersWerePaintedInMoved() {
+
+            // ARRANGE
+            decideAndRecordARebuildPaintingHegemony();
+            recolourHegemony();
+
+            // ACT
+            var actualCanReuse = ledger.canReuseStandingOwners(decideAfterABuild(), true, Set.of());
+
+            // ASSERT
+            assertThat(actualCanReuse)
+                .isFalse();
+        }
+    }
+
+    @Nested
+    class DescribeMovedPalette {
+
+        // The rebuild's line is the one place a recolour lands, so it names the owner and both pairs.
+        @Test
+        void namesTheRecolouredOwnerAndBothOfItsPairs() {
+
+            // ARRANGE
+            var expectedDescription = "owner hegemony from (10,20,30,255 / 40,50,60,255)"
+                + " to (70,80,90,255 / 100,110,120,255)";
+
+            decideAndRecordARebuildPaintingHegemony();
+            recolourHegemony();
+
+            // ACT
+            var actualDescription = ledger.describeMovedPalette();
+
+            // ASSERT
+            assertThat(actualDescription)
+                .isEqualTo(expectedDescription);
+        }
+
+        // Before the first build there is nothing painted to have moved.
+        @Test
+        void namesNothingWhileNothingIsWatched() {
+
+            // ARRANGE
+            var expectedDescription = "none";
+
+            // ACT
+            var actualDescription = ledger.describeMovedPalette();
+
+            // ASSERT
+            assertThat(actualDescription)
+                .isEqualTo(expectedDescription);
+        }
+    }
+
+    @Nested
+    class RecordPalettesPainted {
+
+        // The debug overlay stands no production view, so a recolour waits for its next rebuild
+        // rather than being watched through shades the overlay may not have painted.
+        @Test
+        void stopsWatchingWhenNoProductionViewStands() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.NOTHING;
+
+            decideAndRecordARebuildPaintingHegemony();
+            recolourHegemony();
+
+            // ACT
+            ledger.recordPalettesPainted(null);
+
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
+        }
+
+        // The rebuild that drew the new shades records them, so the frames after it owe nothing.
+        @Test
+        void paysARecolourOnceTheNewShadesAreRecorded() {
+
+            // ARRANGE
+            var expectedStaleness = Staleness.NOTHING;
+
+            decideAndRecordARebuildPaintingHegemony();
+            recolourHegemony();
+
+            // ACT
+            recordHegemonyPainted();
+
+            var actualStaleness = decideAfterABuild().staleness();
+
+            // ASSERT
+            assertThat(actualStaleness)
+                .isEqualTo(expectedStaleness);
+        }
     }
 
     @Nested
@@ -531,7 +740,6 @@ final class OwnerMapBuildLedgerTests {
 
             // ARRANGE
             var expectedStaleness = Staleness.NOTHING;
-
             var staleHalves = decideWithNothingBuilt();
 
             ledger.recordCellsCut(staleHalves);
@@ -580,7 +788,6 @@ final class OwnerMapBuildLedgerTests {
 
             // ARRANGE
             var expectedStaleness = Staleness.CONTENT;
-
             var staleHalves = decideWithNothingBuilt();
 
             ledger.recordCellsCut(staleHalves);
@@ -657,7 +864,6 @@ final class OwnerMapBuildLedgerTests {
     private void moveTheSettingsRevision() {
 
         settingsRevision++;
-
         announceSettingsRevision(settingsRevision);
     }
 
@@ -716,5 +922,29 @@ final class OwnerMapBuildLedgerTests {
         ledger.recordContentRebuilt(staleHalves);
 
         return staleHalves;
+    }
+
+    // The same rebuild, recorded as having painted one Hegemony system, as the full rebuild records
+    // the production view it built.
+    private void decideAndRecordARebuildPaintingHegemony() {
+
+        decideAndRecordARebuild();
+        recordHegemonyPainted();
+    }
+
+    // Records the shades the reading answers now as the ones the standing view was painted in.
+    private void recordHegemonyPainted() {
+
+        ledger.recordPalettesPainted(PaintedPalettes.sampleFrom(
+            readingMock,
+            List.of(new SystemOwner(HEGEMONY_ID, HEGEMONY_PALETTE)),
+            null));
+    }
+
+    // Recolours the Hegemony, as the player picking their own colours or a mod's recolour does.
+    private void recolourHegemony() {
+
+        when(readingMock.resolvePalette(HEGEMONY_ID))
+            .thenReturn(RECOLOURED_PALETTE);
     }
 }

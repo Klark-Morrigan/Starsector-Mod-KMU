@@ -67,42 +67,110 @@ final class AllianceOwnerReadingTests {
         @Test
         void coloursAnAllianceByItsLeadingMember() {
 
+            // ARRANGE
+            var expectedPalette = new ColourPair(BRIGHT, DARK);
+
             var sectorMock = buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK);
 
-            assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(ALLIANCE))
-                .isEqualTo(new ColourPair(BRIGHT, DARK));
+            // ACT
+            var actualPalette = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(ALLIANCE);
+
+            // ASSERT
+            assertThat(actualPalette)
+                .isEqualTo(expectedPalette);
         }
 
         @Test
         void coloursALoneFactionByItsOwnShades() {
 
+            // ARRANGE
+            var expectedPalette = new ColourPair(BRIGHT, DARK);
+
             var sectorMock = buildSectorShadingFaction(LONE_FACTION, BRIGHT, DARK);
 
-            assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(LONE_FACTION))
-                .isEqualTo(new ColourPair(BRIGHT, DARK));
+            // ACT
+            var actualPalette = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(LONE_FACTION);
+
+            // ASSERT
+            assertThat(actualPalette)
+                .isEqualTo(expectedPalette);
+        }
+    }
+
+    @Nested
+    class HasPalette {
+
+        // An alliance paints in its leading member's shades, so those are what it is asked about.
+        @Test
+        void isTrueForTheLeadingMembersShades() {
+
+            // ARRANGE
+            var reading = new AllianceOwnerReading(
+                buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK),
+                ALLIANCE_GROUPING);
+
+            // ACT
+            var actualHasPalette = reading.hasPalette(ALLIANCE, new ColourPair(BRIGHT, DARK));
+
+            // ASSERT
+            assertThat(actualHasPalette)
+                .isTrue();
+        }
+
+        // The leading member was recoloured since, so every system the alliance holds has to be
+        // redrawn.
+        @Test
+        void isFalseOnceTheLeadingMemberIsRecoloured() {
+
+            // ARRANGE
+            var reading = new AllianceOwnerReading(
+                buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK),
+                ALLIANCE_GROUPING);
+
+            // ACT
+            var actualHasPalette = reading.hasPalette(ALLIANCE, new ColourPair(DARK, BRIGHT));
+
+            // ASSERT
+            assertThat(actualHasPalette)
+                .isFalse();
         }
     }
 
     @Nested
     class ResolveName {
 
+        // An alliance's ID is not a faction ID, so its label comes from the grouping - the
+        // sector is never consulted.
         @Test
         void readsTheAlliancesOwnName() {
-            // An alliance's ID is not a faction ID, so its label comes from the grouping - the
-            // sector is never consulted.
+
+            // ARRANGE
+            var expectedName = "Rebel Pact";
+
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveName(ALLIANCE, OwnerNameFormatChoice.FULL))
-                .isEqualTo("Rebel Pact");
+            // ACT
+            var actualName = reading.resolveName(ALLIANCE, OwnerNameFormatChoice.FULL);
+
+            // ASSERT
+            assertThat(actualName)
+                .isEqualTo(expectedName);
         }
 
         @Test
         void readsALoneFactionByItsOwnName() {
 
+            // ARRANGE
+            var expectedName = "The Hegemony";
+
             var reading = new AllianceOwnerReading(buildSectorKnowingHegemony(), ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveName(LONE_FACTION, OwnerNameFormatChoice.FULL))
-                .isEqualTo("The Hegemony");
+            // ACT
+            var actualName = reading.resolveName(LONE_FACTION, OwnerNameFormatChoice.FULL);
+
+            // ASSERT
+            assertThat(actualName)
+                .isEqualTo(expectedName);
         }
     }
 
@@ -112,98 +180,159 @@ final class AllianceOwnerReadingTests {
         @Test
         void readsTheCrestOfTheAlliancesLeadingMember() {
 
+            // ARRANGE
+            var expectedCrestPath = "graphics/rebels_crest.png";
+
             var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, LEADING_MEMBER, "The Rebels", "graphics/rebels_crest.png");
 
             var reading = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveCrestPath(ALLIANCE))
-                .isEqualTo("graphics/rebels_crest.png");
+            // ACT
+            var actualCrestPath = reading.resolveCrestPath(ALLIANCE);
+
+            // ASSERT
+            assertThat(actualCrestPath)
+                .isEqualTo(expectedCrestPath);
         }
 
         @Test
         void readsALoneFactionsOwnCrest() {
 
+            // ARRANGE
+            var expectedCrestPath = "graphics/hegemony_crest.png";
+
             var reading = new AllianceOwnerReading(buildSectorKnowingHegemony(), ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveCrestPath(LONE_FACTION))
-                .isEqualTo("graphics/hegemony_crest.png");
+            // ACT
+            var actualCrestPath = reading.resolveCrestPath(LONE_FACTION);
+
+            // ASSERT
+            assertThat(actualCrestPath)
+                .isEqualTo(expectedCrestPath);
         }
     }
 
     @Nested
     class ResolveStyleAdjustment {
 
+        // A lone faction is backdrop once some alliance stands as the figure, so it takes exactly
+        // the recede the rebuild sampled for the view's backdrop.
         @Test
         void takesTheSampledBackdropRecedeForALoneFactionBesideAnAlliance() {
-            // A lone faction is backdrop once some alliance stands as the figure, so it takes exactly
-            // the recede the rebuild sampled for the view's backdrop.
+
+            // ARRANGE
+            var expectedAdjustment = DESATURATED;
+
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveStyleAdjustment(LONE_FACTION, RECEDING_INPUTS))
-                .isEqualTo(DESATURATED);
+            // ACT
+            var actualAdjustment = reading.resolveStyleAdjustment(LONE_FACTION, RECEDING_INPUTS);
+
+            // ASSERT
+            assertThat(actualAdjustment)
+                .isEqualTo(expectedAdjustment);
         }
 
         @Test
         void recedesNoAllianceEvenWhenTheBackdropRecedes() {
 
+            // ARRANGE
+            var expectedAdjustment = ElementStyleAdjustment.NONE;
+
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveStyleAdjustment(ALLIANCE, RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
+            // ACT
+            var actualAdjustment = reading.resolveStyleAdjustment(ALLIANCE, RECEDING_INPUTS);
+
+            // ASSERT
+            assertThat(actualAdjustment)
+                .isEqualTo(expectedAdjustment);
         }
 
+        // No alliance means no figure, so receding would sink the whole sector rather than
+        // isolate anything - a fresh Nex campaign's case before diplomacy has formed one.
         @Test
         void recedesNothingWhereNoAllianceExists() {
-            // No alliance means no figure, so receding would sink the whole sector rather than
-            // isolate anything - a fresh Nex campaign's case before diplomacy has formed one.
+
+            // ARRANGE
+            var expectedAdjustment = ElementStyleAdjustment.NONE;
+
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), HolderGrouping.identity());
 
-            assertThat(reading.resolveStyleAdjustment(LONE_FACTION, RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
+            // ACT
+            var actualAdjustment = reading.resolveStyleAdjustment(LONE_FACTION, RECEDING_INPUTS);
+
+            // ASSERT
+            assertThat(actualAdjustment)
+                .isEqualTo(expectedAdjustment);
         }
     }
 
     @Nested
     class ResolveCategory {
 
+        // An alliance always paints in the faction category so it stands out, whatever the
+        // adjustment says.
         @Test
         void keepsADesaturatedAllianceAtFullStrength() {
-            // An alliance always paints in the faction category so it stands out, whatever the
-            // adjustment says.
+
+            // ARRANGE
+            var expectedCategory = HolderCategory.FACTION;
+
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveCategory(ALLIANCE, DESATURATED))
-                .isEqualTo(HolderCategory.FACTION);
+            // ACT
+            var actualCategory = reading.resolveCategory(ALLIANCE, DESATURATED);
+
+            // ASSERT
+            assertThat(actualCategory)
+                .isEqualTo(expectedCategory);
         }
 
+        // A lone faction's category is the faction reading's answer, pinned in its own suite, so
+        // one case shows the delegation. Desaturated, because that is where a lone faction's
+        // answer parts from an alliance's.
         @Test
         void placesADesaturatedLoneFactionAsTheFactionReadingDoes() {
-            // A lone faction's category is the faction reading's answer, pinned in its own suite, so
-            // one case shows the delegation. Desaturated, because that is where a lone faction's
-            // answer parts from an alliance's.
+
+            // ARRANGE
+            var expectedCategory = HolderCategory.INDEPENDENT;
+
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
-            assertThat(reading.resolveCategory(LONE_FACTION, DESATURATED))
-                .isEqualTo(HolderCategory.INDEPENDENT);
+            // ACT
+            var actualCategory = reading.resolveCategory(LONE_FACTION, DESATURATED);
+
+            // ASSERT
+            assertThat(actualCategory)
+                .isEqualTo(expectedCategory);
         }
     }
 
     @Nested
     class ResolveUnownedColour {
 
+        // A system nobody holds paints the same on a layer painting alliances as on one painting
+        // factions.
         @Test
         void readsTheNeutralFactionsColour() {
-            // A system nobody holds paints the same on a layer painting alliances as on one painting
-            // factions.
+
+            // ARRANGE
+            var expectedColour = new Color(150, 150, 150);
+
             var sectorMock = buildEmptySector();
 
             when(stubKnownFaction(sectorMock, Factions.NEUTRAL).getBaseUIColor())
                 .thenReturn(new Color(150, 150, 150));
 
-            assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolveUnownedColour())
-                .isEqualTo(new Color(150, 150, 150));
+            // ACT
+            var actualColour = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolveUnownedColour();
+
+            // ASSERT
+            assertThat(actualColour)
+                .isEqualTo(expectedColour);
         }
     }
 
@@ -213,10 +342,17 @@ final class AllianceOwnerReadingTests {
         @Test
         void readsIndependentsOwnShades() {
 
+            // ARRANGE
+            var expectedPalette = new ColourPair(BRIGHT, DARK);
+
             var sectorMock = buildSectorShadingFaction(Factions.INDEPENDENT, BRIGHT, DARK);
 
-            assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolveRecedePalette())
-                .isEqualTo(new ColourPair(BRIGHT, DARK));
+            // ACT
+            var actualPalette = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolveRecedePalette();
+
+            // ASSERT
+            assertThat(actualPalette)
+                .isEqualTo(expectedPalette);
         }
     }
 }

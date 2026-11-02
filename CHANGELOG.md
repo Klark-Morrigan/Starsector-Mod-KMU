@@ -21,6 +21,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **On the *Factions* and *Alliances* views, a claimed system whose last colony leaves stays in its claimant's territory, unfilled**, rather than showing as nobody's until the next full redraw.
 - **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
 - **A system whose repaint fails is redrawn on the next frame**, rather than keeping its old owner.
+- **The political map follows a faction's colours changing**, such as the player faction's colours being set, rather than keeping the old colours until something else redraws it.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
 - **The Market Condition Manager opens on the colony the player is at, never on one already left.**
 - **The Chinese zip shows the Market Condition Manager in Chinese.**
@@ -83,6 +84,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`ClusterAnchor.computeFittedBox()`**: the box a placement's fit reserved, the one statement of a name's fitted extent.
 - **`Label.applyFade(float)`**: recolours the string only when the map's alpha moved.
 - **`OwnerMapRefreshStrategy`**: what a frame owing no rebuild does with the systems marked since, which a layer states. An enum of two constants: `INCREMENTAL`, the default, folds them into the map on screen, and `FULL_REBUILD` leaves them to the next frame's rebuild, for a rule whose answer for one system moves with systems nobody marked; the answer is a `MarkedSystemsOutcome`.
+- **`OwnerReading.hasPalette(String, ColourPair)`**: whether an owner still paints in shades `resolvePalette(String)` answered for it earlier, which the overlay cache asks every frame of each owner the map was painted in. The default compares the two answers; a reading that builds a pair per answer overrides it to compare without one, as the faction and alliance readings do.
 - **`ResolvedSystemOwner`**: one system's owner and fill state, the per-system answer an owner source and a holder rule give.
 - **`SystemOwnerResolver.describeSampledRules()`** and **`SystemHolderResolver.describeSampledRules()`**: the live rules a resolver sampled when it opened, written on the line of the batch it serves. A resolver that sampled none answers `SystemOwnerResolver.NO_SAMPLED_RULES`, the default.
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** and **`snapshotFillStates()`**: one system's owner with its fill state, and every system's fill state as the occupancy holds them at the call.

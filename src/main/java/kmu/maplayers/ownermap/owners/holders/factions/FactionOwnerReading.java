@@ -51,6 +51,13 @@ public final class FactionOwnerReading
         return FactionColours.findPalette(SectorFactions.findFaction(sector, ownerId));
     }
 
+    // Off the live faction, as the shades above are.
+    @Override
+    public boolean hasPalette(String ownerId, ColourPair palette) {
+
+        return FactionColours.hasPalette(SectorFactions.findFaction(sector, ownerId), palette);
+    }
+
     @Override
     public String resolveName(String ownerId, OwnerNameFormatChoice nameFormat) {
 
@@ -103,7 +110,7 @@ public final class FactionOwnerReading
     @Override
     public Color resolveUnownedColour() {
 
-        return FactionColours.resolveNeutralColour(sector);
+        return FactionColours.resolveBaseColour(SectorFactions.findFaction(sector, Factions.NEUTRAL));
     }
 
     // Independent's own two shades, which the tier darkens into the receded backdrop so it sits below

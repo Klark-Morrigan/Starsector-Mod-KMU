@@ -154,7 +154,31 @@ public final class OwnerMapClusterFixtures {
             ownerBySystemKey,
             ownerBySystemKey.keySet(),
             Set.of(),
-            ownerSource);
+            ownerSource,
+            OwnerReadingFake.createAnsweringNothing());
+    }
+
+    /**
+     * The same clusters painted by a stated owner reading, for a case about what a later frame asks
+     * that reading about the shades the build was painted in.
+     *
+     * @param ownerBySystemId who holds each system
+     * @param reading         the owner reading the build retains
+     * @return a live clusters, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersReadBy(
+            Map<String, SystemOwner> ownerBySystemId,
+            OwnerReading reading) {
+
+        var ownerBySystemKey = buildKeyedValues(ownerBySystemId);
+
+        return createClustersUnder(
+            ContentInputsFixtures.createInputsSpotlighting(null), // No owner spotlighted.
+            ownerBySystemKey,
+            ownerBySystemKey.keySet(),
+            Set.of(),
+            new OwnerSourceFake(),
+            reading);
     }
 
     /**
@@ -196,7 +220,8 @@ public final class OwnerMapClusterFixtures {
             buildKeyedValues(ownerBySystemId),
             buildKeyedSystemKeys(inhabitedSystemIds),
             Set.of(),
-            ownerSource);
+            ownerSource,
+            OwnerReadingFake.createAnsweringNothing());
     }
 
     /**
@@ -250,7 +275,8 @@ public final class OwnerMapClusterFixtures {
             buildKeyedValues(ownerBySystemId),
             buildKeyedSystemKeys(inhabitedSystemIds),
             buildKeyedSystemKeys(spotlitPresenceSystemIds),
-            ownerSource);
+            ownerSource,
+            OwnerReadingFake.createAnsweringNothing());
     }
 
     /**
@@ -293,19 +319,21 @@ public final class OwnerMapClusterFixtures {
             ownerBySystemKey,
             ownerBySystemKey.keySet(),
             Set.of(),
-            ownerSource);
+            ownerSource,
+            OwnerReadingFake.createAnsweringNothing());
     }
 
     // The one construction every builder above lands on, differing only in the picks it was baked
-    // under, who is where and the source the build retains. Held in one place so a slot no builder
-    // varies - the inert theme, the stand-in view - cannot come to read one way through one entry
-    // point and another through the next.
+    // under, who is where, and the source and reading the build retains. Held in one place so a slot
+    // no builder varies - the inert theme, the stand-in view - cannot come to read one way through one
+    // entry point and another through the next.
     private static OwnerMapClusters createClustersUnder(
             ContentInputs contentInputs,
             Map<SystemKey, SystemOwner> ownerBySystemKey,
             Set<SystemKey> inhabitedSystemKeys,
             Set<SystemKey> spotlitPresenceSystemKeys,
-            OwnerSource ownerSource) {
+            OwnerSource ownerSource,
+            OwnerReading reading) {
 
         return new OwnerMapClusters(
             SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(
@@ -322,7 +350,7 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE), // Presence palette.
                 new ViewReading(
                     mock(OwnerPaintedView.class),
-                    OwnerReadingFake.createAnsweringNothing(),
+                    reading,
                     ownerSource),
                 contentInputs,
                 false)); // No anchor overlay.
