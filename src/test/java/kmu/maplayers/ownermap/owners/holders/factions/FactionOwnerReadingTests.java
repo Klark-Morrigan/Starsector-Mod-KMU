@@ -90,55 +90,6 @@ final class FactionOwnerReadingTests {
     }
 
     @Nested
-    class HasPalette {
-
-        // The shades the build was painted in, still authored on the faction, so the map owes no
-        // redraw.
-        @Test
-        void isTrueForTheShadesTheFactionStillPaintsIn() {
-
-            // ARRANGE
-            var reading = new FactionOwnerReading(buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK));
-
-            // ACT
-            var actualHasPalette = reading.hasPalette(HEGEMONY, new ColourPair(BRIGHT, DARK));
-
-            // ASSERT
-            assertThat(actualHasPalette)
-                .isTrue();
-        }
-
-        // The faction was recoloured since, as setting the player faction's colours does, so the
-        // map has to be redrawn.
-        @Test
-        void isFalseOnceTheFactionIsRecoloured() {
-
-            // ARRANGE
-            var reading = new FactionOwnerReading(buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK));
-
-            // ACT
-            var actualHasPalette = reading.hasPalette(HEGEMONY, new ColourPair(DARK, BRIGHT));
-
-            // ASSERT
-            assertThat(actualHasPalette)
-                .isFalse();
-        }
-
-        // A faction gone from the sector answers no shades, so no shades is what it still paints
-        // in.
-        @Test
-        void isTrueForNoShadesOfAFactionThatIsGone() {
-
-            // ACT
-            var actualHasPalette = new FactionOwnerReading(mock(SectorAPI.class)).hasPalette("vanished", null);
-
-            // ASSERT
-            assertThat(actualHasPalette)
-                .isTrue();
-        }
-    }
-
-    @Nested
     class ResolveName {
 
         @Test

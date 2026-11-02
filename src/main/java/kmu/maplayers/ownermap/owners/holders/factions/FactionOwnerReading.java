@@ -51,13 +51,6 @@ public final class FactionOwnerReading
         return FactionColours.findPalette(SectorFactions.findFaction(sector, ownerId));
     }
 
-    // Off the live faction, as the shades above are.
-    @Override
-    public boolean hasPalette(String ownerId, ColourPair palette) {
-
-        return FactionColours.hasPalette(SectorFactions.findFaction(sector, ownerId), palette);
-    }
-
     @Override
     public String resolveName(String ownerId, OwnerNameFormatChoice nameFormat) {
 

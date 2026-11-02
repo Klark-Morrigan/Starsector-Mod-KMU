@@ -10,24 +10,18 @@ import kmu.maplayers.ownermap.render.rebuild.PaintedPalettes.OwnerPalette;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins what a build is sampled as having painted in - each distinct owner once, the spotlit footprint
- * under the picked owner - and how a frame finds that a shade has moved since, through each owner's
- * own comparison.
- *
- * <p>The reading is a mock calling the interface's own comparison where a case does not stub it, so
- * a recolour is a moved answer from {@link OwnerReading#resolvePalette}, as it is for a layer that
- * does not override the comparison.
+ * under the picked owner - and how a frame finds that a shade has moved since: a recolour is a moved
+ * answer from the reading the build was painted by.
  */
 final class PaintedPalettesTests {
 
@@ -57,7 +51,7 @@ final class PaintedPalettesTests {
     @BeforeEach
     void stubTheShadesTheBuildWasPaintedIn() {
 
-        readingMock = mock(OwnerReading.class, Mockito.CALLS_REAL_METHODS);
+        readingMock = mock(OwnerReading.class);
 
         when(readingMock.resolvePalette(HEGEMONY_ID))
             .thenReturn(HEGEMONY_PALETTE);
@@ -159,22 +153,6 @@ final class PaintedPalettesTests {
             // ASSERT
             assertThat(actualHasMoved)
                 .isTrue();
-        }
-
-        // The walk asks through each owner's own comparison, so a layer that compares without
-        // building a pair is answered by that comparison.
-        @Test
-        void asksEachOwnerThroughTheReadingsComparison() {
-
-            // ARRANGE
-            var paintedPalettes = sampleHegemonyAndTriTachyon();
-
-            // ACT
-            paintedPalettes.hasAnyPaletteMoved();
-
-            // ASSERT
-            verify(readingMock).hasPalette(HEGEMONY_ID, HEGEMONY_PALETTE);
-            verify(readingMock).hasPalette(TRITACHYON_ID, TRITACHYON_PALETTE);
         }
 
         @Test

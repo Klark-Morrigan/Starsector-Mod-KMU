@@ -98,8 +98,7 @@ final class OwnerMapBuildLedgerTests {
     private OwnerPaintedViewFake viewFake;
     private OwnerMapBuildLedger ledger;
 
-    // The reading a build was painted by. A mock calling the interface's own comparison, so a
-    // recolour is a moved answer from resolvePalette, as it is for a layer that does not override it.
+    // The reading a build was painted by, so a recolour is a moved answer from resolvePalette.
     private OwnerReading readingMock;
 
     @BeforeEach
@@ -130,7 +129,7 @@ final class OwnerMapBuildLedgerTests {
                 preferences.uninhabitedOutline(),
                 preferences.filterRecede()));
 
-        readingMock = mock(OwnerReading.class, Mockito.CALLS_REAL_METHODS);
+        readingMock = mock(OwnerReading.class);
 
         when(readingMock.resolvePalette(HEGEMONY_ID))
             .thenReturn(HEGEMONY_PALETTE);

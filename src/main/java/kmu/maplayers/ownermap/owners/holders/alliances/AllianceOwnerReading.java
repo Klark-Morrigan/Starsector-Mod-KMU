@@ -56,13 +56,6 @@ public final class AllianceOwnerReading
         return factions.resolvePalette(grouping.resolveColourFactionId(ownerId));
     }
 
-    // Asked of the colour faction, for the reason the shades are.
-    @Override
-    public boolean hasPalette(String ownerId, ColourPair palette) {
-
-        return factions.hasPalette(grouping.resolveColourFactionId(ownerId), palette);
-    }
-
     // An alliance reads by its own name; a lone faction by its own, so it never drifts between the
     // groupings it can be folded under.
     @Override

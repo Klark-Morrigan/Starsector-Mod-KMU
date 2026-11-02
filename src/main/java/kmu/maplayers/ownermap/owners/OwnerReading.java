@@ -8,7 +8,6 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
 import java.awt.Color;
-import java.util.Objects;
 
 /**
  * Everything the owner-map tier asks about an owner, answered by the layer that paints by it: the
@@ -37,22 +36,6 @@ public interface OwnerReading {
      *         sector, which the surfaces asking drop rather than colour in a stand-in
      */
     ColourPair resolvePalette(String ownerId);
-
-    /**
-     * Whether an owner still paints in shades {@link #resolvePalette} answered for it earlier.
-     *
-     * <p>Asked every frame the map is open, of each owner the standing build painted, so a recolour
-     * redraws the map rather than waiting for something else to. A layer reading its shades off
-     * something that allocates a pair overrides this to compare without building one.
-     *
-     * @param ownerId the owner to ask about
-     * @param palette the shades {@link #resolvePalette} answered earlier, or null where it answered
-     *                none
-     * @return whether {@link #resolvePalette} would answer equal shades now, or none again
-     */
-    default boolean hasPalette(String ownerId, ColourPair palette) {
-        return Objects.equals(resolvePalette(ownerId), palette);
-    }
 
     /**
      * The label an owner reads by on the map and in the picker.

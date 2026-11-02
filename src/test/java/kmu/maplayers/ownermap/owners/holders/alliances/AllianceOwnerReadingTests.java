@@ -98,45 +98,6 @@ final class AllianceOwnerReadingTests {
     }
 
     @Nested
-    class HasPalette {
-
-        // An alliance paints in its leading member's shades, so those are what it is asked about.
-        @Test
-        void isTrueForTheLeadingMembersShades() {
-
-            // ARRANGE
-            var reading = new AllianceOwnerReading(
-                buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK),
-                ALLIANCE_GROUPING);
-
-            // ACT
-            var actualHasPalette = reading.hasPalette(ALLIANCE, new ColourPair(BRIGHT, DARK));
-
-            // ASSERT
-            assertThat(actualHasPalette)
-                .isTrue();
-        }
-
-        // The leading member was recoloured since, so every system the alliance holds has to be
-        // redrawn.
-        @Test
-        void isFalseOnceTheLeadingMemberIsRecoloured() {
-
-            // ARRANGE
-            var reading = new AllianceOwnerReading(
-                buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK),
-                ALLIANCE_GROUPING);
-
-            // ACT
-            var actualHasPalette = reading.hasPalette(ALLIANCE, new ColourPair(DARK, BRIGHT));
-
-            // ASSERT
-            assertThat(actualHasPalette)
-                .isFalse();
-        }
-    }
-
-    @Nested
     class ResolveName {
 
         // An alliance's ID is not a faction ID, so its label comes from the grouping - the

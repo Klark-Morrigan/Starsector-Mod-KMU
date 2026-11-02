@@ -87,30 +87,12 @@ record PaintedPalettes(
     /**
      * Whether any shade the build painted in has moved since.
      *
-     * <p>Asked every frame the map is open. Each owner is asked through
-     * {@link OwnerReading#hasPalette}, so the walk builds no pair; the recede shades are the one
-     * pair a frame builds.
+     * <p>Asked every frame the map is open, at a getter or two per owner the build painted.
      *
      * @return whether the reading now answers a shade other than the one painted
      */
     boolean hasAnyPaletteMoved() {
-
-        if (!Objects.equals(reading.resolveUnownedColour(), unownedColour)
-                || !Objects.equals(reading.resolveRecedePalette(), recedePalette)) {
-
-            return true;
-        }
-
-        // Indexed rather than iterated, so the per-frame walk allocates no iterator.
-        for (var index = 0; index < ownerPalettes.size(); index++) {
-
-            var ownerPalette = ownerPalettes.get(index);
-            if (!reading.hasPalette(ownerPalette.ownerId(), ownerPalette.palette())) {
-                return true;
-            }
-        }
-
-        return false;
+        return findMovedPalette() != null;
     }
 
     /**
@@ -120,32 +102,47 @@ record PaintedPalettes(
      */
     String describeMovedPalette() {
 
+        var movedPalette = findMovedPalette();
+        return movedPalette == null
+            ? NO_MOVED_PALETTE
+            : movedPalette.describeMove();
+    }
+
+    // The one walk both questions above are answered off, so the line a rebuild writes cannot name a
+    // shade other than the one that owed it. Formats only what it finds moved, which is the rare frame.
+    private MovedPalette findMovedPalette() {
+
         var liveUnownedColour = reading.resolveUnownedColour();
         if (!Objects.equals(liveUnownedColour, unownedColour)) {
 
-            return "unowned from " + formatColour(unownedColour)
-                + " to " + formatColour(liveUnownedColour);
+            return new MovedPalette(
+                "unowned",
+                formatColour(unownedColour),
+                formatColour(liveUnownedColour));
         }
 
         var liveRecedePalette = reading.resolveRecedePalette();
         if (!Objects.equals(liveRecedePalette, recedePalette)) {
 
-            return "recede from " + formatPalette(recedePalette)
-                + " to " + formatPalette(liveRecedePalette);
+            return new MovedPalette(
+                "recede",
+                formatPalette(recedePalette),
+                formatPalette(liveRecedePalette));
         }
 
         for (var ownerPalette : ownerPalettes) {
 
-            var ownerId = ownerPalette.ownerId();
-            if (!reading.hasPalette(ownerId, ownerPalette.palette())) {
+            var livePalette = reading.resolvePalette(ownerPalette.ownerId());
+            if (!Objects.equals(livePalette, ownerPalette.palette())) {
 
-                return "owner " + ownerId
-                    + " from " + formatPalette(ownerPalette.palette())
-                    + " to " + formatPalette(reading.resolvePalette(ownerId));
+                return new MovedPalette(
+                    "owner " + ownerPalette.ownerId(),
+                    formatPalette(ownerPalette.palette()),
+                    formatPalette(livePalette));
             }
         }
 
-        return NO_MOVED_PALETTE;
+        return null;
     }
 
     // A pair as its two shades, primary first.
@@ -173,5 +170,16 @@ record PaintedPalettes(
     record OwnerPalette(
         String ownerId,
         ColourPair palette) {
+    }
+
+    // One shade found moved, written out for the rebuild's line.
+    private record MovedPalette(
+        String subject,
+        String paintedShades,
+        String liveShades) {
+
+        String describeMove() {
+            return subject + " from " + paintedShades + " to " + liveShades;
+        }
     }
 }

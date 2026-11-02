@@ -83,7 +83,6 @@
 - **`ClusterAnchor.computeFittedBox()`**：落点的拟合框，即名称拟合时预留的框，是名称拟合范围的唯一表述。
 - **`Label.applyFade(float)`**：只在地图的不透明度变化时为文字重新着色。
 - **`OwnerMapRefreshStrategy`**：无需重建的帧如何处理此后被标记的星系，由图层声明。它是只有两个常量的枚举：默认的 `INCREMENTAL` 把它们并入屏幕上的地图；`FULL_REBUILD` 把它们留给下一帧的重建，供某一星系的结果会随未被标记的星系而变化的规则使用；结果为 `MarkedSystemsOutcome`。
-- **`OwnerReading.hasPalette(String, ColourPair)`**：所有者是否仍以 `resolvePalette(String)` 先前给出的配色绘制；叠加层缓存每帧都会对地图绘制时用到的每个所有者询问一次。默认实现比较前后两次结果；每次作答都要构造一对颜色的读取会覆盖它，改为不构造新的一对来比较，势力与联盟的读取即是如此。
 - **`ResolvedSystemOwner`**：单个星系的所有者及其填充状态，即所有者来源和持有规则逐星系给出的结果。
 - **`SystemOwnerResolver.describeSampledRules()`** 和 **`SystemHolderResolver.describeSampledRules()`**：解析器打开时采样的实时规则，写在它所服务的批次的日志行上。未采样任何规则的解析器给出默认的 `SystemOwnerResolver.NO_SAMPLED_RULES`。
 - **`SystemOccupancy.readResolvedOwnerOf(SystemKey)`** 和 **`snapshotFillStates()`**：单个星系的所有者及其填充状态，以及调用时其中记录的每个星系的填充状态。
