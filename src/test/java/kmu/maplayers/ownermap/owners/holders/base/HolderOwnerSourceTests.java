@@ -12,13 +12,13 @@ import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
-import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
@@ -37,10 +37,11 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
 import static kmu.maplayers.ownermap.ribbon.OwnerRibbonRunsFixtures.STANDARD_RULES;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -90,18 +91,8 @@ final class HolderOwnerSourceTests {
 
     private MockedStatic<DecivilisedColonyHabitation> habitationSettingMock;
 
-    // The layer's whole-sector rule: one held system, one contested and one unfilled.
-    private final HolderProviderFake holderProviderFake = HolderProviderFake.createAnswering(
-        new HolderResolution(
-            Map.of(HELD_SYSTEM, HEGEMONY_OWNER),
-            SystemFillStates.createOf(Map.of(
-                CONTESTED_SYSTEM,
-                FillState.HATCHED,
-                UNFILLED_SYSTEM,
-                FillState.UNFILLED))));
-
-    private final SystemHolderResolveSourceFake holderResolveSourceFake =
-        new SystemHolderResolveSourceFake();
+    private final SystemHolderResolverSourceFake holderResolverSourceFake =
+        new SystemHolderResolverSourceFake();
 
     private MockedStatic<HolderInhabitation> inhabitationMock;
 
@@ -109,6 +100,22 @@ final class HolderOwnerSourceTests {
     private final List<RibbonPlanInputs> plannerInputs = new ArrayList<>();
 
     private final StaticSeams seams = new StaticSeams();
+
+    // The layer's holding rule: one held system, one contested and one unfilled, every other system
+    // the walk lists nobody's.
+    @BeforeEach
+    void stateTheLayersHolding() {
+
+        holderResolverSourceFake.recordHolderOf(
+            HELD_SYSTEM.systemId(),
+            ResolvedSystemOwner.createSolidlyFilledBy(HEGEMONY_OWNER));
+        holderResolverSourceFake.recordHolderOf(
+            CONTESTED_SYSTEM.systemId(),
+            new ResolvedSystemOwner(HEGEMONY_OWNER, FillState.HATCHED));
+        holderResolverSourceFake.recordHolderOf(
+            UNFILLED_SYSTEM.systemId(),
+            new ResolvedSystemOwner(HEGEMONY_OWNER, FillState.UNFILLED));
+    }
 
     @BeforeEach
     void openTheColonySeams() {
@@ -139,9 +146,14 @@ final class HolderOwnerSourceTests {
         @Test
         void refusesAMissingGrouping() {
 
+            // ARRANGE
             var viewMock = stubViewOver(OwnerAffiliation.NONE, inputs -> system -> RibbonPlan.NONE);
 
-            assertThatThrownBy(() -> new HolderOwnerSource(null, viewMock))
+            // ACT
+            var actualThrown = catchThrowable(() -> new HolderOwnerSource(null, viewMock));
+
+            // ASSERT
+            assertThat(actualThrown)
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("grouping");
         }
@@ -149,64 +161,86 @@ final class HolderOwnerSourceTests {
         @Test
         void refusesAMissingHoldingRule() {
 
+            // ARRANGE
             var viewMock = stubViewOver(OwnerAffiliation.NONE, inputs -> system -> RibbonPlan.NONE);
 
-            when(viewMock.resolveHolderProvider())
+            when(viewMock.resolveSystemHolderResolverSource())
                 .thenReturn(null);
 
-            assertThatThrownBy(() -> new HolderOwnerSource(HolderGrouping.identity(), viewMock))
+            // ACT
+            var actualThrown = catchThrowable(() -> new HolderOwnerSource(HolderGrouping.identity(), viewMock));
+
+            // ASSERT
+            assertThat(actualThrown)
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("holderProvider");
+                .hasMessage("holderResolverSource");
         }
     }
 
     @Nested
     class ResolveOwners {
 
+        // The walk the rebuild opened is the one every stage shares, so the pass the source opens has
+        // to stand on its index rather than a traversal of its own.
         @Test
         void handsTheLayersRuleAPassOverTheWalksOwnIndex() {
-            // The walk the rebuild opened is the one every stage shares, so the pass the source
-            // opens has to stand on its index rather than a traversal of its own.
+
+            // ARRANGE
             var walk = buildWalkUnder(MapVisibilityRules.BASE);
+            var source = buildSourceUnder(HolderGrouping.identity());
 
-            buildSourceUnder(HolderGrouping.identity()).resolveOwners(walk, null);
+            // ACT
+            source.resolveOwners(walk, null);
 
-            assertThat(holderProviderFake.readResolvedPasses())
+            // ASSERT
+            assertThat(holderResolverSourceFake.readPassesOpenedOver())
                 .singleElement()
                 .extracting(HolderPass::sectorIndex)
                 .isSameAs(walk.sectorIndex());
         }
 
+        // One sampling of the grouping per rebuild, taken where the view built the source - a pass
+        // folded under a fresh sampling could resolve a fold the reading never named.
         @Test
         void foldsUnderTheGroupingItWasBuiltUnder() {
-            // One sampling of the grouping per rebuild, taken where the view built the source - a
-            // pass folded under a fresh sampling could resolve a fold the reading never named.
+
+            // ARRANGE
             var grouping = HolderGroupingFixture.buildGroupOf(HEGEMONY, PERSEAN);
+            var source = buildSourceUnder(grouping);
 
-            buildSourceUnder(grouping).resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
+            // ACT
+            source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
 
-            assertThat(holderProviderFake.readResolvedPasses())
+            // ASSERT
+            assertThat(holderResolverSourceFake.readPassesOpenedOver())
                 .singleElement()
                 .extracting(HolderPass::grouping)
                 .isSameAs(grouping);
         }
 
+        // The walk carries the visibility rule the cut decided which systems got cells by, so the
+        // owners are resolved for the very sector the standing geometry was cut for.
         @Test
         void readsColoniesUnderTheRuleTheCellsWereCutUnder() {
-            // The walk carries the visibility rule the cut decided which systems got cells by, so
-            // the owners are resolved for the very sector the standing geometry was cut for.
-            buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(GATED_RULES), null);
 
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+
+            // ACT
+            source.resolveOwners(buildWalkUnder(GATED_RULES), null);
+
+            // ASSERT
             assertThat(readFirstResolvedPass().colonyKnowledge().rule())
                 .isEqualTo(GATED_RULES.colonyVisibility());
         }
 
+        // The other half of the colony rule is the layer's own setting rather than the walk's. Every
+        // other case leaves it at the shipped reading, which a pass hard-coding that reading would
+        // match; posed the other way here, the world is nobody's home.
         @Test
         void readsDecivilisedWorldsUnderTheLayersOwnHabitationKnob() {
-            // The other half of the colony rule is the layer's own setting rather than the walk's.
-            // Every other case leaves it at the shipped reading, which a pass hard-coding that
-            // reading would match; posed the other way here, the world is nobody's home.
+
+            // ARRANGE
             habitationSettingMock
                 .when(DecivilisedColonyHabitation::readFromLunaSettings)
                 .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_UNPOPULATED);
@@ -216,237 +250,374 @@ final class HolderOwnerSourceTests {
 
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
 
-            buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(new SectorWalk(new SectorPassIndex(sector), MapVisibilityRules.BASE), null);
+            var source = buildSourceUnder(HolderGrouping.identity());
 
-            var habitation = readFirstResolvedPass().readHabitationIn(system);
+            source.resolveOwners(new SectorWalk(new SectorPassIndex(sector), MapVisibilityRules.BASE), null);
 
-            assertThat(habitation.blocIds())
+            // ACT
+            var actualHabitation = readFirstResolvedPass().readHabitationIn(system);
+
+            // ASSERT
+            assertThat(actualHabitation.blocIds())
                 .isEmpty();
-            assertThat(habitation.hasInhabitingColony())
+            assertThat(actualHabitation.hasInhabitingColony())
                 .isFalse();
         }
 
         @Test
         void handsTheLayersRuleTheSpotlitOwner() {
 
-            buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
 
-            assertThat(holderProviderFake.readSelectedBlocIds())
+            // ACT
+            source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+
+            // ASSERT
+            assertThat(holderResolverSourceFake.readSpotlitBlocIdsOpenedUnder())
                 .containsExactly(HEGEMONY);
         }
 
+        // The holding is the layer's per-system rule asked of every system the walk lists, so a
+        // rebuild draws each system as a batch re-deriving it would.
         @Test
         void answersWithTheLayersOwnersAndFillExceptions() {
 
-            var owners = buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+            var expectedFillStateBySystemKey = Map.of(
+                CONTESTED_SYSTEM,
+                FillState.HATCHED,
+                UNFILLED_SYSTEM,
+                FillState.UNFILLED);
 
-            assertThat(owners.ownerBySystemKey())
-                .containsExactly(Map.entry(HELD_SYSTEM, HEGEMONY_OWNER));
-            assertThat(owners.fillStates().getNonSolidFillStateBySystemKey())
-                .containsEntry(CONTESTED_SYSTEM, FillState.HATCHED);
-            assertThat(owners.fillStates().getNonSolidFillStateBySystemKey())
-                .containsEntry(UNFILLED_SYSTEM, FillState.UNFILLED);
+            // ACT
+            var actualOwners = source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
+
+            // ASSERT
+            assertThat(actualOwners.ownerBySystemKey())
+                .containsOnly(
+                    Map.entry(HELD_SYSTEM, HEGEMONY_OWNER),
+                    Map.entry(CONTESTED_SYSTEM, HEGEMONY_OWNER),
+                    Map.entry(UNFILLED_SYSTEM, HEGEMONY_OWNER));
+            assertThat(actualOwners.fillStates().getNonSolidFillStateBySystemKey())
+                .isEqualTo(expectedFillStateBySystemKey);
         }
 
+        // Off one pass, the holding and the inhabitation cannot disagree about a colony the
+        // habitation rule admits.
         @Test
         void readsInhabitationOffThePassTheHoldingWasResolvedOver() {
-            // Off one pass, the holding and the inhabitation cannot disagree about a colony the
-            // habitation rule admits.
-            var owners = buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
 
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+
+            // ACT
+            var actualOwners = source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
+
+            // ASSERT
             inhabitationMock.verify(
                 () -> HolderInhabitation.readInhabitedSystemKeys(same(readFirstResolvedPass())));
 
-            assertThat(owners.inhabitedSystemKeys())
+            assertThat(actualOwners.inhabitedSystemKeys())
                 .containsExactlyInAnyOrder(HELD_SYSTEM, UNHELD_SETTLED_SYSTEM);
         }
 
+        // Presence spares a cell nobody holds, so a system somebody holds is never asked about: the
+        // read walks the sector to find its candidates, and an answer that decides nothing is a walk
+        // paid for nothing.
         @Test
         void asksPresenceOnlyOfTheInhabitedSystemsNobodyHolds() {
-            // Presence spares a cell nobody holds, so a system somebody holds is never asked about:
-            // the read walks the sector to find its candidates, and an answer that decides nothing
-            // is a walk paid for nothing.
-            var owners = buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+
+            // ACT
+            var actualOwners = source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+
+            // ASSERT
             inhabitationMock.verify(() -> HolderInhabitation.findSpotlitPresenceSystemKeys(
                 same(readFirstResolvedPass()),
                 eq(HEGEMONY),
                 eq(Set.of(UNHELD_SETTLED_SYSTEM))));
 
-            assertThat(owners.spotlitPresenceSystemKeys())
+            assertThat(actualOwners.spotlitPresenceSystemKeys())
                 .containsExactly(UNHELD_SETTLED_SYSTEM);
         }
 
+        // The counts the resolve found, reported where the profiler sees them: none is a volume of
+        // work its duration divides by, and the row is read against what the readers beneath it
+        // walked.
         @Test
         void namesWhatTheHoldingResolveFound() {
-            // The counts the resolve found, reported where the profiler sees them: none is a volume
-            // of work its duration divides by, and the row is read against what the readers beneath
-            // it walked.
-            var capture = RecordedCapture.recordWhile(() -> buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null));
 
-            assertThat(capture.findNode(RESOLVE_HOLDERS_SECTION).getWorstCall().getTag())
-                .isEqualTo("owned=1 filtering=false contested=1 unfilled=1");
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+            var expectedTag = "owned=3 filtering=false contested=1 unfilled=1";
+
+            // ACT
+            var capture = RecordedCapture.recordWhile(
+                () -> source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null));
+            var actualTag = capture.findNode(RESOLVE_HOLDERS_SECTION).getWorstCall().getTag();
+
+            // ASSERT
+            assertThat(actualTag)
+                .isEqualTo(expectedTag);
         }
 
+        // A filtered resolve walks the spotlit bloc's presence as well, so its duration is read
+        // against a different volume of work and the row has to say which kind it was.
         @Test
         void namesTheHoldingResolveAsFilteringUnderASpotlight() {
-            // A filtered resolve walks the spotlit bloc's presence as well, so its duration is read
-            // against a different volume of work and the row has to say which kind it was.
-            var capture = RecordedCapture.recordWhile(() -> buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY));
 
-            assertThat(capture.findNode(RESOLVE_HOLDERS_SECTION).getWorstCall().getTag())
-                .isEqualTo("owned=1 filtering=true contested=1 unfilled=1");
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+            var expectedTag = "owned=3 filtering=true contested=1 unfilled=1";
+
+            // ACT
+            var capture = RecordedCapture.recordWhile(
+                () -> source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY));
+            var actualTag = capture.findNode(RESOLVE_HOLDERS_SECTION).getWorstCall().getTag();
+
+            // ASSERT
+            assertThat(actualTag)
+                .isEqualTo(expectedTag);
         }
 
+        // Both scans report identically, which is what one shared helper is for.
         @Test
         void namesWhatEachSystemScanSelected() {
-            // Both scans report identically, which is what one shared helper is for.
-            var capture = RecordedCapture.recordWhile(() -> buildSourceUnder(HolderGrouping.identity())
-                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY));
 
-            assertThat(capture.findNode(FIND_INHABITED_SECTION).getWorstCall().getTag())
-                .isEqualTo("systems=2");
-            assertThat(capture.findNode(FIND_SPOTLIT_PRESENCE_SECTION).getWorstCall().getTag())
-                .isEqualTo("systems=1");
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+            var expectedInhabitedTag = "systems=2";
+            var expectedPresenceTag = "systems=1";
+
+            // ACT
+            var capture = RecordedCapture.recordWhile(
+                () -> source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY));
+            var actualInhabitedTag = capture.findNode(FIND_INHABITED_SECTION).getWorstCall().getTag();
+            var actualPresenceTag = capture.findNode(FIND_SPOTLIT_PRESENCE_SECTION).getWorstCall().getTag();
+
+            // ASSERT
+            assertThat(actualInhabitedTag)
+                .isEqualTo(expectedInhabitedTag);
+            assertThat(actualPresenceTag)
+                .isEqualTo(expectedPresenceTag);
         }
     }
 
     @Nested
-    class OpenSystemResolve {
+    class OpenSystemResolver {
 
+        // One walk, one pass: a resolver asked after the whole-sector answer over the same walk
+        // re-derives off the very pass that answer read.
         @Test
-        void opensTheLayersResolveOverThePassTheWholeSectorAnswerUsed() {
-            // One walk, one pass: a resolve asked after the whole-sector answer over the same walk
-            // re-derives off the very pass that answer read.
+        void opensTheLayersResolverOverThePassTheWholeSectorAnswerUsed() {
+
+            // ARRANGE
             var source = buildSourceUnder(HolderGrouping.identity());
             var walk = buildWalkUnder(MapVisibilityRules.BASE);
 
             source.resolveOwners(walk, null);
-            source.openSystemResolve(walk, null);
 
-            assertThat(holderResolveSourceFake.readPassesOpenedOver())
-                .singleElement()
+            // ACT
+            source.openSystemResolver(walk, null);
+
+            // ASSERT
+            assertThat(readLastOpenedPass())
                 .isSameAs(readFirstResolvedPass());
         }
 
+        // A batch's walk is a later reading of the sector, so the pass the rebuild read must not
+        // answer for it.
         @Test
         void opensAFreshPassForAnotherWalk() {
-            // A batch's walk is a later reading of the sector, so the pass the rebuild read must not
-            // answer for it.
+
+            // ARRANGE
             var source = buildSourceUnder(HolderGrouping.identity());
             var batchWalk = buildWalkUnder(MapVisibilityRules.BASE);
 
             source.resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
-            source.openSystemResolve(batchWalk, null);
 
-            assertThat(holderResolveSourceFake.readPassesOpenedOver())
-                .singleElement()
+            // ACT
+            source.openSystemResolver(batchWalk, null);
+
+            // ASSERT
+            assertThat(readLastOpenedPass())
                 .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::sectorIndex)
                 .isSameAs(batchWalk.sectorIndex());
         }
 
+        // The walk keeps one pass per source, so a second source - another sampling of the grouping -
+        // never folds under the first one's.
         @Test
         void opensAPassOfItsOwnBesideAnotherSourceOverTheSameWalk() {
-            // The walk keeps one pass per source, so a second source - another sampling of the
-            // grouping - never folds under the first one's.
+
+            // ARRANGE
             var walk = buildWalkUnder(MapVisibilityRules.BASE);
             var otherGrouping = HolderGroupingFixture.buildGroupOf(HEGEMONY, PERSEAN);
+            var otherSource = buildSourceUnder(otherGrouping);
 
             buildSourceUnder(HolderGrouping.identity()).resolveOwners(walk, null);
-            buildSourceUnder(otherGrouping).openSystemResolve(walk, null);
 
-            assertThat(holderResolveSourceFake.readPassesOpenedOver())
-                .singleElement()
+            // ACT
+            otherSource.openSystemResolver(walk, null);
+
+            // ASSERT
+            assertThat(readLastOpenedPass())
                 .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::grouping)
                 .isSameAs(otherGrouping);
         }
 
+        // The layer's rule decides how a held system fills in the same breath as who holds it, so the
+        // batch's resolver hands its answer on whole. One that rebuilt the answer from the holder alone
+        // would fold a contested or claimed system solid, which a solid answer could not catch.
         @Test
-        void resolvesTheOwnerThroughTheLayersOwnResolve() {
+        void answersTheLayersOwnHolderWithItsFillStateIntact() {
 
-            holderResolveSourceFake.recordHolderOf("corvus", HEGEMONY_OWNER);
+            // ARRANGE
+            var expectedResolved = new ResolvedSystemOwner(HEGEMONY_OWNER, FillState.UNFILLED);
 
-            var resolve = buildSourceUnder(HolderGrouping.identity())
-                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), null);
+            holderResolverSourceFake.recordHolderOf(
+                "corvus",
+                new ResolvedSystemOwner(HEGEMONY_OWNER, FillState.UNFILLED));
 
-            assertThat(resolve.resolveOwnerOf(buildSystem("corvus")))
-                .isEqualTo(HEGEMONY_OWNER);
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), null);
+
+            // ACT
+            var actualResolved = resolver.resolveOwnerOf(buildSystem("corvus"));
+
+            // ASSERT
+            assertThat(actualResolved)
+                .isEqualTo(expectedResolved);
         }
 
+        // The batch re-derives a marked system as the standing build painted it, so the spotlight
+        // that build was painted under reaches the layer's own per-system rule.
+        @Test
+        void opensTheLayersResolverUnderTheSpotlitOwnerItWasOpenedUnder() {
+
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
+
+            // ACT
+            source.openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+
+            // ASSERT
+            assertThat(holderResolverSourceFake.readSpotlitBlocIdsOpenedUnder())
+                .containsExactly(HEGEMONY);
+        }
+
+        // The same projection the whole-sector scan classified by, over the batch's own pass.
         @Test
         void answersInhabitationOffTheBatchesPass() {
-            // The same projection the whole-sector scan classified by, over the batch's own pass.
+
+            // ARRANGE
             var system = buildSystem("corvus");
 
             inhabitationMock
                 .when(() -> HolderInhabitation.isSystemInhabited(any(), same(system)))
                 .thenReturn(true);
 
-            var resolve = buildSourceUnder(HolderGrouping.identity())
-                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), null);
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), null);
 
-            assertThat(resolve.isSystemInhabited(system))
+            // ACT
+            var actualIsInhabited = resolver.isSystemInhabited(system);
+
+            // ASSERT
+            assertThat(actualIsInhabited)
                 .isTrue();
+
             inhabitationMock.verify(() -> HolderInhabitation.isSystemInhabited(
-                same(holderResolveSourceFake.readPassesOpenedOver().get(0)),
+                same(holderResolverSourceFake.readPassesOpenedOver().get(0)),
                 same(system)));
         }
 
         @Test
         void answersPresenceUnderTheSpotlitOwnerItWasOpenedUnder() {
 
+            // ARRANGE
             var system = buildSystem("hybrasil");
 
             inhabitationMock
                 .when(() -> HolderInhabitation.isBlocPresentIn(any(), eq(HEGEMONY), same(system)))
                 .thenReturn(true);
 
-            var resolve = buildSourceUnder(HolderGrouping.identity())
-                .openSystemResolve(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
-            assertThat(resolve.isSpotlitOwnerPresentIn(system))
+            // ACT
+            var actualIsPresent = resolver.isSpotlitOwnerPresentIn(system);
+
+            // ASSERT
+            assertThat(actualIsPresent)
                 .isTrue();
+        }
+
+        // The tier cannot name a layer's rules, so the batch's line reads them through the resolver;
+        // the habitation half samples nothing, so the layer's own resolver is the whole answer.
+        @Test
+        void answersTheRulesTheLayersResolverSampled() {
+
+            // ARRANGE
+            holderResolverSourceFake.recordSampledRules("layer rules");
+
+            var resolver = buildSourceUnder(HolderGrouping.identity())
+                .openSystemResolver(buildWalkUnder(MapVisibilityRules.BASE), null);
+
+            // ACT
+            var actualRules = resolver.describeSampledRules();
+
+            // ASSERT
+            assertThat(actualRules)
+                .isEqualTo("layer rules");
         }
     }
 
     @Nested
     class ResolveRibbonPlanner {
 
+        // A bake in the same frame as the build counts off that build's pass rather than paying a
+        // second habitation fold over the walk it already shares.
         @Test
         void countsOffThePassTheOwnersWereResolvedOver() {
-            // A bake in the same frame as the build counts off that build's pass rather than paying
-            // a second habitation fold over the walk it already shares.
+
+            // ARRANGE
             var source = buildSourceUnder(HolderGrouping.identity());
             var walk = buildWalkUnder(MapVisibilityRules.BASE);
 
             source.resolveOwners(walk, null);
+
+            // ACT
             source.resolveRibbonPlanner(walk, RULES);
 
+            // ASSERT
             assertThat(plannerInputs)
                 .singleElement()
                 .extracting(RibbonPlanInputs::pass)
                 .isSameAs(readFirstResolvedPass());
         }
 
+        // Who stands together is a second reading beside the fold: allies painted apart still band
+        // as allies, so the bake judges by the affiliation the source was built with rather than the
+        // grouping the counts fold under.
         @Test
         void judgesContestsAgainstTheAffiliationItWasBuiltUnder() {
-            // Who stands together is a second reading beside the fold: allies painted apart still
-            // band as allies, so the bake judges by the affiliation the source was built with rather
-            // than the grouping the counts fold under.
+
+            // ARRANGE
             OwnerAffiliation allied = (first, second) -> !first.equals(second);
 
-            buildSourceUnder(HolderGrouping.identity(), allied)
-                .resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
+            var source = buildSourceUnder(HolderGrouping.identity(), allied);
 
+            // ACT
+            source.resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
+
+            // ASSERT
             assertThat(plannerInputs.get(0).affiliation())
                 .isSameAs(allied);
             assertThat(plannerInputs.get(0).grouping())
@@ -456,9 +627,13 @@ final class HolderOwnerSourceTests {
         @Test
         void handsTheLayersPlannerTheRulesTheBakeSampled() {
 
-            buildSourceUnder(HolderGrouping.identity())
-                .resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
+            // ARRANGE
+            var source = buildSourceUnder(HolderGrouping.identity());
 
+            // ACT
+            source.resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
+
+            // ASSERT
             assertThat(plannerInputs.get(0).rules())
                 .isSameAs(RULES);
         }
@@ -466,14 +641,17 @@ final class HolderOwnerSourceTests {
         @Test
         void answersWithThePlannerTheLayerBuilt() {
 
+            // ARRANGE
             var planner = (SystemRibbonPlanner) system -> RibbonPlan.NONE;
+            var source = new HolderOwnerSource(
+                HolderGrouping.identity(),
+                stubViewOver(OwnerAffiliation.NONE, inputs -> planner));
 
-            var answered = new HolderOwnerSource(
-                    HolderGrouping.identity(),
-                    stubViewOver(OwnerAffiliation.NONE, inputs -> planner))
-                .resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
+            // ACT
+            var actualPlanner = source.resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
 
-            assertThat(answered)
+            // ASSERT
+            assertThat(actualPlanner)
                 .isSameAs(planner);
         }
     }
@@ -488,10 +666,19 @@ final class HolderOwnerSourceTests {
         return new HolderOwnerSource(grouping, stubViewOver(affiliation, this::recordPlannerInputs));
     }
 
-    // The first pass the layer's whole-sector rule was handed, which every other read in a case is
-    // compared against.
+    // The first pass the layer's rule was opened over, which every other read in a case is compared
+    // against.
     private HolderPass readFirstResolvedPass() {
-        return holderProviderFake.readResolvedPasses().get(0);
+        return holderResolverSourceFake.readPassesOpenedOver().get(0);
+    }
+
+    // The pass the layer's rule was last opened over: a batch's, where a case opens one after the
+    // rebuild.
+    private HolderPass readLastOpenedPass() {
+
+        var openedPasses = holderResolverSourceFake.readPassesOpenedOver();
+
+        return openedPasses.get(openedPasses.size() - 1);
     }
 
     // The layer's band planner: records what it was handed, and counts nothing.
@@ -510,20 +697,27 @@ final class HolderOwnerSourceTests {
 
         when(viewMock.resolveContestAffiliation())
             .thenReturn(affiliation);
-        when(viewMock.resolveHolderProvider())
-            .thenReturn(holderProviderFake);
-        when(viewMock.resolveSystemHolderResolveSource())
-            .thenReturn(holderResolveSourceFake);
+        when(viewMock.resolveSystemHolderResolverSource())
+            .thenReturn(holderResolverSourceFake);
         when(viewMock.resolveRibbonPlanner(any()))
             .thenAnswer(invocation -> plannerSource.apply(invocation.getArgument(0)));
 
         return viewMock;
     }
 
-    // A walk over no sector: every read beneath the source is stood in for, so only which walk and
-    // which rule reach it matter.
+    // A walk over a sector listing the four systems the cases name, with nothing in them: the
+    // holding is the layer's rule and the colony scans are stood in for, so only which systems,
+    // which walk and which rule reach them matter.
     private static SectorWalk buildWalkUnder(MapVisibilityRules rules) {
-        return new SectorWalk(new SectorPassIndex(null), rules);
+
+        var sector = SectorOwnershipFixtures.buildSectorWithSystems(
+            List.of(),
+            listSystemMarkets(HELD_SYSTEM.systemId()),
+            listSystemMarkets(UNHELD_SETTLED_SYSTEM.systemId()),
+            listSystemMarkets(CONTESTED_SYSTEM.systemId()),
+            listSystemMarkets(UNFILLED_SYSTEM.systemId()));
+
+        return new SectorWalk(new SectorPassIndex(sector), rules);
     }
 
     private static StarSystemAPI buildSystem(String systemId) {

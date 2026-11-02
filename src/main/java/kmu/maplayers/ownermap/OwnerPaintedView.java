@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -49,31 +50,31 @@ public interface OwnerPaintedView {
     String getSegmentLabelKey();
 
     /**
-     * A revision fingerprint folding every live input this view samples, folded into the
-     * drawables' content token so a change to any of them forces a rebuild even when no
-     * setting moved. A view composes it from its own sources ({@link
-     * kmlib.math.hashing.Fingerprints#compute}), so its number of live inputs can grow
-     * without widening this contract. A view sampling nothing live folds no sources and returns a
-     * constant, never triggering a rebuild on its own. This is what lets the shared renderer
-     * invalidate on a view's live data without naming any concrete view - each view declares its
-     * own fingerprint.
+     * The revisions of every live input this view samples, which the map's rebuild and the picker's
+     * memo compare against what they were built under, so a change to any of them forces a rebuild
+     * even when no setting moved. A view stamps each of its own sources in a fixed order, so its
+     * number of live inputs can grow without widening this contract. A view sampling nothing live
+     * answers {@link RevisionStamp#EMPTY}, never triggering a rebuild on its own. This is what lets
+     * the shared renderer invalidate on a view's live data without naming any concrete view.
      *
-     * <p>The player's own preferences are not folded here: the bake samples those with every other
-     * setting and folds them in as values, so a flip that leaves a preference where it was rebuilds
+     * <p>A stamp rather than one int folded from the revisions, since two different readings can
+     * fold to one int and skip the rebuild.
+     *
+     * <p>The player's own preferences are not stamped here: the bake samples those with every other
+     * setting and compares them as values, so a flip that leaves a preference where it was rebuilds
      * nothing.
      *
      * <p>The board arrives as an argument because a view is a stateless strategy every sector's
-     * machinery shares, while the counters it folds are one sector's: a view resolving a board of
+     * machinery shares, while the counters it reads are one sector's: a view resolving a board of
      * its own would answer one sector's ask off another sector's revisions, which is a wrong number
-     * rather than a stale one - the drawing stands as it was and no signal can move the token that
+     * rather than a stale one - the drawing stands as it was and no signal can move the stamp that
      * would rebuild it.
      *
-     * @param board the refresh board of the sector this ask is about, whose revisions the view
-     *              folds
-     * @return this view's content fingerprint over {@code board}; a constant for a view with no
-     *         live inputs
+     * @param board the refresh board of the sector this ask is about, whose revisions the view reads
+     * @return this view's revisions over {@code board}, in a fixed order; {@link RevisionStamp#EMPTY}
+     *         for a view with no live inputs
      */
-    int getContentRevision(MapLayerRefreshBoard board);
+    RevisionStamp readContentRevisions(MapLayerRefreshBoard board);
 
     /**
      * This view's two answers about its owners for one rebuild: the {@link OwnerReading} every
@@ -169,7 +170,7 @@ public interface OwnerPaintedView {
      * The sidebar body grows downward to fit whatever rows a view adds, so a view opts into its own
      * controls without any layout knowing which view asked.
      *
-     * <p>The panel arrives as an argument for the reason the board does on {@link #getContentRevision}:
+     * <p>The panel arrives as an argument for the reason the board does on {@link #readContentRevisions}:
      * a view is a stateless strategy every sector's machinery shares, so a control it builds has no
      * sector of its own to raise on and no screen of its own to write under.
      *

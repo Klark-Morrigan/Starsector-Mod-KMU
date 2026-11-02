@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.render.hover;
 
+import kmlib.cache.memo.IdentityMemo;
+
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.PreviewHighlightGeometry;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -54,6 +56,12 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     // Held rather than resolved per frame: the assembly retains what it built for the previewed
     // set, so a pointer resting on one row re-clips and re-tessellates nothing.
     private final PreviewHighlightGeometry geometry = new PreviewHighlightGeometry();
+
+    // The assembly's view of the draw lists, keyed on the clusters it reads. Kept for the same
+    // reason: the assembly compares each cell's loops by identity, and only a source that outlives
+    // the frame hands back the same loops while the build stands.
+    private final IdentityMemo<OwnerMapClusters, OwnerMapHoverHighlightSource> highlightSourceMemo =
+        new IdentityMemo<>();
 
     /**
      * @param machinery      the machinery installed on the sector whose map this draws over, holding
@@ -137,7 +145,7 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
 
         return new PreviewHighlightPaint(
             geometry.resolveHighlightFor(
-                new OwnerMapHoverHighlightSource(clusters),
+                highlightSourceMemo.resolveValue(clusters, OwnerMapHoverHighlightSource::new),
                 previewedOwnerId,
                 presentSystemKeys),
             colour);
@@ -156,12 +164,11 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     // cannot colour is one neither surface paints.
     private Color resolveShadeOf(OwnerMapClusters clusters, String ownerId) {
 
-        // The placeholder a failed first build stands behind resolved no reading, and an owner with no
-        // reading to ask has no shade to burn.
-        var buildInputs = clusters.getBuildInputs();
-        var palette = buildInputs.wasBuilt()
-            ? buildInputs.getViewReading().reading().resolvePalette(ownerId)
-            : null;
+        var palette = clusters
+            .getBuildInputs()
+            .getViewReading()
+            .reading()
+            .resolvePalette(ownerId);
 
         return palette == null
             ? null

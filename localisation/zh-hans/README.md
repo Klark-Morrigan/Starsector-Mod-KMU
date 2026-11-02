@@ -46,6 +46,7 @@ so read both for the full picture.
     - [Systems](#systems)
     - [Scoring](#scoring)
     - [Drawing](#drawing)
+    - [The void between systems](#the-void-between-systems)
     - [The sidebar](#the-sidebar)
     - [In the changelog: the map and its controls](#in-the-changelog-the-map-and-its-controls)
     - [In the changelog: code](#in-the-changelog-code)
@@ -250,6 +251,7 @@ which every KM mod's shares.
 | English | 简体中文 | Note |
 | --- | --- | --- |
 | Arrange Map Layers | 排列地图图层 | 排列, to put in order, before 地图图层 |
+| Diplomatic Map | 外交地图 | 外交, diplomacy, with 地图 as in 政治地图, since it is a layer |
 | info-layer | 信息图层 | from 图层: a layer that shows information |
 | load a save | 读取存档 | from vanilla's 读取最近的存档 |
 | map layers | 地图图层 | also drawn on the intel screen's map, hence 地图 rather than 星图 |
@@ -405,7 +407,7 @@ So a word of one axis never stands in for another:
 | border | 边界 | the plain word; the outer and inner borders add 国界 and 省界 |
 | border gore | 边界地狱 | the players' word for tangled borders |
 | band path (the ring a cell's band would run along, as its dev overlay draws it) | 色带路径 | 色带, the band, with 路径, a path: the way a band would go round its cell |
-| border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
+| border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | 边界, a border, with 描绘, to draw a line along an outline: the overlay draws each border as each stage traced it |
 | cell | 单元 | one system's area on the map, never a UI control |
 | cluster (a run of one owner's systems, and the name drawn over it) | 区域 | a region, since the run reads as one area on the map |
 | fill | 填充 | the usual graphics word |
@@ -423,6 +425,24 @@ So a word of one axis never stands in for another:
 | ring (the loop inside a cell's border a band runs along) | 环线 | a closed loop line, as a ring road is; not 圆环, which says round, while a cell's ring follows its polygon; kept apart from 边界, the border itself |
 | solid fill | 实色填充 | 实色, solid colour, before 填充, a fill |
 
+#### The void between systems
+
+The words for filling the empty space between systems one faction dominates.
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| base of operations (where a faction's fleets set out from) | 行动基地 | 行动, operations, with 基地, vanilla's word for a base, as in 军事基地 |
+| bubbly (the map's look where every system is a round cell of its own) | 泡泡状; de-bubblify is 不再像一堆泡泡 | 泡泡, bubbles, the plain picture of round cells side by side |
+| foothold (a faction's colony in a system) | 立足点 | a place to stand on, the usual word for a foothold |
+| fringe (the space beyond the sector's outermost systems) | 边缘地带 | 边缘, the edge, with 地带, a zone |
+| gap (empty space between cells that no cell reaches) | 空隙 | the plain word for a gap between things |
+| out-of-game renderer (the tool the fill is prototyped in) | 游戏外渲染器 | 游戏外, outside the game, with KMLib's 渲染器, a renderer |
+| sector fixture (a sector's data extracted from a save, as a player reads it) | 星域数据快照 | vanilla's 星域 with 数据快照, a data snapshot; kept apart from KMLib's 夹具, the test word, which a player cannot read |
+| shipping lane | 航道 | the plain word for a lane ships keep to |
+| starless void (hyperspace with no star system in it) | 无星虚空 | 无星, starless, with 虚空, the void |
+| wedge (a narrow empty space between two adjacent cells) | 楔形缝隙 | 楔形, wedge-shaped, with 缝隙, a narrow gap; kept apart from 空隙, a wider gap |
+| zone of control (what a cell stands for: the space a faction's foothold reaches) | 控制区 | 控制, control, with 区, a zone, the wargame word; not 势力范围, whose 势力 reads as a faction; kept apart from 主导, dominance |
+
 #### The sidebar
 
 | English | 简体中文 | Note |
@@ -432,6 +452,7 @@ So a word of one axis never stands in for another:
 | Full / Short / No (faction names) | 全称 / 简称 / 无 | the usual words for a full and a short name |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |
 | Name, Domination, Presence, Score, Market size, Claims, Attitude (sort) | 名称, 主导, 存在, 得分, 市场规模, 宣称, 关系 | Attitude follows vanilla's 关系 |
+| pick (a choice made on the sidebar) | 选择 | the plain word for a choice, as in 选择器, the picker it is made in |
 | picker (the sidebar list a bloc is spotlit from) | 选择器 | the usual UI word for a control a choice is made in |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Rest of the sector | 星域其余部分 | vanilla's 星域 with 其余部分, the part remaining |
@@ -449,10 +470,12 @@ So a word of one axis never stands in for another:
 | cursor | 光标 | the usual UI word for the pointer on screen |
 | dev display (an overlay a Dev setting draws over the map) | 调试显示 | 调试, the usual word for debugging, with 显示, a display |
 | frame (one drawing of the screen) | 帧 | the usual graphics word; per frame is 每帧 |
+| fuse (cells of one owner drawn as one territory under one border) | 融合 | the plain word for things merging into one |
 | gate (the switch a smoothing pass runs under) | 开关 | the plain word for a switch, something turned on or off |
 | paint (everything one owner's elements draw from) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
 | paint scheme (the theme and palettes one build styles by) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
 | radio (a row of options with one lit) | 单选框 | the usual UI word for a one-of-many control |
+| real holder (who holds a system with no spotlight up) | 实际持有者 | 实际, actual, with 持有者, a holder: the holder the system has before any spotlight rekeys it |
 | rebuild (the map's drawing worked out again) | 重建 | the usual word for building something again |
 | recede control | 退后控件 | 退后 with 控件, the usual UI word for a control |
 | redraw (the map drawn again) | 重绘 | 重, again, with 绘, to draw; the word earlier entries already use |
@@ -473,32 +496,51 @@ So a word of one axis never stands in for another:
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
 | anchor overlay (the dev overlay showing each name's fitted line) | 锚点叠加层 | 锚点, an anchor, the point a name is fixed to, with 叠加层, an overlay |
 | bake (a band worked out once at rebuild, for every frame to draw) | 烘焙 | the usual graphics word for working something out ahead of drawing it |
+| band layout (which side of the nebulae each sub-layer paints) | 分层布局 | 分层, set out in layers, with 布局, a layout; kept apart from 星云绘制顺序, the player's setting it is read from |
+| base view (what an owner map stands on: its draw lists, the debug overlay, or the placeholder) | 基础画面 | 基础, a base, with 画面, a picture on screen; not 视图, which is a political map view |
+| batch (the systems marked since a frame, re-derived together) | 批次 | the plain word for a batch; kept apart from 绘制批次, a draw run |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
 | call tag (the words a profiled call is written with) | 调用标签 | 调用, a call, with 标签, a tag, KMLib's word for a command's tags |
+| caller (the code that calls a method) | 调用方 | 调用, to call, with 方, a party: the side making the call |
 | carry over (a fit keeping a standing name rather than searching again) | 沿用 | the plain word for carrying something on, as settings and saves carry over |
 | carve (taking the names and a cell's narrow places off a band's ring) | 裁切 | the plain word for cutting something away |
 | cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
 | centreline (the line an anchor overlay's band is drawn along) | 中线 | 中, the middle, with 线, a line: the line down the middle of the band |
+| claim reader (the object a view reads every claim through) | 宣称读取器 | 宣称, a claim, with 读取器, a thing that reads; kept apart from 读取方, whoever reads a value |
+| component (one named part of a record) | 组件 | the usual computing word for a part a thing is built of |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
+| compositor (what stacks an owner map's sub-layers into one picture) | 合成器 | the usual graphics word for what puts layers together into one picture |
 | debug line (a log line written at the debug level) | 调试日志行 | KMLib's 调试 level with its 日志行, a log line |
+| default (the answer a layer names unless its rule needs another) | 默认 | the plain word; kept apart from 默认值, a setting's default value |
+| draw lists (everything a build hands the renderer to paint) | 绘制内容 | 绘制, to draw, with 内容, the contents: what there is to draw |
+| draw record (what one cell draws, baked at rebuild) | 绘制记录 | 绘制, to draw, with 记录, a record |
 | draw run (vertices drawn in one GL call) | 绘制批次 | 绘制, to draw, with 批次, a batch |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
+| enum, constant (a type whose values are a closed set of named constants, and one of them) | 枚举, 常量 | the usual Java words for both |
 | fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | fitted box (the box a name's fit reserved) | 拟合框 | 拟合, a fit, with 框, a box |
+| flip (a marked system changing owner) | 易手 | the plain word for changing hands, as the colony axis already uses it |
+| fold (bringing a batch into the map on screen in place) | 并入 | 并, together, with 入, into: merged into what already stands |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
+| full rebuild (the whole map worked out again, against a batch's fold) | 完整重建 | 完整, whole, with [重建](#in-the-changelog-the-map-and-its-controls), a rebuild |
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
-| instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
+| holding rule (the rule a layer decides who holds a system by) | 持有规则 | 持有, to hold, with 规则, a rule |
 | lane rule (a line dividing an anchor overlay's band between a name's lines) | 行间分隔线 | 行间, between lines of text, with 分隔线, a dividing line; kept apart from 行数, a count of lines, which the rule does not show |
+| live (read as a value stands at the moment it is asked, not a copy taken earlier) | 实时 | the plain word for something happening as it is asked |
+| map (a collection of values looked up by key) | 映射表 | the usual computing word for a key-value map; kept apart from 地图, the map on screen |
+| marked (a system a change flagged to be re-derived) | 已标记 | 已, already, with 标记, to mark |
 | mechanic (what paints a cell, such as the market contest or the claim contest) | 机制 | the plain word for a mechanism, as in 底层机制 above |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
+| owner source (where a layer's owners come from) | 所有者来源 | 所有者, an owner, with 来源, a source |
 | package-private (reachable only from inside its own package) | 包私有 | the usual Java word, 包, a package, with 私有, private |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
 | phase (one part of a profiled loop's turn) | 环节 | a link in a process; kept apart from 阶段, a smoothing stage |
+| placeholder (the base view standing before any build completes, drawing nothing) | 占位画面 | 占位, holding a place, with 画面 as in 基础画面: the picture standing in until a build lands |
 | placement (where a fit put one cluster's name) | 落点 | 落, to land, with 点, a point: where the name came down |
 | plan (a band's runs, before they are laid round its ring) | 计划 | the plain word for a plan |
 | plan rules (the lengths a band's runs are laid at) | 计划规则 | 计划, a band's plan, with 规则, rules |
@@ -506,23 +548,35 @@ So a word of one axis never stands in for another:
 | port (the interface a feature's own code reaches the game through) | 端口 | the usual word for a port in a ports-and-adapters design |
 | prefix (the part of a profiling row's name before its first dot) | 前缀 | the plain computing word |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
+| projection (a view showing one part of each entry of another collection) | 投影 | the usual computing word for a view over part of each record |
+| raise (a signal moving on a sector's refresh board) | 触发 | the usual computing word for setting off an event |
 | rank (a bloc's place in a mechanic's order) | 排名 | the plain word for a place in a ranking |
+| re-derive (working one system's answer out again) | 重新解析 | 重新, again, with 解析, to resolve |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | reading (one way of taking the room a name takes: its fitted box or its drawn words) | 读法 | 读, to read, with 法, a way; kept apart from 读取, the act of reading something off |
+| refill (a marked system's fill state moving under the owner it had) | 填充变化 | 填充, a fill, with 变化, a change |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
+| refresh strategy (what a frame owing no rebuild does with marked systems) | 刷新策略 | 刷新, to refresh, with 策略, a strategy: a choice of how something is done |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
+| release (what a cache drops when the machinery holding it goes) | 释放 | the usual computing word for giving held memory back |
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
 | reset hook (a call that empties held state back to its start) | 重置钩子 | 重置, to reset, with 钩子, a hook, the usual computing word for a call others attach to |
 | resolver (a function answering one value per owner, such as a name's shade) | 解析函数 | 解析, to resolve, with 函数, a function |
+| resolver (the object a batch re-derives its marked systems through) | 解析器 | 解析, to resolve, with 器, the usual suffix for a thing that does a job; kept apart from 解析函数, a function answering per owner |
+| restyle (a marked system's cell drawing differently while its owner stays) | 样式变化 | 样式, a style, with 变化, a change |
+| sample (reading a live input once, for a whole rebuild or batch) | 采样 | the usual word for taking one reading of something that moves |
 | sealed type (a type whose every case is named where it is declared) | 密封类型 | the usual Java word, 密封, sealed |
 | seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
+| standing build (the build on screen, which a batch folds into) | 现有构建 | 现有, existing, with 构建, a build |
 | stroke (a band's runs turned into triangles) | 描边 | the usual graphics word for stroking a line |
+| sub-layer (one of the fills, borders, bands and names an owner map stacks) | 子图层 | 子, a part of, with 图层, a map layer: one layer of the picture inside a map layer |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
 | take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
 | trace (finding a cell's ring at an inset) | 描绘 | to draw a line along an outline, the word border tracing already takes |
+| tracker (what names the signals raised since it was last asked) | 追踪器 | 追踪, to track, with 器, the usual suffix for a thing that does a job |
 | verdict (whether the anchor overlay shows a line as accepted, rejected or unbiased) | 判定 | the plain word for a ruling on something |
 | walk (going round a cell's ring once) | 遍历 | the usual computing word for visiting every part of something; kept apart from 扫描, a sweep of the sector |
 
@@ -586,10 +640,12 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 
 | English | 简体中文 | Note |
 | --- | --- | --- |
+| Cell geometry (a Map - Dev section) | 单元几何 | 单元, a cell, with 几何, geometry |
 | dev settings | 开发设置 | from the Dev tabs, 开发 |
 | Nebula draw order (and its Territory fills, Borders, Presence bands, Faction names) | 星云绘制顺序 (领土填充, 边界, 存在色带, 势力名称) | 星云 with 绘制顺序, the order things are drawn in; the four names are the [drawing](#drawing) words for what each one moves |
 | opacity | 不透明度 | the usual graphics word |
 | profiling | 性能分析 | 性能, performance, with 分析, analysis: the usual computing word |
+| Territory reach (how far a cell extends into empty space) | 领土范围 | 领土, territory, with 范围, the extent it reaches |
 | thickness, width | 粗细, 宽度 | the usual words for a line's weight and a span's width |
 | Visibility overrides (SPOILERS) | 可见性覆盖（剧透） | 覆盖, to override, after 可见性; 剧透, the usual word for a spoiler |
 

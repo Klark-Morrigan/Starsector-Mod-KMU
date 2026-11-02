@@ -13,10 +13,9 @@ import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -25,14 +24,16 @@ import java.util.function.Supplier;
  * The owner source of a layer painting holders: it opens a {@link HolderPass} over the walk the
  * tier hands it, folded by the grouping it was built under, and answers every question the tier
  * asks about owners off that one pass - who holds each system through the layer's own
- * {@link HolderProvider}, who lives where through the pass's habitation, where the spotlit bloc
+ * {@link SystemHolderResolver}, who lives where through the pass's habitation, where the spotlit bloc
  * lives among the unheld, and how a cell's band is counted.
  *
- * <p>What the layer states is the three rules that are its own - the whole-sector holding, the
- * per-system holding and the band planner - beside the grouping every one of them is read under and
- * who stands together in a contest. What this adds is the colony reading none of them should open
- * for itself: one pass per walk, so the holder scan, the habitation scan and the band count read
- * each system once between them, and cannot disagree about a colony the habitation rule admits.
+ * <p>What the layer states is the two rules that are its own - the holding and the band planner -
+ * beside the grouping both are read under and who stands together in a contest. The holding is
+ * stated one system at a time, and this runs it over every system for a rebuild and over the marked
+ * ones for a batch, so the two cannot draw one system differently. What this adds is the colony
+ * reading neither rule should open for itself: one pass per walk, so the holder scan, the
+ * habitation scan and the band count read each system once between them, and cannot disagree about
+ * a colony the habitation rule admits.
  *
  * <p>Built per rebuild, over one sampling of the grouping and the affiliation: a view that reads its grouping live
  * makes a fresh source each rebuild, and the build retains it, so a batch that follows re-derives
@@ -59,8 +60,7 @@ public final class HolderOwnerSource
 
     private final HolderGrouping grouping;
     private final OwnerAffiliation contestAffiliation;
-    private final HolderProvider holderProvider;
-    private final SystemHolderResolveSource holderResolveSource;
+    private final SystemHolderResolverSource holderResolverSource;
     private final HolderPaintedView view;
 
     /**
@@ -78,10 +78,9 @@ public final class HolderOwnerSource
             view.resolveContestAffiliation(),
             "contestAffiliation");
 
-        this.holderProvider = Objects.requireNonNull(view.resolveHolderProvider(), "holderProvider");
-        this.holderResolveSource = Objects.requireNonNull(
-            view.resolveSystemHolderResolveSource(),
-            "holderResolveSource");
+        this.holderResolverSource = Objects.requireNonNull(
+            view.resolveSystemHolderResolverSource(),
+            "holderResolverSource");
     }
 
     /**
@@ -96,28 +95,49 @@ public final class HolderOwnerSource
         var profiler = ActiveProfiler.resolveProfiler();
         var pass = openPassOver(walk);
         var resolution = resolveHolders(profiler, pass, spotlitOwnerId);
-        var inhabitedSystemKeys = measureInhabitedScan(profiler, pass);
+
+        // What stands in each system, read once for the whole pass. Independent of the holding and
+        // deliberately so: the holding answers who this layer gives a system to, and a rule that
+        // admits only some markets leaves inhabited systems with no holder, for reasons the layer's
+        // own holding rule sets. Only this read tells those apart from empty space.
+        var inhabitedSystemKeys = measureSystemScan(
+            profiler,
+            FIND_INHABITED_SECTION,
+            () -> HolderInhabitation.readInhabitedSystemKeys(pass));
+
+        // Where the spotlit bloc is living outside anything this holding attributed to it, so the
+        // factionless cells over its own colonies are spared the recede. Asked only of the inhabited
+        // systems the holding left out: a rule that leaves settled systems unheld can leave the
+        // bloc's own colonies there, and this read is what spares their cells. A rule that resolves
+        // holding through a filtered resolve already keys every system the bloc is present in, so
+        // its leftovers are systems the bloc is absent from and the read comes back empty.
+        var unownedSystemKeys = SystemOwner.selectUnownedSystemKeysAmong(
+            resolution.ownerBySystemKey(),
+            inhabitedSystemKeys);
+
+        var spotlitPresenceSystemKeys = measureSystemScan(
+            profiler,
+            FIND_SPOTLIT_PRESENCE_SECTION,
+            () -> HolderInhabitation.findSpotlitPresenceSystemKeys(
+                pass,
+                spotlitOwnerId,
+                unownedSystemKeys));
 
         return new ResolvedOwners(
             resolution.ownerBySystemKey(),
             resolution.fillStates(),
             inhabitedSystemKeys,
-            measureSpotlitPresenceScan(
-                profiler,
-                pass,
-                spotlitOwnerId,
-                resolution.ownerBySystemKey(),
-                inhabitedSystemKeys));
+            spotlitPresenceSystemKeys);
     }
 
     @Override
-    public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+    public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
 
         var pass = openPassOver(walk);
 
-        return new HolderSystemOwnerResolve(
+        return new HolderSystemOwnerResolver(
             pass,
-            holderResolveSource.openResolveOver(pass),
+            holderResolverSource.openResolverOver(pass, spotlitOwnerId),
             spotlitOwnerId);
     }
 
@@ -147,9 +167,10 @@ public final class HolderOwnerSource
     }
 
     // Who holds each system under this layer's rule, and - under a filter - which of the spotlit
-    // systems are contested. The holder scan walks the whole economy, the priciest content step,
-    // so it is profiled on its own and names what it resolved on the call, which is the reading
-    // its duration has to be judged against.
+    // systems are contested: the layer's per-system rule, opened once and asked of every system. The
+    // holder scan walks the whole economy, the priciest content step, so it is profiled on its own
+    // and names what it resolved on the call, which is the reading its duration has to be judged
+    // against.
     private HolderResolution resolveHolders(
             Profiler profiler,
             HolderPass pass,
@@ -157,7 +178,9 @@ public final class HolderOwnerSource
 
         try (var holdersScope = profiler.open(RESOLVE_HOLDERS_SECTION)) {
 
-            var resolution = holderProvider.resolveHolder(pass, spotlitOwnerId);
+            var resolution = HolderResolution.collectOver(
+                pass,
+                holderResolverSource.openResolverOver(pass, spotlitOwnerId));
 
             holdersScope.tagCall("owned=" + resolution.ownerBySystemKey().size()
                 + " filtering=" + (spotlitOwnerId != null)
@@ -166,41 +189,6 @@ public final class HolderOwnerSource
 
             return resolution;
         }
-    }
-
-    // What stands in each system, read once for the whole pass. Independent of the holding and
-    // deliberately so: the holding answers who this layer gives a system to, and a rule that admits
-    // only some markets leaves inhabited systems with no holder, for reasons the layer's own holding
-    // rule sets. Only this read tells those apart from empty space.
-    private static Set<SystemKey> measureInhabitedScan(Profiler profiler, HolderPass pass) {
-
-        return measureSystemScan(
-            profiler,
-            FIND_INHABITED_SECTION,
-            () -> HolderInhabitation.readInhabitedSystemKeys(pass));
-    }
-
-    // Where the spotlit bloc is living outside anything this holding attributed to it, so the
-    // factionless cells over its own colonies are spared the recede. Asked only of the inhabited
-    // systems the holding left out: a rule that leaves settled systems unheld can leave the bloc's
-    // own colonies there, and this read is what spares their cells. A rule that resolves holding
-    // through a filtered resolve already keys every system the bloc is present in, so its leftovers
-    // are systems the bloc is absent from and the read comes back empty for the cost of the set
-    // arithmetic.
-    private static Set<SystemKey> measureSpotlitPresenceScan(
-            Profiler profiler,
-            HolderPass pass,
-            String spotlitOwnerId,
-            Map<SystemKey, SystemOwner> ownerBySystemKey,
-            Set<SystemKey> inhabitedSystemKeys) {
-
-        return measureSystemScan(
-            profiler,
-            FIND_SPOTLIT_PRESENCE_SECTION,
-            () -> HolderInhabitation.findSpotlitPresenceSystemKeys(
-                pass,
-                spotlitOwnerId,
-                SystemOwner.selectUnownedSystemKeysAmong(ownerBySystemKey, inhabitedSystemKeys)));
     }
 
     // One profiled sector scan yielding a set of system keys, naming what it selected on the call.

@@ -7,7 +7,7 @@ import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.compatibility.GameReachReporter;
-import kmlib.starsector.scripts.InstalledTransientScript;
+import kmlib.starsector.scripts.everyframe.InstalledTransientScript;
 import kmlib.starsector.ui.map.MapIconLayering;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;

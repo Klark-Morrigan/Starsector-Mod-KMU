@@ -174,7 +174,7 @@ fills,
 bands,
 and labels identically.
 The sources themselves are [below](#the-ownership-sources);
-the seam they answer is [ownership resolution](../ownermap/owners/holders/README.md),
+what they answer through is [the holder owners](../ownermap/owners/holders/README.md),
 and the three fill states are [the split fill](../ownermap/render/clusters/README.md#the-split-fill-solid-hatched-unfilled).
 
 The fourth input, the owner reading, is where the views differ least.
@@ -202,7 +202,7 @@ What the three views answer alike is stated once,
 on `PoliticalHolderView`,
 which every view of this layer extends:
 
-- the alliance set's revision as the content revision they repaint on;
+- the alliance set's revision as the content revisions they repaint on;
 - the live alliance set as who stands together in a contest,
   whatever a view paints as one bloc;
 - the holder categories;
@@ -288,62 +288,58 @@ which a picker of painters opts into and any other picker leaves alone.
 Every view of this layer paints holders,
 so each states its holding rule to the tier's [holder source](../ownermap/owners/holders/README.md),
 which answers the tier's owner seams off one colony pass.
-Three providers are those rules,
+A rule is stated one system at a time.
+A rebuild asks it of every system,
+and an incremental refresh of the systems a colony event marked,
+so a refreshed system lands the bloc and the fill state the rebuild drew.
+Three resolvers are those rules,
 all of them this layer's own and all in `holders`:
 
-- **`DominanceHolderProvider`** -
-  held systems from the live economy.
+- **`DominanceSystemHolderResolver`** -
+  held systems from the live economy,
+  under one weighting rule sampled per rebuild or batch.
   No view resolves through it bare:
-  the source below wraps it for the Factions and Alliances views.
+  the resolver below wraps it for the Factions and Alliances views.
   Off filter,
   each system goes to its single strongest owner,
   with no exceptions,
   by [the market contest](dominance/README.md#who-holds-a-system)'s rule.
-  Under a spotlight it switches to [the presence-aware resolver](dominance/README.md#under-a-spotlight):
+  Under a spotlight it switches to [the presence-aware contest](dominance/README.md#under-a-spotlight):
   the chosen bloc stays drawn wherever it holds a colony -
   solid where it wins,
   hatched where it does not.
-- **`ClaimAugmentedHolderProvider`** -
-  the Factions and Alliances views' source,
+- **`ClaimAugmentedSystemHolderResolver`** -
+  the Factions and Alliances views' rule,
   through `DominancePaintedView`.
-  It takes held systems from the source above,
-  then folds in each claimed-but-unheld system as an *unfilled* extension of its claimant.
+  It asks the resolver above first,
+  then reads the claim of a system the contest leaves unheld,
+  as an *unfilled* extension of its claimant.
   The claim carries the same bloc key as that faction's held systems,
   so the geometry fuses held and claimed cells into one bordered cluster.
-  A system already held keeps its solid fill:
+  A system already held keeps its fill,
+  and its claim is never read:
   the held signal wins.
   Under a spotlight,
   a claim shares the fate of its bloc -
   the spotlit bloc's claims stay at full strength,
   every other bloc's claims fade with its held cells.
-- **`ClaimsHolderProvider`** -
-  the Claims view's source.
+- **`ClaimSystemHolderResolver`** -
+  the Claims view's rule.
   Every claimed system is painted *solid* in its claimant's colours,
   with nothing held-derived.
   Under a spotlight the chosen bloc's claims stay at full strength and every other claimant's fade,
-  the same trade the source above makes.
+  the same trade the resolver above makes.
   A system has one claimant,
   so nothing is ever contested or unfilled here:
   the resolution has no exceptions and takes the solid fast path on or off filter.
 
-Both claim-reading sources get their claims from [`FilteredClaims`](claims/README.md#under-a-spotlight),
-so which claims a spotlight moves is answered once rather than once per source.
-Each reads them through the claim reader source its view hands it,
+Both claim-reading resolvers get their claims from [`FilteredClaimReader`](claims/README.md#under-a-spotlight),
+so which claims a spotlight moves is answered once rather than once per resolver.
+Each opens the pass's `BlocSpotlight` once
+and hands it to every half it reads through.
+Each reads claims through the claim reader source its view hands it,
 the one the view's bands and hover box read through too;
 see [one reader per pass](claims/README.md#one-reader-per-pass).
-
-An incremental refresh re-derives one system at a time,
-through a per-system resolve each view states,
-also in `holders`.
-The two dominance views state `DominanceSystemHolderResolve`:
-the market contest asked of one system over the batch's own pass,
-under one weighting rule sampled per batch,
-so a single-system refresh lands the bloc the bulk pass would have.
-The Claims view states `ClaimSystemHolderResolve`:
-the claimant of one system,
-read through the same claim reader and folded and coloured by the same rule
-`SectorClaims` applies to the whole sector,
-so a colony event in a claimed system keeps it on its claimant.
 
 ## Where each part lives
 
@@ -355,7 +351,7 @@ Each holds its rule,
 its whole-sector stats and the sort modes over them,
 its band ranking and its hover box.
 The views,
-the holder sources and the held-or-claimed band planner sit beside the mechanics rather than inside one,
+the holder resolvers and the held-or-claimed band planner sit beside the mechanics rather than inside one,
 in `views`,
 `holders` and `ribbon`:
 they are this layer's answers to the tier's seams,
@@ -369,14 +365,14 @@ The build closes `dominance` and `claims` to each other.
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
 | `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), and the contest-painted views' (`DominancePaintedView`) |
-| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
+| `holders` | the holding rules the views state to the tier's holder source: the three resolvers of [the ownership sources](#the-ownership-sources), `DominanceSystemHolderResolver`, `ClaimAugmentedSystemHolderResolver` and `ClaimSystemHolderResolver` |
 | [`ribbon`](ribbon/README.md) | the band planner of the views that fold claims onto held dominance (`HeldOrClaimedSystemRibbonPlanner`) |
 | [`dominance`](dominance/README.md) | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`), stated in [the market contest](dominance/README.md#what-a-colony-weighs) |
 | `dominance/standings` | one hovered system's ranked standings, per group and per faction |
 | [`dominance/ribbon`](dominance/ribbon/README.md) | the band ranking on a cell the contest painted |
 | [`dominance/tooltip`](dominance/tooltip/README.md) | the domination box |
-| [`claims`](claims/README.md) | the claim mechanic: `SectorClaims`, `FilteredClaims`, `PassClaimReaders`, the stats and sort modes |
+| [`claims`](claims/README.md) | the claim mechanic: `SectorClaims`, `FilteredClaimReader`, `PassClaimReaders`, the stats and sort modes |
 | [`claims/ribbon`](claims/ribbon/README.md) | the band ranking on a claims-layer cell |
 | [`claims/tooltip`](claims/tooltip/README.md) | the claims box |
 | [`tooltip`](tooltip/README.md) | what both box families share: `PoliticalMapCellTooltip` with the decree read it heads every box with, `CoreTerritoryHeading`, the contest wording, the status line (`SystemStatusRow`), and the colony lines - a system's colony reading (`SystemColonyReading`) with the qualifier and the observation notes it lays on them |
@@ -391,8 +387,8 @@ That tier is not this layer's,
 which is why it is a package of its own,
 and the build keeps it from naming this one.
 
-- **[Ownership resolution](../ownermap/owners/holders/README.md)** -
-  the per-view ownership seam
+- **[Holder owners](../ownermap/owners/holders/README.md)** -
+  what a view painting holders states
   and what lands in each fill state.
 - **[Cluster fills and borders](../ownermap/render/clusters/README.md)** -
   how cells become each bloc's coloured cluster,
@@ -467,6 +463,12 @@ all of them where `PoliticalMapLayer` builds its renderer:
   which systems seed a cell.
   This layer seeds one for every system the map draws,
   and states it rather than inheriting it.
+- **`OwnerMapRefreshStrategy.INCREMENTAL`**,
+  the tier's -
+  what a frame owing no rebuild does with the systems a change marked.
+  This layer takes the tier's default and folds them into the map on screen,
+  because the market contest weighs every colony of the sector,
+  and a colony change should not walk the economy again.
 
 Who owns each system is not handed to the renderer at all:
 every view answers it through `resolveViewReading`,

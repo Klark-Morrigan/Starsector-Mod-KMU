@@ -1,0 +1,77 @@
+package kmu.maplayers.ownermap.owners;
+
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+/**
+ * One batch's reading of the sector, answering the three questions an incremental refresh asks of
+ * a single marked system: who owns it and how its fill draws, whether anything stands in it, and
+ * whether the spotlit owner is among what does.
+ *
+ * <p>The per-system half of {@link OwnerSource}, and apart from it because the two answer
+ * different costs. The source resolves the whole sector at once, which is what a rebuild wants; an
+ * incremental refresh re-derives only the handful of systems a change marked, and asking the
+ * whole-sector resolve for each of them would pay for the sector once per marked system.
+ *
+ * <p>All three questions travel on one resolver because the incremental path spends all three:
+ * who owns a marked system is settled by whatever rule the layer paints by, while whether anybody
+ * lives there and whether the spotlit owner is among them are questions the layer answers off the
+ * same reading. Handed apart, a caller could answer them off different readings of one sector and
+ * redraw a cell against an owner some other walk found.
+ *
+ * <p>Opened per batch rather than held, since it stands on one reading of the sector and a
+ * reading outlives nothing: the batch that opened it is the batch entitled to it.
+ */
+public interface SystemOwnerResolver {
+
+    /** What {@link #describeSampledRules} answers for a resolver that sampled no live rule. */
+    String NO_SAMPLED_RULES = "none";
+
+    /**
+     * Who paints one star system, and how its fill draws, under whatever rule the layer paints by.
+     *
+     * <p>The fill state is the one the source's whole-sector answer would give the system, so a
+     * re-derived system lands hatched or unfilled exactly where a rebuild would draw it so.
+     *
+     * @param system the system to re-derive; null for a system the sector no longer lists, which
+     *               nobody owns
+     * @return the owner and fill state to record; {@link ResolvedSystemOwner#UNOWNED} where nobody
+     *         owns it and the cell draws unowned
+     */
+    ResolvedSystemOwner resolveOwnerOf(StarSystemAPI system);
+
+    /**
+     * Whether anything stands in one star system, by the same reading the source's whole-sector
+     * answer classifies inhabitation by - so a per-system re-derive cannot take a system off the
+     * map that the rebuild put on it.
+     *
+     * @param system the system to read; null yields false
+     * @return true when something stands in the system
+     */
+    boolean isSystemInhabited(StarSystemAPI system);
+
+    /**
+     * Whether the spotlit owner this resolver was opened under lives in one star system.
+     *
+     * <p>Asked only of systems the batch found nobody owns, since presence is what spares an
+     * unowned cell the recede: a system somebody owns already draws in that owner's cluster, so
+     * where the pick also lives there changes nothing.
+     *
+     * @param system the system to read; null yields false
+     * @return true when the spotlit owner is present in the system; always false off spotlight
+     */
+    boolean isSpotlitOwnerPresentIn(StarSystemAPI system);
+
+    /**
+     * The live rules this resolver sampled when it opened, for the line the batch writes.
+     *
+     * <p>A batch can re-derive a system under a rule the player has moved since the standing build,
+     * and the log is the only place that shows which rule the batch used. The tier cannot name a
+     * layer's rules, so the resolver describes them.
+     *
+     * @return the sampled rules in readable form; {@link #NO_SAMPLED_RULES} for a resolver that
+     *         sampled none
+     */
+    default String describeSampledRules() {
+        return NO_SAMPLED_RULES;
+    }
+}

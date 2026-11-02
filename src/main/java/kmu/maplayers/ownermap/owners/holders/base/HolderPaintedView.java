@@ -48,20 +48,13 @@ public interface HolderPaintedView
     OwnerAffiliation resolveContestAffiliation();
 
     /**
-     * This view's whole-sector holding rule.
+     * Where this view's holding rule is opened from. The rule is stated one system at a time: a
+     * rebuild asks it of every system and an incremental batch of the marked ones, so a refreshed
+     * cell cannot part from the rebuild around it.
      *
-     * @return the provider resolving each system's holder for one rebuild
+     * @return the source a rebuild or a batch opens its holder resolver from
      */
-    HolderProvider resolveHolderProvider();
-
-    /**
-     * Where this view's per-system holding rule is opened from, for an incremental batch. It has to
-     * land the holder {@link #resolveHolderProvider} would, or a refreshed cell parts from the
-     * rebuild around it.
-     *
-     * @return the source a batch opens its holder resolve from
-     */
-    SystemHolderResolveSource resolveSystemHolderResolveSource();
+    SystemHolderResolverSource resolveSystemHolderResolverSource();
 
     /**
      * The mechanic this view's cells are counted by for their presence bands.

@@ -28,18 +28,66 @@ final class SectorWalkTests {
         @Test
         void refusesAMissingIndex() {
 
+            // ARRANGE
+            var expectedMessage = "sectorIndex";
+
+            // ACT, ASSERT
             assertThatThrownBy(() -> new SectorWalk(null, MapVisibilityRules.BASE))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("sectorIndex");
+                .hasMessage(expectedMessage);
         }
 
+        // Standing the fog in for them would turn the opener's fault into a map that quietly draws
+        // less.
         @Test
         void refusesMissingRules() {
-            // Standing the fog in for them would turn the opener's fault into a map that quietly
-            // draws less.
+
+            // ARRANGE
+            var expectedMessage = "visibilityRules";
+
+            // ACT, ASSERT
             assertThatThrownBy(() -> new SectorWalk(new SectorPassIndex(null), null))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("visibilityRules");
+                .hasMessage(expectedMessage);
+        }
+    }
+
+    @Nested
+    class OpenOver {
+
+        // The rebuild and the batch each open their walk through here, so a walk opened over a
+        // sector has to answer that sector and the rules it was opened under.
+        @Test
+        void walksTheSectorUnderTheRulesItWasOpenedWith() {
+
+            // ARRANGE
+            var sectorMock = mock(SectorAPI.class);
+
+            // ACT
+            var actualWalk = SectorWalk.openOver(sectorMock, MapVisibilityRules.BASE);
+
+            // ASSERT
+            assertThat(actualWalk.sector())
+                .isSameAs(sectorMock);
+            assertThat(actualWalk.visibilityRules())
+                .isSameAs(MapVisibilityRules.BASE);
+        }
+
+        // An index answers the sector as it stood when the index was made, so two walks sharing one
+        // would have the second read the sector the first saw.
+        @Test
+        void opensEachWalkOverAnIndexOfItsOwn() {
+
+            // ARRANGE
+            var sectorMock = mock(SectorAPI.class);
+
+            // ACT
+            var actualFirstWalk = SectorWalk.openOver(sectorMock, MapVisibilityRules.BASE);
+            var actualSecondWalk = SectorWalk.openOver(sectorMock, MapVisibilityRules.BASE);
+
+            // ASSERT
+            assertThat(actualSecondWalk.sectorIndex())
+                .isNotSameAs(actualFirstWalk.sectorIndex());
         }
     }
 
@@ -49,16 +97,29 @@ final class SectorWalkTests {
         @Test
         void answersTheSectorItsIndexWasOpenedOver() {
 
+            // ARRANGE
             var sectorMock = mock(SectorAPI.class);
+            var walk = new SectorWalk(new SectorPassIndex(sectorMock), MapVisibilityRules.BASE);
 
-            assertThat(new SectorWalk(new SectorPassIndex(sectorMock), MapVisibilityRules.BASE).sector())
+            // ACT
+            var actualSector = walk.sector();
+
+            // ASSERT
+            assertThat(actualSector)
                 .isSameAs(sectorMock);
         }
 
         @Test
         void answersNoSectorForAWalkOverNone() {
 
-            assertThat(new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE).sector())
+            // ARRANGE
+            var walk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
+
+            // ACT
+            var actualSector = walk.sector();
+
+            // ASSERT
+            assertThat(actualSector)
                 .isNull();
         }
     }
@@ -66,48 +127,65 @@ final class SectorWalkTests {
     @Nested
     class ReadReadingOpenedBy {
 
+        // The owners, the per-system answers and the band count of one walk read one reading between
+        // them, so a second ask is answered without opening again.
         @Test
         void opensOnceForOneOpener() {
-            // The owners, the per-system answers and the band count of one walk read one reading
-            // between them, so a second ask is answered without opening again.
+
+            // ARRANGE
             var walk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
             var opener = new Object();
             var openings = new AtomicInteger();
 
-            var first = walk.readReadingOpenedBy(opener, Object.class, () -> {
+            // ACT
+            var actualFirstReading = walk.readReadingOpenedBy(opener, Object.class, () -> {
+
                 openings.incrementAndGet();
                 return new Object();
             });
-            var second = walk.readReadingOpenedBy(opener, Object.class, Object::new);
+            var actualSecondReading = walk.readReadingOpenedBy(opener, Object.class, Object::new);
 
-            assertThat(second).isSameAs(first);
-            assertThat(openings).hasValue(1);
+            // ASSERT
+            assertThat(actualSecondReading)
+                .isSameAs(actualFirstReading);
+            assertThat(openings)
+                .hasValue(1);
         }
 
+        // Two sources sampled under different rules are two readings, whatever their rules say. The
+        // openers compare equal, so a walk keying its readings by equality would hand the second the
+        // first's reading.
         @Test
         void opensApartForTwoOpeners() {
-            // Two sources sampled under different rules are two readings, whatever their rules say.
-            // The openers compare equal, so a walk keying its readings by equality would hand the
-            // second the first's reading.
+
+            // ARRANGE
             var walk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
 
-            var first = walk.readReadingOpenedBy(new EqualOpener(), Object.class, Object::new);
-            var second = walk.readReadingOpenedBy(new EqualOpener(), Object.class, Object::new);
+            // ACT
+            var actualFirstReading = walk.readReadingOpenedBy(new EqualOpener(), Object.class, Object::new);
+            var actualSecondReading = walk.readReadingOpenedBy(new EqualOpener(), Object.class, Object::new);
 
-            assertThat(second).isNotSameAs(first);
+            // ASSERT
+            assertThat(actualSecondReading)
+                .isNotSameAs(actualFirstReading);
         }
 
+        // A reading lives as long as its walk, so the next rebuild never reads this one's.
         @Test
         void opensApartForTwoWalks() {
-            // A reading lives as long as its walk, so the next rebuild never reads this one's.
+
+            // ARRANGE
             var opener = new Object();
+            var firstWalk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
+            var secondWalk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
 
-            var first = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE)
-                .readReadingOpenedBy(opener, Object.class, Object::new);
-            var second = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE)
-                .readReadingOpenedBy(opener, Object.class, Object::new);
+            // ACT
+            var actualFirstReading = firstWalk.readReadingOpenedBy(opener, Object.class, Object::new);
+            var actualSecondReading = secondWalk.readReadingOpenedBy(opener, Object.class, Object::new);
 
-            assertThat(second).isNotSameAs(first);
+            // ASSERT
+            assertThat(actualSecondReading)
+                .isNotSameAs(actualFirstReading);
         }
     }
 

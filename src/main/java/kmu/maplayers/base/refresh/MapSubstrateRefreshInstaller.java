@@ -2,7 +2,7 @@ package kmu.maplayers.base.refresh;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.scripts.SectorScripts;
+import kmlib.starsector.scripts.everyframe.SectorScripts;
 
 import kmu.maplayers.base.visibility.colonies.ColonySightingsPoll;
 

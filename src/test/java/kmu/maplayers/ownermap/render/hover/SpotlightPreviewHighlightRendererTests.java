@@ -2,10 +2,12 @@ package kmu.maplayers.ownermap.render.hover;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.colour.ColourPair;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.KmuMod;
+import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.MapLayerStoreNamespaces;
@@ -18,6 +20,8 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
+import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
@@ -35,6 +39,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -61,6 +66,11 @@ final class SpotlightPreviewHighlightRendererTests {
     // by the frame below, since a preview can only ever light what the map is showing.
     private static final String OWNER_ID = "hegemony";
     private static final String PRESENT_SYSTEM_ID = "corvus";
+
+    // A rival, and a system it holds where the previewed owner is also present, for the set that
+    // spans two owners.
+    private static final String RIVAL_ID = "tritachyon";
+    private static final String RIVAL_HELD_SYSTEM_ID = "hybrasil";
 
     // The previewed owner's own two authored shades, distinct so a case can say which slot the tier
     // pointed at rather than only that some colour came back.
@@ -92,69 +102,86 @@ final class SpotlightPreviewHighlightRendererTests {
         @Test
         void lightsTheHoveredOwnersSystemsInThatOwnersOwnShade() {
 
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isTrue();
-            assertThat(paint.colour())
+            assertThat(actualPaint.colour())
                 .isEqualTo(OWNER_BRIGHT_COLOUR);
         }
 
+        // The resting state of every frame the player is not on the picker, and so the answer
+        // this has to reach without reading a theme or walking a sector.
         @Test
         void lightsNothingWhenThePointerIsOnNoRow() {
-            // The resting state of every frame the player is not on the picker, and so the answer
-            // this has to reach without reading a theme or walking a sector.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // A row is under the pointer and the tier paints, but the walk found that owner in no
+        // system - so there is nothing on the map the preview could trace.
         @Test
         void lightsNothingWhenTheHoveredOwnerIsPresentNowhere() {
-            // A row is under the pointer and the tier paints, but the walk found that owner in no
-            // system - so there is nothing on the map the preview could trace.
+
+            // ARRANGE
             var view = stubViewFinding(OwnerPresenceIndex.EMPTY);
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // The hover is read under the view the frame painted, not under whichever scope last
+        // reported one. An owner ID means what the view that surfaced it says it means, and the
+        // systems behind it are that view's answer - so a preview crossing a view switch would
+        // light one view's set over another view's map.
         @Test
         void lightsNothingForAHoverReportedUnderAnotherViewsScope() {
-            // The hover is read under the view the frame painted, not under whichever scope last
-            // reported one. An owner ID means what the view that surfaced it says it means, and the
-            // systems behind it are that view's answer - so a preview crossing a view switch would
-            // light one view's set over another view's map.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
 
             FilterHoverSlot
                 .resolveHoverSlotIn(machinery)
                 .recordHoveredId(createScopeOfView("other-view"), OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // The view ID is opaque and shared by nobody's agreement, so a foreign layer whose own
+        // picker lists a view under this one's name is a different list: its hovered row names an
+        // owner this view never surfaced, and lighting it would paint that mod's answer here.
         @Test
         void lightsNothingForAHoverReportedByAnotherModsPicker() {
-            // The view ID is opaque and shared by nobody's agreement, so a foreign layer whose own
-            // picker lists a view under this one's name is a different list: its hovered row names an
-            // owner this view never surfaced, and lighting it would paint that mod's answer here.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
 
             FilterHoverSlot
@@ -163,61 +190,126 @@ final class SpotlightPreviewHighlightRendererTests {
                     new PickerScope(MapLayerStoreNamespaces.createStandInNamespace(), VIEW_ID),
                     OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
+        // The same answer the presence bands give such an owner, and for the same reason: an owner
+        // the layer can no longer colour has no shade, and lighting its cells in a stand-in one
+        // would put colour on the map for something the map cannot name.
         @Test
         void lightsNothingWhenTheReadingHasNoShadesForTheHoveredOwner() {
-            // The same answer the presence bands give such an owner, and for the same reason: an owner
-            // the layer can no longer colour has no shade, and lighting its cells in a stand-in one
-            // would put colour on the map for something the map cannot name.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(
                     view,
                     PAINTING_TIER,
                     OwnerReadingFake.createAnsweringNothing(),
                     PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
 
-        @Test
-        void lightsNothingOverThePlaceholderAFailedBuildStandsBehind() {
-            // The placeholder resolved no reading, so there is no shade to ask it for.
-            var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
-            hover(OWNER_ID);
-
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
-                .resolvePreviewPaint(OwnerMapClusters.createEmpty(view));
-
-            assertThat(paint.isPainting())
-                .isFalse();
-        }
-
+        // The player has set the preview to "No color", which is where this feature is switched
+        // off - there being no gate of its own in front of it.
         @Test
         void lightsNothingWhenTheTierPointsAtNoShade() {
-            // The player has set the preview to "No color", which is where this feature is switched
-            // off - there being no gate of its own in front of it.
+
+            // ARRANGE
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
             hover(OWNER_ID);
 
-            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+            // ACT
+            var actualPaint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
                 .resolvePreviewPaint(buildFrameDrawing(
                     view,
                     ThemeFixtures.NO_HIGHLIGHT,
                     PRESENT_SYSTEM_ID));
 
-            assertThat(paint.isPainting())
+            // ASSERT
+            assertThat(actualPaint.isPainting())
                 .isFalse();
         }
+
+        // The assembly compares each cell's loops by identity, so the source it reads them through
+        // has to outlive the frame. One made per frame flattens the loops afresh, and the whole set
+        // is re-tessellated sixty times a second while the pointer rests on one row.
+        @Test
+        void keepsOneHighlightWhileTheFrameStands() {
+
+            // ARRANGE
+            var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
+            hover(OWNER_ID);
+
+            var clusters = buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID);
+            holdCellBy(clusters, PRESENT_SYSTEM_ID, OWNER_ID);
+
+            var renderer = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE);
+
+            // ACT
+            var actualFirstPaint = renderer.resolvePreviewPaint(clusters);
+            var actualSecondPaint = renderer.resolvePreviewPaint(clusters);
+
+            // ASSERT
+            assertThat(actualFirstPaint.highlight())
+                .isNotSameAs(HoverHighlight.NONE);
+            assertThat(actualSecondPaint.highlight())
+                .isSameAs(actualFirstPaint.highlight());
+        }
+
+        // A previewed owner is lit in systems its rivals hold, so one set can span several owners.
+        // The assembly reads each cell's owner's loops in turn every frame, and only loops kept per
+        // owner come back the same while the frame stands.
+        @Test
+        void keepsOneHighlightForASetHeldBySeveralOwners() {
+
+            // ARRANGE
+            var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID, RIVAL_HELD_SYSTEM_ID));
+            hover(OWNER_ID);
+
+            var clusters = buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID, RIVAL_HELD_SYSTEM_ID);
+            holdCellBy(clusters, PRESENT_SYSTEM_ID, OWNER_ID);
+            holdCellBy(clusters, RIVAL_HELD_SYSTEM_ID, RIVAL_ID);
+
+            var renderer = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE);
+
+            // ACT
+            var actualFirstPaint = renderer.resolvePreviewPaint(clusters);
+            var actualSecondPaint = renderer.resolvePreviewPaint(clusters);
+
+            // ASSERT
+            assertThat(actualFirstPaint.highlight())
+                .isNotSameAs(HoverHighlight.NONE);
+            assertThat(actualSecondPaint.highlight())
+                .isSameAs(actualFirstPaint.highlight());
+        }
+    }
+
+    // Hands the cell to the given owner and gives that owner a traced border, so the assembly reads
+    // the owner's loops for it rather than the empty answer an unheld cell gives.
+    private static void holdCellBy(OwnerMapClusters clusters, String cellId, String ownerId) {
+
+        var owner = new SystemOwner(ownerId, new ColourPair(OWNER_BRIGHT_COLOUR, OWNER_DARK_COLOUR));
+
+        clusters
+            .getOccupancy()
+            .recordOwnerOf(buildCellKey(cellId), ResolvedSystemOwner.createSolidlyFilledBy(owner));
+
+        clusters
+            .getStyledClusterGroupByOwnerId()
+            .put(ownerId, OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of(List.of(buildSquareRun()))));
     }
 
     // The scope the sidebar's picker reports a hovered row under: a view's ID under this mod's own
@@ -278,8 +370,18 @@ final class SpotlightPreviewHighlightRendererTests {
             new double[] {0, 100});
     }
 
+    // A border loop round that square, as the baked [x, y, x, y, ...] run a cluster keeps it in.
+    private static float[] buildSquareRun() {
+        return new float[] {
+            -10, -10,
+            110, -10,
+            110, 110,
+            -10, 110};
+    }
+
     // A view whose walk found the stated presence, under the ID the hover is scoped by. The picker
     // half of its read is empty: the preview reads only where an owner was found, never the rows.
+    // It samples nothing live, so the picker memo serves one walk for the whole case.
     //
     // Stubbed through doReturn because the seam answers a wildcarded read, which a when() stub
     // would have to name the captured item type of.
@@ -289,6 +391,9 @@ final class SpotlightPreviewHighlightRendererTests {
 
         when(viewMock.getId())
             .thenReturn(VIEW_ID);
+
+        when(viewMock.readContentRevisions(any()))
+            .thenReturn(RevisionStamp.EMPTY);
 
         doReturn(new OwnerPickerRead<>(ListPicker.empty(), presenceIndex))
             .when(viewMock)

@@ -43,9 +43,8 @@ public enum DecivilisedColonyHabitation {
      * system could be answered one way for half the sector and the other way for the rest, leaving
      * a map nothing on screen explains.
      *
-     * <p>No refresh work rides on it: every KMU settings change advances the revision the owner
-     * map's rebuild decider folds into its content and holding revisions, so a flip already forces
-     * the rebuild that re-reads this.
+     * <p>No refresh work rides on it: every KMU settings change advances the settings revision the
+     * owner map's build ledger compares, so a flip already forces the rebuild that re-reads this.
      *
      * @return the rule the player's live settings ask for
      */

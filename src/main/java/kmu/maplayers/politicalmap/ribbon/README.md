@@ -45,7 +45,7 @@ Shelved under one,
 it would make that mechanic name the other.
 
 So it sits beside them,
-as the holder sources that fold claims onto held dominance do in `holders`.
+as the holder resolver that folds claims onto held dominance does in `holders`.
 The seam is the composition's own and package-private:
 `HeldSystemRibbonPlanner` answers it through a plain public method,
 and the dominance mechanic names nothing of the views it is composed into.

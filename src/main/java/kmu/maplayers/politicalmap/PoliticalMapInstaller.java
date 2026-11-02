@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.listeners.SectorListeners;
-import kmlib.starsector.scripts.SectorScripts;
+import kmlib.starsector.scripts.everyframe.SectorScripts;
 
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.ownermap.FilterSelectionHeal;

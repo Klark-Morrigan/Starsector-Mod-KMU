@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.refresh;
 
-import kmlib.math.hashing.Fingerprints;
+import kmlib.cache.revisions.RevisionStamp;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
@@ -24,20 +24,19 @@ public enum PoliticalMapRefreshSignal implements MapLayerRefreshSignal {
     ALLIANCES;
 
     /**
-     * The fingerprint of the alliance set alone, which is what every view of this layer answers its
-     * content revision with.
+     * The stamp of the alliance set alone, which is what every view of this layer answers its
+     * content revisions with.
      *
-     * <p>Beside the signal rather than on a view, since it is arithmetic over this signal's own
-     * revision.
+     * <p>Beside the signal rather than on a view, since it reads this signal's own revision.
      *
-     * <p>Composed through a fingerprint rather than handed back bare, so a view that grows a second
-     * live input adds a source beside this one instead of changing what it returns.
+     * <p>Answered as a stamp rather than the bare revision, so a view that grows a second live input
+     * appends its revision to this one instead of changing what it returns.
      *
      * @param board the refresh board of the sector this ask is about
-     * @return the content fingerprint of that board's alliance revision
+     * @return the stamp of that board's alliance revision
      */
-    public static int computeAllianceContentRevision(MapLayerRefreshBoard board) {
-        return Fingerprints.compute(() -> board.getRevision(ALLIANCES));
+    public static RevisionStamp readAllianceContentRevisions(MapLayerRefreshBoard board) {
+        return RevisionStamp.of(board.getRevision(ALLIANCES));
     }
 
     @Override

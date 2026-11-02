@@ -17,7 +17,8 @@ import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
-import kmu.maplayers.ownermap.render.OwnerMapCache;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.politicalmap.views.FactionsView;
 
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +30,7 @@ import java.awt.Color;
 import java.util.List;
 
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.render.rebuild.OwnerMapCacheReads.readProductionClustersOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -113,7 +115,8 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
                 preferences.nameFormat(),
                 outlinePreferenceMock,
                 preferences.filterRecede()),
-            CellSeedRule.SEED_DRAWN_SYSTEMS);
+            CellSeedRule.SEED_DRAWN_SYSTEMS,
+            OwnerMapRefreshStrategy.INCREMENTAL);
         cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
     }
 
@@ -125,43 +128,54 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
     @Nested
     class RefreshDrawLists {
 
+        // The frame the map spends nearly all of its life on. Stated first because every case
+        // below is read against it: a rebuild only means something if standing still does not
+        // produce one.
         @Test
         void rebuildsNothingWhileEverySampledPickStandsStill() {
-            // The frame the map spends nearly all of its life on. Stated first because every case
-            // below is read against it: a rebuild only means something if standing still does not
-            // produce one.
-            var standingMap = cache.getClusters();
 
+            // ARRANGE
+            var standingMap = readProductionClustersOf(cache);
+
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getClusters())
+            // ASSERT
+            assertThat(readProductionClustersOf(cache))
                 .isSameAs(standingMap);
         }
 
+        // The counters a pick's flip raises are what the sidebar and the bloc cache repaint on;
+        // they do not decide whether the map is stale. Folded in, a
+        // click that put a pick back where it was would cost a full rebuild, and so would every
+        // click made on the other screen's panel.
         @Test
         void rebuildsNothingWhenTheRefreshCountersBumpWithEveryPickUnmoved() {
-            // The counters a pick's flip raises are what the sidebar and the bloc cache repaint on;
-            // they do not decide whether the map is stale. Folded in, a
-            // click that put a pick back where it was would cost a full rebuild, and so would every
-            // click made on the other screen's panel.
-            var standingMap = cache.getClusters();
+
+            // ARRANGE
+            var standingMap = readProductionClustersOf(cache);
             var board = machinery.resolveRefreshBoard();
 
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
             board.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
+
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getClusters())
+            // ASSERT
+            assertThat(readProductionClustersOf(cache))
                 .isSameAs(standingMap);
         }
 
+        // The other half of the case above. Those counters decide nothing, so the row the
+        // rebuild is measured on is the only place a reader meets them at all - which is what
+        // separates a rebuild a player asked for from one a settings change or a view switch
+        // caused, and the counters are the only record of the first.
         @Test
         void namesTheSidebarFlipsMadeSinceTheLastRebuildOnTheRowThatMeasuresIt() {
-            // The other half of the case above. Those counters decide nothing, so the row the
-            // rebuild is measured on is the only place a reader meets them at all - which is what
-            // separates a rebuild a player asked for from one a settings change or a view switch
-            // caused, and the counters are the only record of the first.
+
+            // ARRANGE
             machinery.resolveRefreshBoard()
                 .requestRefresh(MapLayerCommonRefreshSignal.FILTER);
 
@@ -169,98 +183,118 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
                 .when(() -> FilterSelection.getSelectedIdOf(any()))
                 .thenReturn(HEGEMONY_ID);
 
-            var capture = RecordedCapture.recordWhile(
+            var expectedSignalsTag = "signalsRaised=FILTER";
+
+            // ACT
+            var actualCapture = RecordedCapture.recordWhile(
                 new RecordingProfiler(() -> FIXED_CLOCK_NANOS),
                 () -> cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN));
 
-            assertThat(capture.findNode(REBUILD_DRAWABLES_ROW).getWorstCall().getTag())
-                .contains("signalsRaised=FILTER");
+            // ASSERT
+            assertThat(actualCapture.findNode(REBUILD_DRAWABLES_ROW).getWorstCall().getTag())
+                .contains(expectedSignalsTag);
         }
 
+        // The spotlight decides who holds a cell rather than only how it is coloured, so a pick
+        // is a different map. The second refresh after it must find nothing further owed, or the
+        // pick would be rebuilding the map on every frame it stayed made.
         @Test
         void rebuildsOnceWhenTheSpotlitBlocMoves() {
-            // The spotlight decides who holds a cell rather than only how it is coloured, so a pick
-            // is a different map. The second refresh after it must find nothing further owed, or the
-            // pick would be rebuilding the map on every frame it stayed made.
-            var standingMap = cache.getClusters();
+
+            // ARRANGE
+            var standingMap = readProductionClustersOf(cache);
 
             seams.resolveFilterSelectionSeam()
                 .when(() -> FilterSelection.getSelectedIdOf(any()))
                 .thenReturn(HEGEMONY_ID);
+
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
-            var rebuiltMap = cache.getClusters();
+            var rebuiltMap = readProductionClustersOf(cache);
 
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
+
+            // ASSERT
             assertThat(rebuiltMap)
                 .isNotSameAs(standingMap);
-
-            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
-
-            assertThat(cache.getClusters())
+            assertThat(readProductionClustersOf(cache))
                 .isSameAs(rebuiltMap);
         }
 
+        // The cost of the picks going per screen, and why it is none in the ordinary case: one
+        // cache serves both panels, so a Tab-to-E switch asks it for the other screen's map. With
+        // both panels holding the same picks the sampled reading is the same reading, so the
+        // revision matches and the standing map is handed back untouched.
         @Test
         void rebuildsNothingAcrossAScreenSwitchWithBothPanelsSetAlike() {
-            // The cost of the picks going per screen, and why it is none in the ordinary case: one
-            // cache serves both panels, so a Tab-to-E switch asks it for the other screen's map. With
-            // both panels holding the same picks the sampled reading is the same reading, so the
-            // revision matches and the standing map is handed back untouched.
-            var standingMap = cache.getClusters();
 
+            // ARRANGE
+            var standingMap = readProductionClustersOf(cache);
+
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, OTHER_SCREEN);
 
-            assertThat(cache.getClusters())
+            // ASSERT
+            assertThat(readProductionClustersOf(cache))
                 .isSameAs(standingMap);
         }
 
+        // And what it costs when they differ: the switch is where the rebuild is paid, which is the
+        // same rebuild moving that pick on one panel already costs - the same work at a different
+        // moment, not a new cost. Staying on either panel then owes nothing, which is what keeps a
+        // switch from rebuilding every frame after it.
         @Test
         void rebuildsOncePerSwitchBetweenPanelsSetDifferently() {
-            // And what it costs when they differ: the switch is where the rebuild is paid, which is the
-            // same rebuild moving that pick on one panel already costs - the same work at a different
-            // moment, not a new cost. Staying on either panel then owes nothing, which is what keeps a
-            // switch from rebuilding every frame after it.
+
+            // ARRANGE
             when(outlinePreferenceMock.isOutlineDrawn(OTHER_SCREEN))
                 .thenReturn(true);
 
-            var mapOnTheFirstPanel = cache.getClusters();
+            var mapOnTheFirstPanel = readProductionClustersOf(cache);
+
+            // ACT
+            cache.refreshDrawLists(FactionsView.INSTANCE, OTHER_SCREEN);
+
+            var mapOnTheOtherPanel = readProductionClustersOf(cache);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, OTHER_SCREEN);
 
-            var mapOnTheOtherPanel = cache.getClusters();
-
-            assertThat(mapOnTheOtherPanel)
-                .isNotSameAs(mapOnTheFirstPanel);
-
-            cache.refreshDrawLists(FactionsView.INSTANCE, OTHER_SCREEN);
-
-            assertThat(cache.getClusters())
-                .isSameAs(mapOnTheOtherPanel);
+            var mapStayingOnTheOtherPanel = readProductionClustersOf(cache);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getClusters())
+            // ASSERT
+            assertThat(mapOnTheOtherPanel)
+                .isNotSameAs(mapOnTheFirstPanel);
+            assertThat(mapStayingOnTheOtherPanel)
+                .isSameAs(mapOnTheOtherPanel);
+            assertThat(readProductionClustersOf(cache))
                 .isNotSameAs(mapOnTheOtherPanel);
         }
 
+        // Whether never-settled space strokes an outline is baked into the theme the cells are
+        // styled from, so the flip cannot show without a rebuild.
         @Test
         void rebuildsOnceWhenTheUninhabitedOutlineFlips() {
-            // Whether never-settled space strokes an outline is baked into the theme the cells are
-            // styled from, so the flip cannot show without a rebuild.
-            var standingMap = cache.getClusters();
+
+            // ARRANGE
+            var standingMap = readProductionClustersOf(cache);
 
             when(outlinePreferenceMock.isOutlineDrawn(any()))
                 .thenReturn(true);
+
+            // ACT
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
-            var rebuiltMap = cache.getClusters();
+            var rebuiltMap = readProductionClustersOf(cache);
 
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
+
+            // ASSERT
             assertThat(rebuiltMap)
                 .isNotSameAs(standingMap);
-
-            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
-
-            assertThat(cache.getClusters())
+            assertThat(readProductionClustersOf(cache))
                 .isSameAs(rebuiltMap);
         }
     }

@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.starsector.factions.alliances.AllianceRecord;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
@@ -43,83 +44,112 @@ final class PoliticalHolderViewTests {
     private final PoliticalHolderView viewMock = mock(PoliticalHolderView.class, CALLS_REAL_METHODS);
 
     @Nested
-    class GetContentRevision {
+    class ReadContentRevisions {
 
+        // A membership change must move the revisions - that is what repaints the alliances view's
+        // fills and every view's bands without a reload.
         @Test
-        void shiftsWhenTheAllianceRevisionMoves() {
-            // A membership change must shift the revision - that is what repaints the alliances
-            // view's fills and every view's bands without a reload.
+        void stampsTheAllianceRevision() {
+
+            // ARRANGE
             var board = new MapLayerRefreshBoard();
-            var before = viewMock.getContentRevision(board);
+            var expectedRevisions = RevisionStamp.of(1);
 
             board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(viewMock.getContentRevision(board))
-                .isNotEqualTo(before);
+            // ACT
+            var actualRevisions = viewMock.readContentRevisions(board);
+
+            // ASSERT
+            assertThat(actualRevisions)
+                .isEqualTo(expectedRevisions);
         }
 
+        // A Mute/Desaturate flip is not stamped here. The bake samples the alliances view's
+        // non-allied recede with every other preference and compares the values, so a flip that
+        // leaves the recede where it was must cost nothing.
         @Test
         void standsStillWhenTheRecedeStyleRevisionMoves() {
-            // A Mute/Desaturate flip is not folded here. The bake samples the alliances view's
-            // non-allied recede with every other preference and folds the values in, so a flip that
-            // leaves the recede where it was must cost nothing.
+
+            // ARRANGE
             var board = new MapLayerRefreshBoard();
-            var before = viewMock.getContentRevision(board);
+            var expectedRevisions = RevisionStamp.of(0);
 
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
-            assertThat(viewMock.getContentRevision(board))
-                .isEqualTo(before);
+            // ACT
+            var actualRevisions = viewMock.readContentRevisions(board);
+
+            // ASSERT
+            assertThat(actualRevisions)
+                .isEqualTo(expectedRevisions);
         }
 
+        // Only the alliance set is stamped, so a signal no view renders its content from leaves the
+        // revisions fixed rather than churning the view.
         @Test
         void standsStillWhenTheGeometryRevisionMoves() {
-            // Only the alliance set is folded in, so a signal no view renders its content from leaves
-            // the contribution fixed rather than churning the view.
+
+            // ARRANGE
             var board = new MapLayerRefreshBoard();
-            var before = viewMock.getContentRevision(board);
+            var expectedRevisions = RevisionStamp.of(0);
 
             board.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
-            assertThat(viewMock.getContentRevision(board))
-                .isEqualTo(before);
+            // ACT
+            var actualRevisions = viewMock.readContentRevisions(board);
+
+            // ASSERT
+            assertThat(actualRevisions)
+                .isEqualTo(expectedRevisions);
         }
 
+        // One stateless view answers for every sector, so the board handed in is the only thing
+        // telling two sectors' asks apart. An alliance formed under one sector must move that
+        // sector's revisions and leave the other's exactly where they were - a view reading an
+        // ambient board instead would repaint whichever sector happened to be running.
         @Test
-        void foldsTheBoardItIsHandedRatherThanAnother() {
-            // One stateless view answers for every sector, so the board handed in is the only thing
-            // telling two sectors' asks apart. An alliance formed under one sector must move that
-            // sector's number and leave the other's exactly where it was - a view folding an
-            // ambient board instead would repaint whichever sector happened to be running.
+        void readsTheBoardItIsHandedRatherThanAnother() {
+
+            // ARRANGE
             var board = new MapLayerRefreshBoard();
             var otherBoard = new MapLayerRefreshBoard();
-            var before = viewMock.getContentRevision(board);
-            var otherBefore = viewMock.getContentRevision(otherBoard);
+            var expectedRevisions = RevisionStamp.of(1);
+            var expectedOtherRevisions = RevisionStamp.of(0);
 
             board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(viewMock.getContentRevision(board))
-                .isNotEqualTo(before);
-            assertThat(viewMock.getContentRevision(otherBoard))
-                .isEqualTo(otherBefore);
+            // ACT
+            var actualRevisions = viewMock.readContentRevisions(board);
+            var actualOtherRevisions = viewMock.readContentRevisions(otherBoard);
+
+            // ASSERT
+            assertThat(actualRevisions)
+                .isEqualTo(expectedRevisions);
+            assertThat(actualOtherRevisions)
+                .isEqualTo(expectedOtherRevisions);
         }
     }
 
     @Nested
     class ResolveContestAffiliation {
 
+        // Who stands together in a contest is the live alliance set whatever a view paints as one
+        // bloc: allies painted apart still read as allies.
         @Test
         void readsTheLiveAllianceSet() {
-            // Who stands together in a contest is the live alliance set whatever a view paints as one
-            // bloc: allies painted apart still read as allies.
+
+            // ARRANGE
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
 
                 alliancesMock
                     .when(NexerelinAlliances::resolveFactionAlliances)
                     .thenReturn(SAMPLED_ALLIANCES);
 
+                // ACT
                 var affiliation = viewMock.resolveContestAffiliation();
 
+                // ASSERT
                 assertThat(affiliation.areOwnersAllied("hegemony", "persean"))
                     .isTrue();
                 assertThat(affiliation.areOwnersAllied("hegemony", "tritachyon"))
@@ -134,27 +164,40 @@ final class PoliticalHolderViewTests {
         @Test
         void declaresTheHolderCategories() {
 
-            assertThat(viewMock.resolveCategories())
-                .isSameAs(HolderCategories.INSTANCE);
+            // ARRANGE
+            var expectedCategories = HolderCategories.INSTANCE;
+
+            // ACT
+            var actualCategories = viewMock.resolveCategories();
+
+            // ASSERT
+            assertThat(actualCategories)
+                .isSameAs(expectedCategories);
         }
     }
 
     @Nested
     class ResolveOwnerReading {
 
+        // One answer read back, enough to show the reading is the faction reading over the handed
+        // sector. The rest of what it answers is pinned by that reading's own suite.
         @Test
         void namesABlocByItsFactionOffTheHandedSector() {
-            // One answer read back, enough to show the reading is the faction reading over the handed
-            // sector. The rest of what it answers is pinned by that reading's own suite.
+
+            // ARRANGE
             var sectorMock = mock(SectorAPI.class);
+            var expectedName = "Hegemony";
 
             stubNamedFaction(sectorMock, "hegemony", "Hegemony");
 
-            assertThat(viewMock
-                    .resolveOwnerReading(sectorMock, HolderGrouping.identity())
-                    .resolveName("hegemony", OwnerNameFormatChoice.SHORT))
-                .isEqualTo("Hegemony");
+            // ACT
+            var actualName = viewMock
+                .resolveOwnerReading(sectorMock, HolderGrouping.identity())
+                .resolveName("hegemony", OwnerNameFormatChoice.SHORT);
+
+            // ASSERT
+            assertThat(actualName)
+                .isEqualTo(expectedName);
         }
     }
-
 }

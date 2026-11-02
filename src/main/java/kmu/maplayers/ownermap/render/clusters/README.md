@@ -192,30 +192,33 @@ which the same source answers in the same call:
 the settled systems the spotlit owner lives in that nobody owns.
 One source answering both is what lets presence be a partition of the set emptiness is asked of,
 so a cell cannot be called empty space while the spotlight keeps an owner's fill over it.
-How a source reads the two is its own business;
-KMU's own layers describe theirs beside their answers,
-which [the owner seams](../../owners/README.md) link to.
+How a source reads the two is its own business,
+and [the owner seams](../../owners/README.md) say what each must answer.
 
-Both sets sit with the owner map in **`SystemOccupancy`** -
+Both sets sit with the owner map and each system's fill state in **`SystemOccupancy`** -
 who is in each system -
-rather than beside the `ContentInputs` the build was baked under or the contested set it derived,
-both of which are fixed once the build ends,
-because all three of these move between rebuilds:
+rather than beside the `ContentInputs` the build was baked under,
+which are fixed once the build ends,
+because all four of these move between rebuilds:
+an owner's rule can change how a system's fill draws without changing who owns it,
 a settlement founded or lost changes what stands in a system,
 and the pick founding one changes where the pick lives,
-in neither case moving an owner the map would notice.
+in none of these cases moving an owner the map would notice.
 The incremental refresh folds each marked system's answer into that one type,
-so the three facts a cell is styled from are read off one state of the sector rather than three.
+so the four facts a system is drawn from are read off one state of the sector rather than several.
 
 The type owns its collections -
 it copies what a pass hands it and answers every read with an unmodifiable view -
 so the only way to move a fact is one of its folds,
-each of which reports whether it moved anything.
-That report is what the refresh redraws a cell on.
-Held as three loose collections instead,
-they would have had to be mutable by the caller's good manners,
-which a build answering with an immutable empty set keeps perfectly
-until the first settlement is founded.
+each of which lets the caller tell whether it moved anything.
+That is what the refresh redraws a cell on.
+Held as loose collections instead,
+they would be kept from moving by the caller's good manners alone.
+
+The owner and the fill state are one entry,
+a `ResolvedSystemOwner` held only for a system somebody owns,
+so a fill state has nowhere to sit on a system nobody owns.
+The owner map the grouping and the labels read is a live projection of those entries rather than a second map kept beside them.
 
 ## Borders against empty space
 
@@ -272,13 +275,11 @@ What is the layer's is entirely upstream of it -
 which is why `ClusterGroupBuilder` keeps its name
 while producing a record that says nothing about what an owner is.
 
-It also answers the cursor's candidate-loop read,
-flattening an owner's bodies into the one list the highlight hit-tests against -
-and retaining it,
-because the highlight memoises its resolved halo on that list's identity
-and a fresh list per frame would re-clip the wash sixty times a second.
-The retained answer is keyed on the owner's cluster group by identity,
-so a refresh that replaces the group recomputes once and a refresh that does not costs nothing.
+The cursor's candidate loops are not kept here.
+They are a hover concern,
+so `OwnerMapHoverHighlightSource` flattens an owner's bodies into the one list the highlight hit-tests against
+and keeps one per owner while its cluster group stands;
+[the caching notes](../../../../../../../../docs/dev/caching.md#hover-lookups) say why.
 
 ### `PaintedCellStore`: what one cell carries
 
@@ -336,10 +337,12 @@ the `MapStyling` (the theme, the border trace, the layer's categories and the th
 the `ViewReading` (the view, the owner reading it was styled and named by,
 and the owner source it was resolved under),
 the `ContentInputs` it sampled,
-and the `SystemFillStates` the source decided -
-which systems hatch and which paint no fill.
+and whether the anchor overlay is shown.
+The fill states are not among them:
+the `SystemOccupancy` beside them holds each system's,
+since a batch folds them.
 The source rides there for the incremental refresh alone,
-which reopens a per-system resolve under the sampling it patches;
+which reopens a per-system resolver under the sampling it patches;
 nothing styles or names by it.
 
 They are one value because they are fixed together:
@@ -361,9 +364,9 @@ so the two can never be two samplings.
 Held here rather than built by each stage,
 because the paints remember every answer,
 and the full build and every batch after it then share one memo rather than resolving each owner again.
-`wasBuilt` is its answer to whether a build ran under it at all:
-the placeholder a failed first build stands behind resolved no reading,
-so the incremental refresh and the picker preview ask it before reaching for one.
+Every value of it comes from a build that ran:
+what stands before the first build completes is a placeholder view holding no clusters at all,
+so no reader has to ask whether a reading was resolved.
 
 ## The split fill: solid, hatched, unfilled
 
@@ -448,11 +451,10 @@ is the framework's [`base.render.clusters`](../../../base/render/clusters/README
 which knows nothing of who holds what;
 the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`).
 The *incremental refresh* that redraws what a marked change moved -
-over the marked systems' owner,
+over the marked systems' owner and fill state,
 inhabitation and spotlit presence,
-which `render.MarkedSystemRederive` reads back first -
-is `render.IncrementalOwnerRefresh`,
-at the render root alongside the layer renderer (`OwnerMapLayerRenderer`) and the per-frame cache that drives it -
-the composition root that wires these feature packages together.
+which `render.rebuild.MarkedSystemRederive` reads back first -
+is `render.rebuild.IncrementalOwnerRefresh`,
+beside the per-frame cache that drives it and the full rebuild it stands in for.
 *Which* change triggers a full rebuild here and
 which one only re-shapes a handful of cells is [the caching notes](../../../../../../../../docs/dev/caching.md).

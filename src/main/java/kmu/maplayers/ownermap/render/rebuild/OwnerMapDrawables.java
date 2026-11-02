@@ -1,0 +1,275 @@
+package kmu.maplayers.ownermap.render.rebuild;
+
+import kmlib.starsector.ui.font.FontAtlas;
+
+import kmu.maplayers.base.geometry.RevisedCellGeometry;
+import kmu.maplayers.base.labels.Label;
+import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.SectorWalk;
+import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
+import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
+
+/**
+ * What an owner map has built to draw, and how each part of it is rebuilt: one of the two
+ * base views, the cluster-label placements drawn over either, and the name labels minted from them.
+ *
+ * <p>Apart from what decides <em>when</em> to rebuild, because the two are different questions. The
+ * ledger reads revisions and settings to say whether anything is owed; this holds the products
+ * and knows, for each, which builder makes it from which inputs. A rebuild is then
+ * {@link FullOwnerMapRebuild} naming the stages in order and this running them, and neither has to
+ * know the other's bookkeeping.
+ */
+final class OwnerMapDrawables {
+
+    // The base view standing: the production draw lists, the debug border-tracing overlay built
+    // in their place while the "debug border tracing" dev toggle is on, or the placeholder until
+    // the first build completes.
+    private BuiltView builtView = BuiltView.PLACEHOLDER;
+
+    // The cluster-label placements and what they were fitted under, held here rather than by
+    // either view above so they draw over whichever is live - turning border tracing on must not
+    // hide them. Empty unless the names or the anchor overlay is on; they feed both. The two are
+    // one value because a placement is only reusable as a pair with the rules it was sized under,
+    // and this class is what owns them across the rebuilds that reuse them.
+    private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
+
+    // The cached owner-name labels, built from the placements above. Each owns a GL buffer, so
+    // the builder disposes the standing strings whenever it rebuilds this list. Empty unless the
+    // names toggle is on.
+    private final List<Label> ownerLabels = new ArrayList<>();
+
+    // The face the sector settled its labels on, asked when a rebuild fits names rather than when these
+    // drawables are made: settling reads every owner name, which drawables made before the first
+    // rebuild has no call to pay for. The fit records the face beside its placements, so everything
+    // drawn after it reads the face from there.
+    private final Supplier<FontAtlas> labelFaceSource;
+
+    /**
+     * @param labelFaceSource answers the face the sector settled its labels on, which every name is
+     *                        fitted in
+     */
+    OwnerMapDrawables(Supplier<FontAtlas> labelFaceSource) {
+        this.labelFaceSource = labelFaceSource;
+    }
+
+    /** @return the base view standing, which the renderer paints by case */
+    BuiltView getBuiltView() {
+        return builtView;
+    }
+
+    /** @return the cluster-label placements, drawn over whichever base view is live */
+    List<ClusterAnchor> getClusterAnchors() {
+        return standingAnchors.getAnchors();
+    }
+
+    /** @return the cached owner-name labels */
+    List<Label> getOwnerLabels() {
+        return ownerLabels;
+    }
+
+    /**
+     * @return whether only the placeholder stands, which is what makes a first frame owe a build
+     *         whatever the revisions happen to say
+     */
+    boolean hasNothingBuilt() {
+
+        return builtView.selectByCase(
+            clusters -> false,
+            borderStageOverlay -> false,
+            () -> true);
+    }
+
+    /**
+     * The standing map a per-system owner change folds into, where one can.
+     *
+     * <p>Only the production view takes a fold. The debug overlay replaced the draw lists a fold
+     * would patch, and the placeholder has none. A filtered build folds like any other, the batch
+     * re-deriving each marked system under the spotlight the build was painted under.
+     *
+     * @param cellGeometry the cells the standing draw lists were shaped from
+     * @return the parts the refresh reads and writes, or empty where no production view stands
+     */
+    Optional<StandingOwnerMap> findFoldableStandingMap(RevisedCellGeometry cellGeometry) {
+
+        return builtView.selectByCase(
+            clusters -> Optional.of(createStandingMapOver(clusters, cellGeometry)),
+            borderStageOverlay -> Optional.empty(),
+            Optional::empty);
+    }
+
+    /**
+     * @return which base view stands, for the lines that say why a batch went unfolded and what a
+     *         release dropped
+     */
+    String describeBuiltViewKind() {
+
+        return builtView.selectByCase(
+            clusters -> "production",
+            borderStageOverlay -> "debugOverlay",
+            () -> "placeholder");
+    }
+
+    /**
+     * @return what the last rebuild left for the render to paint, in the terms of whichever view
+     *         it built
+     */
+    String describeBuiltCounts() {
+
+        return builtView.selectByCase(
+            clusters -> "styledCells=" + clusters.getStyledCellByCellKey().size(),
+            borderStageOverlay -> "debugBaseLoops=" + borderStageOverlay.baseLoops().size(),
+            () -> "nothingBuilt");
+    }
+
+    /**
+     * Releases everything built, when the machinery holding it goes.
+     *
+     * <p>The labels' GL buffers are released as part of it: they are freed at the moment the lists
+     * are dropped rather than left to LazyLib's finalizer sweep. The placements go with the record
+     * of what they were fitted under, since a statement of the rules this sector's labels were made
+     * under must not outlive the labels.
+     */
+    void disposeAll() {
+
+        LabelsBuilder.disposeAll(ownerLabels);
+
+        ownerLabels.clear();
+        standingAnchors.discardAnchors();
+
+        builtView = BuiltView.PLACEHOLDER;
+    }
+
+    /**
+     * Builds the debug border-tracing view, which replaces the production draw lists outright.
+     *
+     * <p>The owners it traces are the active view's own, resolved through its source over the
+     * rebuild's walk with nothing spotlit - so the overlay traces the borders the map would draw,
+     * and asks the layer nothing the production build does not. One resolve and one reading of the
+     * theme serve the overlay and the anchors beside it, so the two cannot disagree about who owns
+     * a cell or how it is styled.
+     *
+     * <p>The names are fitted only while the anchor overlay is shown. What the fit reports about the
+     * names it moved is dropped: this view replaces the production draw lists outright, so nothing
+     * is laid around the names for a moved one to oblige.
+     *
+     * @param rebuildReading the cells to trace, the walk the source reads over, and the view, picks
+     *                       and overlay the rebuild sampled
+     */
+    void rebuildBorderTracingOverlay(RebuildReading rebuildReading) {
+
+        var viewReading = rebuildReading.viewReading();
+
+        // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
+        // map has rather than one pick's footprint.
+        var owners = viewReading.source().resolveOwners(rebuildReading.walk(), null);
+        var styling = readStylingOf(rebuildReading);
+
+        builtView = new BuiltView.Debug(DebugBorderTracingBuilder.buildDebugDrawables(
+            rebuildReading.cellGeometry().cells(),
+            owners,
+            styling));
+
+        ClusterAnchorsBuilder.rebuildClusterAnchors(
+            standingAnchors,
+            rebuildReading.cellGeometry(),
+            ClusterLabelStylingSnapshot
+                .resolveForTracing(
+                    owners.ownerBySystemKey(),
+                    styling,
+                    viewReading.reading(),
+                    rebuildReading.contentInputs(),
+                    rebuildReading.isAnchorOverlayShown(),
+                    labelFaceSource.get())
+                .createFitInputs());
+    }
+
+    /**
+     * Builds the production view's three stages, driven off the one walk of the sector the
+     * rebuild opened: the fills, the names fitted inside the borders they trace, and the bands laid
+     * around wherever those names ended up. The bands count through the source the owners came
+     * from, which is what sharing the walk asks ({@link SectorWalk}).
+     *
+     * @param rebuildReading the cells to shape, the rebuild's one walk of the sector, and the view,
+     *                       picks and overlay the rebuild sampled
+     * @param owners         who owns what and who is where, resolved over the walk by this rebuild
+     *                       or kept from the one before it - which of the two is the caller's call,
+     *                       being a question about what moved since
+     */
+    void rebuildClustersAndBands(RebuildReading rebuildReading, ResolvedOwners owners) {
+
+        var buildInputs = new OwnerMapBuildInputs(
+            readStylingOf(rebuildReading),
+            rebuildReading.viewReading(),
+            rebuildReading.contentInputs(),
+            rebuildReading.isAnchorOverlayShown());
+
+        var clusters = OwnerMapBuilder.buildClusters(
+            rebuildReading.cellGeometry().cells(),
+            buildInputs,
+            owners);
+
+        builtView = new BuiltView.Production(clusters);
+
+        // The names and the bands through the stages a batch folding into this build runs too, so
+        // the two paths fit and bake one map alike. The cells go over carrying the revision they
+        // stand at rather than the live signal read at the top - the two agree here, and only the
+        // pair is true of the geometry in hand.
+        var standingMap = createStandingMapOver(clusters, rebuildReading.cellGeometry());
+
+        standingMap.fitNamesIn(labelFaceSource.get());
+
+        // The bands come last, after the names have places, because they are laid around
+        // them: a band is cut by the room the names take, so baking one before the fit
+        // would leave it running under a word rather than clear of it. What the fit
+        // reports about the names it moved is dropped here: every cell was just rebuilt
+        // from nothing, so all of them owe a band whatever the names did.
+        standingMap
+            .createRibbonsBakerOver(rebuildReading.walk())
+            .bakeAllCellRibbons();
+    }
+
+    /**
+     * Mints the name labels from the placements just rebuilt, keeping them in step with the fills
+     * and borders and reusing the one placement search the names and the anchor overlay share.
+     *
+     * @param areNamesDrawn whether names are showing at all - the rebuild's own sampling of the
+     *                      preference, so what is minted matches what was fitted
+     */
+    void rebuildLabels(boolean areNamesDrawn) {
+        LabelsBuilder.rebuildLabels(ownerLabels, standingAnchors, areNamesDrawn);
+    }
+
+    // The standing map as one value, for the incremental refresh that patches it in place and for
+    // the production rebuild's own name and band stages, which the refresh runs too.
+    private StandingOwnerMap createStandingMapOver(
+            OwnerMapClusters clusters,
+            RevisedCellGeometry cellGeometry) {
+
+        return new StandingOwnerMap(clusters, standingAnchors, ownerLabels, cellGeometry);
+    }
+
+    // The paint scheme one rebuild styles everything it builds from, read once here for whichever
+    // view it builds, so the fills or outlines and the names over them share one reading.
+    private static MapStyling readStylingOf(RebuildReading rebuildReading) {
+
+        var viewReading = rebuildReading.viewReading();
+
+        return MapStyling.readFromLunaSettings(
+            viewReading.view().resolveCategories(),
+            viewReading.reading(),
+            rebuildReading.contentInputs());
+    }
+}

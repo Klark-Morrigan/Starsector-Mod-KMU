@@ -616,7 +616,10 @@ final class PaintedCellBuilderTests {
                     ContentInputsFixtures.createInputsRecedingBehind(
                         null, // No owner spotlighted.
                         ElementStyleAdjustment.NONE)),
-                SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()));
+                SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(
+                    Map.of(buildCellKey(SYSTEM_ID), OWNER),
+                    Set.of(),
+                    Set.of()));
         }
 
         // The sector-wide tier the rounding cases share: every corner arced, at a radius the shared
@@ -684,7 +687,7 @@ final class PaintedCellBuilderTests {
                         new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     buildReadingAdjusting(ElementStyleAdjustment.NONE),
                     ContentInputsFixtures.createInputsRecedingBehind(selectedOwnerId, recede)),
-                SystemOccupancy.createCopyOf(
+                SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(
                     Map.of(),
                     Set.of(buildCellKey(DECIVILISED_SYSTEM_ID), buildCellKey(UNHELD_INHABITED_SYSTEM_ID)),
                     spotlitPresenceSystemKeys));
@@ -781,7 +784,7 @@ final class PaintedCellBuilderTests {
                     ContentInputsFixtures.createInputsRecedingBehind(
                         null, // No owner spotlighted.
                         ElementStyleAdjustment.NONE)),
-                SystemOccupancy.createCopyOf(owners, Set.of(), Set.of()));
+                SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(owners, Set.of(), Set.of()));
         }
 
         // The one owned system every adjustment test shares over a fixed style/palette backdrop;
@@ -806,7 +809,10 @@ final class PaintedCellBuilderTests {
                     ContentInputsFixtures.createInputsRecedingBehind(
                         isFiltering ? "selected-owner" : null,
                         recede)),
-                SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()));
+                SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(
+                    Map.of(buildCellKey(SYSTEM_ID), OWNER),
+                    Set.of(),
+                    Set.of()));
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

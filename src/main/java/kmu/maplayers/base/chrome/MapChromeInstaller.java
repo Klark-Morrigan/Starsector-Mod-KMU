@@ -2,7 +2,7 @@ package kmu.maplayers.base.chrome;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.scripts.SectorScripts;
+import kmlib.starsector.scripts.everyframe.SectorScripts;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;

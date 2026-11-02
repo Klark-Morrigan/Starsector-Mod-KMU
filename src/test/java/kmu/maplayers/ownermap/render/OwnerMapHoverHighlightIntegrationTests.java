@@ -7,22 +7,20 @@ import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.hover.HoverHighlightGeometry;
 import kmu.maplayers.base.hover.MapHoverFixture;
-import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
@@ -36,6 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInputsSpellingNames;
+import static kmu.maplayers.ownermap.render.clusters.SystemOccupancyFixtures.createEmptyOccupancy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -86,41 +86,49 @@ final class OwnerMapHoverHighlightIntegrationTests {
         @Test
         void lightsTheRoundedRingAnUnpopulatedCellStrokesRatherThanTheCellItWasShapedFrom() {
 
-            var highlight = buildAndHoverUnpopulatedCellUnder(ROUNDING_ON);
+            // ACT
+            var actualHighlight = buildAndHoverUnpopulatedCellUnder(ROUNDING_ON);
 
+            // ASSERT
             // The corner the raw Voronoi cell has at the origin is gone from what lights up,
             // because rounding stepped back from it along both edges before the cell was recorded.
             // Were the shaped cell recorded instead, the wash would trace straight through here.
-            assertThat(hasPoint(highlight.washOutline(), 0, 0))
+            assertThat(hasPoint(actualHighlight.washOutline(), 0, 0))
                 .isFalse();
 
             // And it lights up at all, so the case above cannot pass by resolving nothing.
-            assertThat(highlight.washOutline())
+            assertThat(actualHighlight.washOutline())
                 .isNotEmpty();
-            assertThat(highlight.washTriangles())
+            assertThat(actualHighlight.washTriangles())
                 .isNotEmpty();
         }
 
+        // The other half of the gate, and what stops the case above from passing on any ring
+        // that merely happens to miss the origin: under the same chain with rounding off, the
+        // cell strokes the shape it was shaped from and that is what lights up.
         @Test
         void lightsTheSharpRingAnUnpopulatedCellStrokesWhenRoundingIsOff() {
-            // The other half of the gate, and what stops the case above from passing on any ring
-            // that merely happens to miss the origin: under the same chain with rounding off, the
-            // cell strokes the shape it was shaped from and that is what lights up.
-            var highlight = buildAndHoverUnpopulatedCellUnder(ROUNDING_OFF);
 
-            assertThat(hasPoint(highlight.washOutline(), 0, 0))
+            // ACT
+            var actualHighlight = buildAndHoverUnpopulatedCellUnder(ROUNDING_OFF);
+
+            // ASSERT
+            assertThat(hasPoint(actualHighlight.washOutline(), 0, 0))
                 .isTrue();
         }
 
+        // A cell that fuses into no cluster has no frontier to trace, so the halo half of the
+        // highlight is empty and the wash is the whole of what it lights. Stated here because
+        // it is why the wash has to carry the drawn ring: there is no clamp behind it to
+        // correct a raw one.
         @Test
         void haloesNothingOverAnUnpopulatedCell() {
-            // A cell that fuses into no cluster has no frontier to trace, so the halo half of the
-            // highlight is empty and the wash is the whole of what it lights. Stated here because
-            // it is why the wash has to carry the drawn ring: there is no clamp behind it to
-            // correct a raw one.
-            var highlight = buildAndHoverUnpopulatedCellUnder(ROUNDING_ON);
 
-            assertThat(highlight.glowLoops())
+            // ACT
+            var actualHighlight = buildAndHoverUnpopulatedCellUnder(ROUNDING_ON);
+
+            // ASSERT
+            assertThat(actualHighlight.glowLoops())
                 .isEmpty();
         }
     }
@@ -153,7 +161,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
             CornerRoundingStyle cornerRounding) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createEmpty(),
+            createEmptyOccupancy(),
             new OwnerMapBuildInputs(
                 new MapStyling(
                     buildThemeRoundingBy(cornerRounding),
@@ -166,9 +174,8 @@ final class OwnerMapHoverHighlightIntegrationTests {
                     mock(OwnerPaintedView.class),
                     OwnerReadingFake.createAnsweringNothing(),
                     new OwnerSourceFake()),
-                ContentInputs.createEmpty(),
-                false,
-                SystemFillStates.ALL_SOLID));
+                createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                false));
     }
 
     // Every category drawn by its outline alone, over a sector-wide tier carrying the given corner

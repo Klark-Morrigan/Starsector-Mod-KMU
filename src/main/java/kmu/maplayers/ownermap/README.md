@@ -31,6 +31,7 @@ see the [mod README](../../../../../../README.md) for project context.
 - [What a layer supplies](#what-a-layer-supplies)
 - [What a layer holds](#what-a-layer-holds)
 - [The stages it wires](#the-stages-it-wires)
+- [The rebuild is a slot](#the-rebuild-is-a-slot)
 - [The arrow](#the-arrow)
 - [The words it keeps](#the-words-it-keeps)
 - [Where each part lives](#where-each-part-lives)
@@ -72,10 +73,11 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | The tier asks | Through |
 | --- | --- |
 | who owns each system, which owned systems draw hatched or unfilled, what stands where and where the spotlit owner lives, for a whole rebuild | an `OwnerSource`, resolved with the reading through `OwnerPaintedView.resolveViewReading` and handed the rebuild's `SectorWalk` |
-| who owns one marked system, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolve` that same source opens over the batch's own walk |
+| who owns one marked system and how its fill draws, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolver` that same source opens over the batch's own walk, under the spotlight the standing build was painted under |
 | how a cell's presence band is counted | the same source's band planner |
 | each owner's shades, name, crest, recede and category, the shade an unowned cell paints in and the pair a receded one sinks toward | the `OwnerReading` resolved beside the source |
 | which systems seed a cell | a `CellSeedRule`, handed to `OwnerMapLayerRenderer.createForLiveScreen`; `SEED_DRAWN_SYSTEMS` for the systems the map draws |
+| what a frame owing no rebuild does with the systems marked since | an `OwnerMapRefreshStrategy`, handed to `OwnerMapLayerRenderer.createForLiveScreen`: `INCREMENTAL` to fold (the default), `FULL_REBUILD` to rebuild - see [the rebuild is a slot](#the-rebuild-is-a-slot) |
 | which categories cells divide into, which one is full strength, and which one an unowned cell falls to | `OwnerCategories`, through `OwnerPaintedView.resolveCategories` |
 | whether the cursor is answered at all | the substrate's `MapLayerHoverGates`, or the tier's `SharedOwnerMapHoverGates` over the shared owner-map switches |
 | what the picker's hovered row lights | `OwnerMapPreviewHighlight`, or the tier's `SpotlightPreviewHighlightRenderer` for a layer offering the spotlight picker |
@@ -143,7 +145,7 @@ so a layer holding the same values gets the same answer without the pipeline:
 | --- | --- |
 | the style resolvers (`MapPaints`) | the `MapStyling`, the `OwnerReading` and the sampled `ContentInputs` |
 | the cell builder (`PaintedCellBuilder`) | the `MapPaints` and the `SystemOccupancy` |
-| the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the `SystemFillStates` |
+| the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the `SystemFillStates` the occupancy holds |
 | the border trace and smoothing | the substrate's `ClusterBorderTrace` and `BorderSmoothing`, over rings and a style |
 | the label fit (the substrate's `ClusterAnchorsBuilder`) | the cells, the standing placements, and the `ClusterAnchorFitInputs` a `ClusterLabelStylingSnapshot` over the build's `MapPaints` creates |
 | the band planner | the source's `SystemRibbonPlanner`, the substrate's port, over a `SectorWalk` and the `RibbonPlanRules` |
@@ -161,6 +163,43 @@ Stating the inputs is what keeps an incremental re-shape identical to a full bui
 The full build and a batch hand a stage the same values,
 through the factories on the built clusters,
 rather than the stage reading them off the model it fills.
+
+## The rebuild is a slot
+
+A change in one system marks that system stale,
+and what a frame owing no rebuild does with it is the layer's choice:
+an `OwnerMapRefreshStrategy` the layer hands over where it composes itself.
+`INCREMENTAL` is the default a layer names:
+it re-derives only the marked systems and redraws what they disturbed.
+`FULL_REBUILD` folds nothing,
+and the next frame rebuilds.
+A layer takes it when its rule's answer for one system moves with systems nobody marked,
+such as a network or reach rule,
+where re-deriving only the marked systems would draw them wrong.
+
+The incremental filler is the default because every layer can take it without cost.
+It reads nothing of a layer but the owner source the standing build was resolved by,
+which every layer states anyway,
+and a marked system lands as a rebuild would draw it,
+its fill state included.
+
+The strategy is an enum:
+the two fillers are the whole set,
+and each has a name a log line can print.
+
+A filtered map folds like any other,
+because the source re-derives a marked system as the spotlit build painted it,
+so a spotlight owes no rebuild per colony change.
+Which standing maps owe the rebuild whatever the layer chose is
+[the caching notes' second path](../../../../../../docs/dev/caching.md#the-four-rebuild-paths).
+
+Two other parts are slots in the same sense:
+which side of the nebulae each sub-layer paints (`OwnerMapBandLayout`)
+and what the picker's hovered row lights (`OwnerMapPreviewHighlight`).
+Neither has a default in the tier,
+since each is one layer's answer;
+a layer states both where it composes itself,
+beside its strategy.
 
 ## The arrow
 
@@ -181,7 +220,7 @@ Inside the tier,
 the core may not import `owners/holders`,
 the one subtree it is closed to.
 The holder answers fill the core's seams from inside the tier
-so both layers painting holders can reach them,
+so every layer painting holders can reach them,
 and a core that imported one would know what an owner is.
 The edge leaves the subtree out with the gate's `except:`,
 so a core package added later is closed to it without a line of its own.
@@ -227,7 +266,7 @@ since that is what a player's stored setting is keyed by.
 | Package | What is in it |
 | --- | --- |
 | *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewReading`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
-| [`owners`](owners/README.md) | the seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolve`, the walk it is handed and the `ResolvedOwners` it answers), how each looks (`OwnerReading`) and who stands together in a contest (`OwnerAffiliation`) - beside the owner of a system (`SystemOwner`) and the spotlight's own key (`SpotlitOwners`) |
+| [`owners`](owners/README.md) | the seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolver`, the walk it is handed and the `ResolvedOwners` it answers), how each looks (`OwnerReading`) and who stands together in a contest (`OwnerAffiliation`) - beside the owner of a system (`SystemOwner`) and the spotlight's own key (`SpotlitOwners`) |
 | [`owners/holders`](owners/holders/README.md) | the answers of the layers painting holders, outside the core: what every holder shares (`base`, with its picker in `base.picker`), one holder as one owner (`factions`), and a group of holders as one owner (`alliances`) |
 | `picker` | the owner picker model: its rows (`SelectableOwner`, `RankedOwner`), the metrics they carry, the sort modes ranking them, and the presence index a preview lights |
 | `preferences` | the per-save body choices - name format, uninhabited outline, recede - and `OwnerMapBodyPreferences`, the set a layer builds over keys of its own |
@@ -236,7 +275,8 @@ since that is what a player's stored setting is keyed by.
 | `render/labels` | what a cluster's name reads and what shade it draws in, handed to the substrate's fit drive as its `ClusterAnchorFitInputs` |
 | [`render/ribbon`](render/ribbon/README.md) | the bake: which cells band, whose runs each plans, and the player's band settings |
 | [`ribbon`](ribbon/README.md) | how an owner-painted cell's runs are laid from the ranked count a layer hands over: their lengths and their dividers, behind the substrate's `SystemRibbonPlanner` port the count arrives through |
-| `render` | the cache, the compositor stacking the sub-layers in their band order, the incremental refresh, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
+| `render` | the compositor stacking the sub-layers in their band order, the band layout it stacks them by, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
+| `render/rebuild` | what the standing build was made from and what a frame owes against it (`OwnerMapBuildLedger`), the cache acting on it (`OwnerMapCache`), the full walk (`FullOwnerMapRebuild`), and the slot for marked systems (`OwnerMapRefreshStrategy`) with its incremental filler |
 | `render/hover` | what the cursor is over on this map, the seam a layer answers the picker preview through, and the tier's shared answers to it and to the substrate's cursor switches |
 | `sidebar` | the body controls a layer built on this tier offers, and the memo behind its picker |
 

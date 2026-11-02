@@ -24,6 +24,7 @@ import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
 import kmu.maplayers.ownermap.render.OwnerMapLayerRenderer;
 import kmu.maplayers.ownermap.render.hover.SharedOwnerMapHoverGates;
 import kmu.maplayers.ownermap.render.hover.SpotlightPreviewHighlightRenderer;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.ownermap.sidebar.OwnerMapBodyControls;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.ownermap.sidebar.SelectableOwnerCache;
@@ -206,7 +207,10 @@ public final class PoliticalMapLayer
                 PoliticalMapBandLayoutReader::readChosenLayout,
                 // This layer seeds a cell for every system the map draws, which is the substrate's
                 // own rule - stated here, where the layer composes itself, rather than inherited.
-                CellSeedRule.SEED_DRAWN_SYSTEMS));
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
+                // A rebuild weighs every colony of the sector, so a colony change folds its system in
+                // place rather than walking the economy again.
+                OwnerMapRefreshStrategy.INCREMENTAL));
     }
 
     // The spotlight picker for the selected view: its selectable blocs under the player's live

@@ -51,8 +51,7 @@ public final class MapPaints {
      * @param styling       the resolved paint scheme: the theme, the layer's categories and the
      *                      palettes an unowned or receded element paints in
      * @param reading       the painting layer's answers about its owners - each one's category and
-     *                      recede - resolved once for the build; null only for the placeholder a
-     *                      failed build stands behind, which is never asked to paint an owner
+     *                      recede - resolved once for the build
      * @param contentInputs the sidebar picks the build sampled: the spotlight and the recede behind
      *                      it
      */
@@ -76,8 +75,7 @@ public final class MapPaints {
 
     /**
      * @return the painting layer's reading these paints resolve through, for a stage that also asks
-     *         it something other than a style - an owner's name - so both answers are one reading;
-     *         null only for the placeholder a failed build stands behind
+     *         it something other than a style - an owner's name - so both answers are one reading
      */
     public OwnerReading getReading() {
         return reading;

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
 import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.ui.controls.specs.CheckboxSpec;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
@@ -133,51 +134,80 @@ final class PoliticalMapLayerTests {
     @Nested
     class ResolveStanding {
 
+        // The counterpart to No Layer's null: this tab is the one with sector wiring - a save heal,
+        // four listeners and a poll - so taking its tab off the bar has something to save. One pair
+        // for the tab, since the pair holds nothing and every sector arrives as an argument.
         @Test
         void yieldsThePairThatWiresThePoliticalMapToASector() {
-            // The counterpart to No Layer's null: this tab is the one with sector wiring - a save
-            // heal, four listeners and a poll - so taking its tab off the bar has something to save.
-            // One pair for the tab, since the pair holds nothing and every sector arrives as an
-            // argument.
-            assertThat(layer.resolveStanding())
-                .isInstanceOf(PoliticalMapStanding.class)
-                .isSameAs(layer.resolveStanding());
+
+            // ARRANGE
+            var expectedType = PoliticalMapStanding.class;
+
+            // ACT
+            var actualFirst = layer.resolveStanding();
+            var actualSecond = layer.resolveStanding();
+
+            // ASSERT
+            assertThat(actualFirst)
+                .isInstanceOf(expectedType)
+                .isSameAs(actualSecond);
         }
     }
 
     @Nested
     class ResolveRenderer {
 
+        // The counterpart to No Layer's null: this tab is the one that draws, and it hands the map
+        // surface one view-neutral renderer rather than branching on the view roster. Twice for one
+        // sector is once, since the surface resolves it every frame and the hover box again in the
+        // pass after.
         @Test
         void yieldsTheOneRendererThatMachineryKeeps() {
-            // The counterpart to No Layer's null: this tab is the one that draws, and it hands the map
-            // surface one view-neutral renderer rather than branching on the view roster. Twice for
-            // one sector is once, since the surface resolves it every frame and the hover box again
-            // in the pass after.
-            assertThat(layer.resolveRenderer(machinery))
-                .isInstanceOf(SequencedMapLayerRenderer.class)
-                .isSameAs(layer.resolveRenderer(machinery));
+
+            // ARRANGE
+            var expectedType = SequencedMapLayerRenderer.class;
+
+            // ACT
+            var actualFirst = layer.resolveRenderer(machinery);
+            var actualSecond = layer.resolveRenderer(machinery);
+
+            // ASSERT
+            assertThat(actualFirst)
+                .isInstanceOf(expectedType)
+                .isSameAs(actualSecond);
         }
 
+        // This tab is registered once for the process while everything behind its renderer - the
+        // cut cells, the territories, the fitted names - is one sector's, so the same tab has to
+        // answer for two sectors with two renderers.
         @Test
         void yieldsARendererPerMachinerySoOneSectorsDrawingIsNotAnothers() {
-            // This tab is registered once for the process while everything behind its renderer - the
-            // cut cells, the territories, the fitted names - is one sector's, so the same tab has to
-            // answer for two sectors with two renderers.
-            assertThat(layer.resolveRenderer(machinery))
-                .isNotSameAs(layer.resolveRenderer(otherMachinery));
+
+            // ACT
+            var actualRenderer = layer.resolveRenderer(machinery);
+            var actualOtherRenderer = layer.resolveRenderer(otherMachinery);
+
+            // ASSERT
+            assertThat(actualRenderer)
+                .isNotSameAs(actualOtherRenderer);
         }
 
+        // The renderer goes with the sector's machinery, so the sector installed on after it draws
+        // through one of its own rather than through the previous sector's cached cells.
         @Test
         void leavesNothingBehindOnTheMachineryItWasReleasedWith() {
-            // The renderer goes with the sector's machinery, so the sector installed on after it
-            // draws through one of its own rather than through the previous sector's cached cells.
-            var renderer = layer.resolveRenderer(machinery);
+
+            // ARRANGE
+            var releasedRenderer = layer.resolveRenderer(machinery);
 
             machinery.disposeMachinery();
 
-            assertThat(layer.resolveRenderer(machinery))
-                .isNotSameAs(renderer);
+            // ACT
+            var actualRenderer = layer.resolveRenderer(machinery);
+
+            // ASSERT
+            assertThat(actualRenderer)
+                .isNotSameAs(releasedRenderer);
         }
     }
 
@@ -208,15 +238,18 @@ final class PoliticalMapLayerTests {
         @Test
         void storesTheNameFormatUnderThePoliticalMapsFrozenKey() {
 
+            // ARRANGE
             var preferences = captureBodyPreferences();
 
             try (var sectorMemoryFake = new SectorMemoryFake()) {
 
+                // ACT
                 preferences.nameFormat().selectNameFormat(
                     BODY_SCREEN,
                     OwnerNameFormatChoice.SHORT,
                     new MapLayerRefreshBoard());
 
+                // ASSERT
                 assertThat(sectorMemoryFake.readStoredValue(NAME_FORMAT_KEY))
                     .isEqualTo(SHORT_NAME_FORMAT_VALUE);
             }
@@ -225,15 +258,18 @@ final class PoliticalMapLayerTests {
         @Test
         void storesTheOutlineUnderThePoliticalMapsFrozenKey() {
 
+            // ARRANGE
             var preferences = captureBodyPreferences();
 
             try (var sectorMemoryFake = new SectorMemoryFake()) {
 
+                // ACT
                 preferences.uninhabitedOutline().setOutlineDrawn(
                     BODY_SCREEN,
                     true,
                     new MapLayerRefreshBoard());
 
+                // ASSERT
                 assertThat(sectorMemoryFake.readStoredValue(UNINHABITED_OUTLINE_KEY))
                     .isEqualTo(true);
             }
@@ -242,13 +278,16 @@ final class PoliticalMapLayerTests {
         @Test
         void storesTheFilterRecedeUnderThePoliticalMapsFrozenKeys() {
 
+            // ARRANGE
             var filterRecede = captureBodyPreferences().filterRecede();
 
             try (var sectorMemoryFake = new SectorMemoryFake()) {
 
+                // ACT
                 filterRecede.setMuted(BODY_SCREEN, true, new MapLayerRefreshBoard());
                 filterRecede.setDesaturated(BODY_SCREEN, false, new MapLayerRefreshBoard());
 
+                // ASSERT
                 assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_MUTE_KEY))
                     .isEqualTo(true);
                 assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_DESATURATE_KEY))
@@ -259,6 +298,7 @@ final class PoliticalMapLayerTests {
         @Test
         void appendsTheSelectedViewsControlsAfterTheSelector() {
 
+            // ARRANGE
             when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
@@ -284,9 +324,11 @@ final class PoliticalMapLayerTests {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                var body = layer.getBodyControls(BODY_SCREEN);
+                // ACT
+                var actualBody = layer.getBodyControls(BODY_SCREEN);
 
-                assertThat(body)
+                // ASSERT
+                assertThat(actualBody)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER, VIEW_MARKER);
             }
         }
@@ -294,6 +336,7 @@ final class PoliticalMapLayerTests {
         @Test
         void placesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
 
+            // ARRANGE
             when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
@@ -327,18 +370,21 @@ final class PoliticalMapLayerTests {
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 
-                var body = layer.getBodyControls(BODY_SCREEN);
+                // ACT
+                var actualBody = layer.getBodyControls(BODY_SCREEN);
 
-                assertThat(body)
+                // ASSERT
+                assertThat(actualBody)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER, PICKER_MARKER, VIEW_MARKER);
             }
         }
 
+        // The faction view adds no controls of its own, so the body is only the shared rows and the
+        // selector - nothing trails the selector.
         @Test
         void omitsViewControlsWhenTheSelectedViewAddsNone() {
 
-            // The faction view adds no controls of its own, so the body is only the shared rows and
-            // the selector - nothing trails the selector.
+            // ARRANGE
             when(viewWithoutControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of());
 
@@ -363,17 +409,21 @@ final class PoliticalMapLayerTests {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                var body = layer.getBodyControls(BODY_SCREEN);
+                // ACT
+                var actualBody = layer.getBodyControls(BODY_SCREEN);
 
-                assertThat(body)
+                // ASSERT
+                assertThat(actualBody)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER);
             }
         }
 
+        // The off sentinel is stored for the asking panel, so no view is selected there; even a view
+        // that has controls contributes none, since the tab is showing but that panel's map is dark.
         @Test
         void appendsNoViewControlsWhenTheMapIsOff() {
-            // The off sentinel is stored for the asking panel, so no view is selected there; even a view
-            // that has controls contributes none, since the tab is showing but that panel's map is dark.
+
+            // ARRANGE
             registerDefaultView(viewWithControlsMock);
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
@@ -396,19 +446,23 @@ final class PoliticalMapLayerTests {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                var body = layer.getBodyControls(BODY_SCREEN);
+                // ACT
+                var actualBody = layer.getBodyControls(BODY_SCREEN);
 
-                assertThat(body)
+                // ASSERT
+                assertThat(actualBody)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER);
             }
         }
 
+        // What sits beside the sort selector is this layer's decision, not the framework picker's:
+        // the political map fills that half with the filter recede - a caption and the Mute and
+        // Desaturate checkboxes - so the "rest of the sector" knobs read beside the metric. Built for
+        // real (no picker stub), since the pairing is the thing under test.
         @Test
         void pairsTheFilterRecedeWithThePickersSortSelector() {
-            // What sits beside the sort selector is this layer's decision, not the framework
-            // picker's: the political map fills that half with the filter recede - a caption and the
-            // Mute and Desaturate checkboxes - so the "rest of the sector" knobs read beside the
-            // metric. Built for real (no picker stub), since the pairing is the thing under test.
+
+            // ARRANGE
             registerViewWithOneBloc(viewWithoutControlsMock);
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
@@ -430,8 +484,10 @@ final class PoliticalMapLayerTests {
 
                 stubSharedControlsAndSelector(controlsMock);
 
+                // ACT
                 var sortRow = findSortRow(layer.getBodyControls(BODY_SCREEN));
 
+                // ASSERT
                 // The left half is the sort selector over this layer's own vocabulary, one row per
                 // mode, so the modes reaching the picker are the political map's.
                 assertThat(sortRow.leftColumn())
@@ -449,13 +505,15 @@ final class PoliticalMapLayerTests {
             }
         }
 
+        // The scope this layer hands over is what makes each view remember its own spotlight and its
+        // own sort: the stores partition by whatever ID they are given, so a layer passing a constant
+        // would still read and write consistently and every store-level test would stay green while
+        // all three views shared one slot. Pinned here because this is the only place the ID is
+        // chosen.
         @Test
         void scopesThePickerToTheSelectedViewsId() {
-            // The scope this layer hands over is what makes each view remember its own spotlight and
-            // its own sort: the stores partition by whatever ID they are given, so a layer passing a
-            // constant would still read and write consistently and every store-level test would stay
-            // green while all three views shared one slot. Pinned here because this is the only place
-            // the ID is chosen.
+
+            // ARRANGE
             registerViewWithOneBloc(viewWithoutControlsMock);
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
@@ -476,8 +534,10 @@ final class PoliticalMapLayerTests {
 
                 stubSharedControlsAndSelector(controlsMock);
 
+                // ACT
                 layer.getBodyControls(BODY_SCREEN);
 
+                // ASSERT
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         argThat(slot -> PICKER_VIEW_ID.equals(slot.scopeId())),
@@ -487,28 +547,35 @@ final class PoliticalMapLayerTests {
             }
         }
 
+        // The body build is handed no sector - a vanilla screen names none - so it resolves the
+        // running one's machinery itself, and the list it reads is that sector's. Every case above
+        // resolves no sector at all, under which a build reaching any other machinery would answer
+        // identically; only a build over a really installed sector can tell them apart.
         @Test
         void readsThePickerOffTheRunningSectorsMachinery() {
-            // The body build is handed no sector - a vanilla screen names none - so it resolves the
-            // running one's machinery itself, and the list it reads is that sector's. Every case
-            // above resolves no sector at all, under which a build reaching any other machinery
-            // would answer identically; only a build over a really installed sector can tell them
-            // apart.
-            buildBodyOverInstalledSector((sector, machinery, controlsMock, pickerMock, recedeMock) ->
+
+            // ARRANGE, ACT
+            buildBodyOverInstalledSector((sector, machinery, controlsMock, pickerMock, recedeMock) -> {
+
+                // ASSERT
                 // The walk ran against the installed sector, which it can only have done through
                 // that sector's own memo - the machinery of no sector reads no economy at all.
                 verify(viewWithoutControlsMock)
-                    .resolveOwnerPickerRead(sector));
+                    .resolveOwnerPickerRead(sector);
+            });
         }
 
+        // The controls this body builds all write a sidebar-only preference, which repaints by
+        // raising a signal rather than by moving settingsRevision - so each is handed the board of
+        // the machinery this build resolved. Handed any other, a flip would repaint a map the player
+        // is not looking at and leave the one they are as it was.
         @Test
         void handsEveryWriterTheRunningSectorsOwnRefreshBoard() {
-            // The controls this body builds all write a sidebar-only preference, which repaints by
-            // raising a signal rather than by moving settingsRevision - so each is handed the board
-            // of the machinery this build resolved. Handed any other, a flip would repaint a map the
-            // player is not looking at and leave the one they are as it was.
+
+            // ARRANGE, ACT
             buildBodyOverInstalledSector((sector, machinery, controlsMock, pickerMock, recedeMock) -> {
 
+                // ASSERT
                 var installedBoard = machinery.resolveRefreshBoard();
 
                 // The three seams the body hands a panel to - the shared sub-options, the filter recede
@@ -538,19 +605,22 @@ final class PoliticalMapLayerTests {
             });
         }
 
+        // The screen travels the whole build for the same reason the board does: a control writes the
+        // preference of the panel it was placed on, so a piece left to find a screen for itself would
+        // file its click under whichever panel happened to be up when it was pressed. Every seam the
+        // body composes is asked for, since one of them dropping the screen is exactly one control set
+        // silently landing on the other panel's slots.
+        //
+        // The view read the body branches on is covered by the arrangement rather than by a verify:
+        // the showing screen's map is posed off, so reaching the picker and the view's own controls at
+        // all is only possible for a build that resolved the asking panel's view.
         @Test
         void handsEveryPieceTheScreenWhosePanelAskedForTheBody() {
-            // The screen travels the whole build for the same reason the board does: a control writes the
-            // preference of the panel it was placed on, so a piece left to find a screen for itself would
-            // file its click under whichever panel happened to be up when it was pressed. Every seam the
-            // body composes is asked for, since one of them dropping the screen is exactly one control set
-            // silently landing on the other panel's slots.
-            //
-            // The view read the body branches on is covered by the arrangement rather than by a verify:
-            // the showing screen's map is posed off, so reaching the picker and the view's own controls
-            // at all is only possible for a build that resolved the asking panel's view.
+
+            // ARRANGE, ACT
             buildBodyOverInstalledSector((sector, machinery, controlsMock, pickerMock, recedeMock) -> {
 
+                // ASSERT
                 controlsMock.verify(
                     () -> OwnerMapBodyControls.buildSharedControls(
                         any(),
@@ -582,19 +652,24 @@ final class PoliticalMapLayerTests {
             });
         }
 
+        // The shared stores hold no mod's name, so which mod's spotlight, sort and column count a
+        // picker reads and writes is decided here. A slot built under any other namespace reads back
+        // nothing every existing save holds, which no store's own suite can catch.
         @Test
         void filesThePickersPicksUnderThisModsOwnStoreNamespace() {
-            // The shared stores hold no mod's name, so which mod's spotlight, sort and column count a
-            // picker reads and writes is decided here. A slot built under any other namespace reads
-            // back nothing every existing save holds, which no store's own suite can catch.
-            buildBodyOverInstalledSector((sector, machinery, controlsMock, pickerMock, recedeMock) ->
+
+            // ARRANGE, ACT
+            buildBodyOverInstalledSector((sector, machinery, controlsMock, pickerMock, recedeMock) -> {
+
+                // ASSERT
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         argThat(slot ->
                             MAP_STORE_KEY_PREFIX.equals(slot.screenSlot().namespace().keyPrefix())),
                         any(),
                         any(),
-                        any())));
+                        any()));
+            });
         }
     }
 
@@ -604,14 +679,21 @@ final class PoliticalMapLayerTests {
         @Test
         void lettersTheTabFromThePoliticalMapsOwnKey() {
 
+            // ARRANGE
+            var expectedLabelText = "Political Map";
+
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stringsMock
                     .when(() -> KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP))
                     .thenReturn("Political Map");
 
-                assertThat(layer.resolveTabLabelText())
-                    .isEqualTo("Political Map");
+                // ACT
+                var actualLabelText = layer.resolveTabLabelText();
+
+                // ASSERT
+                assertThat(actualLabelText)
+                    .isEqualTo(expectedLabelText);
             }
         }
     }
@@ -619,30 +701,42 @@ final class PoliticalMapLayerTests {
     @Nested
     class ResolveShortcutKeycode {
 
+        // Which row the rebind lands in is this tab's own fact, so a wrong ID here silently ignores
+        // the player's rebind while every framework test stays green.
         @Test
         void readsThePoliticalMapsOwnRebindingField() {
-            // Which row the rebind lands in is this tab's own fact, so a wrong ID here silently
-            // ignores the player's rebind while every framework test stays green.
+
+            // ARRANGE
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
                 settingsMock
                     .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(SHORTCUT_SETTING_FIELD))
                     .thenReturn(BOUND_KEYCODE);
 
-                assertThat(layer.resolveShortcutKeycode())
+                // ACT
+                var actualKeycode = layer.resolveShortcutKeycode();
+
+                // ASSERT
+                assertThat(actualKeycode)
                     .isEqualTo(BOUND_KEYCODE);
             }
         }
 
+        // No key of this tab's own stands behind the row: a settings read answering nothing leaves
+        // the tab unbound, which the bar draws no hint for and matches no press against. A fallback
+        // keycode here would be a second answer to what the shipped table already decides, and would
+        // bind a key the player had cleared.
         @Test
         void leavesTheTabUnboundWhenTheSettingsRowAnswersNoKey() {
-            // No key of this tab's own stands behind the row: a settings read answering nothing leaves
-            // the tab unbound, which the bar draws no hint for and matches no press against. A fallback
-            // keycode here would be a second answer to what the shipped table already decides, and would
-            // bind a key the player had cleared.
+
+            // ARRANGE
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
-                assertThat(layer.resolveShortcutKeycode())
+                // ACT
+                var actualKeycode = layer.resolveShortcutKeycode();
+
+                // ASSERT
+                assertThat(actualKeycode)
                     .isZero();
             }
         }
@@ -735,8 +829,8 @@ final class PoliticalMapLayerTests {
         when(view.getId())
             .thenReturn(PICKER_VIEW_ID);
 
-        when(view.getContentRevision(any()))
-            .thenReturn(1);
+        when(view.readContentRevisions(any()))
+            .thenReturn(RevisionStamp.of(1));
 
         when(view.getViewBodyControls(any()))
             .thenReturn(List.of());
@@ -846,8 +940,8 @@ final class PoliticalMapLayerTests {
 
         when(view.getId())
             .thenReturn("selected-view");
-        when(view.getContentRevision(any()))
-            .thenReturn(0);
+        when(view.readContentRevisions(any()))
+            .thenReturn(RevisionStamp.of(0));
 
         doReturn(OwnerPickerRead.empty())
             .when(view)

@@ -9,7 +9,6 @@ import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
-import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
@@ -39,6 +38,8 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.ownermap.ContentInputsFixtures.createInputsSpellingNames;
+import static kmu.maplayers.ownermap.render.clusters.SystemOccupancyFixtures.createEmptyOccupancy;
 
 import static org.mockito.Mockito.mock;
 
@@ -218,12 +219,38 @@ public final class OwnerMapClusterFixtures {
             Set<String> inhabitedSystemIds,
             Set<String> spotlitPresenceSystemIds) {
 
+        return createClustersSpotlighting(
+            selectedOwnerId,
+            ownerBySystemId,
+            inhabitedSystemIds,
+            spotlitPresenceSystemIds,
+            new OwnerSourceFake());
+    }
+
+    /**
+     * The same spotlit clusters retaining a stated owner source, for a case about a batch folding
+     * into a spotlit build.
+     *
+     * @param selectedOwnerId          the spotlighted owner's ID
+     * @param ownerBySystemId          who holds each system
+     * @param inhabitedSystemIds       every system something stands in
+     * @param spotlitPresenceSystemIds the settled systems the pick lives in that nobody holds
+     * @param ownerSource              the source the build retains
+     * @return a live clusters, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersSpotlighting(
+            String selectedOwnerId,
+            Map<String, SystemOwner> ownerBySystemId,
+            Set<String> inhabitedSystemIds,
+            Set<String> spotlitPresenceSystemIds,
+            OwnerSource ownerSource) {
+
         return createClustersUnder(
             ContentInputsFixtures.createInputsSpotlighting(selectedOwnerId),
             buildKeyedValues(ownerBySystemId),
             buildKeyedSystemKeys(inhabitedSystemIds),
             buildKeyedSystemKeys(spotlitPresenceSystemIds),
-            new OwnerSourceFake());
+            ownerSource);
     }
 
     /**
@@ -281,7 +308,7 @@ public final class OwnerMapClusterFixtures {
             OwnerSource ownerSource) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createCopyOf(
+            SystemOccupancyFixtures.createSolidlyFilledOccupancyOf(
                 ownerBySystemKey,
                 inhabitedSystemKeys,
                 spotlitPresenceSystemKeys),
@@ -298,8 +325,7 @@ public final class OwnerMapClusterFixtures {
                     OwnerReadingFake.createAnsweringNothing(),
                     ownerSource),
                 contentInputs,
-                false, // No anchor overlay.
-                SystemFillStates.ALL_SOLID));
+                false)); // No anchor overlay.
     }
 
     /**
@@ -337,7 +363,7 @@ public final class OwnerMapClusterFixtures {
             OwnerReading reading) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createEmpty(),
+            createEmptyOccupancy(),
             new OwnerMapBuildInputs(
                 new MapStyling(
                     renderStyle,
@@ -347,9 +373,8 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
                 new ViewReading(view, reading, new OwnerSourceFake()),
-                ContentInputs.createEmpty(),
-                false, // No anchor overlay.
-                SystemFillStates.ALL_SOLID));
+                createInputsSpellingNames(OwnerNameFormatChoice.FULL),
+                false)); // No anchor overlay.
     }
 
     /**

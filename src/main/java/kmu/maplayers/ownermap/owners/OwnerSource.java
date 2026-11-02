@@ -14,7 +14,7 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
  * nothing at all - is its own, and the tier reads nothing of who owns a system.
  *
  * <p>Three asks, because three parts of the pipeline spend the source's rule. The whole-sector
- * answer is a rebuild's. The per-system resolve is an incremental batch's, reopened over the
+ * answer is a rebuild's. The per-system resolver is an incremental batch's, reopened over the
  * batch's own walk: it is asked of the source the standing build was resolved under, so a marked
  * system is re-derived under the very snapshot its neighbours were painted by. The band planner is
  * the bake's, because a band explains the fill it sits inside - counting it by any rule but the
@@ -39,13 +39,15 @@ public interface OwnerSource {
     ResolvedOwners resolveOwners(SectorWalk walk, String spotlitOwnerId);
 
     /**
-     * Opens one batch's per-system resolve over the batch's own walk.
+     * Opens one batch's per-system resolver over the batch's own walk.
      *
      * @param walk           the batch's walk of the sector
-     * @param spotlitOwnerId the spotlit owner the standing build was painted under, or null
-     * @return the batch's resolve, answering the three questions of one marked system
+     * @param spotlitOwnerId the spotlit owner the standing build was painted under, or null - a
+     *                       source that spotlights answers each marked system as its spotlit
+     *                       whole-sector answer would
+     * @return the batch's resolver, answering the three questions of one marked system
      */
-    SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId);
+    SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId);
 
     /**
      * The mechanic this source's cells are counted by for their presence bands, over the bake's

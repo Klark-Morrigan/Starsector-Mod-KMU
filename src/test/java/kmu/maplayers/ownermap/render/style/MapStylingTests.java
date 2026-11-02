@@ -27,49 +27,57 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the paint scheme's answers: what one build's read of the theme, the border trace and the
- * reading carries, the shade its neutral pair reads as, and what a build that never resolved a
- * theme carries in place of one.
- *
- * <p>The placeholder is worth pinning precisely because nothing paints it. A slot left null there
- * would surface as a crash on the frame after a failed first build - the one frame no test of the
- * normal path ever reaches - so what this asserts is that every slot holds something at all.
+ * reading carries, the shade its neutral pair reads as, and the style an unowned cell draws in.
  */
 final class MapStylingTests {
 
     @Nested
     class ReadNeutralColour {
 
+        // An unowned cell names no owner, so its pair holds one shade twice and the colour is
+        // whichever slot you look at.
         @Test
         void answersTheShadeTheNeutralPairHolds() {
-            // An unowned cell names no owner, so its pair holds one shade twice and the
-            // colour is whichever slot you look at.
-            var styling = new MapStyling(
-                null,
-                null,
-                OwnerCategoriesFake.SHARED_FAKE,
-                new ColourPair(Color.CYAN, Color.CYAN),
-                new ColourPair(Color.MAGENTA, Color.ORANGE),
-                new ColourPair(Color.PINK, Color.WHITE));
 
-            assertThat(styling.readNeutralColour())
-                .isEqualTo(Color.CYAN);
+            // ARRANGE
+            var styling = buildStylingOverDistinctPalettes();
+            var expectedColour = Color.CYAN;
+
+            // ACT
+            var actualColour = styling.readNeutralColour();
+
+            // ASSERT
+            assertThat(actualColour)
+                .isEqualTo(expectedColour);
         }
 
+        // The three palettes sit in adjacent same-typed slots, so a colour read from the wrong one
+        // would still compile and still answer a Color. Only distinct shades catch it.
         @Test
         void readsTheNeutralPairRatherThanEitherSpotlightPalette() {
-            // The three palettes sit in adjacent same-typed slots, so a colour read from the wrong
-            // one would still compile and still answer a Color. Only distinct shades catch it.
-            var styling = new MapStyling(
+
+            // ARRANGE
+            var styling = buildStylingOverDistinctPalettes();
+
+            // ACT
+            var actualColour = styling.readNeutralColour();
+
+            // ASSERT
+            assertThat(actualColour)
+                .isNotEqualTo(Color.MAGENTA)
+                .isNotEqualTo(Color.PINK);
+        }
+
+        // A scheme with no theme or trace, whose three palettes each hold shades the others do not.
+        private static MapStyling buildStylingOverDistinctPalettes() {
+
+            return new MapStyling(
                 null,
                 null,
                 OwnerCategoriesFake.SHARED_FAKE,
                 new ColourPair(Color.CYAN, Color.CYAN),
                 new ColourPair(Color.MAGENTA, Color.ORANGE),
                 new ColourPair(Color.PINK, Color.WHITE));
-
-            assertThat(styling.readNeutralColour())
-                .isNotEqualTo(Color.MAGENTA)
-                .isNotEqualTo(Color.PINK);
         }
     }
 
@@ -105,23 +113,33 @@ final class MapStylingTests {
             labelSettingsMock.close();
         }
 
+        // Read here once for the build, so every cluster group it draws - and every one the
+        // incremental refresh redraws - is traced under the same parameters.
         @Test
         void carriesTheBorderTraceItReads() {
-            // Read here once for the build, so every cluster group it draws - and every one the
-            // incremental refresh redraws - is traced under the same parameters.
+
+            // ARRANGE
+            var expectedBorderTrace = new ClusterBorderTrace(7.0, 3.0);
+
             try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
 
                 stubInertTheme(styleReaderMock);
 
-                assertThat(readStylingOverTheFakeReading().borderTrace())
-                    .isEqualTo(new ClusterBorderTrace(7.0, 3.0));
+                // ACT
+                var actualStyling = readStylingOverAReadingAnsweringNothing();
+
+                // ASSERT
+                assertThat(actualStyling.borderTrace())
+                    .isEqualTo(expectedBorderTrace);
             }
         }
 
+        // The picks go to the theme read rather than being sampled again, since a category's style
+        // may ride on one and the rebuild has already decided which picks it was owed by.
         @Test
         void carriesTheThemeReadForTheLayersCategoriesUnderThePicks() {
-            // The picks go to the theme read rather than being sampled again, since a category's
-            // style may ride on one and the rebuild has already decided which picks it was owed by.
+
+            // ARRANGE
             var contentInputs = ContentInputsFixtures.createInertInputs();
             var theme = buildInertTheme();
 
@@ -131,14 +149,16 @@ final class MapStylingTests {
                     .when(() -> RenderStyleReader.readRenderStyle(OwnerCategoriesFake.SHARED_FAKE, contentInputs))
                     .thenReturn(theme);
 
-                var styling = MapStyling.readFromLunaSettings(
+                // ACT
+                var actualStyling = MapStyling.readFromLunaSettings(
                     OwnerCategoriesFake.SHARED_FAKE,
                     OwnerReadingFake.createAnsweringNothing(),
                     contentInputs);
 
-                assertThat(styling.renderStyle())
+                // ASSERT
+                assertThat(actualStyling.renderStyle())
                     .isSameAs(theme);
-                assertThat(styling.categories())
+                assertThat(actualStyling.categories())
                     .isSameAs(OwnerCategoriesFake.SHARED_FAKE);
             }
         }
@@ -146,28 +166,40 @@ final class MapStylingTests {
         @Test
         void holdsTheReadingsUnownedShadeInBothNeutralSlots() {
 
+            // ARRANGE
+            var expectedNeutralPalette = new ColourPair(Color.GRAY, Color.GRAY);
+
             try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
 
                 stubInertTheme(styleReaderMock);
 
-                assertThat(readStylingOverTheFakeReading().neutralPalette())
-                    .isEqualTo(new ColourPair(Color.GRAY, Color.GRAY));
+                // ACT
+                var actualStyling = readStylingOverAReadingAnsweringNothing();
+
+                // ASSERT
+                assertThat(actualStyling.neutralPalette())
+                    .isEqualTo(expectedNeutralPalette);
             }
         }
 
         @Test
         void darkensTheReadingsRecedeShadesByTheThemesDarkening() {
 
+            // ARRANGE
             try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
 
                 stubInertTheme(styleReaderMock);
 
-                assertThat(readStylingOverTheFakeReading().desaturationPalette())
+                // ACT
+                var actualStyling = readStylingOverAReadingAnsweringNothing();
+
+                // ASSERT
+                assertThat(actualStyling.desaturationPalette())
                     .isEqualTo(DARKENED_RECEDE_PALETTE);
             }
         }
 
-        private static MapStyling readStylingOverTheFakeReading() {
+        private static MapStyling readStylingOverAReadingAnsweringNothing() {
 
             return MapStyling.readFromLunaSettings(
                 OwnerCategoriesFake.SHARED_FAKE,
@@ -190,48 +222,6 @@ final class MapStylingTests {
     }
 
     @Nested
-    class CreateEmpty {
-
-        @Test
-        void carriesNoThemeAtAll() {
-            // The honest record of the failure: no theme was resolved, and the render path skips
-            // an empty overlay before it would read one.
-            assertThat(MapStyling.createEmpty().renderStyle())
-                .isNull();
-        }
-
-        @Test
-        void fillsEveryPaletteSlotSoNoneIsNull() {
-
-            var styling = MapStyling.createEmpty();
-
-            assertThat(styling.neutralPalette())
-                .isNotNull();
-            assertThat(styling.desaturationPalette())
-                .isNotNull();
-            assertThat(styling.presencePalette())
-                .isNotNull();
-            assertThat(styling.readNeutralColour())
-                .isNotNull();
-        }
-
-        @Test
-        void holdsOneNeutralShadeInEverySlotOfEveryPalette() {
-            // Every slot the same stand-in, so nothing in the placeholder reads as a choice
-            // somebody made - and the colour read off the neutral pair answers that same shade.
-            var styling = MapStyling.createEmpty();
-            var placeholder = styling.readNeutralColour();
-
-            assertThat(styling.neutralPalette())
-                .isEqualTo(new ColourPair(placeholder, placeholder));
-            assertThat(styling.desaturationPalette())
-                .isEqualTo(new ColourPair(placeholder, placeholder));
-            assertThat(styling.presencePalette())
-                .isEqualTo(new ColourPair(placeholder, placeholder));
-        }
-    }
-
-    @Nested
     class ResolveUnownedStyle {
 
         // Two bundles told apart by their outline width alone, so the answer names the category
@@ -242,14 +232,28 @@ final class MapStylingTests {
         @Test
         void answersTheSettledCategorysStyleForASettledCell() {
 
-            assertThat(buildStylingOverTheTwoBundles().resolveUnownedStyle(true))
+            // ARRANGE
+            var styling = buildStylingOverTheTwoBundles();
+
+            // ACT
+            var actualStyle = styling.resolveUnownedStyle(true);
+
+            // ASSERT
+            assertThat(actualStyle)
                 .isEqualTo(SETTLED_STYLE);
         }
 
         @Test
         void answersTheEmptyCategorysStyleForAnEmptyCell() {
 
-            assertThat(buildStylingOverTheTwoBundles().resolveUnownedStyle(false))
+            // ARRANGE
+            var styling = buildStylingOverTheTwoBundles();
+
+            // ACT
+            var actualStyle = styling.resolveUnownedStyle(false);
+
+            // ASSERT
+            assertThat(actualStyle)
                 .isEqualTo(EMPTY_STYLE);
         }
 

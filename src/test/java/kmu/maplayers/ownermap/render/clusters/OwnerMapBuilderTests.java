@@ -21,9 +21,10 @@ import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
@@ -43,8 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what a build hands down and what it keeps: the walk it was given, at the source the owners
- * are asked of, and the view's reading and styling it was handed, retained whole for every stage
- * after it.
+ * are asked of, and the build inputs it was handed, retained whole for every stage after it.
  *
  * <p>Two halves, because a rebuild has two. The owners are a reading of the sector, asked of the
  * layer's source on a row of their own; the build paints over whatever owners it is handed, from
@@ -93,27 +93,35 @@ final class OwnerMapBuilderTests {
     @Nested
     class ResolveOwners {
 
+        // The walk every stage of the rebuild shares: a source asked over one of its own would be a
+        // second traversal of the sector, and a second reading of a sector free to have moved between
+        // them.
         @Test
         void asksTheSourceOverTheHandedWalk() {
-            // The walk every stage of the rebuild shares: a source asked over one of its own would
-            // be a second traversal of the sector, and a second reading of a sector free to have
-            // moved between them.
+
+            // ARRANGE
             var sourceFake = new OwnerSourceFake();
 
+            // ACT
             OwnerMapBuilder.resolveOwners(sourceFake, walk, UNFILTERED_INPUTS);
 
+            // ASSERT
             assertThat(sourceFake.readOwnerWalks())
                 .singleElement()
                 .isSameAs(walk);
         }
 
+        // The one pick that reaches the owners, taken off the rebuild's own sampling.
         @Test
         void asksUnderTheSampledSpotlight() {
-            // The one pick that reaches the owners, taken off the rebuild's own sampling.
+
+            // ARRANGE
             var sourceFake = new OwnerSourceFake();
 
+            // ACT
             OwnerMapBuilder.resolveOwners(sourceFake, walk, SPOTLIGHTING_INPUTS);
 
+            // ASSERT
             assertThat(sourceFake.readSpotlitOwnerIdsAsked())
                 .containsExactly("hegemony");
         }
@@ -121,155 +129,169 @@ final class OwnerMapBuilderTests {
         @Test
         void answersWithTheSourcesOwnAnswer() {
 
+            // ARRANGE
             var owners = buildOwnersHolding(HELD_SYSTEM, HELD_BY);
+            var sourceFake = OwnerSourceFake.createAnswering(owners);
 
-            assertThat(OwnerMapBuilder.resolveOwners(
-                    OwnerSourceFake.createAnswering(owners),
-                    walk,
-                    UNFILTERED_INPUTS))
+            // ACT
+            var actualOwners = OwnerMapBuilder.resolveOwners(sourceFake, walk, UNFILTERED_INPUTS);
+
+            // ASSERT
+            assertThat(actualOwners)
                 .isSameAs(owners);
         }
 
+        // A rebuild that kept its owners shows as missing this row, which is a plainer reading than a
+        // source's scans that each happened to cost nothing - and whatever the source times of its
+        // own is read inside it.
         @Test
         void isMeasuredOnARowOfItsOwnAboveWhatTheSourceMeasures() {
-            // A rebuild that kept its owners shows as missing this row, which is a plainer reading
-            // than a source's scans that each happened to cost nothing - and whatever the source
-            // times of its own is read inside it.
-            var capture = RecordedCapture.recordWhile(() -> OwnerMapBuilder.resolveOwners(
-                new ScanningSourceFake(),
-                walk,
-                UNFILTERED_INPUTS));
 
-            assertThat(capture.findNode(RESOLVE_OWNERS_SECTION).getChildren())
+            // ARRANGE
+            var sourceFake = new ScanningSourceFake();
+            var expectedChildSectionName = "ownerMapBuilderTests.sourceOwnScan";
+
+            // ACT
+            var capture = RecordedCapture.recordWhile(
+                () -> OwnerMapBuilder.resolveOwners(sourceFake, walk, UNFILTERED_INPUTS));
+            var actualChildren = capture.findNode(RESOLVE_OWNERS_SECTION).getChildren();
+
+            // ASSERT
+            assertThat(actualChildren)
                 .extracting(node -> node.getSection().getName())
-                .containsExactly(SOURCE_OWN_SECTION.getName());
+                .containsExactly(expectedChildSectionName);
         }
     }
 
     @Nested
     class BuildClusters {
 
+        // The whole point of resolving apart from building: a rebuild a style pick owes is handed the
+        // owners the last one resolved, and must paint from them rather than ask the source for an
+        // answer it already holds.
         @Test
         void buildsFromTheHandedOwnersWithoutAskingTheSourceAgain() {
-            // The whole point of resolving apart from building: a rebuild a style pick owes is
-            // handed the owners the last one resolved, and must paint from them rather than ask
-            // the source for an answer it already holds.
+
+            // ARRANGE
             var sourceFake = new OwnerSourceFake();
+            var viewReading = buildReadingOver(sourceFake);
+            var owners = buildOwnersHolding(HELD_SYSTEM, HELD_BY);
 
-            var clusters = buildClustersOver(
-                buildReadingOver(sourceFake),
-                buildOwnersHolding(HELD_SYSTEM, HELD_BY));
+            // ACT
+            var actualClusters = buildClustersOver(viewReading, owners);
 
+            // ASSERT
             assertThat(sourceFake.readOwnerWalks())
                 .isEmpty();
-            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
+            assertThat(actualClusters.getOccupancy().getOwnerBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, HELD_BY));
         }
 
+        // The clusters are folded into by the incremental refresh, and owners handed to a later
+        // rebuild have to still say what they said - so what the build holds is its own.
         @Test
         void copiesTheHandedOwnersRatherThanAdoptingThem() {
-            // The clusters are folded into by the incremental refresh, and owners handed to a later
-            // rebuild have to still say what they said - so what the build holds is its own.
-            var owners = buildOwnersHolding(HELD_SYSTEM, HELD_BY);
 
+            // ARRANGE
+            var owners = buildOwnersHolding(HELD_SYSTEM, HELD_BY);
             var clusters = buildClustersOver(buildReadingOver(new OwnerSourceFake()), owners);
 
-            clusters.getOccupancy().recordOwnerOf(HELD_SYSTEM, null);
+            // ACT
+            clusters.getOccupancy().recordOwnerOf(HELD_SYSTEM, ResolvedSystemOwner.UNOWNED);
 
+            // ASSERT
             assertThat(owners.ownerBySystemKey())
                 .containsKey(HELD_SYSTEM);
         }
 
+        // The fill states the source co-produced with its owner map ride into the build's occupancy
+        // beside the owners, which a batch folds them in and the fill split reads them off.
         @Test
         void carriesTheFillStatesTheOwnersStated() {
-            // The fill states the source co-produced with its owner map ride onto the build's inputs
-            // whole, which the fill split reads them off.
-            var expectedFillStates = SystemFillStates.createOf(Map.of(
-                buildCellKey("askonia"),
-                FillState.HATCHED,
-                buildCellKey("eos"),
-                FillState.UNFILLED));
-
-            var clusters = buildClustersOver(
-                buildReadingOver(new OwnerSourceFake()),
-                new ResolvedOwners(Map.of(), expectedFillStates, Set.of(), Set.of()));
-
-            assertThat(clusters.getBuildInputs().getFillStates())
-                .isSameAs(expectedFillStates);
-        }
-
-        @Test
-        void retainsTheHandedReadingWhole() {
-            // The fills, borders and seams are styled off the build inputs and the labels off the
-            // snapshot taken from them, and a batch re-derives through the source beside it - so
-            // the reading retained here is the very one the owners were resolved beside.
-            var viewReading = buildReadingOver(new OwnerSourceFake());
-
-            var clusters = buildClustersOver(viewReading, ResolvedOwners.createEmpty());
-
-            assertThat(clusters.getBuildInputs().getViewReading())
-                .isSameAs(viewReading);
-        }
-
-        @Test
-        void retainsTheHandedStylingWhole() {
-            // The rebuild reads its styling once for everything it builds, so the scheme the
-            // incremental refresh and the names read back is the very one it was handed.
-            var clusters = buildClustersOver(
-                buildReadingOver(new OwnerSourceFake()),
-                ResolvedOwners.createEmpty());
-
-            assertThat(clusters.getBuildInputs().getStyling())
-                .isSameAs(STYLING);
-        }
-
-        // A batch folding into the build later fits its names under what the build was baked under,
-        // so the overlay the rebuild sampled has to ride onto the build's inputs.
-        @Test
-        void retainsTheSampledAnchorOverlay() {
 
             // ARRANGE
             var viewReading = buildReadingOver(new OwnerSourceFake());
+            var owners = new ResolvedOwners(
+                Map.of(buildCellKey("askonia"), HELD_BY, buildCellKey("eos"), HELD_BY),
+                SystemFillStates.createOf(Map.of(
+                    buildCellKey("askonia"),
+                    FillState.HATCHED,
+                    buildCellKey("eos"),
+                    FillState.UNFILLED)),
+                Set.of(),
+                Set.of());
 
             // ACT
-            var actualIsAnchorOverlayShown = buildClustersOver(viewReading, ResolvedOwners.createEmpty())
-                .getBuildInputs()
-                .isAnchorOverlayShown();
+            var actualClusters = buildClustersOver(viewReading, owners);
 
             // ASSERT
-            assertThat(actualIsAnchorOverlayShown)
-                .isTrue();
+            assertThat(actualClusters.getOccupancy().snapshotFillStates().getNonSolidFillStateBySystemKey())
+                .containsOnly(
+                    Map.entry(buildCellKey("askonia"), FillState.HATCHED),
+                    Map.entry(buildCellKey("eos"), FillState.UNFILLED));
         }
 
+        // The fills, borders and seams are styled off the build inputs and the labels off the
+        // snapshot taken from them, and a batch re-derives through the source and fits under the
+        // overlay beside them - so the inputs retained here are the very ones the rebuild sampled.
+        @Test
+        void retainsTheHandedBuildInputsWhole() {
+
+            // ARRANGE
+            var buildInputs = buildInputsOver(buildReadingOver(new OwnerSourceFake()));
+
+            // ACT
+            var actualClusters = OwnerMapBuilder.buildClusters(
+                new CellGeometryCache(),
+                buildInputs,
+                ResolvedOwners.createEmpty());
+
+            // ASSERT
+            assertThat(actualClusters.getBuildInputs())
+                .isSameAs(buildInputs);
+        }
+
+        // The number the shaping stage's duration is read against. Nothing is shaped over an empty
+        // geometry, which is what the zero states - the counter is on the row either way, so a reader
+        // can tell a stage that shaped nothing from one that never ran.
         @Test
         void countsTheCellsItShaped() {
-            // The number the shaping stage's duration is read against. Nothing is shaped over an
-            // empty geometry, which is what the zero states - the counter is on the row either way,
-            // so a reader can tell a stage that shaped nothing from one that never ran.
-            var capture = RecordedCapture.recordWhile(() -> buildClustersOver(
-                buildReadingOver(new OwnerSourceFake()),
-                ResolvedOwners.createEmpty()));
 
-            var shapeRow = capture.findNode(SHAPE_AND_STYLE_SECTION);
+            // ARRANGE
+            var viewReading = buildReadingOver(new OwnerSourceFake());
+            var expectedTag = "styled=0 owners=0";
 
-            assertThat(shapeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
+            // ACT
+            var capture = RecordedCapture.recordWhile(
+                () -> buildClustersOver(viewReading, ResolvedOwners.createEmpty()));
+            var actualShapeRow = capture.findNode(SHAPE_AND_STYLE_SECTION);
+
+            // ASSERT
+            assertThat(actualShapeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
                 .isZero();
-            assertThat(shapeRow.getWorstCall().getTag())
-                .isEqualTo("styled=0 owners=0");
+            assertThat(actualShapeRow.getWorstCall().getTag())
+                .isEqualTo(expectedTag);
         }
 
-        // A build over no geometry under the shared picks, overlay and styling, differing per case in
-        // the reading and the owners alone. The overlay is sampled on, so a build dropping it reads
-        // as the placeholder's off.
+        // A build over no geometry under the shared picks and styling, differing per case in the
+        // reading and the owners alone.
         private static OwnerMapClusters buildClustersOver(ViewReading viewReading, ResolvedOwners owners) {
 
             return OwnerMapBuilder.buildClusters(
                 new CellGeometryCache(),
+                buildInputsOver(viewReading),
+                owners);
+        }
+
+        // The inputs every build here is handed: the shared picks and styling beside the case's own
+        // reading, with the overlay on.
+        private static OwnerMapBuildInputs buildInputsOver(ViewReading viewReading) {
+
+            return new OwnerMapBuildInputs(
+                STYLING,
                 viewReading,
                 UNFILTERED_INPUTS,
-                true,
-                owners,
-                STYLING);
+                true);
         }
     }
 
@@ -303,7 +325,7 @@ final class OwnerMapBuilderTests {
         }
 
         @Override
-        public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+        public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
             throw new UnsupportedOperationException("no case here re-derives a system");
         }
 

@@ -3,9 +3,16 @@ package kmu.maplayers.ownermap.render.clusters;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -13,34 +20,35 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Who is in each star system, as a built map owns it: which owner owns it, whether anything
- * stands in it at all, and - while an owner is spotlighted - whether the pick is one of the things
- * standing in it.
+ * Who is in each star system, as a built map owns it: which owner owns it and how its fill draws
+ * inside that owner's border, whether anything stands in it at all, and - while an owner is
+ * spotlighted - whether the pick is one of the things standing in it.
  *
- * <p>The three travel together because a cell is drawn from all three at once. The owner decides
- * whether the cell fuses into a cluster group or draws alone; inhabitation tells a settled cell nobody
- * owns from the empty backdrop; and the pick's presence spares such a cell the recede a spotlight
- * sinks the rest of the sector under. Read from two different states of the sector, they produce a
- * cell no single reading of the sector would have drawn - a haven sunk under a spotlight it is the
- * subject of, or a colonised system still drawn as backdrop.
+ * <p>The four travel together because a map is drawn from all four at once. The owner decides
+ * whether the cell fuses into a cluster group or draws alone, and its fill state how the group
+ * fills over it; inhabitation tells a settled cell nobody owns from the empty backdrop; and the
+ * pick's presence spares such a cell the recede a spotlight sinks the rest of the sector under. Read
+ * from two different states of the sector, they produce a cell no single reading of the sector would
+ * have drawn - a haven sunk under a spotlight it is the subject of, or a colonised system still
+ * drawn as backdrop.
  *
- * <p>Which is why they move together too. A full rebuild resolves all three; the incremental
- * refresh re-derives all three per marked system, through the folds below rather than by editing
- * collections it was handed. Each fold reports whether it moved anything, because a change here is
- * exactly what obliges the system's cell to be drawn again - so no fact can be brought up to date
- * without the redraw it owes being noticed.
+ * <p>Which is why they move together too. A full rebuild resolves all four; the incremental
+ * refresh re-derives all four per marked system, through the folds below rather than by editing
+ * collections it was handed. Each fold lets the caller tell whether it moved anything, because a
+ * change here is exactly what obliges the system's cell or its owner's group to be drawn again - so
+ * no fact can be brought up to date without the redraw it owes being noticed.
  *
  * <p>The collections are this type's own, copied on the way in. Anything reachable from a getter is
- * an unmodifiable view of them, so the only way to move a fact is a fold. That is the whole point
- * of the type rather than three loose collections on the built map: those had to be mutable by
- * caller convention, which a caller passing an immutable empty set kept perfectly until the first
- * fold threw.
+ * an unmodifiable view of them, so the only way to move a fact is a fold. Loose collections on the
+ * built map would be kept from moving by caller convention alone.
  */
 public final class SystemOccupancy {
 
-    // Who owns each system. A system with no entry is owned by nobody - which is not the same as
-    // nobody living there, and reading it as such is what the inhabited set below exists to stop.
-    private final Map<SystemKey, SystemOwner> ownerBySystemKey;
+    // Who owns each system and how its fill draws inside that owner's border. A system with no
+    // entry is owned by nobody - which is not the same as nobody living there, and reading it as
+    // such is what the inhabited set below exists to stop. Only an owned system has an entry, so a
+    // fill state has nowhere to sit on a system nobody owns.
+    private final Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey;
 
     // Every system something stands in, as the owner source counts it.
     private final Set<SystemKey> inhabitedSystemKeys;
@@ -56,62 +64,59 @@ public final class SystemOccupancy {
     private final Set<SystemKey> readableSpotlitPresenceSystemKeys;
 
     private SystemOccupancy(
-            Map<SystemKey, SystemOwner> ownerBySystemKey,
+            Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey,
             Set<SystemKey> inhabitedSystemKeys,
             Set<SystemKey> spotlitPresenceSystemKeys) {
 
-        this.ownerBySystemKey = ownerBySystemKey;
+        this.resolvedOwnerBySystemKey = resolvedOwnerBySystemKey;
         this.inhabitedSystemKeys = inhabitedSystemKeys;
         this.spotlitPresenceSystemKeys = spotlitPresenceSystemKeys;
 
-        readableOwnerBySystemKey = Collections.unmodifiableMap(ownerBySystemKey);
+        readableOwnerBySystemKey = new OwnerProjection(resolvedOwnerBySystemKey);
         readableInhabitedSystemKeys = Collections.unmodifiableSet(inhabitedSystemKeys);
         readableSpotlitPresenceSystemKeys = Collections.unmodifiableSet(spotlitPresenceSystemKeys);
     }
 
     /**
-     * The occupancy one pass resolved, copied out of whatever the pass's three reads answered
-     * with.
+     * The occupancy one pass resolved, copied out of what the owner source answered.
      *
      * <p>Copied rather than adopted, because a read is free to answer with an immutable empty
      * collection - the presence read does exactly that off filter - and this type's whole job is
      * that folding a fact cannot depend on which of its callers happened to answer with what.
-     * Insertion-ordered copies, so a walk of any of the three runs in the order the pass resolved
-     * it rather than in a hash's.
+     * Insertion-ordered copies, so a walk of any of them runs in the order the pass resolved it
+     * rather than in a hash's.
      *
-     * @param ownerBySystemKey          who owns each system; a system nobody owns is absent
-     * @param inhabitedSystemKeys       every system something stands in
-     * @param spotlitPresenceSystemKeys the settled systems the spotlit owner lives in that nobody
-     *                                  owns; empty off filter
+     * <p>Each owned system takes its fill state beside its owner. A state the owners name for a
+     * system nobody owns is not copied: there is no border for it to draw inside.
+     *
+     * @param owners who owns each system and how it fills, every system something stands in, and
+     *               where the spotlit owner lives among the unowned ones
      * @return the occupancy, ready to be read and folded
      */
-    public static SystemOccupancy createCopyOf(
-            Map<SystemKey, SystemOwner> ownerBySystemKey,
-            Set<SystemKey> inhabitedSystemKeys,
-            Set<SystemKey> spotlitPresenceSystemKeys) {
+    public static SystemOccupancy createCopyOf(ResolvedOwners owners) {
+
+        var resolvedOwnerBySystemKey = new LinkedHashMap<SystemKey, ResolvedSystemOwner>();
+        var fillStates = owners.fillStates();
+
+        for (var entry : owners.ownerBySystemKey().entrySet()) {
+
+            var systemKey = entry.getKey();
+
+            resolvedOwnerBySystemKey.put(
+                systemKey,
+                new ResolvedSystemOwner(entry.getValue(), fillStates.resolveFillStateOf(systemKey)));
+        }
 
         return new SystemOccupancy(
-            new LinkedHashMap<>(ownerBySystemKey),
-            new LinkedHashSet<>(inhabitedSystemKeys),
-            new LinkedHashSet<>(spotlitPresenceSystemKeys));
-    }
-
-    /**
-     * An empty occupancy: nobody owns anything, nothing stands anywhere, no pick lives anywhere.
-     *
-     * <p>What a build that never ran carries, and what a build fills in as it resolves. Named here
-     * rather than spelt out as three empty collections at each such caller, so "nothing resolved
-     * yet" is one value.
-     *
-     * @return an empty occupancy, ready to be folded into
-     */
-    public static SystemOccupancy createEmpty() {
-        return createCopyOf(Map.of(), Set.of(), Set.of());
+            resolvedOwnerBySystemKey,
+            new LinkedHashSet<>(owners.inhabitedSystemKeys()),
+            new LinkedHashSet<>(owners.spotlitPresenceSystemKeys()));
     }
 
     /**
      * @return who owns each system, keyed by {@link SystemKey}; a system nobody owns is absent
-     *         rather than present under a null
+     *         rather than present under a null. A live view of the owners the fill states sit
+     *         beside, so the two cannot drift apart
      */
     public Map<SystemKey, SystemOwner> getOwnerBySystemKey() {
         return readableOwnerBySystemKey;
@@ -139,8 +144,38 @@ public final class SystemOccupancy {
         if (systemKey == null) {
             return null;
         }
+        // The unowned answer names nobody, which is what an absent entry means.
+        return readResolvedOwnerOf(systemKey).owner();
+    }
 
-        return ownerBySystemKey.get(systemKey);
+    /**
+     * Who owns one system and how its fill draws, as the one answer a re-derive compares its own
+     * against.
+     *
+     * @param systemKey the system to read
+     * @return its owner and fill state; {@link ResolvedSystemOwner#UNOWNED} where nobody owns it
+     */
+    public ResolvedSystemOwner readResolvedOwnerOf(SystemKey systemKey) {
+        return resolvedOwnerBySystemKey.getOrDefault(systemKey, ResolvedSystemOwner.UNOWNED);
+    }
+
+    /**
+     * How every system fills as this occupancy now stands, copied for one cluster-group builder.
+     *
+     * <p>A copy rather than a view, so a builder traces every owner of its pass against one state
+     * of the map even where a fold lands between two of its owners.
+     *
+     * @return the state each system fills in; solid for any system not named
+     */
+    public SystemFillStates snapshotFillStates() {
+
+        var fillStateBySystemKey = new LinkedHashMap<SystemKey, FillState>();
+
+        for (var entry : resolvedOwnerBySystemKey.entrySet()) {
+            fillStateBySystemKey.put(entry.getKey(), entry.getValue().fillState());
+        }
+
+        return SystemFillStates.createOf(fillStateBySystemKey);
     }
 
     /**
@@ -192,30 +227,31 @@ public final class SystemOccupancy {
     public Set<SystemKey> selectUnownedSystemKeysAmong(Set<SystemKey> candidateSystemKeys) {
         // The owner side's own rule rather than a copy of it, so the source that resolves the
         // whole sector and this fold cannot come to disagree about what "unowned" means.
-        return SystemOwner.selectUnownedSystemKeysAmong(ownerBySystemKey, candidateSystemKeys);
+        return SystemOwner.selectUnownedSystemKeysAmong(readableOwnerBySystemKey, candidateSystemKeys);
     }
 
     /**
-     * Records who owns one system, or that nobody does.
+     * Records who owns one system and how it fills, or that nobody owns it.
      *
-     * <p>Takes the absent owner as a null rather than through a second method, because the two
-     * are one answer from the resolve that produced it: a system with nothing counted in it
-     * resolves to nobody, and the caller that has just asked should not have to branch on which
-     * kind of answer it got before writing it down.
+     * <p>Takes the absent owner as {@link ResolvedSystemOwner#UNOWNED} rather than through a second
+     * method, because the two are one answer from the resolve that produced it: a system with
+     * nothing counted in it resolves to nobody, and the caller that has just asked should not have
+     * to branch on which kind of answer it got before writing it down.
      *
      * <p>Reports nothing about what moved, unlike the folds below, because an owner change is not
      * a yes-or-no: what the redraw needs is both sides of the transfer, so the caller reads the
-     * standing owner before it writes and has the pair without being told.
+     * standing answer before it writes and has the pair without being told.
      *
      * @param systemKey the system to record
-     * @param owner     who owns it now, or null when nobody does
+     * @param resolved  who owns it now and how it fills
      */
-    public void recordOwnerOf(SystemKey systemKey, SystemOwner owner) {
+    public void recordOwnerOf(SystemKey systemKey, ResolvedSystemOwner resolved) {
 
-        if (owner == null) {
-            ownerBySystemKey.remove(systemKey);
+        if (resolved.owner() == null) {
+            resolvedOwnerBySystemKey.remove(systemKey);
+
         } else {
-            ownerBySystemKey.put(systemKey, owner);
+            resolvedOwnerBySystemKey.put(systemKey, resolved);
         }
     }
 
@@ -252,5 +288,81 @@ public final class SystemOccupancy {
         return isMember
             ? systemKeys.add(systemKey)
             : systemKeys.remove(systemKey);
+    }
+
+    // The owner half of each resolved owner, as a live read-only map. A projection rather than a
+    // second map kept beside the first, so no write can move an owner without its fill state. A
+    // write through it throws, as AbstractMap's and the iterator's own do.
+    private static final class OwnerProjection
+            extends AbstractMap<SystemKey, SystemOwner> {
+
+        private final Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey;
+        private final Set<Map.Entry<SystemKey, SystemOwner>> ownerEntries = new OwnerEntries();
+
+        OwnerProjection(Map<SystemKey, ResolvedSystemOwner> resolvedOwnerBySystemKey) {
+            this.resolvedOwnerBySystemKey = resolvedOwnerBySystemKey;
+        }
+
+        // Answered off the map itself rather than AbstractMap's walk of the entries, so a lookup
+        // stays a hash probe inside the per-cell loops that make it.
+        @Override
+        public boolean containsKey(Object key) {
+            return resolvedOwnerBySystemKey.containsKey(key);
+        }
+
+        @Override
+        public Set<Map.Entry<SystemKey, SystemOwner>> entrySet() {
+            return ownerEntries;
+        }
+
+        @Override
+        public SystemOwner get(Object key) {
+
+            var resolved = resolvedOwnerBySystemKey.get(key);
+            return resolved == null
+                ? null
+                : resolved.owner();
+        }
+
+        @Override
+        public int size() {
+            return resolvedOwnerBySystemKey.size();
+        }
+
+        // Each entry paired with its owner alone, in the order the resolved owners hold them.
+        private final class OwnerEntries
+                extends AbstractSet<Map.Entry<SystemKey, SystemOwner>> {
+
+            @Override
+            public Iterator<Map.Entry<SystemKey, SystemOwner>> iterator() {
+
+                var resolvedEntries = resolvedOwnerBySystemKey
+                    .entrySet()
+                    .iterator();
+
+                return new Iterator<>() {
+
+                    @Override
+                    public boolean hasNext() {
+                        return resolvedEntries.hasNext();
+                    }
+
+                    @Override
+                    public Map.Entry<SystemKey, SystemOwner> next() {
+
+                        var resolvedEntry = resolvedEntries.next();
+
+                        return new SimpleImmutableEntry<>(
+                            resolvedEntry.getKey(),
+                            resolvedEntry.getValue().owner());
+                    }
+                };
+            }
+
+            @Override
+            public int size() {
+                return resolvedOwnerBySystemKey.size();
+            }
+        }
     }
 }

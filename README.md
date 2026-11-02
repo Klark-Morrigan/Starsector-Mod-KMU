@@ -1,5 +1,8 @@
 # Klark Morrigan's Utilities (KMU)
 
+<!-- No inline logo, unlike the forum post's badge: it makes the URL too long for GitHub's image proxy (HTTP 414). -->
+![Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FKlark-Morrigan%2FStarsector-Mod-KMU%2Fbadges%2Fdownloads.json&style=for-the-badge&label=downloads)
+
 [Install with **TriOS**](https://trilink.wispborne.com/open.html?mod=%7B%22url%22%3A%22https%3A%2F%2Fgithub.com%2FKlark-Morrigan%2FStarsector-Mod-KMU%2Freleases%2Flatest%2Fdownload%2Fkmu-en.version%22%2C%22id%22%3A%22kmu%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fraw.githubusercontent.com%2FLazyWizard%2Flazylib%2Fmaster%2Fmod%2Flazylib.version%22%2C%22id%22%3A%22lw_lazylib%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fraw.githubusercontent.com%2FLukas22041%2FLunaLib%2Fmain%2FLunaLib.version%22%2C%22id%22%3A%22lunalib%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fgithub.com%2FKlark-Morrigan%2FStarsector-Mod-KMLib%2Freleases%2Flatest%2Fdownload%2Fkmlib-en.version%22%2C%22id%22%3A%22kmlib%22%7D).
 
 ## Index
@@ -323,16 +326,6 @@ The task doing it is `writeVersionFile`,
 which KMLib's shared Starsector conventions register for any mod that commits a template -
 KMU states no build wiring of its own for it.
 
-[publish-badges.yml](.github/workflows/publish-badges.yml) refreshes the download badges daily and on demand,
-through KMLib's reusable
-[publish-download-badges](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#reusable-ci--release-actions)
-pipeline.
-It counts the release zips only,
-not the `.version` files that update checkers poll on every game start,
-and publishes the figures to this repo's `badges` branch.
-It calls KMLib at `master` rather than at the release pin,
-since it publishes figures and cannot affect a release.
-
 [publish-badges.yml](.github/workflows/publish-badges.yml) refreshes the download badges every 30 minutes and on demand,
 through KMLib's reusable
 [publish-download-badges](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#reusable-ci--release-actions)
@@ -440,9 +433,9 @@ Binary files are left to git's own detection.
 (and its [.bat](scripts/show-download-counts.bat))
 shows the download counts and badge figures a badge run would publish,
 publishing nothing.
-It hands this repo's root to KMLib's script of the same name,
-so it needs KMLib and Common-Automation as sibling checkouts,
-and `gh` logged in.
+It hands this repo's root to KMLib's script of the same name;
+[KMLib's README](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#reusable-ci--release-actions)
+says what it shows and needs.
 
 ### Developer tooling
 

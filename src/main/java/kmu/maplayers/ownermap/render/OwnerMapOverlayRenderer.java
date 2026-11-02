@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.cache.memo.IdentityMemo;
+
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.MapLayerHoverGates;
@@ -13,12 +15,14 @@ import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.MapFrameCompositor;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
+import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.base.ribbon.CellRibbonRenderer;
 import kmu.maplayers.base.ribbon.overlay.CellRibbonPathRenderer;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.apache.log4j.Logger;
@@ -81,19 +85,20 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // since the answer follows a setting the player can move between frames.
     private final Supplier<OwnerMapBandLayout> bandLayoutSource;
 
+    // The anchor overlay packed into its draw runs, keyed on the placements it was packed from. The
+    // cache hands over a new list with every pass, so the overlay is packed once per pass rather
+    // than walked afresh every frame it is on.
+    private final IdentityMemo<List<ClusterAnchor>, ClusterAnchorRuns> anchorRunsMemo = new IdentityMemo<>();
+
+    // The highlight's view of the draw lists, keyed on the clusters it reads. Kept while the cache
+    // holds the same clusters, so a frame with the cursor on the map allocates nothing for it and
+    // the loops the source retains survive from one frame to the next.
+    private final IdentityMemo<OwnerMapClusters, OwnerMapHoverHighlightSource> hoverHighlightSourceMemo =
+        new IdentityMemo<>();
+
     // Diagnostic: ensures the first map render logs exactly once, so a map that draws nothing can
     // be told from one whose render never fired.
     private boolean hasLoggedFirstRender;
-
-    // The anchor overlay packed into its draw runs, and the placements it was packed from. Kept
-    // while the cache holds the same placements, which hands over a new list with every pass, so
-    // the overlay is packed once per pass rather than walked afresh every frame it is on.
-    private ClusterAnchorRuns anchorRuns = ClusterAnchorRuns.NONE;
-    private List<ClusterAnchor> packedAnchors = List.of();
-
-    // The highlight's view of the draw lists, kept while the cache holds the same clusters, so a
-    // frame with the cursor on the map allocates nothing for it.
-    private OwnerMapHoverHighlightSource hoverHighlightSource;
 
     /**
      * @param cache            the draw lists every band is emitted from, made for the same sector's
@@ -127,6 +132,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         logFirstRenderOnce(mapFrame);
 
         var layout = bandLayoutSource.get();
+        var builtView = cache.getBuiltView();
 
         // The canonical stack, bottom to top, each entry gated on whether the band it was placed in
         // is the one being painted. Written out in order in one pass rather than one method per
@@ -134,21 +140,34 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         // between the bands is the layout's - a pair of band methods would have to state the order
         // twice and could state it two ways.
         var isPaintingFills = layout.fillBand() == band;
+        var isPaintingBorders = layout.borderBand() == band;
 
-        renderBaseView(mapFrame, isPaintingFills, layout.borderBand() == band);
+        // The debug overlay replaces the production base view outright, and the placeholder standing
+        // before any build has nothing to paint.
+        builtView.runByCase(
+            clusters -> renderProductionBaseView(clusters, mapFrame, isPaintingFills, isPaintingBorders),
+            borderStageOverlay -> renderBorderTracingOverlay(borderStageOverlay, mapFrame, isPaintingFills),
+            () -> { });
 
         // The anchor overlay layers over whichever base view just drew - independent of the swap
         // above, so the two debug toggles compose. Gated on its own toggle here (not by the list
         // being empty): the placements are also built for the owner names, so the list can be
         // non-empty while the debug overlay is off.
         if (isPaintingFills && KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
-            ClusterAnchorRenderer.renderOnMap(resolveAnchorRuns(cache.getClusterAnchors()), mapFrame);
+            ClusterAnchorRenderer.renderOnMap(
+                anchorRunsMemo.resolveValue(cache.getClusterAnchors(), ClusterAnchorRuns::packAnchorRuns),
+                mapFrame);
         }
 
-        // The debug overlay replaced the draw lists the bands were baked into, so there is nothing
-        // to paint them from - the same reason the hover feedback stands down under it.
-        if (layout.ribbonBand() == band && !cache.isDebug()) {
-            renderPresenceBands(mapFrame);
+        // Only the production view has bands. The debug overlay replaced the draw lists the bands
+        // were baked into - the same reason the hover feedback stands down under it - and the
+        // placeholder baked none.
+        if (layout.ribbonBand() == band) {
+
+            builtView.runByCase(
+                clusters -> renderPresenceBands(clusters, mapFrame),
+                borderStageOverlay -> { },
+                () -> { });
         }
 
         // Last of the stack, so a name wins where it meets a band: a name says which owner a whole
@@ -159,21 +178,15 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         }
     }
 
-    // Swaps production and debug base render on which view the cache built: the debug overlay
-    // replaces the normal render, and the cache built exactly one of the two.
-    private void renderBaseView(
+    // The debug overlay in place of the production base view. It has no split of its own to
+    // honour, replacing fills and borders together, so it rides with the fills.
+    private static void renderBorderTracingOverlay(
+            ClusterBorderStageOverlay borderStageOverlay,
             MapFrame mapFrame,
-            boolean isPaintingFills,
-            boolean isPaintingBorders) {
+            boolean isPaintingFills) {
 
-        if (!cache.isDebug()) {
-            renderProductionBaseView(mapFrame, isPaintingFills, isPaintingBorders);
-
-        } else if (isPaintingFills) {
-
-            ClusterBorderStageRenderer.renderOnMap(
-                cache.getBorderStageOverlay(),
-                mapFrame);
+        if (isPaintingFills) {
+            ClusterBorderStageRenderer.renderOnMap(borderStageOverlay, mapFrame);
         }
     }
 
@@ -181,24 +194,19 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // dispatch because the debug overlay replaces all four at once: none has anything to draw from
     // once the cache built the overlay instead.
     private void renderProductionBaseView(
+            OwnerMapClusters clusters,
             MapFrame mapFrame,
             boolean isPaintingFills,
             boolean isPaintingBorders) {
 
         if (isPaintingFills) {
-
-            ClusterRenderer.renderFillsOnMap(
-                cache.getClusters(),
-                mapFrame);
+            ClusterRenderer.renderFillsOnMap(clusters, mapFrame);
         }
 
         // After the fills wherever the two meet, which the layout guarantees: the borders can be
         // lifted clear of a fogged fill, but never sunk under their own fill.
         if (isPaintingBorders) {
-
-            ClusterRenderer.renderBordersOnMap(
-                cache.getClusters(),
-                mapFrame);
+            ClusterRenderer.renderBordersOnMap(clusters, mapFrame);
         }
 
         if (!isPaintingFills) {
@@ -209,15 +217,13 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         // switch: it answers a pointer on the sidebar rather than one on the map, so a player who has
         // switched the map's own cursor feedback off still sees what a row would spotlight. Its own
         // style tier is where it is turned down to nothing.
-        previewHighlight.renderPreviewOnMap(
-            cache.getClusters(),
-            mapFrame);
+        previewHighlight.renderPreviewOnMap(clusters, mapFrame);
 
         // Gated on the effects switches alone, though the hover it reads may have been published for
         // the box's sake: with only the tooltip on, the cursor is still resolved every frame and
         // nothing may be painted over the map for it.
         if (hoverGates.isHoverEffectsEnabled()) {
-            renderHoverHighlight(mapFrame);
+            renderHoverHighlight(clusters, mapFrame);
         }
     }
 
@@ -225,39 +231,13 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // brightens the fill beneath it rather than being painted over. The frame's draw lists are
     // wrapped as the highlight's source, so the framework's pass asks this layer what the cursor is
     // on rather than reading the layer's model itself.
-    private void renderHoverHighlight(MapFrame mapFrame) {
-
-        var clusters = cache.getClusters();
+    private void renderHoverHighlight(OwnerMapClusters clusters, MapFrame mapFrame) {
 
         hoverHighlightRenderer.renderCursorHighlightOnMap(
-            resolveHoverHighlightSource(clusters),
+            hoverHighlightSourceMemo.resolveValue(clusters, OwnerMapHoverHighlightSource::new),
             clusters.getGlobalStyle().hoverHighlight(),
             hoverState.getHover(),
             mapFrame);
-    }
-
-    // The source over these clusters: the one held while they are the ones drawn, a new one after a
-    // rebuild replaced them.
-    private OwnerMapHoverHighlightSource resolveHoverHighlightSource(OwnerMapClusters clusters) {
-
-        if (hoverHighlightSource == null || hoverHighlightSource.clusters() != clusters) {
-            hoverHighlightSource = new OwnerMapHoverHighlightSource(clusters);
-        }
-
-        return hoverHighlightSource;
-    }
-
-    // The runs packed from these placements: the ones held while they are the ones standing, fresh
-    // ones after a pass replaced them.
-    private ClusterAnchorRuns resolveAnchorRuns(List<ClusterAnchor> anchors) {
-
-        if (anchors != packedAnchors) {
-
-            anchorRuns = ClusterAnchorRuns.packAnchorRuns(anchors);
-            packedAnchors = anchors;
-        }
-
-        return anchorRuns;
     }
 
     // The per-cell presence bands, and the debug overlay explaining them straight after: the path
@@ -265,10 +245,9 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // other. The overlay is gated by the paths themselves rather than by a settings read: the bake
     // holds a path only while the player has it on, so an off toggle arrives as an empty map. The
     // bands are gated the same way - a cell where nothing is present bakes none.
-    private void renderPresenceBands(MapFrame mapFrame) {
+    private static void renderPresenceBands(OwnerMapClusters clusters, MapFrame mapFrame) {
 
-        var ribbonStore = cache
-            .getClusters()
+        var ribbonStore = clusters
             .getPaintedCells()
             .getRibbonStore();
 

@@ -15,11 +15,9 @@ import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.Map;
 
@@ -108,27 +106,20 @@ public final class OwnerMapBuilder {
 
     // Shapes the cached raw cells into merged clusters and partitions them into the cluster-filled
     // (owned) and per-cell (settled/uninhabited) draw lists, baking in each cell's colours,
-    // opacities, and widths resolved from the handed styling, then flattens each to GL-ready vertex
-    // runs. The view's reading arrives with it, retained on the clusters so an incremental re-shape
-    // classifies against the same view, reading and source.
+    // opacities, and widths resolved from the handed build inputs, then flattens each to GL-ready
+    // vertex runs. The inputs are retained on the clusters so an incremental re-shape classifies
+    // against the same view, reading and source.
     //
-    // The reading arrives rather than being resolved here because the owners were resolved through
-    // the source that came with it, both over one sampling of the view's live inputs - a reading
-    // resolved again here could name and colour a fold the owners were never resolved under. The
-    // sidebar preferences arrive for a like reason: the rebuild sampled them once when it decided it
-    // was owed, so reading them again here could paint the map under a pick the decision never saw.
-    // The anchor overlay's toggle arrives with them, sampled by the same rebuild, and is retained so
-    // a later batch re-fits the names under it. The owners arrive for a third reason: they may be the
-    // answer a previous rebuild got, kept because nothing they read has moved since. The styling
-    // arrives for a fourth: the rebuild reads it once for everything it builds, the names fitted
-    // after these cells included.
+    // The inputs arrive built rather than being read here, because the rebuild sampled each of them
+    // once for everything it builds: the reading beside the source the owners were resolved through,
+    // the sidebar picks when it decided it was owed, and the styling the names fitted after these
+    // cells are read under too. Read again here, any of them could paint the map under a fold, a pick
+    // or a scheme the rest of the rebuild never saw. The owners arrive for another reason: they may be
+    // the answer a previous rebuild got, kept because nothing they read has moved since.
     public static OwnerMapClusters buildClusters(
             CellGeometryCache geometryCache,
-            ViewReading viewReading,
-            ContentInputs contentInputs,
-            boolean isAnchorOverlayShown,
-            ResolvedOwners owners,
-            MapStyling styling) {
+            OwnerMapBuildInputs buildInputs,
+            ResolvedOwners owners) {
 
         var profiler = ActiveProfiler.resolveProfiler();
 
@@ -137,24 +128,20 @@ public final class OwnerMapBuilder {
             // Stated once here, ahead of any geometry, because it does not vary across the bodies
             // this pass then cuts: it is the heading the per-body hatch lines are read under, and
             // the one place their units are given.
-            HatchBuildDiagnostics.logHatchSpecification(styling.renderStyle().global().hatch());
+            HatchBuildDiagnostics.logHatchSpecification(
+                buildInputs
+                    .getStyling()
+                    .renderStyle()
+                    .global()
+                    .hatch());
 
             var clusters = new OwnerMapClusters(
                 // Copied out of the owners rather than adopted: the incremental refresh folds
                 // into what the clusters hold, and owners handed to a later rebuild have to still
-                // say what they said.
-                SystemOccupancy.createCopyOf(
-                    owners.ownerBySystemKey(),
-                    owners.inhabitedSystemKeys(),
-                    owners.spotlitPresenceSystemKeys()),
-                new OwnerMapBuildInputs(
-                    styling,
-                    viewReading,
-                    contentInputs,
-                    isAnchorOverlayShown,
-                    // Which owned systems hatch - the spotlit owner's systems it is present in
-                    // without winning - and which paint no fill, owned for border and label alone.
-                    owners.fillStates()));
+                // say what they said. The fill states go with them - which owned systems hatch,
+                // and which paint no fill - since a batch folds those beside the owners.
+                SystemOccupancy.createCopyOf(owners),
+                buildInputs);
 
             shapeAndStyleCells(profiler, clusters, geometryCache);
 
@@ -235,9 +222,9 @@ public final class OwnerMapBuilder {
                 cellGrouping.resolveDrawnSystemKeyOf(entry.getKey()),
                 entry.getValue());
 
-            if (painted != null) {
-                clusters.getPaintedCells().putPaintedCell(entry.getKey(), painted);
-            }
+            clusters
+                .getPaintedCells()
+                .putOrRemovePaintedCell(entry.getKey(), painted);
         }
     }
 
@@ -263,12 +250,11 @@ public final class OwnerMapBuilder {
 
             for (var entry : cellGrouping.groupCellKeysByOwner().entrySet()) {
 
-                var memberCellKeys = entry.getValue();
-                var owner = clusters.getOccupancy().readOwnerOfMembers(cellGrouping, memberCellKeys);
-
-                clusters.putStyledClusterGroup(
+                clusters.rebuildClusterGroupOf(
+                    groupBuilder,
+                    cellGrouping,
                     entry.getKey(),
-                    groupBuilder.buildClusterGroup(owner, memberCellKeys));
+                    entry.getValue());
             }
         }
     }

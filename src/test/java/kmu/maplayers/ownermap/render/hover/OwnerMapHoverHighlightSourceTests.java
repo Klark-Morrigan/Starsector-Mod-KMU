@@ -25,9 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * are the candidates and what shade the highlight burns in, both derived from who holds the system,
  * plus the frame's painted shapes handed straight over.
  *
- * <p>Also pins the identity contract the highlight's memoisation depends on: the same instances
- * come back for as long as the build behind them stands, so a cursor resting on one cell costs
- * one trace rather than one per frame.
+ * <p>Also pins the identity contract the highlight's memoisation depends on: the same loops come
+ * back for as long as the owner's cluster group stands, so a cursor resting on one cell costs one
+ * trace rather than one per frame, and a replaced group is flattened afresh.
  */
 final class OwnerMapHoverHighlightSourceTests {
 
@@ -40,79 +40,219 @@ final class OwnerMapHoverHighlightSourceTests {
     @Nested
     class ResolveCandidateFrontierLoopsOf {
 
+        // Every loop the owner traced is a candidate; which of them encloses this cell is the
+        // highlight's own geometric question, not one answered here.
         @Test
         void returnsTheOwnersOwnBorderLoops() {
-            // Every loop the owner traced is a candidate; which of them encloses this cell is
-            // the highlight's own geometric question, not one answered here.
-            var loops = List.of(
+
+            // ARRANGE
+            var expectedLoops = List.of(
                 buildSquareRun(0, 0, 100),
                 buildSquareRun(500, 0, 100));
 
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
-                buildClusterGroupWithLoops(loops)));
+                buildClusterGroupWithLoops(expectedLoops)));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
-                .containsExactlyElementsOf(loops);
+            // ACT
+            var actualLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualLoops)
+                .containsExactlyElementsOf(expectedLoops);
         }
 
+        // Flattened across bodies and in cluster order: the cursor read cannot say which body it is
+        // in, so every loop the owner strokes anywhere is a candidate.
+        @Test
+        void gathersEveryLoopOfEveryBodyOuterRingsAndEnclavesAlike() {
+
+            // ARRANGE
+            var homeOuter = buildSquareRun(0, 0, 100);
+            var homeEnclave = buildSquareRun(40, 40, 20);
+            var exclaveOuter = buildSquareRun(500, 0, 100);
+
+            var source = readSourceOf(buildClustersWith(
+                Map.of("A", OWNER),
+                Map.of("A", buildSquare(10, 10, 80)),
+                OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of(
+                    List.of(homeOuter, homeEnclave),
+                    List.of(exclaveOuter)))));
+
+            // ACT
+            var actualLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualLoops)
+                .containsExactly(homeOuter, homeEnclave, exclaveOuter);
+        }
+
+        // The cursor and the holding share one address, so hovering one of two systems that answer
+        // to "A" haloes that system's own owner - where a lookup by ID alone would have handed back
+        // the other's frontier.
         @Test
         void answersTheHoveredSystemOfAPairSharingAnId() {
-            // The cursor and the holding share one address, so hovering one of two systems that
-            // answer to "A" haloes that system's own owner - where a lookup by ID alone would
-            // have handed back the other's frontier.
+
+            // ARRANGE
             var hovered = new SystemKey("A", "", "8b3");
-            var loops = List.of(buildSquareRun(0, 0, 100));
+            var twin = new SystemKey("A", "", "38d53");
+            var expectedLoops = List.of(buildSquareRun(0, 0, 100));
+
             var source = readSourceOf(buildClustersHeldByKey(
                 Map.of(hovered, OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
-                buildClusterGroupWithLoops(loops)));
+                buildClusterGroupWithLoops(expectedLoops)));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf(hovered))
-                .containsExactlyElementsOf(loops);
+            // ACT
+            var actualHoveredLoops = source.resolveCandidateFrontierLoopsOf(hovered);
+            var actualTwinLoops = source.resolveCandidateFrontierLoopsOf(twin);
 
-            assertThat(source.resolveCandidateFrontierLoopsOf(new SystemKey("A", "", "38d53")))
+            // ASSERT
+            assertThat(actualHoveredLoops)
+                .containsExactlyElementsOf(expectedLoops);
+            assertThat(actualTwinLoops)
                 .isEmpty();
         }
 
+        // A decivilised or uninhabited cell fuses into no cluster group, so it has no frontier to
+        // offer at all.
         @Test
         void returnsNothingForAnUnownedCell() {
-            // A decivilised or uninhabited cell fuses into no cluster group, so it has no frontier
-            // to offer at all.
+
+            // ARRANGE
             var source = readSourceOf(buildClustersWith(
                 Map.of(),
                 Map.of("A", buildSquare(10, 10, 80)),
                 null));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
+            // ACT
+            var actualLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualLoops)
                 .isEmpty();
         }
 
+        // An owner whose group baked nothing is dropped from the draw lists, so its cell has no
+        // frontier to offer even though somebody holds it.
+        @Test
+        void returnsNothingForAnOwnerWithNoClusterGroup() {
+
+            // ARRANGE
+            var source = readSourceOf(buildClustersWith(
+                Map.of("A", OWNER),
+                Map.of("A", buildSquare(10, 10, 80)),
+                null));
+
+            // ACT
+            var actualLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualLoops)
+                .isEmpty();
+        }
+
+        // The owner's border is "No color", so its cluster group carries no loops - an owned cell
+        // that still has nothing to halo.
         @Test
         void returnsNothingWhenTheOwnerBakedNoBorder() {
-            // The owner's border is "No color", so its cluster group carries no loops - an owned cell
-            // that still has nothing to halo.
+
+            // ARRANGE
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildClusterGroupWithLoops(List.of())));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
+            // ACT
+            var actualLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualLoops)
                 .isEmpty();
         }
 
+        // Identity, not equality. The highlight memoises its resolved halo against the instance it
+        // was handed, so a fresh list per ask would re-clip the wash every frame the cursor rests
+        // on one cell - a change no assertion about the loops themselves would notice.
         @Test
-        void returnsTheSameListWhileTheBuildStands() {
-            // The highlight memoises on this instance, so handing back a fresh copy per call
-            // would re-trace the loops every frame the cursor rests on one cell.
+        void returnsTheSameListWhileTheOwnersGroupStands() {
+
+            // ARRANGE
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildClusterGroupWithLoops(List.of(buildSquareRun(0, 0, 100)))));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
-                .isSameAs(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")));
+            // ACT
+            var actualFirstLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+            var actualSecondLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualSecondLoops)
+                .isSameAs(actualFirstLoops);
+        }
+
+        // A previewed set asks after the owners of all its cells every frame. Asking after a
+        // second owner must not evict the first owner's list, or every cell of a set held by
+        // several owners would miss the highlight's memo on every frame.
+        @Test
+        void keepsEachOwnersListWhileTheAsksMoveBetweenOwners() {
+
+            // ARRANGE
+            var rival = new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY));
+            var clusters = fillClusters(
+                OwnerMapClusterFixtures.createClustersOwnedBy(Map.of("A", OWNER, "B", rival)),
+                Map.of(
+                    "A", buildSquare(10, 10, 80),
+                    "B", buildSquare(510, 10, 80)),
+                buildClusterGroupWithLoops(List.of(buildSquareRun(0, 0, 100))));
+
+            clusters
+                .getStyledClusterGroupByOwnerId()
+                .put(rival.ownerId(), buildClusterGroupWithLoops(List.of(buildSquareRun(500, 0, 100))));
+
+            var source = readSourceOf(clusters);
+
+            // ACT
+            var actualFirstLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            source.resolveCandidateFrontierLoopsOf(buildCellKey("B"));
+
+            var actualReturningLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualReturningLoops)
+                .isSameAs(actualFirstLoops);
+        }
+
+        // The other half of retaining an answer: an incremental refresh replaces an owner's group
+        // wholesale when a neighbour flips, and a retained list that outlived it would halo a
+        // frontier the map is no longer drawing.
+        @Test
+        void flattensAgainWhenARefreshReplacesTheOwnersGroup() {
+
+            // ARRANGE
+            var rebuiltLoop = buildSquareRun(900, 900, 100);
+            var clusters = buildClustersWith(
+                Map.of("A", OWNER),
+                Map.of("A", buildSquare(10, 10, 80)),
+                buildClusterGroupWithLoops(List.of(buildSquareRun(0, 0, 100))));
+
+            var source = readSourceOf(clusters);
+
+            source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            clusters
+                .getStyledClusterGroupByOwnerId()
+                .put(OWNER_ID, buildClusterGroupWithLoops(List.of(rebuiltLoop)));
+
+            // ACT
+            var actualLoops = source.resolveCandidateFrontierLoopsOf(buildCellKey("A"));
+
+            // ASSERT
+            assertThat(actualLoops)
+                .containsExactly(rebuiltLoop);
         }
     }
 
@@ -122,38 +262,55 @@ final class OwnerMapHoverHighlightSourceTests {
         @Test
         void paintsAnOwnedCellInItsOwnersShade() {
 
+            // ARRANGE
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildClusterGroupWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.SECONDARY))
+            // ACT
+            var actualColour = source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.SECONDARY);
+
+            // ASSERT
+            assertThat(actualColour)
                 .isEqualTo(SECONDARY);
         }
 
+        // An unowned cell has no palette of its own, so the highlight says so in the same neutral
+        // the cell's own outline draws in.
         @Test
         void paintsAnUnownedCellInTheNeutralShade() {
-            // An unowned cell has no palette of its own, so the highlight says so in the same
-            // neutral the cell's own outline draws in.
+
+            // ARRANGE
             var source = readSourceOf(buildClustersWith(
                 Map.of(),
                 Map.of("A", buildSquare(10, 10, 80)),
                 null));
 
-            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.PRIMARY))
+            // ACT
+            var actualColour = source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.PRIMARY);
+
+            // ASSERT
+            assertThat(actualColour)
                 .isEqualTo(OwnerMapClusterFixtures.NEUTRAL_COLOUR);
         }
 
+        // The theme points the highlight at no shade at all, which the render pass reads as "skip
+        // the whole thing".
         @Test
         void returnsNothingForANoColourChoice() {
-            // The theme points the highlight at no shade at all, which the render pass reads as
-            // "skip the whole thing".
+
+            // ARRANGE
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildClusterGroupWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), null))
+            // ACT
+            var actualColour = source.resolveHighlightColourOf(buildCellKey("A"), null);
+
+            // ASSERT
+            assertThat(actualColour)
                 .isNull();
         }
     }
@@ -161,20 +318,27 @@ final class OwnerMapHoverHighlightSourceTests {
     @Nested
     class GetFillPolygonByCellKey {
 
+        // Passed through rather than rebuilt, which is what makes the halo trace the shape the
+        // cursor was hit-tested against - the cursor read takes these same shapes off the same
+        // clusters. Reading one cell out of them is the framework's own, pinned by
+        // PaintedCellShapesTests.
         @Test
         void handsOverTheFramesOwnShapes() {
-            // Passed through rather than rebuilt, which is what makes the halo trace the shape
-            // the cursor was hit-tested against - the cursor read takes these same shapes off
-            // the same clusters. Reading one cell out of them is the framework's own,
-            // pinned by PaintedCellShapesTests.
-            var paintedExtent = buildSquare(10, 10, 80);
+
+            // ARRANGE
             var clusters = buildClustersWith(
                 Map.of("A", OWNER),
-                Map.of("A", paintedExtent),
+                Map.of("A", buildSquare(10, 10, 80)),
                 buildClusterGroupWithLoops(List.of()));
 
-            assertThat(readSourceOf(clusters).getFillPolygonByCellKey())
-                .isSameAs(clusters.getFillPolygonByCellKey());
+            var expectedShapes = clusters.getFillPolygonByCellKey();
+
+            // ACT
+            var actualShapes = readSourceOf(clusters).getFillPolygonByCellKey();
+
+            // ASSERT
+            assertThat(actualShapes)
+                .isSameAs(expectedShapes);
         }
     }
 

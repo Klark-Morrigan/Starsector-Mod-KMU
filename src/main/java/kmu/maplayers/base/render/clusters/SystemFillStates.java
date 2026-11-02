@@ -102,8 +102,8 @@ public final class SystemFillStates {
     /**
      * The state one system draws in.
      *
-     * <p>A cell with no star of its own has no per-system fill state, so it fills solid with the rest
-     * of its cluster rather than probing the map with a null key.
+     * <p>A cell with no star of its own has no per-system fill state, so it fills solid with the
+     * rest of its cluster rather than probing the map with a null key.
      *
      * @param systemKey the system a member cell draws as, or null for a cell with no star of its own
      * @return the state it draws in; solid for any system not named

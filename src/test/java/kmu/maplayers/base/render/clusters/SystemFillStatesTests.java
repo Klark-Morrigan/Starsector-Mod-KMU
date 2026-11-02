@@ -34,18 +34,24 @@ final class SystemFillStatesTests {
         @Test
         void dropsASolidEntryAsWhatEveryUnnamedSystemAnswers() {
 
-            var fillStates = SystemFillStates.createOf(Map.of(SYSTEM, FillState.SOLID));
-            var actualFillStates = fillStates.getNonSolidFillStateBySystemKey();
+            // ARRANGE
+            var fillStateBySystemKey = Map.of(SYSTEM, FillState.SOLID);
 
-            assertThat(actualFillStates)
+            // ACT
+            var actualFillStates = SystemFillStates.createOf(fillStateBySystemKey);
+
+            // ASSERT
+            assertThat(actualFillStates.getNonSolidFillStateBySystemKey())
                 .isEmpty();
         }
 
+        // The layer goes on building its own map once it has handed one over - a claim augmenting
+        // another resolution's answer copies it and writes more - so the answer here must not
+        // follow.
         @Test
         void keepsItsAnswerAfterTheLayerWritesToItsOwnMap() {
-            // The layer goes on building its own map once it has handed one over - a claim
-            // augmenting another resolution's answer copies it and writes more - so the answer here
-            // must not follow.
+
+            // ARRANGE
             var fillStateBySystemKey = new LinkedHashMap<SystemKey, FillState>();
 
             fillStateBySystemKey.put(SYSTEM, FillState.HATCHED);
@@ -54,8 +60,10 @@ final class SystemFillStatesTests {
 
             fillStateBySystemKey.put(OTHER_SYSTEM, FillState.UNFILLED);
 
+            // ACT
             var actualFillState = fillStates.resolveFillStateOf(OTHER_SYSTEM);
 
+            // ASSERT
             assertThat(actualFillState)
                 .isEqualTo(FillState.SOLID);
         }
@@ -67,8 +75,13 @@ final class SystemFillStatesTests {
         @Test
         void returnsSolidForASystemTheLayerDidNotName() {
 
-            var actualFillState = SystemFillStates.ALL_SOLID.resolveFillStateOf(SYSTEM);
+            // ARRANGE
+            var fillStates = SystemFillStates.ALL_SOLID;
 
+            // ACT
+            var actualFillState = fillStates.resolveFillStateOf(SYSTEM);
+
+            // ASSERT
             assertThat(actualFillState)
                 .isEqualTo(FillState.SOLID);
         }
@@ -76,9 +89,13 @@ final class SystemFillStatesTests {
         @Test
         void returnsHatchedForASystemNamedHatched() {
 
+            // ARRANGE
             var fillStates = SystemFillStates.createOf(Map.of(SYSTEM, FillState.HATCHED));
+
+            // ACT
             var actualFillState = fillStates.resolveFillStateOf(SYSTEM);
 
+            // ASSERT
             assertThat(actualFillState)
                 .isEqualTo(FillState.HATCHED);
         }
@@ -86,35 +103,49 @@ final class SystemFillStatesTests {
         @Test
         void returnsUnfilledForASystemNamedUnfilled() {
 
+            // ARRANGE
             var fillStates = SystemFillStates.createOf(Map.of(SYSTEM, FillState.UNFILLED));
+
+            // ACT
             var actualFillState = fillStates.resolveFillStateOf(SYSTEM);
 
+            // ASSERT
             assertThat(actualFillState)
                 .isEqualTo(FillState.UNFILLED);
         }
 
+        // A null system has no per-system fill state, so it fills solid with the rest of the
+        // cluster rather than probing the map with a null key, which the immutable map it holds
+        // would refuse outright.
         @Test
         void returnsSolidForACellWithNoStarOfItsOwn() {
-            // A null system has no per-system fill state, so it fills solid with the rest of the
-            // cluster rather than probing the map with a null key.
+
+            // ARRANGE
             var fillStates = SystemFillStates.createOf(Map.of(OTHER_SYSTEM, FillState.UNFILLED));
+
+            // ACT
             var actualFillState = fillStates.resolveFillStateOf(null);
 
+            // ASSERT
             assertThat(actualFillState)
                 .isEqualTo(FillState.SOLID);
         }
 
+        // The map names a system the way the members do, so a colliding pair can draw in two
+        // different states - where a map keyed by ID could only have hatched both or neither.
         @Test
         void drawsTwoSystemsSharingAnIdInTheirOwnStates() {
-            // The map names a system the way the members do, so a colliding pair can draw in two
-            // different states - where a map keyed by ID could only have hatched both or neither.
+
+            // ARRANGE
             var hatched = new SystemKey(SYSTEM_ID, "", "8b3");
             var solid = new SystemKey(SYSTEM_ID, "", "38d53");
             var fillStates = SystemFillStates.createOf(Map.of(hatched, FillState.HATCHED));
 
+            // ACT
             var actualHatchedState = fillStates.resolveFillStateOf(hatched);
             var actualSolidState = fillStates.resolveFillStateOf(solid);
 
+            // ASSERT
             assertThat(actualHatchedState)
                 .isEqualTo(FillState.HATCHED);
             assertThat(actualSolidState)
@@ -128,14 +159,17 @@ final class SystemFillStatesTests {
         @Test
         void countsOnlyTheSystemsNamedInThatState() {
 
+            // ARRANGE
             var fillStates = SystemFillStates.createOf(Map.of(
                 SYSTEM,
                 FillState.HATCHED,
                 OTHER_SYSTEM,
                 FillState.UNFILLED));
 
+            // ACT
             var actualHatchedCount = fillStates.countSystemsIn(FillState.HATCHED);
 
+            // ASSERT
             assertThat(actualHatchedCount)
                 .isEqualTo(1);
         }
@@ -144,13 +178,18 @@ final class SystemFillStatesTests {
     @Nested
     class Equals {
 
+        // A resolution holding these compares by what it says, as the records around it do.
         @Test
         void holdsForTwoValuesNamingTheSameSystemsInTheSameStates() {
-            // A resolution holding these compares by what it says, as the records around it do.
+
+            // ARRANGE
             var fillStates = SystemFillStates.createOf(Map.of(SYSTEM, FillState.HATCHED));
             var sameFillStates = SystemFillStates.createOf(Map.of(SYSTEM, FillState.HATCHED));
+
+            // ACT
             var actualIsEqual = fillStates.equals(sameFillStates);
 
+            // ASSERT
             assertThat(actualIsEqual)
                 .isTrue();
         }
@@ -158,10 +197,14 @@ final class SystemFillStatesTests {
         @Test
         void failsForTheSameSystemInAnotherState() {
 
+            // ARRANGE
             var fillStates = SystemFillStates.createOf(Map.of(SYSTEM, FillState.HATCHED));
             var otherFillStates = SystemFillStates.createOf(Map.of(SYSTEM, FillState.UNFILLED));
+
+            // ACT
             var actualIsEqual = fillStates.equals(otherFillStates);
 
+            // ASSERT
             assertThat(actualIsEqual)
                 .isFalse();
         }

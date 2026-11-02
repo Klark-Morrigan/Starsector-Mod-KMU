@@ -13,10 +13,8 @@ import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +28,7 @@ import java.util.Map;
  * <p>Two things live here, and the type keeps them apart. The built map is live: the
  * {@link PaintedCellStore} and the styled-cluster-group map are written through by the refresh,
  * which replaces just the cells and owners an owner change touched; the {@link SystemOccupancy}
- * is folded by the same refresh as what stands in a system comes and goes, its three facts
+ * is folded by the same refresh as what stands in a system comes and goes, its four facts
  * mutable together behind one type's folds so no pass can bring one up to date and leave a cell
  * drawn from two readings of the sector; and the cluster index is re-derived whenever the
  * holding moves. The {@link OwnerMapBuildInputs} beside them are fixed once the build ends and
@@ -74,34 +72,14 @@ public final class OwnerMapClusters
     private final OwnerMapBuildInputs buildInputs;
 
     // Which contiguous cluster each system sits in, re-derived by reindexClusters whenever the
-    // owner map changes. Seeded empty so a build that never indexes (and the empty placeholder)
-    // still answers a lookup rather than tripping over a null.
+    // owner map changes. Seeded empty so a build that never indexes still answers a lookup rather
+    // than tripping over a null.
     private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
-
-    // The last owner whose loops were flattened for a cursor read, and what came out. One entry
-    // because the cursor is over one cell at a time; see listCandidateBorderLoopsOf for why the
-    // result has to be retained at all rather than rebuilt per ask.
-    private String candidateLoopsOwnerId;
-    private StyledClusterGroup candidateLoopsClusterGroup;
-    private List<float[]> candidateLoops = List.of();
 
     public OwnerMapClusters(SystemOccupancy occupancy, OwnerMapBuildInputs buildInputs) {
 
         this.occupancy = occupancy;
         this.buildInputs = buildInputs;
-    }
-
-    // An empty placeholder for the render path to fall back on after a failed first build: the
-    // two draw lists are empty so the render is a harmless no-op, and the next frame's retry
-    // replaces it with a real build before any incremental pass - which needs the theme - can
-    // run, so the placeholder inputs are never read. It carries the active view (the one being
-    // drawn when the build failed) rather than naming a concrete view, keeping this model
-    // view-agnostic.
-    public static OwnerMapClusters createEmpty(OwnerPaintedView view) {
-
-        return new OwnerMapClusters(
-            SystemOccupancy.createEmpty(),
-            OwnerMapBuildInputs.createEmpty(view));
     }
 
     /**
@@ -191,18 +169,19 @@ public final class OwnerMapClusters
     }
 
     /**
-     * The cluster-group builder this build's owners are traced by, over the paints and fill states
-     * it was baked under and the cells it groups.
+     * The cluster-group builder this build's owners are traced by, over the paints it was baked
+     * under, the fill states its occupancy now holds and the cells it groups.
      *
      * <p>The one place the pipeline states the builder's inputs, for the reason
      * {@link #createPaintedCellBuilder()} is. The grouping and edges arrive because a batch groups
-     * the cells afresh once its flips have folded, while the paints and fill states stand for the
-     * life of the build.
+     * the cells afresh once its flips have folded, and the fill states are read off the occupancy
+     * for the same reason: a batch folds them per marked system. The paints stand for the life of
+     * the build.
      *
      * @param cellGrouping       how the drawn cells group under the current owners, as
      *                           {@link #resolveCellGroupingOver} answers it
      * @param cellEdgesByCellKey the raw cells the borders are traced from
-     * @return a builder over this build's paints and fill states and the given cells
+     * @return a builder over this build's paints, its current fill states and the given cells
      */
     public ClusterGroupBuilder createClusterGroupBuilder(
             CellGrouping cellGrouping,
@@ -212,7 +191,7 @@ public final class OwnerMapClusters
             buildInputs.getPaints(),
             cellGrouping,
             cellEdgesByCellKey,
-            buildInputs.getFillStates());
+            occupancy.snapshotFillStates());
     }
 
     /**
@@ -249,6 +228,36 @@ public final class OwnerMapClusters
     }
 
     /**
+     * Traces one owner's cluster group from its members and records it, or drops the owner where it
+     * has no members left.
+     *
+     * <p>The one statement of how an owner's group is rebuilt, for the full build tracing every
+     * owner and a batch re-tracing the owners it touched, so the two cannot trace one owner
+     * differently. An owner whose members are gone draws nothing and is not traced at all.
+     *
+     * @param groupBuilder   the builder this pass traces its owners by, as
+     *                       {@link #createClusterGroupBuilder} answers it
+     * @param cellGrouping   how the drawn cells group under the current owners, as
+     *                       {@link #resolveCellGroupingOver} answers it
+     * @param ownerId        the owner's ID, as the grouping keys it
+     * @param memberCellKeys the cells the owner draws, or null or empty where it draws none
+     */
+    public void rebuildClusterGroupOf(
+            ClusterGroupBuilder groupBuilder,
+            CellGrouping cellGrouping,
+            String ownerId,
+            List<SystemKey> memberCellKeys) {
+
+        var clusterGroup = memberCellKeys == null || memberCellKeys.isEmpty()
+            ? null
+            : groupBuilder.buildClusterGroup(
+                occupancy.readOwnerOfMembers(cellGrouping, memberCellKeys),
+                memberCellKeys);
+
+        putStyledClusterGroup(ownerId, clusterGroup);
+    }
+
+    /**
      * Records one owner's cluster group, or drops the owner where it bakes none.
      *
      * <p>The write path for the map, rather than each caller choosing between a put and a remove: an
@@ -271,46 +280,6 @@ public final class OwnerMapClusters
     }
 
     /**
-     * Every loop one owner strokes, across all of its bodies, as the flat candidate list a cursor
-     * read is answered from.
-     *
-     * <p>Retained rather than rebuilt per ask, and that is the whole reason this is a method here
-     * instead of a loop at the call site: the highlight memoises its resolved halo against the
-     * identity of the list it was handed, so a fresh list each frame would miss that memo and
-     * re-clip and re-tessellate the wash sixty times a second while the cursor sits still. One
-     * entry is enough, because the cursor is over one cell at a time.
-     *
-     * <p>The retained answer is keyed on the owner's own cluster group by identity: a rebuild or
-     * an incremental refresh replaces that group wholesale rather than editing it, so a group
-     * that still matches is geometry that has not moved.
-     *
-     * @param ownerId the owner to answer for
-     * @return its loops, outer ring and enclaves alike, in cluster order; empty when the owner
-     *         drew none or is not on the map
-     */
-    public List<float[]> listCandidateBorderLoopsOf(String ownerId) {
-
-        var clusterGroup = styledClusterGroupByOwnerId.get(ownerId);
-        if (clusterGroup == null) {
-            return List.of();
-        }
-
-        if (!ownerId.equals(candidateLoopsOwnerId) || clusterGroup != candidateLoopsClusterGroup) {
-
-            var loops = new ArrayList<float[]>();
-
-            for (var cluster : clusterGroup.clusters()) {
-                loops.addAll(cluster.listLoops());
-            }
-
-            candidateLoopsOwnerId = ownerId;
-            candidateLoopsClusterGroup = clusterGroup;
-            candidateLoops = loops;
-        }
-        return candidateLoops;
-    }
-
-    /**
      * @return who is in each system, as the one live record: what a pass folding a marked system's
      *         owner, its inhabitation or the pick's presence in it writes through, and what every
      *         reader of any of the three reads
@@ -321,8 +290,8 @@ public final class OwnerMapClusters
     }
 
     /**
-     * @return what this build was baked under - the paint scheme, the view and its reading, the
-     *         sampled picks and the fill states - as the one reading every stage of it sampled.
+     * @return what this build was baked under - the paint scheme, the view and its reading, and the
+     *         sampled picks - as the one reading every stage of it sampled.
      *         What a pass that runs after the build reads rather than asking the source again: a
      *         label re-fit or a band re-bake taken off a second reading would spell the names one
      *         way and have been sized for another

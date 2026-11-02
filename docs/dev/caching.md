@@ -11,7 +11,7 @@ The shared library's caches are a separate and much simpler problem
 (font assets and pure derivations, none of which can go stale,
 and the memo the [settled faces](#settled-faces) are held in);
 they are documented in [KMLib's caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md),
-including the `Fingerprints` primitive this document's revision counters fold through.
+including the `RevisionStamp` primitive this document's revision counters are compared through.
 
 ## Index
 
@@ -242,7 +242,7 @@ reaches that sector's board directly,
 and every one of them does.
 A sidebar control looks like the exception,
 a settings change naming no sector,
-but the tab's body build resolves an machinery once and hands its board to each control it places,
+but the tab's body build resolves a machinery once and hands its board to each control it places,
 so a flip repaints the map that control was placed over.
 Nothing resolves a board off the running sector:
 a producer reaching one it was not handed is a producer that can raise on a map nobody is looking at.
@@ -253,13 +253,13 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | `MapLayerCommonRefreshSignal.DRAW_LISTS` | `MapLayerCommonRefreshSignal` | the overlay cache, after a full rebuild or a fold of marked systems | the hover box's memo |
 | `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh, or a full rebuild where the standing map cannot take one |
 | grouping revision | `MapLayerRefreshBoard` | every system marked into the set above | the sidebar picker memo |
-| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance records differing from the last poll's | every political view's content revision |
+| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance records differing from the last poll's | every political view's content revisions |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | **nothing** - see below |
-| `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/ownermap/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the clusters rebuild, which folds its values into the content revision |
+| `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/ownermap/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the clusters rebuild, which compares its values with what the standing map was built from |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the clusters rebuild |
-| content revision | each `OwnerPaintedView` | the view's own live inputs, folded via `Fingerprints` off the board it is handed | the clusters rebuild, and the sidebar picker memo |
+| content revisions | each `OwnerPaintedView` | the view's own live inputs, stamped as a `RevisionStamp` off the board it is handed | the clusters rebuild, and the sidebar picker memo |
 
 Three of those deserve their reason stated.
 
@@ -275,7 +275,7 @@ so flipping one does *not* bump `settingsRevision`.
 Each setter raises its own signal,
 and none of those three signals triggers a rebuild:
 the clusters are rebuilt on the *values* the toggles hold,
-sampled once per rebuild into `ContentInputs` and folded into the content revision.
+sampled once per rebuild into `ContentInputs` and compared with what the standing map was built from.
 A counter reports that somebody clicked something;
 the values answer the only question a rebuild turns on -
 would this build come out the same.
@@ -300,19 +300,21 @@ the setters' `board` argument is what carries the "raise on the sector you were 
 so removing the three is a change to four holders' signatures
 rather than a deletion of three enum constants.
 
-The **content revision** is the seam that keeps the shared pipeline from naming any concrete view:
-a view folds its own live inputs into one int,
+The **content revisions** are the seam that keeps the shared pipeline from naming any concrete view:
+a view stamps the revisions of its own live inputs,
 so each invalidates on what it actually reads.
-All three political views fold the alliance revision,
+The stamp keeps every revision rather than folding them into one int,
+since two different readings can fold to one int and skip the rebuild.
+All three political views stamp the alliance revision,
 for different reasons -
 the alliances view because membership decides what it paints,
 the faction and claims views because their bands judge a contest against it -
-while a view that samples nothing live folds no sources and never forces a rebuild on its own.
+while a view that samples nothing live answers the empty stamp and never forces a rebuild on its own.
 The board those counters are read off is an argument,
 since a view is a stateless strategy every sector's machinery shares
 while the counters are one sector's:
 both callers -
-the overlay cache's own fingerprint and the picker memo's key -
+the overlay cache's build ledger and the picker memo's key -
 already hold the machinery being asked about,
 so each names the board it means
 rather than leaving the view to resolve whichever sector is running.
@@ -321,23 +323,25 @@ rather than leaving the view to resolve whichever sector is running.
 
 ### The overlay cache
 
-[`OwnerMapCache`](../../src/main/java/kmu/maplayers/ownermap/render/OwnerMapCache.java)
+[`OwnerMapCache`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapCache.java)
 is the owner:
 each owner-painted layer's renderer holds one -
 one per layer per sector,
 the renderer itself held by that sector's installed machinery under the layer's ID
 (`SectorMapMachinery.resolveLayerMachinery`) -
-and asks it to `refresh` each frame the map is open.
+and asks it to `refreshDrawLists` each frame the map is open.
 It holds both halves
 (geometry and built draw lists)
 and rebuilds only the stale half.
-What a frame owes is
-[`OwnerMapRebuildDecider`](../../src/main/java/kmu/maplayers/ownermap/render/OwnerMapRebuildDecider.java)'s
-answer,
+What a frame owes is answered by
+[`OwnerMapBuildLedger`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapBuildLedger.java),
 asked first and acted on:
-the decider holds what each half was built against and compares this frame's revisions and settings to it,
+the ledger holds what each half was built from and compares this frame's revisions and settings to it,
 which opens no reading of the sector,
 so nearly every frame stops at it.
+It compares whole values by `equals` rather than a hash of them,
+so two readings that differ always rebuild,
+however their values happen to fold.
 The settings the cells are cut from are read again only when KMU's settings revision moves,
 since every one of them is a LunaLib field and LunaLib reports each change;
 on any other frame the last reading stands.
@@ -345,20 +349,44 @@ The two are apart because they run at different cadences -
 the question every frame,
 the rebuild rarely -
 and a class holding both put the cheap question and the expensive answer behind one door.
-The baselines advance only as the cache reports each stage complete,
+The ledger's entries advance only as the full rebuild
+([`FullOwnerMapRebuild`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/FullOwnerMapRebuild.java))
+reports each stage complete,
 so a rebuild that threw part way is asked again next frame rather than taken as done.
 The geometry's revision is not a field beside the cells but rides with them,
 for the same reason the placements ride with their fingerprint below:
 a revision naming cells other than the ones in hand reads as permission to reuse work fitted inside a partition that has since been recut.
 It **counts cuts** rather than echoing the reachable-set signal,
-since that signal is only one of the four things that recut them -
-see below.
+since that signal is only one of the three things that recut them
+([`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/CellCutInputs.java)).
+
+A frame that owes no rebuild may still have drained systems a change marked,
+and what it does with them is the layer's
+[`OwnerMapRefreshStrategy`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/OwnerMapRefreshStrategy.java):
+fold them into the standing map,
+or owe the next frame the full rebuild.
+Why that is a slot rather than one behaviour is
+[the tier's](../../src/main/java/kmu/maplayers/ownermap/README.md#the-rebuild-is-a-slot).
 
 It is also where rebuild faults are contained:
-a failing rebuild is logged once rather than per frame,
-leaves the cached revisions un-advanced so the next frame retries,
-and installs an empty placeholder so the renderer never dereferences a null draw list.
-The last good draw lists stay on screen in the meantime.
+a failing rebuild or fold is logged once rather than per frame,
+each under a warning of its own,
+and owes the next frame the full rebuild.
+The fold catches its own throw,
+since only it holds the batch it dropped,
+and its warning names how many marked systems went.
+The renderer paints whichever base view stands,
+a sealed `BuiltView`:
+the production draw lists,
+the debug overlay,
+or the placeholder that stands before the first build completes and draws nothing.
+So a failed first build leaves nothing null for the renderer to reach.
+A failing rebuild would be retried anyway,
+since it advances no cached revision.
+A failing fold would not:
+its batch is already drained and no revision moved for it,
+so the debt is the only record that the marked systems still need redrawing.
+The draw lists already on screen stay there in the meantime.
 
 **A rebuild is a pass too**,
 on the same terms the poll is and for the heavier reason:
@@ -389,7 +417,7 @@ with nothing on screen reporting which half was which.
 
 Both staleness questions are settled **before** the index is opened,
 and that ordering is the arrangement rather than an accident.
-`refresh` runs every frame the map is open and nearly every frame rebuilds nothing,
+`refreshDrawLists` runs every frame the map is open and nearly every frame rebuilds nothing,
 so a reading opened first would put a walk of every system into every idle frame -
 worse than the three walks per rebuild it was opened to collapse.
 The incremental re-shape below therefore opens a reading of its own,
@@ -419,18 +447,10 @@ and every farther cell is provably untouched.
 Two seed inputs bypass the diff and force a full reseed,
 because each changes every cell:
 the frontier resolution and the cell reach.
-So do the dev reveal toggles,
-which change *which* systems seed a cell at all.
-
-Those four -
-the reachable-set revision plus those three settings -
-are one value,
-[`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/CellCutInputs.java),
-because the question asked of them is the single one they answer together:
-would the cells be cut differently now.
-Only the first raises a framework signal;
-the other three move without it,
-so a staleness test taken on the signal alone reads a settings recut as no change at all.
+The visibility rules go through the diff,
+since they change *which* systems seed a cell rather than how one is cut.
+When the cells are recut at all is
+[`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/CellCutInputs.java)'s to say.
 
 The cache holds raw cells,
 not shaped outlines.
@@ -453,7 +473,7 @@ plus the derivation inputs an incremental re-shape needs -
 the styling,
 the view grouping,
 the filter snapshot,
-and who holds each system.
+and who holds each system and how its fill draws.
 
 Each drawn cell's presence band is baked into it too,
 and baked rather than emitted because every size in it is a world quantity:
@@ -488,15 +508,15 @@ and held only while its toggle is on;
 what it traces and how it clears is [the band bake](../../src/main/java/kmu/maplayers/ownermap/render/ribbon/README.md#seeing-the-path-a-cell-did-not-use)'s.
 
 Retaining those inputs is what makes the incremental path *correct* rather than merely cheap:
-[`IncrementalOwnerRefresh`](../../src/main/java/kmu/maplayers/ownermap/render/IncrementalOwnerRefresh.java)
+[`IncrementalOwnerRefresh`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/IncrementalOwnerRefresh.java)
 re-classifies a handful of cells against exactly the ownership and styles the full build used,
 through the same builder primitives,
 so an incrementally-updated map is indistinguishable from a rebuilt one.
-Which is also why the holder map,
+Which is also why the holder map and each system's fill state,
 the inhabited set and the spotlit-presence set are retained *live*,
 as one [`SystemOccupancy`](../../src/main/java/kmu/maplayers/ownermap/render/clusters/SystemOccupancy.java):
-a cell is classified from all three at once,
-so one of them fixed where the rebuild began would have the refresh styling a cell from two different readings of the sector.
+a map is drawn from all of them at once,
+so one of them fixed where the rebuild began would have the refresh drawing a system from two different readings of the sector.
 The type owns its collections and reports what each fold moved,
 which is what the refresh redraws a cell on.
 
@@ -549,6 +569,17 @@ The hovered system rides on the published hover beside its key.
 Finding a system by key walks every system in the sector,
 so the cursor read looks it up once where the cursor reaches the cell
 and carries it on from its last reading while the cursor stays there.
+
+The halo's candidate loops are kept too.
+[`OwnerMapHoverHighlightSource`](../../src/main/java/kmu/maplayers/ownermap/render/hover/OwnerMapHoverHighlightSource.java)
+flattens an owner's border loops once
+and keeps the list while that owner's cluster group stands,
+because the highlight memoises its halo on the list's identity.
+It keeps one list per owner,
+since a previewed set spans the cells of several holders
+and asks after each of them every frame.
+The compositor and the picker preview each keep one source per build through KMLib's `IdentityMemo`,
+so the kept list lasts from one frame to the next.
 
 ### The hover box
 
@@ -616,11 +647,10 @@ the emission drawing each form in a pass of its own.
 ### Sidebar pickers
 
 `RevisionMemo` is the memo any layer's sidebar holds its resolved picker in,
-keyed on the scope and a revision the caller supplies.
+keyed on the scope and the revisions the caller supplies.
 A body build runs twice a frame (render and hit-test),
 so without a memo every picker would re-resolve its list several times a frame.
-It is KMLib's (`kmlib.starsector.ui.widgets.lists`),
-like the picker it feeds;
+It is KMLib's (`kmlib.cache.memo`);
 [KMLib's caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) file it as an invalidation primitive rather than a cache,
 since what it holds,
 when it goes stale,
@@ -629,17 +659,20 @@ including the discard a consumer calls when whatever the value belonged to is re
 
 [`SelectableOwnerCache`](../../src/main/java/kmu/maplayers/ownermap/sidebar/SelectableOwnerCache.java)
 is the owner-map tier's use of it:
-what it adds is the revision,
+what it adds is the revisions,
 the one thing the memo cannot know.
 What it holds is the selected view's whole `ListPicker` -
 the blocs on offer and the vocabulary that ranks them -
 since a view answers both together and neither means anything without the other.
 Each of its resolves is a full grouped dominance pass over the sector,
 so it is the picker that most needs the memo to hold.
-That revision is the economy-weighting settings,
-the view's own grouping inputs,
-and the board's grouping revision,
-which every system marked stale moves.
+Those revisions are the economy-weighting settings,
+the board's grouping revision,
+which every system marked stale moves,
+and the view's own content revisions,
+in that order:
+the view's stamp varies in length,
+so it goes after the two fixed ones.
 It deliberately **excludes** the filter selection.
 The picker is which blocs are selectable,
 not which one is spotlighted,
@@ -709,7 +742,7 @@ A bloc's owner and its two shades are read once per pass.
 `SectorBlocPalettes` remembers each bloc's owner on first ask,
 a bloc whose colour faction has gone included,
 and the `HolderPass` holds the one instance every reader of that pass shares:
-the holder resolves,
+the holder resolvers,
 the spotlight,
 the claim resolves
 and the band bake.
@@ -763,15 +796,23 @@ in increasing cost:
    and the standing draw lists are handed to the renderer.
    This is the overwhelmingly common path,
    which is why both staleness questions are settled before any reading is opened.
-2. **Systems marked stale** -
+2. **Systems marked stale**,
+   on a layer whose strategy folds them -
    the stale set is drained and only those systems and their neighbours are re-derived and re-shaped,
    with the two affected owners' cluster groups rebuilt.
-   Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/ownermap/render/MarkedSystemRederive.java)'s
+   A layer taking the full rebuild drains the set and owes path 3 to the next frame instead.
+   So does a view that cannot take a fold:
+   the debug overlay,
+   or the placeholder standing before any build completes.
+   A spotlit map is no such map;
+   why the stock filler can fold one is
+   [the tier's](../../src/main/java/kmu/maplayers/ownermap/README.md#the-rebuild-is-a-slot).
+   Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/ownermap/render/rebuild/MarkedSystemRederive.java)'s
    and redrawing what that disturbed is the refresh's,
    so what a change costs is decided apart from what changed.
    Three facts are re-derived per marked system,
    over one reading of the sector opened for the whole batch:
-   who holds it,
+   who holds it and how its fill draws,
    whether anything stands in it,
    and whether the spotlit bloc is one of the things standing in it.
    The last two are what a cell that no bloc holds is drawn from,
@@ -782,6 +823,11 @@ in increasing cost:
    Such a cell is redrawn alone:
    neither fact moves a seam,
    so no neighbour re-shapes and no cluster is retraced.
+   A fill state moving under the same holder -
+   a claimed system losing its last colony,
+   say -
+   re-traces that holder's cluster group and nothing else,
+   its border being where it was.
    The marked systems' presence bands are re-baked whether or not anything flipped:
    the colonisation and transfer events that mark a system are exactly the events that change how many colonies are in it,
    and a band counts colonies where the fills only weigh them.
@@ -876,8 +922,9 @@ on load and on every settings change.
   A colony event names its own system;
   only a change to the drawn *set* is allowed to invalidate the partition.
 - The per-frame path must stay int compares.
-  Any new live input needs a revision of its own folded into a fingerprint -
-  never a per-frame scan to detect change.
+  Any new live input needs a revision of its own added to a stamp -
+  never a per-frame scan to detect change,
+  and never a fold of several revisions into one int.
   The settled faces and [the hover box](#the-hover-box) are the two stated exceptions.
 - An incremental update must read back the same inputs the full build used,
   and go through the same primitives,
@@ -890,7 +937,7 @@ on load and on every settings change.
 
 - [KMLib caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) -
   the font and glyph caches KMU draws through,
-  and the `Fingerprints` primitive.
+  and the `RevisionStamp` primitive.
 - [Owner-painted map assembly](../../src/main/java/kmu/maplayers/ownermap/README.md) -
   the tier the overlay cache,
   the clusters and the sidebar picker memo live in.

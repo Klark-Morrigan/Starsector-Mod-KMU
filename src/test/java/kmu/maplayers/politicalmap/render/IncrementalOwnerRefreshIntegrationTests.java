@@ -9,8 +9,12 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
+import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -21,6 +25,7 @@ import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.ribbon.CellRibbon;
@@ -30,19 +35,24 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.render.IncrementalOwnerRefresh;
-import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTests;
-import kmu.maplayers.ownermap.render.StandingOwnerMap;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
+import kmu.maplayers.ownermap.render.rebuild.IncrementalOwnerRefreshTests;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
+import kmu.maplayers.ownermap.render.rebuild.StandingOwnerMap;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.ribbon.RibbonBakeSettings;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
@@ -51,6 +61,7 @@ import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.views.DominancePaintedView;
 import kmu.maplayers.politicalmap.views.FactionsView;
 import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
@@ -61,6 +72,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,7 +80,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -177,6 +191,17 @@ final class IncrementalOwnerRefreshIntegrationTests {
         // marked - the refresh is handed the batch rather than draining one of its own.
         private final Set<SystemKey> staleSystemKeys = new LinkedHashSet<>();
 
+        // The claims a claim-reading case states per system, read through the view the rebuild
+        // and the refresh both paint under. Nobody claims anything unless a case says so.
+        private final ClaimBreakdownReaderFake claimReaderFake = new ClaimBreakdownReaderFake();
+
+        // The view both legs paint under: the faction view, reading its claims through the stated
+        // reader rather than inferring them from colonies the fixture does not carry.
+        private final DominancePaintedView viewFake = new ClaimingFactionsViewFake(claimReaderFake);
+
+        // The spotlight pick, which the seam answers as nobody unless a case spotlights a bloc.
+        private MockedStatic<FilterSelection> filterSelectionMock;
+
         private FactionAPI hegemonyMock;
         private FactionAPI tritachyonMock;
         private FactionAPI piratesMock;
@@ -195,9 +220,11 @@ final class IncrementalOwnerRefreshIntegrationTests {
             hegemonyMock = SectorOwnershipFixtures.buildFaction(
                 HEGEMONY,
                 SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT);
+
             tritachyonMock = SectorOwnershipFixtures.buildFaction(
                 TRITACHYON,
                 SectorOwnershipFixtures.TRITACHYON_FACTION_BRIGHT);
+
             piratesMock = SectorOwnershipFixtures.buildFaction(
                 PIRATES,
                 SectorOwnershipFixtures.PERSEAN_FACTION_BRIGHT);
@@ -252,7 +279,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
             // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory
             // state as well.
-            seams.openSeam(FilterSelection.class);
+            filterSelectionMock = seams.openSeam(FilterSelection.class);
         }
 
         @AfterEach
@@ -261,48 +288,59 @@ final class IncrementalOwnerRefreshIntegrationTests {
             seams.closeEverySeam();
         }
 
+        // The system no holder ever accounted for: nobody held it before and somebody holds it
+        // now, so the cell goes from empty backdrop to a bloc's territory and owes a band it
+        // never had.
         @Test
         void drawsWhatARebuildWouldWhenASystemTakesItsFirstColony() {
-            // The system no holder ever accounted for: nobody held it before and somebody holds it
-            // now, so the cell goes from empty backdrop to a bloc's territory and owes a band it
-            // never had.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(FRONTIER_SYSTEM, buildColony(piratesMock, FRONTIER_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
         }
 
+        // The other end of the same move: the holder entry goes, the system leaves the inhabited
+        // set, and the cell falls back to the empty backdrop - a different category, a different
+        // paint, and no band at all.
         @Test
         void drawsWhatARebuildWouldWhenASystemLosesItsLastColony() {
-            // The other end of the same move: the holder entry goes, the system leaves the
-            // inhabited set, and the cell falls back to the empty backdrop - a different category,
-            // a different paint, and no band at all.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(DYING_SYSTEM);
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, DYING_SYSTEM);
         }
 
+        // The flip, which is the one move that reaches past the marked system's own cell: the edge
+        // it shares with the core turns from a same-bloc seam into a national border, and the edge
+        // it shares with the dying system turns the other way.
         @Test
         void drawsWhatARebuildWouldWhenASystemChangesHands() {
-            // The flip, which is the one move that reaches past the marked system's own cell: the
-            // edge it shares with the core turns from a same-bloc seam into a national border, and
-            // the edge it shares with the dying system turns the other way.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, BORDER_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
         }
 
+        // The band's own case, and the arm no switch can reach: the holder is unmoved and the fill
+        // says exactly what it said before, while the band goes from one bloc's tally to a contest.
+        // Nothing but the band reports it, so a batch that re-derived the holder and left the count
+        // alone would look right everywhere else.
         @Test
         void drawsWhatARebuildWouldWhenARivalArrivesInAHeldSystem() {
-            // The band's own case, and the arm no switch can reach: the holder is unmoved and the
-            // fill says exactly what it said before, while the band goes from one bloc's tally to
-            // a contest. Nothing but the band reports it, so a batch that re-derived the holder
-            // and left the count alone would look right everywhere else.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(
@@ -310,36 +348,43 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 buildColony(hegemonyMock, CORE_COLONY_SIZE),
                 buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
         }
 
+        // The commonest event of all - a colony resize that leaves the same winner, the same
+        // settlement and the same count - so the map must come back exactly as it was. It is not a
+        // no-op path: the marked system's band is re-baked whatever happened, and this is what says
+        // the band it lays is the band it replaced.
         @Test
         void drawsWhatARebuildWouldWhenAColonyGrowsAndNothingMoves() {
-            // The commonest event of all - a colony resize that leaves the same winner, the same
-            // settlement and the same count - so the map must come back exactly as it was. It is
-            // not a no-op path: the marked system's band is re-baked whatever happened, and this
-            // is what says the band it lays is the band it replaced.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(CORE_SYSTEM, buildColony(hegemonyMock, GROWN_CORE_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
         }
 
+        // One map carried through a system's whole life, compared against a rebuild at every step
+        // of it - which is the arrangement production actually runs: the cache holds one map for
+        // the session and folds batch after batch into it, where every case above starts from a map
+        // just rebuilt. So this is the only case that can catch a refresh that is right once and
+        // wrong the second time - a fold that half-updates something, leaving a map each individual
+        // comparison accepts and the next one builds on.
+        //
+        // The first comparison marks nothing. It asserts what every case here rests on and none of
+        // them states: that two rebuilds of one sector agree, so a difference found after a fold is
+        // the fold's and not the rebuild's.
         @Test
         void drawsWhatARebuildWouldAtEveryStepOfASystemsLife() {
-            // One map carried through a system's whole life, compared against a rebuild at every
-            // step of it - which is the arrangement production actually runs: the cache holds one
-            // map for the session and folds batch after batch into it, where every case above
-            // starts from a map just rebuilt. So this is the only case that can catch a refresh
-            // that is right once and wrong the second time - a fold that half-updates something,
-            // leaving a map each individual comparison accepts and the next one builds on.
-            //
-            // The first comparison marks nothing. It asserts what every case here rests on and
-            // none of them states: that two rebuilds of one sector agree, so a difference found
-            // after a fold is the fold's and not the rebuild's.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap);
 
             // Settled: nobody held it, somebody does now.
@@ -368,18 +413,21 @@ final class IncrementalOwnerRefreshIntegrationTests {
             assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
         }
 
+        // The same walk over a system with neighbours on both sides, which is what the frontier's
+        // own life cannot reach: every step here re-shapes a ring rather than one cell, re-indexes
+        // the clusters, and rebuilds two blocs' territories - and does it to a map the previous step
+        // already re-shaped. A re-shape that left a neighbour holding an edge from the step before
+        // would survive any single fold and show here.
+        //
+        // The border system carries one colony throughout, the same size each time: what moves is
+        // who owns it, so nothing but the holder can account for a difference.
         @Test
         void drawsWhatARebuildWouldAtEveryStepOfAMiddleSystemsFlips() {
-            // The same walk over a system with neighbours on both sides, which is what the
-            // frontier's own life cannot reach: every step here re-shapes a ring rather than one
-            // cell, re-indexes the clusters, and rebuilds two blocs' territories - and does it to
-            // a map the previous step already re-shaped. A re-shape that left a neighbour holding
-            // an edge from the step before would survive any single fold and show here.
-            //
-            // The border system carries one colony throughout, the same size each time: what
-            // moves is who owns it, so nothing but the holder can account for a difference.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(standingMap);
 
             // Sold to the neighbour on its right: the seam with the core hardens into a national
@@ -408,23 +456,125 @@ final class IncrementalOwnerRefreshIntegrationTests {
             assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
         }
 
+        // All three moves in one drain, which is what a fleet action or an economy tick actually
+        // delivers. The flip's re-shape ring reaches a system whose own colonies moved in the same
+        // batch, so the two redraws have to compose rather than each arriving at the map the other
+        // has already left behind.
         @Test
         void drawsWhatARebuildWouldWhenOneBatchMovesAllThree() {
-            // All three moves in one drain, which is what a fleet action or an economy tick
-            // actually delivers. The flip's re-shape ring reaches a system whose own colonies
-            // moved in the same batch, so the two redraws have to compose rather than each
-            // arriving at the map the other has already left behind.
+
+            // ARRANGE
             var standingMap = buildMapByFullRebuild();
 
             placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, BORDER_COLONY_SIZE));
             placeColoniesIn(DYING_SYSTEM);
             placeColoniesIn(FRONTIER_SYSTEM, buildColony(piratesMock, FRONTIER_COLONY_SIZE));
 
+            // ACT, ASSERT
             assertRefreshDrawsWhatARebuildWould(
                 standingMap,
                 BORDER_SYSTEM,
                 DYING_SYSTEM,
                 FRONTIER_SYSTEM);
+        }
+
+        // A bloc still claiming a system its last colony left keeps it as an unfilled extension of
+        // its territory, so a rebuild draws the claim; a batch that re-derived by the contest alone
+        // drew the system unowned until the next rebuild.
+        @Test
+        void drawsWhatARebuildWouldWhenAClaimedSystemLosesItsLastColony() {
+
+            // ARRANGE
+            claimReaderFake.setBreakdown(DYING_SYSTEM, new SystemClaimBreakdown(null, TRITACHYON, List.of()));
+
+            var standingMap = buildMapByFullRebuild();
+
+            placeColoniesIn(DYING_SYSTEM);
+
+            // ACT, ASSERT
+            assertRefreshDrawsWhatARebuildWould(standingMap, DYING_SYSTEM);
+
+            var actualResolved = readStandingAnswerOf(standingMap, DYING_SYSTEM);
+
+            assertThat(actualResolved.owner().ownerId())
+                .isEqualTo(TRITACHYON);
+            assertThat(actualResolved.fillState())
+                .isEqualTo(FillState.UNFILLED);
+        }
+
+        // Under a spotlight a batch re-derives a marked system as the filtered build painted it: the
+        // pick's spotlit key, hatched where it lives without winning. A batch re-deriving by the
+        // plain contest would overwrite the spotlit key, which is why a filtered map used to owe a
+        // rebuild per change rather than fold one.
+        @Test
+        void drawsWhatARebuildWouldWhenThePickArrivesInASystemUnderASpotlight() {
+
+            // ARRANGE
+            spotlightBloc(TRITACHYON);
+
+            var standingMap = buildMapByFullRebuild();
+
+            placeColoniesIn(
+                CORE_SYSTEM,
+                buildColony(hegemonyMock, CORE_COLONY_SIZE),
+                buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            // ACT, ASSERT
+            assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
+
+            var actualResolved = readStandingAnswerOf(standingMap, CORE_SYSTEM);
+
+            assertThat(SpotlitOwners.isSpotlitOwner(actualResolved.owner().ownerId()))
+                .isTrue();
+            assertThat(actualResolved.fillState())
+                .isEqualTo(FillState.HATCHED);
+        }
+
+        // The same spotlit map carried through the pick's arrival, its win and its departure, so a
+        // fold that half-updates the hatching on one step shows on the next.
+        @Test
+        void drawsWhatARebuildWouldAtEveryStepOfThePicksLifeInASystemUnderASpotlight() {
+
+            // ARRANGE
+            spotlightBloc(TRITACHYON);
+
+            var standingMap = buildMapByFullRebuild();
+
+            // ACT, ASSERT
+            // Arrived beside a heavier holder: spotlit and hatched.
+            placeColoniesIn(
+                BORDER_SYSTEM,
+                buildColony(hegemonyMock, BORDER_COLONY_SIZE),
+                buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+
+            // Taken outright: spotlit and solid, the hatching gone with the rival.
+            placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+
+            // Gone: back to the real holder nobody, which the spotlight recedes.
+            placeColoniesIn(BORDER_SYSTEM);
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+        }
+
+        // Spotlights one bloc on every view, as the sidebar's pick is read by both legs.
+        private void spotlightBloc(String blocId) {
+
+            filterSelectionMock
+                .when(() -> FilterSelection.getSelectedIdOf(any()))
+                .thenReturn(blocId);
+        }
+
+        // Who the folded map now says owns one system, and how it fills.
+        private static ResolvedSystemOwner readStandingAnswerOf(StandingOwnerMap standingMap, String systemId) {
+
+            return standingMap
+                .getClusters()
+                .getOccupancy()
+                .readResolvedOwnerOf(buildCellKey(systemId));
         }
 
         // Marks the named systems, folds the batch into the standing map, and compares what that
@@ -433,13 +583,17 @@ final class IncrementalOwnerRefreshIntegrationTests {
         // The refresh runs first because the rebuild it is compared against is taken from the
         // sector as it stands after the fold: one built ahead of the fold would be compared against
         // a map that had not yet accounted for the marks.
+        //
+        // Folded through the incremental strategy, the door the cache folds through: the refresh
+        // behind it is the rebuild package's own, and this suite lives beside the political views
+        // it paints under.
         private void assertRefreshDrawsWhatARebuildWould(
                 StandingOwnerMap standingMap,
                 String... markedSystemIds) {
 
             staleSystemKeys.addAll(buildCellKeys(markedSystemIds));
 
-            IncrementalOwnerRefresh.applyStaleOwnerUpdates(
+            OwnerMapRefreshStrategy.INCREMENTAL.refreshMarkedSystems(
                 openWalkOverTheSector(),
                 standingMap,
                 staleSystemKeys);
@@ -454,10 +608,10 @@ final class IncrementalOwnerRefreshIntegrationTests {
             // comes back in two orders. Named rather than taken over the whole comparison,
             // because a band's runs are a draw order and two bands laying the same runs in
             // different orders are two different bands.
-            assertThat(readDrawnMap(standingMap.clusters()))
+            assertThat(readDrawnMap(standingMap.getClusters()))
                 .usingRecursiveComparison()
                 .ignoringCollectionOrderInFields("inhabitedSystemKeys", "spotlitPresenceSystemKeys")
-                .isEqualTo(readDrawnMap(buildMapByFullRebuild().clusters()));
+                .isEqualTo(readDrawnMap(buildMapByFullRebuild().getClusters()));
         }
 
         // A walk of the sector as it stands, under the player's live visibility rules - what the
@@ -477,28 +631,31 @@ final class IncrementalOwnerRefreshIntegrationTests {
             // The rebuild's one walk of the sector and the view's reading for it, opened here as the
             // plugin's cache opens them and handed to the owners, the build and the bake beneath it.
             var walk = openWalkOverTheSector();
-            var viewReading = FactionsView.INSTANCE.resolveViewReading(sectorMock);
+            var viewReading = viewFake.resolveViewReading(sectorMock);
 
             // The rebuild's one sampling of the sidebar picks, taken here as the plugin's cache
             // takes it and carried through every stage below, so the fills, the fit, the bands and
             // the labels are all baked under one reading of them.
             // The names off, which is what leaves the bands a function of the map alone.
             var contentInputs = ContentInputs.sampleForView(
-                FactionsView.INSTANCE,
+                viewFake,
                 OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 MapLayerScreens.MAP_SCOPE);
 
             // The rebuild's one reading of the styling, taken as the plugin's cache takes it.
-            var territories = OwnerMapBuilder.buildClusters(
-                cellsMock,
-                viewReading,
-                contentInputs,
-                false,
-                OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs),
+            var buildInputs = new OwnerMapBuildInputs(
                 MapStyling.readFromLunaSettings(
                     viewReading.view().resolveCategories(),
                     viewReading.reading(),
-                    contentInputs));
+                    contentInputs),
+                viewReading,
+                contentInputs,
+                false);
+
+            var territories = OwnerMapBuilder.buildClusters(
+                cellsMock,
+                buildInputs,
+                OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs));
 
             var standingAnchors = new StandingClusterAnchors();
             var ownerLabels = new ArrayList<Label>();
@@ -545,9 +702,10 @@ final class IncrementalOwnerRefreshIntegrationTests {
     // from it. Copied out of the built map rather than read through it, so the values compared are
     // the ones each leg finished with even though the refresh edits its map in place.
     //
-    // The occupancy's three facts are here beside the cells because a difference in them is the
-    // failure this suite exists to catch, and a difference that has not yet reached a cell is the
-    // one a later change to how a cell is styled would turn into a visible one.
+    // The occupancy's facts are here beside the cells because a difference in them is the failure
+    // this suite exists to catch, and a difference that has not yet reached a cell is the one a later
+    // change to how a cell is styled would turn into a visible one. The fill states are among them,
+    // a batch folding them per marked system as it folds the holder.
     //
     // The blocs' territories are here because a cell does not carry them: an owned cell draws only
     // its interior seams, while the fill, the national border and the hatch belong to the cluster
@@ -555,6 +713,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
     // correctly and never re-indexed the clusters, moves nothing a cell would report.
     private record DrawnMap(
         Map<SystemKey, SystemOwner> holderBySystemKey,
+        Map<SystemKey, FillState> nonSolidFillStateBySystemKey,
         Set<SystemKey> inhabitedSystemKeys,
         Set<SystemKey> spotlitPresenceSystemKeys,
         Map<SystemKey, StyledCell> styledCellByCellKey,
@@ -568,11 +727,57 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
         return new DrawnMap(
             new LinkedHashMap<>(occupancy.getOwnerBySystemKey()),
+            new LinkedHashMap<>(occupancy.snapshotFillStates().getNonSolidFillStateBySystemKey()),
             new LinkedHashSet<>(occupancy.getInhabitedSystemKeys()),
             new LinkedHashSet<>(occupancy.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
             new LinkedHashMap<>(territories.getPaintedCells().getRibbonStore().getRibbonByCellKey()));
+    }
+
+    /**
+     * The faction view reading its claims through a stated reader, so a case can pose a claim the
+     * vanilla mechanic would infer from colonies no fixture carries. Everything else is the faction
+     * view's own.
+     */
+    private static final class ClaimingFactionsViewFake
+            implements DominancePaintedView {
+
+        private final ClaimBreakdownReader claimReader;
+
+        private ClaimingFactionsViewFake(ClaimBreakdownReader claimReader) {
+            this.claimReader = claimReader;
+        }
+
+        @Override
+        public String getId() {
+            return FactionsView.INSTANCE.getId();
+        }
+
+        @Override
+        public String getSegmentLabelKey() {
+            return FactionsView.INSTANCE.getSegmentLabelKey();
+        }
+
+        @Override
+        public HolderGrouping resolveGrouping() {
+            return FactionsView.INSTANCE.resolveGrouping();
+        }
+
+        @Override
+        public Optional<MapHoverTooltip> resolveHoverTooltip() {
+            return FactionsView.INSTANCE.resolveHoverTooltip();
+        }
+
+        @Override
+        public Predicate<String> resolveSelectableBlocGate(HolderGrouping grouping) {
+            return FactionsView.INSTANCE.resolveSelectableBlocGate(grouping);
+        }
+
+        @Override
+        public ClaimBreakdownReaderSource resolveClaimReaderSource() {
+            return (knownColonyReader, sectorIndex) -> claimReader;
+        }
     }
 
     // The systems the fixture sector lists, keyed by ID and in row order.

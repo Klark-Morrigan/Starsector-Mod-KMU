@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
@@ -20,6 +21,7 @@ import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.labels.anchor.specifications.LeanScoring;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
@@ -37,14 +39,17 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.ResolvedSystemOwner;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolver;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
-import kmu.maplayers.ownermap.render.OwnerMapCache;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapCache;
+import kmu.maplayers.ownermap.render.rebuild.OwnerMapRefreshStrategy;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
@@ -62,6 +67,7 @@ import org.mockito.MockedStatic;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +75,7 @@ import java.util.Set;
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.ownermap.render.rebuild.OwnerMapCacheReads.readProductionClustersOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -109,6 +116,9 @@ final class RelayOwnerLayerIntegrationTests {
     // a second pair, both unlike anything KMU's own layers would carry.
     private static final String RELAY = "carries_relay";
     private static final String NO_RELAY = "lacks_relay";
+
+    // The one owner a second layer gives every system, for the case of two layers on one sector.
+    private static final String WHOLE_SECTOR = "whole_sector";
     private static final ColourPair RELAY_PALETTE = new ColourPair(Color.CYAN, Color.BLUE);
     private static final ColourPair NO_RELAY_PALETTE = new ColourPair(Color.ORANGE, Color.RED);
 
@@ -122,6 +132,10 @@ final class RelayOwnerLayerIntegrationTests {
     private static final String DARK_SYSTEM = "dark";
     private static final String SETTLED_SYSTEM = "settled";
     private static final String EMPTY_SYSTEM = "empty";
+
+    // The screen every rebuild is driven for. A stand-in rather than one of the two live screens:
+    // no case here turns on which panel the frame was prepared for.
+    private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
 
     private static final double WELD_TOLERANCE = 1.0;
     private static final double MITER_LIMIT = 4.0;
@@ -217,71 +231,87 @@ final class RelayOwnerLayerIntegrationTests {
     @Nested
     class BuildClusters {
 
+        // The relay category fills from the primary slot and the other from the secondary, so a fill
+        // in the right owner's right slot says both the shades and the category were the layer's.
         @Test
         void fillsAndBordersEachOwnerInItsOwnShadesByItsOwnCategory() {
-            // The relay category fills from the primary slot and the other from the secondary, so a
-            // fill in the right owner's right slot says both the shades and the category were the
-            // layer's.
-            var clusters = buildRelayMap();
-            var relayGroup = clusters.getStyledClusterGroupByOwnerId().get(RELAY);
-            var darkGroup = clusters.getStyledClusterGroupByOwnerId().get(NO_RELAY);
 
-            assertThat(relayGroup.fill().colour())
+            // ACT
+            var clusters = buildRelayMap();
+            var actualRelayGroup = clusters.getStyledClusterGroupByOwnerId().get(RELAY);
+            var actualDarkGroup = clusters.getStyledClusterGroupByOwnerId().get(NO_RELAY);
+
+            // ASSERT
+            assertThat(actualRelayGroup.fill().colour())
                 .isEqualTo(Color.CYAN);
-            assertThat(relayGroup.border().colour())
+            assertThat(actualRelayGroup.border().colour())
                 .isEqualTo(Color.BLUE);
-            assertThat(darkGroup.fill().colour())
+            assertThat(actualDarkGroup.fill().colour())
                 .isEqualTo(Color.RED);
         }
 
         @Test
         void fusesTheRelayPairIntoOneBodyUnderItsOwnerKey() {
 
-            var clusters = buildRelayMap();
+            // ARRANGE
+            var expectedClusterCount = 1;
 
-            assertThat(clusters.getStyledClusterGroupByOwnerId().get(RELAY).clusters())
-                .hasSize(1);
+            // ACT
+            var clusters = buildRelayMap();
+            var actualRelayGroup = clusters.getStyledClusterGroupByOwnerId().get(RELAY);
+
+            // ASSERT
+            assertThat(actualRelayGroup.clusters())
+                .hasSize(expectedClusterCount);
         }
 
+        // A fused cell's seam paints from the same reading as its body's fill and border.
         @Test
         void strokesTheSeamBetweenTheRelayPairInTheRelayShade() {
-            // A fused cell's seam paints from the same reading as its body's fill and border.
+
+            // ACT
             var clusters = buildRelayMap();
-            var seam = (StyledCell.FusedCell) clusters
+            var actualSeam = (StyledCell.FusedCell) clusters
                 .getStyledCellByCellKey()
                 .get(buildCellKey(RELAY_WEST));
 
-            assertThat(seam.seamPaint().colour())
+            // ASSERT
+            assertThat(actualSeam.seamPaint().colour())
                 .isEqualTo(Color.CYAN);
         }
 
+        // The settled category fills and the empty one does not, so the two unowned cells prove which
+        // of the layer's categories each fell to - and both paint the layer's own shade.
         @Test
         void paintsAnUnownedCellInTheLayersUnownedShadeByItsOwnCategories() {
-            // The settled category fills and the empty one does not, so the two unowned cells prove
-            // which of the layer's categories each fell to - and both paint the layer's own shade.
+
+            // ACT
             var clusters = buildRelayMap();
 
-            var settledCell = (StyledCell.LoneCell) clusters
+            var actualSettledCell = (StyledCell.LoneCell) clusters
                 .getStyledCellByCellKey()
                 .get(buildCellKey(SETTLED_SYSTEM));
 
-            var emptyCell = (StyledCell.LoneCell) clusters
+            var actualEmptyCell = (StyledCell.LoneCell) clusters
                 .getStyledCellByCellKey()
                 .get(buildCellKey(EMPTY_SYSTEM));
 
-            assertThat(settledCell.fillPaint().colour())
+            // ASSERT
+            assertThat(actualSettledCell.fillPaint().colour())
                 .isEqualTo(UNOWNED_COLOUR);
-            assertThat(emptyCell.fillPaint().colour())
+            assertThat(actualEmptyCell.fillPaint().colour())
                 .isNull();
-            assertThat(emptyCell.outlinePaint().colour())
+            assertThat(actualEmptyCell.outlinePaint().colour())
                 .isEqualTo(UNOWNED_COLOUR);
         }
 
         @Test
         void neverAsksTheSectorWhoAnOwnerIs() {
 
+            // ACT
             buildRelayMap();
 
+            // ASSERT
             verify(sectorMock, never())
                 .getFaction(any());
         }
@@ -290,13 +320,16 @@ final class RelayOwnerLayerIntegrationTests {
     @Nested
     class RebuildClusterAnchors {
 
+        // The relay category's names draw in the primary slot and the other's in the secondary, so
+        // each placement's shade names its owner's category as well as its shades.
         @Test
         void namesEachOwnerByTheLayersNameInItsCategorysNameShade() {
-            // The relay category's names draw in the primary slot and the other's in the secondary,
-            // so each placement's shade names its owner's category as well as its shades.
-            var anchors = labelRelayMap();
 
-            assertThat(anchors)
+            // ACT
+            var actualAnchors = labelRelayMap();
+
+            // ASSERT
+            assertThat(actualAnchors)
                 .extracting(ClusterAnchor::nameLines, ClusterAnchor::colour)
                 .containsExactly(
                     tuple(List.of("Relay Net"), Color.CYAN),
@@ -306,8 +339,10 @@ final class RelayOwnerLayerIntegrationTests {
         @Test
         void neverAsksTheSectorWhoAnOwnerIs() {
 
+            // ACT
             labelRelayMap();
 
+            // ASSERT
             verify(sectorMock, never())
                 .getFaction(any());
         }
@@ -337,14 +372,7 @@ final class RelayOwnerLayerIntegrationTests {
                 MapSectorFixture.buildReachableSystemAt(DARK_SYSTEM, 30000f, 0f),
                 MapSectorFixture.buildReachableSystemAt(RELAY_EAST, 60000f, 0f));
 
-            when(relayViewMock.getId())
-                .thenReturn("relays");
-            when(relayViewMock.resolveViewRecedeAdjustment(any()))
-                .thenReturn(ElementStyleAdjustment.NONE);
-            when(relayViewMock.resolveCategories())
-                .thenReturn(new RelayCategoriesFake());
-            when(relayViewMock.resolveViewReading(any()))
-                .thenReturn(new ViewReading(relayViewMock, new RelayReadingFake(), relaySourceFake));
+            stubViewAnswering(relayViewMock, "relays", relaySourceFake);
         }
 
         @AfterEach
@@ -353,17 +381,21 @@ final class RelayOwnerLayerIntegrationTests {
             seams.closeEverySeam();
         }
 
+        // The core asks the layer which systems each owner holds and reads nothing about owners
+        // itself. That the core reaches none of KMU's own answers on the way is the layering gate's
+        // to say rather than this case's: this suite sits in a package the gate closes to them, so it
+        // could not name one to stand in for.
         @Test
         void paintsEachSystemByTheLayersOwnRule() {
-            // The core asks the layer which systems each owner holds and reads nothing about owners
-            // itself. That the core reaches none of KMU's own answers on the way is the layering gate's to
-            // say rather than this case's: this suite sits in a package the gate closes to them, so
-            // it could not name one to stand in for.
+
+            // ARRANGE
             var cache = buildCacheSeeding(CellSeedRule.SEED_DRAWN_SYSTEMS);
 
-            cache.refreshDrawLists(relayViewMock, ScreenMemoryScopes.createStandInScreen());
+            // ACT
+            cache.refreshDrawLists(relayViewMock, SCREEN);
 
-            assertThat(cache.getClusters().getOccupancy().getOwnerBySystemKey())
+            // ASSERT
+            assertThat(readProductionClustersOf(cache).getOccupancy().getOwnerBySystemKey())
                 .extractingFromEntries(entry -> entry.getKey().systemId(), entry -> entry.getValue().ownerId())
                 .containsExactlyInAnyOrder(
                     tuple(RELAY_WEST, RELAY),
@@ -371,42 +403,176 @@ final class RelayOwnerLayerIntegrationTests {
                     tuple(RELAY_EAST, RELAY));
         }
 
+        // The walk the cut was taken from, so the owners are resolved for the sector the cells stand
+        // on rather than whichever is running.
         @Test
         void handsTheSourceTheWalkOfItsOwnSector() {
-            // The walk the cut was taken from, so the owners are resolved for the sector the cells
-            // stand on rather than whichever is running.
-            buildCacheSeeding(CellSeedRule.SEED_DRAWN_SYSTEMS)
-                .refreshDrawLists(relayViewMock, ScreenMemoryScopes.createStandInScreen());
 
+            // ARRANGE
+            var cache = buildCacheSeeding(CellSeedRule.SEED_DRAWN_SYSTEMS);
+
+            // ACT
+            cache.refreshDrawLists(relayViewMock, SCREEN);
+
+            // ASSERT
             assertThat(relaySourceFake.walks)
                 .singleElement()
                 .extracting(SectorWalk::sector)
                 .isSameAs(relaySectorMock);
         }
 
+        // The layer states which systems seed its cells, so a rule narrower than the drawn set leaves
+        // a drawn system with no cell - which a cut inheriting another layer's rule would have given
+        // one.
         @Test
         void cutsCellsOnlyForTheSystemsTheLayersSeedRuleAdmits() {
-            // The layer states which systems seed its cells, so a rule narrower than the drawn set
-            // leaves a drawn system with no cell - which a cut inheriting another layer's rule
-            // would have given one.
+
+            // ARRANGE
             var cache = buildCacheSeeding((pass, system) -> !DARK_SYSTEM.equals(system.getId()));
 
-            cache.refreshDrawLists(relayViewMock, ScreenMemoryScopes.createStandInScreen());
+            // ACT
+            cache.refreshDrawLists(relayViewMock, SCREEN);
 
-            assertThat(cache.getClusters().getStyledCellByCellKey().keySet())
+            // ASSERT
+            assertThat(readProductionClustersOf(cache).getStyledCellByCellKey().keySet())
                 .extracting(SystemKey::systemId)
                 .containsExactlyInAnyOrder(RELAY_WEST, RELAY_EAST);
+        }
+
+        // Two layers over one sector each rebuild through their own source, so the cells they fuse
+        // are their own rule's: a cache that read owners from anywhere but its layer's source would
+        // fuse both maps alike.
+        @Test
+        void fusesDifferentCellsForTwoLayersWithDifferentSourcesOverOneSector() {
+
+            // ARRANGE
+            var machinery = new SectorMapMachinery(relaySectorMock);
+            var wholeSectorViewMock = mock(OwnerPaintedView.class);
+
+            stubViewAnswering(wholeSectorViewMock, "whole_sector", new WholeSectorSourceFake());
+
+            var relayCache = buildCacheOver(machinery, OwnerMapRefreshStrategy.FULL_REBUILD);
+            var wholeSectorCache = buildCacheOver(machinery, OwnerMapRefreshStrategy.FULL_REBUILD);
+
+            // ACT
+            relayCache.refreshDrawLists(relayViewMock, SCREEN);
+            wholeSectorCache.refreshDrawLists(wholeSectorViewMock, SCREEN);
+
+            // ASSERT
+            assertThat(readProductionClustersOf(relayCache).getStyledClusterGroupByOwnerId().keySet())
+                .containsExactlyInAnyOrder(RELAY, NO_RELAY);
+            assertThat(readProductionClustersOf(wholeSectorCache).getStyledClusterGroupByOwnerId().keySet())
+                .containsExactly(WHOLE_SECTOR);
+        }
+
+        // The incremental re-derive is a stock filler: it reads nothing of a layer but its owner
+        // source, so a layer the tier has never heard of folds a marked system through its own rule
+        // into the map on screen, with no rebuild and none of KMU's own owner answers on the way.
+        @Test
+        void foldsAMarkedSystemThroughTheLayersOwnSourceUnderTheIncrementalStrategy() {
+
+            // ARRANGE
+            var machinery = new SectorMapMachinery(relaySectorMock);
+            var cache = buildCacheOver(machinery, OwnerMapRefreshStrategy.INCREMENTAL);
+            var expectedWalkCount = 1;
+
+            cache.refreshDrawLists(relayViewMock, SCREEN);
+
+            var standingClusters = readProductionClustersOf(cache);
+
+            relaySourceFake.buildRelayIn(DARK_SYSTEM);
+            machinery.resolveRefreshBoard().markSystemGroupingStale(buildCellKey(DARK_SYSTEM));
+
+            // ACT
+            cache.refreshDrawLists(relayViewMock, SCREEN);
+
+            // ASSERT
+            assertThat(readProductionClustersOf(cache))
+                .isSameAs(standingClusters);
+            assertThat(readProductionClustersOf(cache).getOccupancy().readOwnerOf(buildCellKey(DARK_SYSTEM)).ownerId())
+                .isEqualTo(RELAY);
+            assertThat(relaySourceFake.walks)
+                .hasSize(expectedWalkCount);
+        }
+
+        // The full walk folds nothing, so the marked system reaches the map through the full rebuild
+        // the frame after it was drained - which reads it under the layer's rule afresh.
+        @Test
+        void rebuildsForAMarkedSystemOnTheFrameAfterUnderTheFullRebuildStrategy() {
+
+            // ARRANGE
+            var machinery = new SectorMapMachinery(relaySectorMock);
+            var cache = buildCacheOver(machinery, OwnerMapRefreshStrategy.FULL_REBUILD);
+            var expectedWalkCount = 2;
+
+            cache.refreshDrawLists(relayViewMock, SCREEN);
+
+            relaySourceFake.buildRelayIn(DARK_SYSTEM);
+            machinery.resolveRefreshBoard().markSystemGroupingStale(buildCellKey(DARK_SYSTEM));
+
+            // ACT
+            cache.refreshDrawLists(relayViewMock, SCREEN);
+            cache.refreshDrawLists(relayViewMock, SCREEN);
+
+            // ASSERT
+            assertThat(readProductionClustersOf(cache).getOccupancy().readOwnerOf(buildCellKey(DARK_SYSTEM)).ownerId())
+                .isEqualTo(RELAY);
+            assertThat(relaySourceFake.walks)
+                .hasSize(expectedWalkCount);
         }
 
         // A cache over this sector's own machinery, drawing no names and seeding under the given
         // rule.
         private OwnerMapCache buildCacheSeeding(CellSeedRule seedRule) {
 
-            return new OwnerMapCache(
+            return buildCacheOver(
                 new SectorMapMachinery(relaySectorMock),
-                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                seedRule);
+                seedRule,
+                OwnerMapRefreshStrategy.FULL_REBUILD);
         }
+
+        // A cache over the given machinery of this sector, drawing no names, seeding every drawn
+        // system and taking marked systems by the given strategy.
+        private OwnerMapCache buildCacheOver(
+                SectorMapMachinery machinery,
+                OwnerMapRefreshStrategy refreshStrategy) {
+
+            return buildCacheOver(
+                machinery,
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
+                refreshStrategy);
+        }
+
+        // The one construction both of those land on, so the preferences every case draws under are
+        // stated once.
+        private OwnerMapCache buildCacheOver(
+                SectorMapMachinery machinery,
+                CellSeedRule seedRule,
+                OwnerMapRefreshStrategy refreshStrategy) {
+
+            return new OwnerMapCache(
+                machinery,
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
+                seedRule,
+                refreshStrategy);
+        }
+    }
+
+    // Stubs a view as a rebuild asks it: its ID, no recede of its own, the relay layer's categories,
+    // and a reading over the relay layer's answers that hands over the given source.
+    private static void stubViewAnswering(
+            OwnerPaintedView layerViewMock,
+            String viewId,
+            OwnerSource ownerSource) {
+
+        when(layerViewMock.getId())
+            .thenReturn(viewId);
+        when(layerViewMock.resolveViewRecedeAdjustment(any()))
+            .thenReturn(ElementStyleAdjustment.NONE);
+        when(layerViewMock.resolveCategories())
+            .thenReturn(new RelayCategoriesFake());
+        when(layerViewMock.resolveViewReading(any()))
+            .thenReturn(new ViewReading(layerViewMock, new RelayReadingFake(), ownerSource));
     }
 
     // The map the relay layer's rule resolves: both relay systems to one owner, the dark system to
@@ -433,16 +599,19 @@ final class RelayOwnerLayerIntegrationTests {
         var contentInputs = ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL);
 
         // The styling read once for the rebuild, as the drawables read it.
-        return OwnerMapBuilder.buildClusters(
-            geometryCacheMock,
-            viewReading,
-            contentInputs,
-            false,
-            owners,
+        var buildInputs = new OwnerMapBuildInputs(
             MapStyling.readFromLunaSettings(
                 viewMock.resolveCategories(),
                 viewReading.reading(),
-                contentInputs));
+                contentInputs),
+            viewReading,
+            contentInputs,
+            false);
+
+        return OwnerMapBuilder.buildClusters(
+            geometryCacheMock,
+            buildInputs,
+            owners);
     }
 
     // That map's names, fitted the way a production rebuild fits them.
@@ -508,12 +677,19 @@ final class RelayOwnerLayerIntegrationTests {
     }
 
     /**
-     * The relay layer's owner source: a system carries a relay or it does not, read off its ID alone
-     * over the walk the tier hands it - no settlement, no ruler, no grouping.
+     * The relay layer's owner source: a system carries a relay or it does not, read off a list of
+     * system IDs a case may grow - no settlement, no ruler, no grouping.
      */
-    private static final class RelaySourceFake implements OwnerSource {
+    private static final class RelaySourceFake
+            implements OwnerSource {
 
         private final List<SectorWalk> walks = new ArrayList<>();
+        private final Set<String> relaySystemIds = new LinkedHashSet<>(List.of(RELAY_WEST, RELAY_EAST));
+
+        // Builds a relay in one system, which every resolve asked after this answers.
+        private void buildRelayIn(String systemId) {
+            relaySystemIds.add(systemId);
+        }
 
         @Override
         public ResolvedOwners resolveOwners(SectorWalk walk, String spotlitOwnerId) {
@@ -523,12 +699,7 @@ final class RelayOwnerLayerIntegrationTests {
             var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
 
             for (var systemKey : walk.sectorIndex().readSystemsByKey().keySet()) {
-
-                ownerBySystemKey.put(
-                    systemKey,
-                    systemKey.systemId().startsWith("relay")
-                        ? new SystemOwner(RELAY, RELAY_PALETTE)
-                        : new SystemOwner(NO_RELAY, NO_RELAY_PALETTE));
+                ownerBySystemKey.put(systemKey, resolveOwnerOf(systemKey.systemId()));
             }
 
             return new ResolvedOwners(
@@ -539,9 +710,72 @@ final class RelayOwnerLayerIntegrationTests {
         }
 
         @Override
-        public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+        public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
+            return new RelaySystemResolverFake();
+        }
 
-            throw new UnsupportedOperationException("no case here re-derives a system");
+        // The one rule both answers read: a relay or not.
+        private SystemOwner resolveOwnerOf(String systemId) {
+
+            return relaySystemIds.contains(systemId)
+                ? new SystemOwner(RELAY, RELAY_PALETTE)
+                : new SystemOwner(NO_RELAY, NO_RELAY_PALETTE);
+        }
+
+        /** The per-system answers by the same rule: every listed system is somebody's, and lived in. */
+        private final class RelaySystemResolverFake
+                implements SystemOwnerResolver {
+
+            @Override
+            public ResolvedSystemOwner resolveOwnerOf(StarSystemAPI system) {
+
+                return system == null
+                    ? ResolvedSystemOwner.UNOWNED
+                    : ResolvedSystemOwner.createSolidlyFilledBy(RelaySourceFake.this.resolveOwnerOf(system.getId()));
+            }
+
+            @Override
+            public boolean isSystemInhabited(StarSystemAPI system) {
+                return system != null;
+            }
+
+            @Override
+            public boolean isSpotlitOwnerPresentIn(StarSystemAPI system) {
+                return false;
+            }
+        }
+
+        @Override
+        public SystemRibbonPlanner resolveRibbonPlanner(SectorWalk walk, RibbonPlanRules rules) {
+
+            return system -> RibbonPlan.NONE;
+        }
+    }
+
+    /** A second layer's source, giving every system one owner, for the case of two layers on one sector. */
+    private static final class WholeSectorSourceFake
+            implements OwnerSource {
+
+        @Override
+        public ResolvedOwners resolveOwners(SectorWalk walk, String spotlitOwnerId) {
+
+            var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
+
+            for (var systemKey : walk.sectorIndex().readSystemsByKey().keySet()) {
+                ownerBySystemKey.put(systemKey, new SystemOwner(WHOLE_SECTOR, NO_RELAY_PALETTE));
+            }
+
+            return new ResolvedOwners(
+                ownerBySystemKey,
+                SystemFillStates.ALL_SOLID,
+                ownerBySystemKey.keySet(),
+                Set.of());
+        }
+
+        @Override
+        public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
+
+            throw new UnsupportedOperationException("no case here re-derives a system of this layer");
         }
 
         @Override
@@ -552,7 +786,8 @@ final class RelayOwnerLayerIntegrationTests {
     }
 
     /** The relay layer's answers about its two owners, none of them read off the sector. */
-    private static final class RelayReadingFake implements OwnerReading {
+    private static final class RelayReadingFake
+            implements OwnerReading {
 
         @Override
         public ColourPair resolvePalette(String ownerId) {
@@ -610,7 +845,8 @@ final class RelayOwnerLayerIntegrationTests {
      * slot and the rest from the secondary, so a colour read back names the category it came from;
      * a settled unowned cell fills and an empty one only outlines.
      */
-    private static final class RelayCategoriesFake implements OwnerCategories {
+    private static final class RelayCategoriesFake
+            implements OwnerCategories {
 
         @Override
         public Map<MapStyleCategory, CategoryStyle> readCategoryStyles(ContentInputs contentInputs) {

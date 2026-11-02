@@ -25,19 +25,21 @@ import java.util.Set;
  * than deriving from a sector.
  *
  * <p>The whole-sector answer is one stated {@link ResolvedOwners}, empty unless a case says
- * otherwise. The per-system answers - who owns a system, whether anything stands in it, whether the
- * spotlit owner lives there - are stated per system ID, an unstated owner answering nobody and an
- * unstated inhabitation answering whatever {@link #answerEverySystemInhabited} last set. The band
- * planner plans nothing unless a case hands one over.
+ * otherwise. The per-system answers - who owns a system and how it fills, whether anything stands in
+ * it, whether the spotlit owner lives there - are stated per system ID, an unstated owner answering
+ * nobody and an unstated inhabitation answering whatever {@link #answerEverySystemInhabited} last
+ * set. The band planner plans nothing unless a case hands one over, and the resolvers sampled no
+ * rules unless a case states some.
  */
-public final class OwnerSourceFake implements OwnerSource {
+public final class OwnerSourceFake
+        implements OwnerSource {
 
-    private final Map<String, SystemOwner> ownerBySystemId = new LinkedHashMap<>();
+    private final Map<String, ResolvedSystemOwner> ownerBySystemId = new LinkedHashMap<>();
     private final Map<String, Boolean> inhabitationBySystemId = new LinkedHashMap<>();
     private final Set<String> spotlitPresenceSystemIds = new LinkedHashSet<>();
 
     private final List<SectorWalk> ownerWalks = new ArrayList<>();
-    private final List<SectorWalk> systemResolveWalks = new ArrayList<>();
+    private final List<SectorWalk> systemResolverWalks = new ArrayList<>();
     private final List<SectorWalk> ribbonPlannerWalks = new ArrayList<>();
     private final List<RibbonPlanRules> ribbonPlanRules = new ArrayList<>();
     private final List<String> spotlitOwnerIdsAsked = new ArrayList<>();
@@ -46,6 +48,7 @@ public final class OwnerSourceFake implements OwnerSource {
     private ResolvedOwners resolvedOwners = ResolvedOwners.createEmpty();
     private boolean isInhabitedUnlessStated;
     private SystemRibbonPlanner ribbonPlanner = system -> RibbonPlan.NONE;
+    private String sampledRules = SystemOwnerResolver.NO_SAMPLED_RULES;
 
     /**
      * A source answering a stated whole-sector resolution, for a case about what a build does with
@@ -57,19 +60,30 @@ public final class OwnerSourceFake implements OwnerSource {
     public static OwnerSourceFake createAnswering(ResolvedOwners owners) {
 
         var sourceFake = new OwnerSourceFake();
+
         sourceFake.resolvedOwners = owners;
 
         return sourceFake;
     }
 
     /**
-     * States who owns one system, for every per-system resolve this source opens.
+     * States who owns one system, filling it solid, for every per-system resolver this source opens.
      *
      * @param systemId the system's own ID
      * @param owner    the owner to answer with, or null for a system nobody owns
      */
     public void recordOwnerOf(String systemId, SystemOwner owner) {
-        ownerBySystemId.put(systemId, owner);
+        recordResolvedOwnerOf(systemId, ResolvedSystemOwner.createSolidlyFilledBy(owner));
+    }
+
+    /**
+     * States who owns one system and how it fills, for every per-system resolver this source opens.
+     *
+     * @param systemId the system's own ID
+     * @param resolved the owner and fill state to answer with
+     */
+    public void recordResolvedOwnerOf(String systemId, ResolvedSystemOwner resolved) {
+        ownerBySystemId.put(systemId, resolved);
     }
 
     /**
@@ -106,6 +120,16 @@ public final class OwnerSourceFake implements OwnerSource {
     }
 
     /**
+     * States the rules every per-system resolver this source opens describes itself as having
+     * sampled, ahead of the default of none.
+     *
+     * @param rules what the resolvers answer for their sampled rules
+     */
+    public void answerSampledRules(String rules) {
+        sampledRules = rules;
+    }
+
+    /**
      * @return every walk a whole-sector resolve was asked over, in the order asked
      */
     public List<SectorWalk> readOwnerWalks() {
@@ -113,10 +137,10 @@ public final class OwnerSourceFake implements OwnerSource {
     }
 
     /**
-     * @return every walk a per-system resolve was opened over, in the order opened
+     * @return every walk a per-system resolver was opened over, in the order opened
      */
-    public List<SectorWalk> readSystemResolveWalks() {
-        return List.copyOf(systemResolveWalks);
+    public List<SectorWalk> readSystemResolverWalks() {
+        return List.copyOf(systemResolverWalks);
     }
 
     /**
@@ -141,7 +165,7 @@ public final class OwnerSourceFake implements OwnerSource {
     }
 
     /**
-     * @return the ID of every system a per-system resolve was asked the owner of, in the order asked
+     * @return the ID of every system a per-system resolver was asked the owner of, in the order asked
      */
     public List<String> readResolvedSystemIds() {
         return List.copyOf(resolvedSystemIds);
@@ -157,12 +181,12 @@ public final class OwnerSourceFake implements OwnerSource {
     }
 
     @Override
-    public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+    public SystemOwnerResolver openSystemResolver(SectorWalk walk, String spotlitOwnerId) {
 
-        systemResolveWalks.add(walk);
+        systemResolverWalks.add(walk);
         spotlitOwnerIdsAsked.add(spotlitOwnerId);
 
-        return new StatedResolveFake();
+        return new StatedResolverFake();
     }
 
     @Override
@@ -180,15 +204,16 @@ public final class OwnerSourceFake implements OwnerSource {
     }
 
     /** The per-system answers this source states, read live so a case may state them late. */
-    private final class StatedResolveFake implements SystemOwnerResolve {
+    private final class StatedResolverFake
+            implements SystemOwnerResolver {
 
         @Override
-        public SystemOwner resolveOwnerOf(StarSystemAPI system) {
+        public ResolvedSystemOwner resolveOwnerOf(StarSystemAPI system) {
 
             var systemId = readIdOf(system);
             resolvedSystemIds.add(systemId);
 
-            return ownerBySystemId.get(systemId);
+            return ownerBySystemId.getOrDefault(systemId, ResolvedSystemOwner.UNOWNED);
         }
 
         @Override
@@ -199,6 +224,11 @@ public final class OwnerSourceFake implements OwnerSource {
         @Override
         public boolean isSpotlitOwnerPresentIn(StarSystemAPI system) {
             return spotlitPresenceSystemIds.contains(readIdOf(system));
+        }
+
+        @Override
+        public String describeSampledRules() {
+            return sampledRules;
         }
     }
 }

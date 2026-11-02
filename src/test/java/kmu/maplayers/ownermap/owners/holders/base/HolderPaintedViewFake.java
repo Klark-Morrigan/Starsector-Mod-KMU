@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.cache.revisions.RevisionStamp;
+
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.SystemRibbonPlanner;
@@ -165,13 +167,8 @@ public final class HolderPaintedViewFake
     }
 
     @Override
-    public HolderProvider resolveHolderProvider() {
-        return HolderProviderFake.createHoldingNothing();
-    }
-
-    @Override
-    public SystemHolderResolveSource resolveSystemHolderResolveSource() {
-        return new SystemHolderResolveSourceFake();
+    public SystemHolderResolverSource resolveSystemHolderResolverSource() {
+        return new SystemHolderResolverSourceFake();
     }
 
     @Override
@@ -225,7 +222,7 @@ public final class HolderPaintedViewFake
     }
 
     @Override
-    public int getContentRevision(MapLayerRefreshBoard board) {
-        return 0;
+    public RevisionStamp readContentRevisions(MapLayerRefreshBoard board) {
+        return RevisionStamp.EMPTY;
     }
 }

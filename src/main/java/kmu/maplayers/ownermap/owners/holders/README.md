@@ -32,8 +32,8 @@ flowchart LR
     V --> R[FactionOwnerReading<br/>or AllianceOwnerReading]
     W([SectorWalk]) --> S
     S -->|opens| P[HolderPass]
-    P --> H[HolderProvider:<br/>the view's own rule]
-    H --> HR[HolderResolution]
+    P --> H[SystemHolderResolver:<br/>the view's own rule]
+    H -->|asked of every system| HR[HolderResolution]
     HR --> Solid
     HR --> Hatched
     HR --> Unfilled
@@ -41,17 +41,17 @@ flowchart LR
 
 | Package | What is in it |
 | --- | --- |
-| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's owner and shades, read once per pass (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
+| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the spotlit bloc paired with the holder it draws as (`BlocSpotlight`), the grouping seam (`HolderGrouping`), a bloc's owner and shades, read once per pass (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
 | `base.picker` | the picker every holder view shares: its assembly (`BlocPickerAssembly`), the standing mode it appends, and the colony size metric and modes a view ranks by |
 | `factions` | one faction as one owner: `FactionOwnerReading`, and the faction lines of the hover box |
 | `alliances` | a group of factions as one owner: `AllianceOwnerReading`, the contest axis (`BlocAffiliation`, `ContestSides`) and the lines naming a holder's allies and rivals |
 
 ## Why it sits inside the tier
 
-Both layers painting holders answer the tier's seams the same way apart from their shades:
-they walk the same colonies under the same grouping.
+Every layer painting holders answers the tier's seams the same way apart from its shades:
+it walks the sector's colonies under a grouping.
 One layer may not import another,
-so the shared answers sit where both reach them -
+so the shared answers sit where every such layer reaches them -
 inside the tier,
 nested under the seam they fill.
 
@@ -114,12 +114,11 @@ and only this subtree knows what it is made of.
 ## What a layer states
 
 A view painting holders implements `HolderPaintedView`
-and states six parts:
+and states five parts:
 
 - the grouping that folds factions into blocs;
 - who stands together in a contest a band judges, an `OwnerAffiliation`;
-- its whole-sector holding rule, a `HolderProvider`;
-- where its per-system rule is opened from, a `SystemHolderResolveSource`;
+- where its holding rule is opened from, a `SystemHolderResolverSource`;
 - how a band is counted, a `SystemRibbonPlanner` over one bake's inputs;
 - how a bloc looks, an `OwnerReading` over a grouping.
 
@@ -219,7 +218,9 @@ the layer's habitation knob,
 and the grouping it was built under.
 It asks every question about that walk off that one pass.
 
-- **The holding** is the layer's `HolderProvider`, handed the pass and the spotlit bloc.
+- **The holding** is the layer's `SystemHolderResolver`,
+  opened over the pass under the spotlit bloc
+  and asked of every system the pass walks (`HolderResolution.collectOver`).
 - **What stands where** is `HolderInhabitation`, over the same pass.
 - **Where the spotlit bloc lives** is `HolderInhabitation` too,
   asked only of the inhabited systems the holding left to nobody.
@@ -238,14 +239,18 @@ while the source itself holds nothing from one walk to the next.
 
 A batch's walk is a later reading of the sector,
 so the source opens a fresh pass for it
-and opens the layer's `SystemHolderResolve` over that pass.
-The resolve answers who holds a marked system.
+and opens the layer's `SystemHolderResolver` over that pass,
+under the bloc the standing build was spotlighting.
+The resolver answers who holds a marked system and how its fill draws.
 Whether anybody lives there and whether the spotlit bloc does are answered off the same pass,
 by the same projections the whole-sector scans used,
 so a re-derived system cannot leave the map the rebuild put it on.
 
-The holding rule is the layer's to keep in step with its whole-sector rule:
-a resolve that lands a different bloc parts the refreshed cell from the rebuild around it.
+A layer states its holding only this way, one system at a time.
+The rebuild runs the same resolver over every system,
+so a refreshed cell lands the bloc and the fill state the rebuild around it drew,
+spotlight included,
+with nothing for the layer to keep in step.
 
 ## The band count
 
@@ -313,13 +318,13 @@ What a holder rule puts in the two exceptions:
 - **Unfilled** -
   a system a rule extends a bloc's holdings with though the bloc does not hold it.
 
-A rule that never contests or unfills leaves both sets empty,
+A rule that never contests or unfills leaves every system solid,
 and pays nothing for the split.
 
 ## What is not here
 
 - The *rules* -
-  the providers and resolves a layer's views state,
+  the resolvers a layer's views state,
   and the mechanics behind them -
   are that layer's own.
   This subtree holds the assembly and the answers every holder layer shares, never a mechanic.

@@ -3,7 +3,7 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.listeners.SectorListeners;
-import kmlib.starsector.scripts.SectorScripts;
+import kmlib.starsector.scripts.everyframe.SectorScripts;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import kmu.maplayers.base.compatibility.MapLayerGameReach;
