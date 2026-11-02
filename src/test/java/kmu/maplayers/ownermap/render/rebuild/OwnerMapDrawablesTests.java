@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.rebuild;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.ui.font.FontAtlas;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -18,6 +19,8 @@ import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
+import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
@@ -38,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
+import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,6 +91,11 @@ final class OwnerMapDrawablesTests {
 
     // The owner a spotlit build is painted under.
     private static final String HEGEMONY_ID = "hegemony";
+
+    // The shades a build paints the Hegemony in.
+    private static final ColourPair HEGEMONY_PALETTE = new ColourPair(
+        new Color(10, 20, 30),
+        new Color(40, 50, 60));
 
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
 
@@ -477,6 +486,114 @@ final class OwnerMapDrawablesTests {
             // ASSERT
             assertThat(actualStandingMap)
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class SamplePaintedPalettes {
+
+        // The builders a rebuild drives, stood in for: what each builds is pinned where it lives,
+        // and all this asks is what the drawables sample off a build that ran.
+        private final StaticSeams seams = new StaticSeams();
+
+        @AfterEach
+        void closeSeams() {
+            seams.closeEverySeam();
+        }
+
+        // Nothing has been painted, so there is nothing to watch.
+        @Test
+        void isNullBeforeAnythingHasBeenBuilt() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+
+            // ACT
+            var actualPaintedPalettes = drawables.samplePaintedPalettes();
+
+            // ASSERT
+            assertThat(actualPaintedPalettes)
+                .isNull();
+        }
+
+        // The view's own occupancy and reading, rather than the rebuild's, so a sample taken after a
+        // fold covers an owner the fold painted.
+        @Test
+        void samplesTheProductionViewsOwnersOffItsOwnReading() {
+
+            // ARRANGE
+            var expectedOwnerPalettes = List.of(new PaintedPalettes.OwnerPalette(HEGEMONY_ID, HEGEMONY_PALETTE));
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersReadBy(
+                    Map.of("held", new SystemOwner(HEGEMONY_ID, HEGEMONY_PALETTE)),
+                    OwnerReadingFake
+                        .createAnsweringNothing()
+                        .withLooks(Map.of(HEGEMONY_ID, HEGEMONY_PALETTE), Map.of())),
+                buildRebuildReading(false));
+
+            // ACT
+            var actualPaintedPalettes = drawables.samplePaintedPalettes();
+
+            // ASSERT
+            assertThat(actualPaintedPalettes.ownerPalettes())
+                .isEqualTo(expectedOwnerPalettes);
+        }
+
+        // The spotlit key names no owner a reading knows, so the footprint is asked about under the
+        // owner the sidebar picked.
+        @Test
+        void samplesTheSpotlitFootprintUnderThePickedOwner() {
+
+            // ARRANGE
+            var expectedOwnerIds = List.of(HEGEMONY_ID);
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+
+            buildProductionThrough(
+                seams,
+                drawables,
+                OwnerMapClusterFixtures.createClustersSpotlighting(
+                    HEGEMONY_ID,
+                    Map.of("held", SpotlitOwners.createSpotlitOwner(HEGEMONY_PALETTE)),
+                    Set.of("held"),
+                    Set.of()),
+                buildRebuildReading(false));
+
+            // ACT
+            var actualPaintedPalettes = drawables.samplePaintedPalettes();
+
+            // ASSERT
+            assertThat(actualPaintedPalettes.ownerPalettes())
+                .extracting(PaintedPalettes.OwnerPalette::ownerId)
+                .isEqualTo(expectedOwnerIds);
+        }
+
+        // The overlay is a diagnostic view whose recolours wait for its next rebuild.
+        @Test
+        void isNullUnderTheDebugOverlay() {
+
+            // ARRANGE
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+
+            openStylingSeams(seams);
+
+            seams.openSeam(ClusterAnchorsBuilder.class);
+            seams
+                .openSeam(DebugBorderTracingBuilder.class)
+                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()))
+                .thenReturn(TRACED_OVERLAY);
+
+            drawables.rebuildBorderTracingOverlay(buildRebuildReading(false));
+
+            // ACT
+            var actualPaintedPalettes = drawables.samplePaintedPalettes();
+
+            // ASSERT
+            assertThat(actualPaintedPalettes)
+                .isNull();
         }
     }
 

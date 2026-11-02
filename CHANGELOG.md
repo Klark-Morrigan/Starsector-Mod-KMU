@@ -21,6 +21,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **On the *Factions* and *Alliances* views, a claimed system whose last colony leaves stays in its claimant's territory, unfilled**, rather than showing as nobody's until the next full redraw.
 - **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
 - **A system whose repaint fails is redrawn on the next frame**, rather than keeping its old owner.
+- **The political map follows a faction's colours changing**, such as the player faction's colours being set, rather than keeping the old colours until something else redraws it.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
 - **The Market Condition Manager opens on the colony the player is at, never on one already left.**
 - **The Chinese zip shows the Market Condition Manager in Chinese.**

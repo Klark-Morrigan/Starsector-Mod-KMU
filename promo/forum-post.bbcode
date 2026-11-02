@@ -31,8 +31,7 @@ This mod is made compatible with [b][url=https://fractalsoftworks.com/forum/inde
 [hr]
 [color=maroon][b]Sector Map Layers[/b][/color] (colloquially known as the [color=maroon][b]map mod[/b][/color]) is an overlay for the map screen [b](Tab, Q)[/b], the intel screen [b](E, 1)[/b], the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have [b]Random Assortment of Things[/b] installed.
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [table]
 [tr]
 [td]
@@ -62,8 +61,7 @@ Intel screen.
 
 Everything is calculated and drawn off of game data, and it gets updated as the state of the sector changes. Map layers don't alter any of the data being used to draw it, making map layers [b]read-only[/b] by design.
 
-[spoiler=Sector examples]
-[center]
+[spoiler=Sector examples][center]
 [table]
 [tr]
 [td]
@@ -88,8 +86,7 @@ Heavily modded.
 [/table]
 [/center]
 [/spoiler]
-[spoiler=How to access map layers]
-[color=maroon][b]KMU[/b][/color] comes with [color=maroon][b]Sector Map Layers[/b][/color] feature [color=green]turned on by default[/color]. After loading a save or starting a new game, when you open the [b]map screen[/b] or the [b]intel screen[/b], you'll see a new [b]Map layers[/b] button among map filter buttons. Clicking that button or pressing [b](M)[/b] enables the map layer overlay and its sidebar.
+[spoiler=How to access map layers][color=maroon][b]KMU[/b][/color] comes with [color=maroon][b]Sector Map Layers[/b][/color] feature [color=green]turned on by default[/color]. After loading a save or starting a new game, when you open the [b]map screen[/b] or the [b]intel screen[/b], you'll see a new [b]Map layers[/b] button among map filter buttons. Clicking that button or pressing [b](M)[/b] enables the map layer overlay and its sidebar.
 
 [center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/ui-toggle-map.png[/img]
@@ -102,9 +99,7 @@ Intel screen.
 
 The main control interface of map layers is the collapsible [b]sidebar[/b] that lists all available layers and related knobs and toggles.
 
-[spoiler=Available map layers]
-[spoiler=Political Map (P)]
-[list]
+[spoiler=Available map layers][spoiler=Political Map (P)][list]
 [li]Focuses on [b]populated colonies[/b] (markets) and their affiliation.
 [list]
 [li]Only they paint the map.[/li]
@@ -113,8 +108,7 @@ The main control interface of map layers is the collapsible [b]sidebar[/b] that 
 [li]All non-market entities produce no map paint.[/li]
 [/list]
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/domination-factions-unpopulated.png[/img]
 [color=red]Unclaimed[/color] [b]unpopulated systems[/b] are drawn very faintly just to show where systems touch.
 Those outlines of unpopulated systems can be toggled on and off independently from [b]populated systems[/b],
@@ -125,8 +119,7 @@ which are always drawn even when there's no organised faction in the system (e.g
 [/li]
 [li]Any given system can be painted by only a single faction, so each system draws a [b]presence ribbon[/b] hugging its border that represents each populated colony with the color of the faction holding them. Ribbons are shortened to represent [b]solidified control[/b] when only a single faction or alliance is present in a system, while that presence is in no violation of [b]unconditional claims[/b].
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/domination-factions-presence-ribbon.png[/img]
 Presence ribbons: [b]Samarra[/b] draws one showing 3 [b]Hegemony[/b] markets and 1 [b]Independent[/b] market.
 [/center]
@@ -134,8 +127,7 @@ Presence ribbons: [b]Samarra[/b] draws one showing 3 [b]Hegemony[/b] markets and
 [/li]
 [li]Expandable [b]system tooltips[/b] provide detailed information on how each market affects the balance of power.
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/domination-factions-tooltip-lists-neutral-markets.png[/img]
 Tooltips list [b]Neutral[/b] (unowned) markets.
 
@@ -150,8 +142,7 @@ Tooltips list markets producing no domination score.
 [li]On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.[/li]
 [/list]
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/domination-factions-filter.png[/img]
 Faction filter, expanded to 2 columns, sorted by faction [b]attitude[/b] toward the player.
 
@@ -173,8 +164,7 @@ The [color=maroon][b]Political Map[/b][/color] comes with 3 views:
 [list]
 [li][color=maroon][b]Factions[/b][/color] - paints faction territory based on a custom [b]domination algorithm[/b] (highly customisable in settings) that weighs markets sizes, stability, whether a market is hidden, presence of an orbital station (or if a station is militarised), and the number of patrol fleets generated (by their sizes).
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/domination-factions-penelope_star.png[/img]
 [b]Luddic Church[/b] [color=red]unconditionally claims[/color] [b]Penelope's Star[/b] but [color=red]isn't present[/color] there,
 and per domination rules actually present faction ([b]Independent[/b]) reads as the holder.
@@ -182,22 +172,19 @@ The claim is still listed in the tooltip.
 [/li]
 [li][color=maroon][b]Alliances[/b][/color] (only visible with [b]Nexerelin[/b] installed) - same as [color=maroon][b]Factions[/b][/color] but allied factions stand as a single political entity with their holdings combined.
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/domination-alliances-tooltip.png[/img]
 Tooltips in the [color=maroon][b]Alliances[/b][/color] view combine domination score of present alliance members.
 [/li]
 [li][color=maroon][b]Claims[/b][/color] - paints faction territory based on the vanilla [b]system claim[/b] mechanic - dynamic or unconditional. [b]Unconditional claims[/b] are set via sector memory and are the highest authority. [b]Unless a claim is unconditional, system claim is resolved dynamically[/b] - the single biggest market (that participates in the economy) wins, boosted by the presence of same-faction markets (of any kind) and any military industry constructed. [color=red]The player faction and [b]non-territorial[/b] factions cannot lay claims dynamically.[/color] If you filter by a [b]non-territorial[/b] faction, unclaimed systems with their presence will be spotlit.
 
-[spoiler=Examples]
-[center]
+[spoiler=Examples][center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/en/claims-cored-but-somebody-else-is-present.png[/img]
 [b]Luddic Church[/b] isn't present in [b]Penelope's Star[/b] system, [color=red]holds an unconditional claim[/color] on it,
 and there's a [color=red]non-territorial[/color] faction ([b]Independent[/b]) present.
 [/li]
 [/list][/spoiler][/spoiler]
-[spoiler=Spoiler protection]
-To avoid spoilers, map layers operate on a vanilla-derived [b]visibility[/b] system [i][color=lightgrey](each component is available in settings)[/color][/i]:
+[spoiler=Spoiler protection]To avoid spoilers, map layers operate on a vanilla-derived [b]visibility[/b] system [i][color=lightgrey](each component is available in settings)[/color][/i]:
 [list]
 [li][b]Hidden systems[/b] (with no hyperspace anchor generated off of a star, nebula, or a black hole) are not revealed unless there's a visible population center present or it holds an active gate.[/li]
 [li]Entities marked as [b]discoverable[/b] (hidden on the system map until in range of player fleet sensors) are not revealed. They are also listed on [color=maroon][b]Claims[/b][/color] tooltips because vanilla uses them in claim calculations, but are redacted.[/li]
@@ -209,8 +196,7 @@ To avoid spoilers, map layers operate on a vanilla-derived [b]visibility[/b] sys
 
 This mod comes with a suite of [b]LunaLib[/b] settings that allow you to tweak, visuals, sound volume, keybinds, underlying mechanics.
 
-[spoiler=Console commands]
-If you've got [b][url=https://fractalsoftworks.com/forum/index.php?topic=4106.0]Console Commands[/url][/b] installed you can make use of the following commands.
+[spoiler=Console commands]If you've got [b][url=https://fractalsoftworks.com/forum/index.php?topic=4106.0]Console Commands[/url][/b] installed you can make use of the following commands.
 
 Provided by [color=maroon][b]KMU[/b][/color]:
 [list]
@@ -228,8 +214,7 @@ Provided by [color=maroon][b]KMLib[/b][/color]:
 [li][b]kmlib_transfer_market [entity-id] [faction-id][/b] - Hands an existing colony to another owner. [b][entity-id][/b] defaults to the nearest colonisable market. [b][faction-id][/b] defaults to the player faction.[/li]
 [/list]
 [/spoiler]
-[spoiler=Compatibility]
-[color=maroon][b]KMU[/b][/color] injects map layers into the map widget as map-only terrain. And to be visible in the Starscape mode, the starscape terrain variant is tagged as a slipstream. Custom terrain is the only thing that has to be serialised into saves as Java class references, and that's why a clean uninstall is required for disabling the mod.
+[spoiler=Compatibility][color=maroon][b]KMU[/b][/color] injects map layers into the map widget as map-only terrain. And to be visible in the Starscape mode, the starscape terrain variant is tagged as a slipstream. Custom terrain is the only thing that has to be serialised into saves as Java class references, and that's why a clean uninstall is required for disabling the mod.
 
 The game reuses the map widget, and so do many mods. Those custom placements of the widget get map layers for free, but they should come with no mouseover detection and no controls (borrowing selections from the map screen as the main instance) without a compatibility patch.
 
@@ -240,8 +225,7 @@ Additionally, the mod has been made specifically compatible with:
 [li][b][url=https://fractalsoftworks.com/forum/index.php?topic=26260.0]Random Assortment of Things[/url][/b] and its [b]minimap replacement[/b]. The minimap draws the map widget via a tooltip in the corner of the screen. This mod comes with a RAT compatibility mode enabled by default that scopes mouse detection to the widget. Layer selection is inherited from the map screen. As a bonus, the map widget is made invisible when it's docked off-screen (docking is RAT's way of hiding the map widget when the player docks at markets or opens any UI screens) - that disables any related rendering and should provide a marginal performance improvement (more so when in hyperspace) in the menus that don't show the sector map.[/li]
 [/list]
 [/spoiler]
-[spoiler=Q&A]
-[b]Q:[/b] The nebulae in [b]Starscape[/b] mode obscure parts of the map. Can I hide them?
+[spoiler=Q&A][b]Q:[/b] The nebulae in [b]Starscape[/b] mode obscure parts of the map. Can I hide them?
 [b]A:[/b] [i]You can choose which parts of [color=maroon][b]Map Layers[/b][/color] are painted above the [b]Starscape[/b] nebulae and which stay below them. Open the [b]Map - Politics - Visuals[/b] settings tab and find its [b]Nebula draw order[/b] section, which holds four settings: [b]Territory fills[/b], [b]Borders[/b], [b]Presence bands[/b] and [b]Faction names[/b].[/i]
 [/spoiler]
 [hr]
@@ -265,8 +249,7 @@ You can try breaking the mod or just play as you normally would.
 
 And feel free to share suggestions, ideas, requests - those will affect this mod's direction and priorities. While I have ideated and planned out some info-layers I want to implement next, and some of their conception - that covers my own vision, and I'd like to hear what's yours.
 [hr]
-[spoiler=Post-release roadmap]
-[list]
+[spoiler=Post-release roadmap][list]
 [li]Vanilla intel integration into the visibility system.[/li]
 [li]Map layer [b]help tooltips[/b].[/li]
 [li][b]Faction and alliance tooltips[/b] off of the sortable filter list.[/li]
@@ -287,8 +270,7 @@ And feel free to share suggestions, ideas, requests - those will affect this mod
 [li]A [b]framework[/b] for modders defining and supplying their own custom layers based on existing ones or brand new.[/li]
 [/list]
 [/spoiler]
-[spoiler=AI usage disclaimer]
-this mod has been made with usage of LLMs - for research, brainstorming, code generation, code review, code refactoring, translation. Each step was performed with human oversight and playtesting, with as much human code review as can be reasonably performed for a mod project.
+[spoiler=AI usage disclaimer]this mod has been made with usage of LLMs - for research, brainstorming, code generation, code review, code refactoring, translation. Each step was performed with human oversight and playtesting, with as much human code review as can be reasonably performed for a mod project.
 
 The Simplified Chinese translation has been done using the following technique. Vanilla vocabulary was matched to the Chinese core localisation, and other mods' vocabulary to their own Chinese versions. Forum vocabulary was collected as well, and all of it was gathered into a translation reference that records the rationale for each term. KMLib's and KMU's own vocabulary was translated by the intent behind each term. The mod author reviewed all the collected vocabulary against those rationales, and the translations were applied in several passes for consistency.
 [/spoiler]

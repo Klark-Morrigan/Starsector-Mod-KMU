@@ -162,6 +162,10 @@ final class FullOwnerMapRebuild {
         // reference, so a rebuild cannot name one sector to its cut and another to its fills.
         var sector = machinery.resolveSector();
 
+        // Described before the rebuild records the shades it paints in, which leaves nothing moved
+        // to name.
+        var movedPalette = ledger.describeMovedPalette();
+
         var walk = SectorWalk.openOver(
             sector,
             staleHalves.cellCut().visibilityRules());
@@ -192,11 +196,15 @@ final class FullOwnerMapRebuild {
             // the bake folds the sampled values - so this is the only place the answer lands where
             // the rebuild it preceded can be read against it. It is context rather than cause: a
             // signal may be raised with no rebuild owed, and a rebuild may be owed with none raised.
+            //
+            // And the shade that moved, which no key on the line shows: a recolour reads here as
+            // the reason the map was redrawn.
             drawablesScope.tagCall("content=" + staleHalves.contentKey()
                 + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + isCellCutStale
                 + " ownersReused=" + wereOwnersReused
-                + " signalsRaised=" + signalTracker.drainRaisesSinceTheLastReading());
+                + " signalsRaised=" + signalTracker.drainRaisesSinceTheLastReading()
+                + " paletteMoved=" + movedPalette);
         }
     }
 
@@ -260,6 +268,8 @@ final class FullOwnerMapRebuild {
                 .contentInputs()
                 .nameFormat()
                 .areNamesDrawn());
+
+        ledger.recordPalettesPainted(drawables.samplePaintedPalettes());
         ledger.recordContentRebuilt(staleHalves);
 
         return wereOwnersReused;
@@ -284,6 +294,7 @@ final class FullOwnerMapRebuild {
                 rebuildReading.viewReading().source(),
                 rebuildReading.walk(),
                 rebuildReading.contentInputs());
+
             ledger.recordOwnersResolved(staleHalves);
         }
 

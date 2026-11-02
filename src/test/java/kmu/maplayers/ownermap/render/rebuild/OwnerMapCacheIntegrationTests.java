@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.render.rebuild;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.statics.StaticSeams;
@@ -20,8 +21,10 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
@@ -41,6 +44,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.awt.Color;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -92,6 +97,15 @@ final class OwnerMapCacheIntegrationTests {
 
     // The system a change marked stale between two frames.
     private static final SystemKey MARKED_CELL = buildCellKey("marked");
+
+    // The shades a build painted the Hegemony in, and the ones a recolour moves them to.
+    private static final ColourPair HEGEMONY_PALETTE = new ColourPair(
+        new Color(10, 20, 30),
+        new Color(40, 50, 60));
+
+    private static final ColourPair RECOLOURED_PALETTE = new ColourPair(
+        new Color(70, 80, 90),
+        new Color(100, 110, 120));
 
     // The machinery the throwing cases' cache belongs to, installed on no sector - which is what
     // makes the rebuild throw part way through, those cases being about what a cache leaves
@@ -626,10 +640,74 @@ final class OwnerMapCacheIntegrationTests {
                 .containsExactly(
                     "Owner map fold failed; dropped 1 marked system(s), next frame owes the full rebuild",
                     "Owner map left 1 marked system(s) unfolded; reason=fold threw; next frame rebuilds");
+
             assertThat(logFake.getThrowables())
                 .singleElement()
                 .extracting(Throwable::getMessage)
                 .isEqualTo("fold fails");
+        }
+
+        // An owner's shades are baked into what the frames draw and move no key, so a recolour is
+        // asked of the build's reading each frame. The shades are asked before the batch folds: a
+        // fold ahead of the rebuild would repaint the marked cell in the new shade beside the same
+        // owner's other cells still in the old one, so the rebuild takes the mark instead, and reads
+        // the owners afresh rather than painting over ones carrying the old shades.
+        @Test
+        void redrawsARecolouredOwnerOnTheNextFrameFoldingTheMarkedSystemIntoTheRebuild() {
+
+            // ARRANGE
+            var paletteByOwnerId = new HashMap<>(Map.of(HEGEMONY_ID, HEGEMONY_PALETTE));
+
+            openEverySeamARebuildReaches(createClustersPaintingHegemonyIn(paletteByOwnerId));
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            paletteByOwnerId.put(HEGEMONY_ID, RECOLOURED_PALETTE);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+
+            // ACT
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ASSERT
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any()),
+                times(2));
+
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
+                times(2));
+
+            incrementalRefreshMock.verifyNoInteractions();
+
+            assertThat(emptySectorMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
+                .isEmpty();
+        }
+
+        // The rebuild records the shades it painted in, so the recolour costs one rebuild rather
+        // than one on every frame after it.
+        @Test
+        void owesNothingMoreOnceTheRecolourIsRedrawn() {
+
+            // ARRANGE
+            var paletteByOwnerId = new HashMap<>(Map.of(HEGEMONY_ID, HEGEMONY_PALETTE));
+
+            openEverySeamARebuildReaches(createClustersPaintingHegemonyIn(paletteByOwnerId));
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            paletteByOwnerId.put(HEGEMONY_ID, RECOLOURED_PALETTE);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ACT
+            cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            // ASSERT
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any()),
+                times(2));
         }
     }
 
@@ -796,6 +874,17 @@ final class OwnerMapCacheIntegrationTests {
             Map.of(),
             Set.of(),
             Set.of());
+    }
+
+    // Draw lists holding one Hegemony system, painted by a reading whose shades are read off the
+    // given map, so a case recolours the Hegemony by writing to it.
+    private static OwnerMapClusters createClustersPaintingHegemonyIn(Map<String, ColourPair> paletteByOwnerId) {
+
+        return OwnerMapClusterFixtures.createClustersReadBy(
+            Map.of("held", new SystemOwner(HEGEMONY_ID, HEGEMONY_PALETTE)),
+            OwnerReadingFake
+                .createAnsweringNothing()
+                .withLooks(paletteByOwnerId, Map.of()));
     }
 
     // What the cache wrote over one frame, the frame a case acts on.

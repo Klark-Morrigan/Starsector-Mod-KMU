@@ -111,6 +111,23 @@ final class OwnerMapDrawables {
     }
 
     /**
+     * The shades the standing production view painted in, for the ledger to watch.
+     *
+     * <p>Read off the view's own occupancy and reading rather than the rebuild's, so a sample taken
+     * after a fold covers an owner the fold painted.
+     *
+     * @return the shades, or null where no production view stands - the debug overlay or the
+     *         placeholder
+     */
+    PaintedPalettes samplePaintedPalettes() {
+
+        return builtView.selectByCase(
+            OwnerMapDrawables::samplePaintedPalettesOf,
+            borderStageOverlay -> null,
+            () -> null);
+    }
+
+    /**
      * @return which base view stands, for the lines that say why a batch went unfolded and what a
      *         release dropped
      */
@@ -259,6 +276,18 @@ final class OwnerMapDrawables {
             RevisedCellGeometry cellGeometry) {
 
         return new StandingOwnerMap(clusters, standingAnchors, ownerLabels, cellGeometry);
+    }
+
+    // The shades one production view painted in: every owner its occupancy holds, asked of the
+    // reading it was painted by, the spotlit footprint under the owner the sidebar picked.
+    private static PaintedPalettes samplePaintedPalettesOf(OwnerMapClusters clusters) {
+
+        var buildInputs = clusters.getBuildInputs();
+
+        return PaintedPalettes.sampleFrom(
+            buildInputs.getViewReading().reading(),
+            clusters.getOccupancy().getOwnerBySystemKey().values(),
+            buildInputs.getContentInputs().selectedOwnerId());
     }
 
     // The paint scheme one rebuild styles everything it builds from, read once here for whichever

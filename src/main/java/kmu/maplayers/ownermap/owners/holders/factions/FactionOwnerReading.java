@@ -103,7 +103,7 @@ public final class FactionOwnerReading
     @Override
     public Color resolveUnownedColour() {
 
-        return FactionColours.resolveNeutralColour(sector);
+        return FactionColours.resolveBaseColour(SectorFactions.findFaction(sector, Factions.NEUTRAL));
     }
 
     // Independent's own two shades, which the tier darkens into the receded backdrop so it sits below

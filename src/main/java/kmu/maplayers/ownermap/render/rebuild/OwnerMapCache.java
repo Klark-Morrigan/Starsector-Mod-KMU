@@ -47,6 +47,11 @@ import java.util.Set;
  * standing map was built under - never a per-frame economy scan. The sample stays per frame because a
  * screen switch moves every pick while no counter moves.
  *
+ * <p>The clusters are also rebuilt when a shade the standing map was painted in moves - the player
+ * picking their own colours, or a mod recolouring an owner ({@link PaintedPalettes}).
+ * Each owner's shades are baked into what the frames draw, and nothing else here follows them, so
+ * each frame asks the standing map's owner reading whether it still answers them.
+ *
  * <p>Between those, a change in one system marks just its own system stale, and what a frame does
  * with the marked systems is the layer's {@link OwnerMapRefreshStrategy}: fold them into the
  * standing map, or owe the next frame the full rebuild. The full rebuild is the fallback either way
@@ -303,6 +308,8 @@ public final class OwnerMapCache
             return;
         }
 
+        // A fold may paint an owner the build did not, whose shades are then watched as well.
+        ledger.recordPalettesPainted(drawables.samplePaintedPalettes());
         announceDrawListsRebuilt();
     }
 
