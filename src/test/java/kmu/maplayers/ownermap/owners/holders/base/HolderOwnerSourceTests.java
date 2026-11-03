@@ -46,6 +46,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -622,6 +623,33 @@ final class HolderOwnerSourceTests {
                 .isSameAs(allied);
             assertThat(plannerInputs.get(0).grouping())
                 .isSameAs(HolderGrouping.identity());
+        }
+
+        // Colouring is the view's choice, so a view colouring its segments by something its fills
+        // are not painted by reaches the band - asked over the very pass the band counts off.
+        @Test
+        void coloursTheBandThroughTheViewsOwnPaletteRead() {
+
+            // ARRANGE
+            var viewMock = stubViewOver(
+                OwnerAffiliation.NONE,
+                HolderOwnerSourceTests.this::recordPlannerInputs);
+
+            var source = new HolderOwnerSource(HolderGrouping.identity(), viewMock);
+            var expectedPalettes = (RibbonPaletteReader) (blocId, ownerFactionId) -> null;
+
+            when(viewMock.resolveRibbonPalettes(any()))
+                .thenReturn(expectedPalettes);
+
+            // ACT
+            source.resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
+
+            // ASSERT
+            assertThat(plannerInputs.get(0).palettes())
+                .isSameAs(expectedPalettes);
+
+            verify(viewMock)
+                .resolveRibbonPalettes(same(plannerInputs.get(0).pass()));
         }
 
         @Test

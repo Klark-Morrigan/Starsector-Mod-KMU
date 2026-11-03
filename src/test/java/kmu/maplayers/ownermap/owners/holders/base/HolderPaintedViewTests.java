@@ -63,22 +63,29 @@ final class HolderPaintedViewTests {
         @Test
         void samplesTheGroupingOnceForBothAnswers() {
 
+            // ARRANGE
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
+            var expectedSampleCount = 1;
 
+            // ACT
             viewFake.resolveViewReading(mock(SectorAPI.class));
 
+            // ASSERT
             assertThat(viewFake.countGroupingSamples())
-                .isEqualTo(1);
+                .isEqualTo(expectedSampleCount);
         }
 
         @Test
         void resolvesTheReadingOverTheSampledGroupingAndTheHandedSector() {
 
+            // ARRANGE
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
             var sectorMock = mock(SectorAPI.class);
 
+            // ACT
             viewFake.resolveViewReading(sectorMock);
 
+            // ASSERT
             assertThat(viewFake.listReadingSectors())
                 .containsExactly(sectorMock);
             assertThat(viewFake.listReadingGroupings())
@@ -86,24 +93,27 @@ final class HolderPaintedViewTests {
                 .isSameAs(SAMPLED_GROUPING);
         }
 
+        // Read back through the band planner the source builds, whose inputs carry the pass the
+        // source opened - and so the grouping that pass folds under.
         @Test
         void foldsTheSourceUnderThatSameSampling() {
-            // Read back through the band planner the source builds, whose inputs carry the pass the
-            // source opened - and so the grouping that pass folds under.
+
+            // ARRANGE
             seams
                 .openSeam(DecivilisedColonyHabitation.class)
                 .when(DecivilisedColonyHabitation::readFromLunaSettings)
                 .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_POPULATED);
 
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
+            var walk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
 
+            // ACT
             viewFake
                 .resolveViewReading(mock(SectorAPI.class))
                 .source()
-                .resolveRibbonPlanner(
-                    new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE),
-                    STANDARD_RULES);
+                .resolveRibbonPlanner(walk, STANDARD_RULES);
 
+            // ASSERT
             assertThat(viewFake.listPlannerInputs())
                 .singleElement()
                 .extracting(RibbonPlanInputs::grouping)
@@ -113,59 +123,98 @@ final class HolderPaintedViewTests {
         @Test
         void answersWithItselfAsTheView() {
 
+            // ARRANGE
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
 
-            assertThat(viewFake.resolveViewReading(mock(SectorAPI.class)).view())
+            // ACT
+            var actualReading = viewFake.resolveViewReading(mock(SectorAPI.class));
+
+            // ASSERT
+            assertThat(actualReading.view())
                 .isSameAs(viewFake);
         }
 
+        // The band explains the fill it sits inside, so the source counts by the mechanic the
+        // view declared rather than one of its own.
         @Test
         void countsBandsThroughTheViewsOwnPlanner() {
-            // The band explains the fill it sits inside, so the source counts by the mechanic the
-            // view declared rather than one of its own.
+
+            // ARRANGE
             seams
                 .openSeam(DecivilisedColonyHabitation.class)
                 .when(DecivilisedColonyHabitation::readFromLunaSettings)
                 .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_POPULATED);
 
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
-            var planner = viewFake
+            var walk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
+
+            // ACT
+            var actualPlanner = viewFake
                 .resolveViewReading(mock(SectorAPI.class))
                 .source()
-                .resolveRibbonPlanner(
-                    new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE),
-                    STANDARD_RULES);
+                .resolveRibbonPlanner(walk, STANDARD_RULES);
 
-            assertThat(planner)
+            // ASSERT
+            assertThat(actualPlanner)
                 .isSameAs(HolderPaintedViewFake.PLANNER);
+        }
+    }
+
+    @Nested
+    class ResolveRibbonPalettes {
+
+        // A view stating nothing colours its band through the pass's own read, the one its fills
+        // are coloured through, so each run draws in the shades its fill is painted in.
+        @Test
+        void answersThePassesOwnPaletteRead() {
+
+            // ARRANGE
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, SAMPLED_GROUPING);
+            var expectedPalettes = pass.palettes();
+
+            // ACT
+            var actualPalettes = viewFake.resolveRibbonPalettes(pass);
+
+            // ASSERT
+            assertThat(actualPalettes)
+                .isSameAs(expectedPalettes);
         }
     }
 
     @Nested
     class ReadPickerUnderOneGrouping {
 
+        // A grouping can be a live read of the game, so a second sampling could hand the walk and
+        // the rows two different memberships.
         @Test
         void samplesTheGroupingOnce() {
-            // A grouping can be a live read of the game, so a second sampling could hand the walk and
-            // the rows two different memberships.
-            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
 
+            // ARRANGE
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
+            var expectedSampleCount = 1;
+
+            // ACT
             viewFake.readPickerUnderOneGrouping(
                 mock(SectorAPI.class),
                 grouping -> new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY),
                 ANY_MODES);
 
+            // ASSERT
             assertThat(viewFake.countGroupingSamples())
-                .isEqualTo(1);
+                .isEqualTo(expectedSampleCount);
         }
 
+        // The rows come off the walk's numbers, so they are named under the grouping the walk was
+        // read under rather than under one of their own.
         @Test
         void readsTheWalkAndTheRowsUnderThatSampling() {
-            // The rows come off the walk's numbers, so they are named under the grouping the walk was
-            // read under rather than under one of their own.
+
+            // ARRANGE
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
             var walkedGroupings = new ArrayList<HolderGrouping>();
 
+            // ACT
             viewFake.readPickerUnderOneGrouping(
                 mock(SectorAPI.class),
                 grouping -> {
@@ -174,6 +223,7 @@ final class HolderPaintedViewTests {
                 },
                 ANY_MODES);
 
+            // ASSERT
             assertThat(walkedGroupings)
                 .singleElement()
                 .isSameAs(SAMPLED_GROUPING);
@@ -186,11 +236,13 @@ final class HolderPaintedViewTests {
     @Nested
     class ResolveOwnerPickerRead {
 
+        // The core's sidebar and stale-selection heal hold no running pass, so the default reads
+        // the player's live rules itself and hands them on beside the sector it was asked about.
+        // The dev reveal stands in for them, being a reading no default could land on by chance.
         @Test
         void handsThePlayersLiveColonyRulesOnWithTheSector() {
-            // The core's sidebar and stale-selection heal hold no running pass, so the default reads
-            // the player's live rules itself and hands them on beside the sector it was asked about.
-            // The dev reveal stands in for them, being a reading no default could land on by chance.
+
+            // ARRANGE
             seams
                 .openSeam(ColonyReadRules.class)
                 .when(ColonyReadRules::readFromLunaSettings)
@@ -199,8 +251,10 @@ final class HolderPaintedViewTests {
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
             var sectorMock = mock(SectorAPI.class);
 
+            // ACT
             viewFake.resolveOwnerPickerRead(sectorMock);
 
+            // ASSERT
             assertThat(viewFake.listPickerSectors())
                 .containsExactly(sectorMock);
             assertThat(viewFake.listPickerRules())
@@ -211,28 +265,41 @@ final class HolderPaintedViewTests {
     @Nested
     class ResolveBlocPickerRead {
 
+        // The base case is "no spotlight", so a view with nothing to list inherits a whole
+        // answer rather than overriding with two arguments it would ignore. Pinned on the
+        // fake rather than on the one view that currently relies on it, since what is under
+        // test is the seam's default and not that view's choice to keep it.
         @Test
         void defaultsToTheEmptyPickerSoASpotlightIsOptedInto() {
-            // The base case is "no spotlight", so a view with nothing to list inherits a whole
-            // answer rather than overriding with two arguments it would ignore. Pinned on the
-            // fake rather than on the one view that currently relies on it, since what is under
-            // test is the seam's default and not that view's choice to keep it.
+
+            // ARRANGE
             var viewFake = new HolderPaintedViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPickerRead(mock(SectorAPI.class), UNDER_THE_FOG).picker().items())
+            // ACT
+            var actualRead = viewFake.resolveBlocPickerRead(mock(SectorAPI.class), UNDER_THE_FOG);
+
+            // ASSERT
+            assertThat(actualRead.picker().items())
                 .isEmpty();
         }
 
+        // The other half of the default read. A view offering no rows can still be asked where a
+        // bloc is - the ask reaches the seam before any row does - so the default has to answer
+        // an empty set rather than leave a null for the lookup to fall over on.
         @Test
         void defaultsToNoPresenceSoALookupAnswersRatherThanFaults() {
-            // The other half of the default read. A view offering no rows can still be asked where a
-            // bloc is - the ask reaches the seam before any row does - so the default has to answer
-            // an empty set rather than leave a null for the lookup to fall over on.
+
+            // ARRANGE
             var viewFake = new HolderPaintedViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPickerRead(mock(SectorAPI.class), UNDER_THE_FOG)
-                    .presenceIndex()
-                    .readPresentSystemKeys("hegemony"))
+            // ACT
+            var actualPresentSystemKeys = viewFake
+                .resolveBlocPickerRead(mock(SectorAPI.class), UNDER_THE_FOG)
+                .presenceIndex()
+                .readPresentSystemKeys("hegemony");
+
+            // ASSERT
+            assertThat(actualPresentSystemKeys)
                 .isEmpty();
         }
     }
@@ -240,16 +307,24 @@ final class HolderPaintedViewTests {
     @Nested
     class ResolveSelectableBlocGate {
 
+        // The default is for a view whose blocs are all of a kind, so it asks nothing about what
+        // a bloc is: a lone faction and a group are both offered.
         @Test
         void offersALoneFactionAndAGroupAlike() {
-            // The default is for a view whose blocs are all of a kind, so it asks nothing about what
-            // a bloc is: a lone faction and a group are both offered.
-            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
-            var gate = viewFake.resolveSelectableBlocGate(SAMPLED_GROUPING);
 
-            assertThat(gate.test("tritachyon"))
+            // ARRANGE
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
+            var groupBlocId = SAMPLED_GROUPING.resolveBlocId("hegemony");
+
+            // ACT
+            var gate = viewFake.resolveSelectableBlocGate(SAMPLED_GROUPING);
+            var actualOffersLoneFaction = gate.test("tritachyon");
+            var actualOffersGroup = gate.test(groupBlocId);
+
+            // ASSERT
+            assertThat(actualOffersLoneFaction)
                 .isTrue();
-            assertThat(gate.test(SAMPLED_GROUPING.resolveBlocId("hegemony")))
+            assertThat(actualOffersGroup)
                 .isTrue();
         }
     }

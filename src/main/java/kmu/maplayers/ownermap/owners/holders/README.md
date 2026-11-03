@@ -271,6 +271,7 @@ in faction ID order,
 so one member's colonies sit together inside the bloc's run.
 How each segment is coloured is [its own section](#colouring-a-segment).
 `RibbonPlanInputs` carries the pass,
+the view's palette read,
 the `OwnerAffiliation` the contest is judged against and the laying rules,
 so every mechanic of a composed planner counts off a single walk of each system
 and judges its contests against one affiliation.
@@ -315,12 +316,17 @@ asked for the bloc the colony is counted under and the faction owning it.
 The grouping decides what a run is,
 and the palette read decides what a segment is.
 
-The read is the pass's own (`HolderPass.palettes()`),
+Which read is the view's choice,
+stated beside its planner as `HolderPaintedView.resolveRibbonPalettes`.
+By default it is the pass's own (`HolderPass.palettes()`),
 the one the fills were coloured through.
-Its `SectorBlocPalettes` answers a bloc's shades for every member,
+That `SectorBlocPalettes` answers a bloc's shades for every member,
 so a run draws in the one pair its fill is painted in.
-A layer colouring by something a bloc does not decide answers per member,
+A view colouring by something a bloc does not decide answers with a read of its own,
+per member,
 and an alliance's run then comes out member by member.
+The fills never read the view's choice,
+so a band can be coloured by something its fill is not painted by.
 The alliance stays one run either way,
 parted as one holding,
 because its fill reads as one bloc.

@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
@@ -20,8 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins that one bake's band inputs answer their palettes, grouping and habitation off the pass
- * rather than off a read of their own.
+ * Pins that one bake's band inputs answer their grouping and habitation off the pass rather than
+ * off a read of their own.
  *
  * <p>The pass is stood in for, since what it answers is pinned in its own suite; what belongs here
  * is that the inputs ask it rather than anything beside it.
@@ -35,30 +34,8 @@ final class RibbonPlanInputsTests {
         new RibbonSegmentLengths(4, 2),
         UNCONTESTED_RUNS_SHORTENED);
 
-    @Nested
-    class Palettes {
-
-        // The pass's own rather than one built beside it, so a band colours a bloc through the
-        // very object the fills of the same rebuild were coloured through.
-        @Test
-        void answersThePassesOwnPaletteRead() {
-
-            // ARRANGE
-            var passMock = mock(HolderPass.class);
-            var palettes = new SectorBlocPalettes(mock(SectorAPI.class), HolderGrouping.identity());
-            var inputs = new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES);
-
-            when(passMock.palettes())
-                .thenReturn(palettes);
-
-            // ACT
-            var actualPalettes = inputs.palettes();
-
-            // ASSERT
-            assertThat(actualPalettes)
-                .isSameAs(palettes);
-        }
-    }
+    // A palette read none of these cases colours through: what they pin is the pass's answers.
+    private static final RibbonPaletteReader UNREAD_PALETTES = (blocId, ownerFactionId) -> null;
 
     @Nested
     class Grouping {
@@ -70,7 +47,7 @@ final class RibbonPlanInputsTests {
             // ARRANGE
             var grouping = buildGroupOf("hegemony", "persean");
             var passMock = mock(HolderPass.class);
-            var inputs = new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES);
+            var inputs = new RibbonPlanInputs(passMock, UNREAD_PALETTES, OwnerAffiliation.NONE, RULES);
 
             when(passMock.grouping())
                 .thenReturn(grouping);
@@ -99,7 +76,7 @@ final class RibbonPlanInputsTests {
                 Map.of("hegemony", new BlocHabitation(List.of("hegemony"), 5)));
 
             var passMock = mock(HolderPass.class);
-            var inputs = new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES);
+            var inputs = new RibbonPlanInputs(passMock, UNREAD_PALETTES, OwnerAffiliation.NONE, RULES);
 
             when(passMock.readHabitationIn(systemMock))
                 .thenReturn(habitation);

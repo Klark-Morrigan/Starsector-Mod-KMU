@@ -51,9 +51,9 @@ import static org.mockito.Mockito.when;
  * <p>The segment grammar itself has its own suite, so what is asserted here is the counts and the
  * order reaching it - read off the runs, those being the only place either is visible.
  *
- * <p>The member cases stand a per-member palette read in, since the live one answers a bloc's shades
- * for every member and so cannot show the grouping deciding the run while the read decides the
- * segment.
+ * <p>The member cases hand in a palette read answering by owner, as a view colouring by something
+ * the bloc does not decide would, since the pass's own read answers a bloc's shades for every member
+ * and so cannot show the grouping deciding the run while the read decides the segment.
  */
 final class ColonyCellRibbonsTests {
 
@@ -84,9 +84,12 @@ final class ColonyCellRibbonsTests {
 
             // ACT
             var actualSegments = planFor(
-                Optional.of(HEGEMONY),
-                List.of(HEGEMONY, TRITACHYON),
-                HEGEMONY, HEGEMONY, TRITACHYON).segments();
+                    Optional.of(HEGEMONY),
+                    List.of(HEGEMONY, TRITACHYON),
+                    HEGEMONY,
+                    HEGEMONY,
+                    TRITACHYON)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -102,7 +105,11 @@ final class ColonyCellRibbonsTests {
             var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
 
             // ACT
-            var actualSegments = planFor(Optional.of(HEGEMONY), List.of(HEGEMONY), HEGEMONY).segments();
+            var actualSegments = planFor(
+                    Optional.of(HEGEMONY),
+                    List.of(HEGEMONY),
+                    HEGEMONY)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -120,9 +127,10 @@ final class ColonyCellRibbonsTests {
 
             // ACT
             var actualSegments = planFor(
-                Optional.of(HEGEMONY),
-                List.of(HEGEMONY, TRITACHYON),
-                HEGEMONY).segments();
+                    Optional.of(HEGEMONY),
+                    List.of(HEGEMONY, TRITACHYON),
+                    HEGEMONY)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -135,7 +143,10 @@ final class ColonyCellRibbonsTests {
         void drawsNoBandForASystemNobodyLivesIn() {
 
             // ACT
-            var actualSegments = planFor(NO_PAINTER, List.of()).segments();
+            var actualSegments = planFor(
+                    NO_PAINTER,
+                    List.of())
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -159,9 +170,12 @@ final class ColonyCellRibbonsTests {
 
             // ACT
             var actualSegments = planFor(
-                Optional.of(HEGEMONY),
-                List.of(HEGEMONY, TRITACHYON),
-                HEGEMONY, PERSEAN, TRITACHYON).segments();
+                    Optional.of(HEGEMONY),
+                    List.of(HEGEMONY, TRITACHYON),
+                    HEGEMONY,
+                    PERSEAN,
+                    TRITACHYON)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -183,9 +197,12 @@ final class ColonyCellRibbonsTests {
 
             // ACT
             var actualSegments = planFor(
-                Optional.of(HEGEMONY),
-                List.of(HEGEMONY),
-                TRITACHYON, PERSEAN, HEGEMONY).segments();
+                    Optional.of(HEGEMONY),
+                    List.of(HEGEMONY),
+                    TRITACHYON,
+                    PERSEAN,
+                    HEGEMONY)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -206,9 +223,11 @@ final class ColonyCellRibbonsTests {
 
             // ACT
             var actualSegments = planFor(
-                Optional.of(TRITACHYON),
-                List.of(TRITACHYON, HEGEMONY, TRITACHYON),
-                HEGEMONY, TRITACHYON).segments();
+                    Optional.of(TRITACHYON),
+                    List.of(TRITACHYON, HEGEMONY, TRITACHYON),
+                    HEGEMONY,
+                    TRITACHYON)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -228,7 +247,12 @@ final class ColonyCellRibbonsTests {
                 new RibbonSegment(TRITACHYON_BRIGHT, 3));
 
             // ACT
-            var actualSegments = planFor(NO_PAINTER, List.of(), TRITACHYON, HEGEMONY).segments();
+            var actualSegments = planFor(
+                    NO_PAINTER,
+                    List.of(),
+                    TRITACHYON,
+                    HEGEMONY)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -246,9 +270,11 @@ final class ColonyCellRibbonsTests {
 
             // ACT
             var actualSegments = planFor(
-                Optional.of(HEGEMONY),
-                List.of(HEGEMONY, VANISHED_BLOC),
-                HEGEMONY, VANISHED_BLOC).segments();
+                    Optional.of(HEGEMONY),
+                    List.of(HEGEMONY, VANISHED_BLOC),
+                    HEGEMONY,
+                    VANISHED_BLOC)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -264,15 +290,19 @@ final class ColonyCellRibbonsTests {
             var systemMock = mock(StarSystemAPI.class);
             var palettes = RibbonPlanFixtures.buildShadedPalettes();
             var colonyOwnerIdsByBlocId = collectOneColonyPerName(HEGEMONY, VANISHED_BLOC);
-            var inputs = buildAlliedInputsFor(stubPassHolding(systemMock, palettes, colonyOwnerIdsByBlocId));
             var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 1));
+
+            var inputs = buildAlliedInputsFor(
+                stubPassHolding(systemMock, colonyOwnerIdsByBlocId),
+                palettes);
 
             // ACT
             var actualSegments = ColonyCellRibbons.planCellRibbon(
-                Optional.of(HEGEMONY),
-                systemMock,
-                List.of(HEGEMONY, VANISHED_BLOC),
-                inputs).segments();
+                    Optional.of(HEGEMONY),
+                    systemMock,
+                    List.of(HEGEMONY, VANISHED_BLOC),
+                    inputs)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -286,10 +316,20 @@ final class ColonyCellRibbonsTests {
         void laysAGroupsRunMemberByMemberInOwnerIdOrder() {
 
             // ARRANGE
-            var palettesMock = mock(SectorBlocPalettes.class);
+            var palettes = readPaletteByOwner(Map.of(
+                HEGEMONY,
+                HEGEMONY_PALETTE,
+                TRITACHYON,
+                TRITACHYON_PALETTE,
+                PERSEAN,
+                PERSEAN_PALETTE));
+
             var colonyOwnerIdsByBlocId = Map.of(
-                GROUP_BLOC_ID, List.of(TRITACHYON, HEGEMONY, TRITACHYON),
-                PERSEAN, List.of(PERSEAN));
+                GROUP_BLOC_ID,
+                List.of(TRITACHYON, HEGEMONY, TRITACHYON),
+                PERSEAN,
+                List.of(PERSEAN));
+
             var expectedSegments = List.of(
                 new RibbonSegment(HEGEMONY_BRIGHT, 3),
                 new RibbonSegment(HEGEMONY_DARK, 1),
@@ -299,19 +339,13 @@ final class ColonyCellRibbonsTests {
                 new RibbonSegment(TRITACHYON_DARK, 1),
                 new RibbonSegment(PERSEAN_BRIGHT, 3));
 
-            when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, HEGEMONY))
-                .thenReturn(HEGEMONY_PALETTE);
-            when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, TRITACHYON))
-                .thenReturn(TRITACHYON_PALETTE);
-            when(palettesMock.readSegmentPalette(PERSEAN, PERSEAN))
-                .thenReturn(PERSEAN_PALETTE);
-
             // ACT
             var actualSegments = planForColonyOwners(
-                Optional.of(GROUP_BLOC_ID),
-                List.of(GROUP_BLOC_ID, PERSEAN),
-                palettesMock,
-                colonyOwnerIdsByBlocId).segments();
+                    Optional.of(GROUP_BLOC_ID),
+                    List.of(GROUP_BLOC_ID, PERSEAN),
+                    palettes,
+                    colonyOwnerIdsByBlocId)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -324,26 +358,30 @@ final class ColonyCellRibbonsTests {
         void dropsTheSegmentOfAColonyWhoseOwnerHasNoShadesAndKeepsItsRun() {
 
             // ARRANGE
-            var palettesMock = mock(SectorBlocPalettes.class);
+            var palettes = readPaletteByOwner(Map.of(
+                HEGEMONY,
+                HEGEMONY_PALETTE,
+                TRITACHYON,
+                TRITACHYON_PALETTE));
+
             var colonyOwnerIdsByBlocId = Map.of(
-                GROUP_BLOC_ID, List.of(HEGEMONY, VANISHED_BLOC),
-                TRITACHYON, List.of(TRITACHYON));
+                GROUP_BLOC_ID,
+                List.of(HEGEMONY, VANISHED_BLOC),
+                TRITACHYON,
+                List.of(TRITACHYON));
+
             var expectedSegments = List.of(
                 new RibbonSegment(HEGEMONY_BRIGHT, 3),
                 new RibbonSegment(HEGEMONY_DARK, 1),
                 new RibbonSegment(TRITACHYON_BRIGHT, 3));
 
-            when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, HEGEMONY))
-                .thenReturn(HEGEMONY_PALETTE);
-            when(palettesMock.readSegmentPalette(TRITACHYON, TRITACHYON))
-                .thenReturn(TRITACHYON_PALETTE);
-
             // ACT
             var actualSegments = planForColonyOwners(
-                Optional.of(GROUP_BLOC_ID),
-                List.of(GROUP_BLOC_ID, TRITACHYON),
-                palettesMock,
-                colonyOwnerIdsByBlocId).segments();
+                    Optional.of(GROUP_BLOC_ID),
+                    List.of(GROUP_BLOC_ID, TRITACHYON),
+                    palettes,
+                    colonyOwnerIdsByBlocId)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -357,21 +395,23 @@ final class ColonyCellRibbonsTests {
         void leavesNoPartingBehindABlocAllOfWhoseColoniesDrop() {
 
             // ARRANGE
-            var palettesMock = mock(SectorBlocPalettes.class);
-            var colonyOwnerIdsByBlocId = Map.of(
-                HEGEMONY, List.of(HEGEMONY),
-                GROUP_BLOC_ID, List.of(VANISHED_BLOC, VANISHED_BLOC));
-            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+            var palettes = readPaletteByOwner(Map.of(HEGEMONY, HEGEMONY_PALETTE));
 
-            when(palettesMock.readSegmentPalette(HEGEMONY, HEGEMONY))
-                .thenReturn(HEGEMONY_PALETTE);
+            var colonyOwnerIdsByBlocId = Map.of(
+                HEGEMONY,
+                List.of(HEGEMONY),
+                GROUP_BLOC_ID,
+                List.of(VANISHED_BLOC, VANISHED_BLOC));
+
+            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
 
             // ACT
             var actualSegments = planForColonyOwners(
-                Optional.of(HEGEMONY),
-                List.of(HEGEMONY, GROUP_BLOC_ID),
-                palettesMock,
-                colonyOwnerIdsByBlocId).segments();
+                    Optional.of(HEGEMONY),
+                    List.of(HEGEMONY, GROUP_BLOC_ID),
+                    palettes,
+                    colonyOwnerIdsByBlocId)
+                .segments();
 
             // ASSERT
             assertThat(actualSegments)
@@ -399,7 +439,7 @@ final class ColonyCellRibbonsTests {
     private static RibbonPlan planForColonyOwners(
             Optional<String> paintingBlocId,
             List<String> rankedBlocIds,
-            SectorBlocPalettes palettes,
+            RibbonPaletteReader palettes,
             Map<String, List<String>> colonyOwnerIdsByBlocId) {
 
         var systemMock = mock(StarSystemAPI.class);
@@ -408,7 +448,13 @@ final class ColonyCellRibbonsTests {
             paintingBlocId,
             systemMock,
             rankedBlocIds,
-            buildInputsFor(stubPassHolding(systemMock, palettes, colonyOwnerIdsByBlocId)));
+            buildInputsFor(stubPassHolding(systemMock, colonyOwnerIdsByBlocId), palettes));
+    }
+
+    // A palette read answering each colony by the faction owning it, whatever bloc it is counted
+    // under - the read a view colouring by something the bloc does not decide hands in.
+    private static RibbonPaletteReader readPaletteByOwner(Map<String, ColourPair> paletteByOwnerId) {
+        return (blocId, ownerFactionId) -> paletteByOwnerId.get(ownerFactionId);
     }
 
     // One colony per name, owned by the bloc it names - a bloc named twice lives on two colonies.
@@ -417,6 +463,7 @@ final class ColonyCellRibbonsTests {
         var colonyOwnerIdsByBlocId = new LinkedHashMap<String, List<String>>();
 
         for (var blocId : colonyBlocIds) {
+
             colonyOwnerIdsByBlocId
                 .computeIfAbsent(blocId, absentBlocId -> new ArrayList<>())
                 .add(blocId);
@@ -424,11 +471,9 @@ final class ColonyCellRibbonsTests {
         return colonyOwnerIdsByBlocId;
     }
 
-    // A pass answering the system's habitation as the colonies each bloc is mapped to, and its
-    // palette read as the one given.
+    // A pass answering the system's habitation as the colonies each bloc is mapped to.
     private static HolderPass stubPassHolding(
             StarSystemAPI system,
-            SectorBlocPalettes palettes,
             Map<String, List<String>> colonyOwnerIdsByBlocId) {
 
         var habitationByBlocId = new LinkedHashMap<String, BlocHabitation>();
@@ -441,8 +486,6 @@ final class ColonyCellRibbonsTests {
 
         when(passMock.readHabitationIn(system))
             .thenReturn(new SystemHabitation(List.of(), habitationByBlocId));
-        when(passMock.palettes())
-            .thenReturn(palettes);
 
         return passMock;
     }

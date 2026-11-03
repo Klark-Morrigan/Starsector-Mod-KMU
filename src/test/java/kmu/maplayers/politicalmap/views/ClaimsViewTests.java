@@ -205,10 +205,8 @@ final class ClaimsViewTests {
         void countsEveryCellFromTheClaimContest() {
 
             // ARRANGE
-            var inputs = new RibbonPlanInputs(
-                HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity()),
-                OwnerAffiliation.NONE,
-                STANDARD_RULES);
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var inputs = new RibbonPlanInputs(pass, pass.palettes(), OwnerAffiliation.NONE, STANDARD_RULES);
 
             var plannerMock = mock(ClaimedSystemRibbonPlanner.class);
 

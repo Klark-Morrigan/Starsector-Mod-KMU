@@ -70,6 +70,21 @@ public interface HolderPaintedView
     SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs);
 
     /**
+     * Where this view's band segments read their shades, one colony at a time.
+     *
+     * <p>Beside the planner because it is the band's other choice: the planner decides which
+     * colonies a band counts and in what order, and this decides what colour each one draws in. The
+     * fills never read it, so a view can colour its bands by something its fills are not painted by.
+     *
+     * @param pass the bake's reading of the sector, whose own palette read is the default
+     * @return the pass's own read, which colours every colony in its bloc's shades; a view
+     *         colouring its segments by anything else answers its own
+     */
+    default RibbonPaletteReader resolveRibbonPalettes(HolderPass pass) {
+        return pass.palettes();
+    }
+
+    /**
      * The answers about this view's blocs - each one's shades, name, crest, recede and category -
      * over one sampling of the grouping.
      *

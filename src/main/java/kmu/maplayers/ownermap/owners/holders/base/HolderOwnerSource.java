@@ -144,12 +144,17 @@ public final class HolderOwnerSource
     @Override
     public SystemRibbonPlanner resolveRibbonPlanner(SectorWalk walk, RibbonPlanRules rules) {
 
-        // The pass, who stands together and the laying rules are handed to whatever planner the
-        // layer resolves - so every mechanic counting one map reads a bloc's shades through the
-        // pass's one palette read, judges a contest against one affiliation, and lays its cells by
-        // one rule.
-        return view.resolveRibbonPlanner(
-            new RibbonPlanInputs(openPassOver(walk), contestAffiliation, rules));
+        // The pass, the view's palette read, who stands together and the laying rules are handed to
+        // whatever planner the layer resolves - so every mechanic counting one map colours its
+        // segments through one read, judges a contest against one affiliation, and lays its cells
+        // by one rule.
+        var pass = openPassOver(walk);
+
+        return view.resolveRibbonPlanner(new RibbonPlanInputs(
+            pass,
+            view.resolveRibbonPalettes(pass),
+            contestAffiliation,
+            rules));
     }
 
     // The pass this source reads one walk through, opened on the first ask about that walk and kept

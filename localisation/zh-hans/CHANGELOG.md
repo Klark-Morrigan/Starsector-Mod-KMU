@@ -54,7 +54,8 @@
 - **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按种类分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
 - **`HolderRankingRules.createByMarketProximity(StarSystemAPI, Colonies, ColonyKnowledge, HolderGrouping)`**：实际排名规则唯一的构建处，包括对中立势力的排除和按市场远近的平局裁定。地图填充和刷新轮询都按它排名。
-- **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的所有者和配色，因此一次重建中的每个解析和每条色带都通过同一个对象为集团着色。
+- **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的所有者和配色，因此一次重建中的每个解析和每条按集团着色的色带都通过同一个对象为集团着色。
+- **`HolderPaintedView.resolveRibbonPalettes(HolderPass)`**：视图的色带分段读取配色之处，与其规划器并列。默认为本次计算自身的配色读取；按填充所不依据的内容为色带着色的视图返回自己的读取。
 - **`CellTooltipEntryLine.createCountedEntityLine(EntityNameplate, int)`**：为星域地图绘制的对象建立计数行，以其地图图标开头。
 - **`ContestBlockHeading.createFixedKeySource(String)`**：标题不随安装环境变化的区块所用的标题来源。
 - **`BlocSpotlight`**：被聚焦集团及其星系绘制所用的持有者。`BlocSpotlight.openOver(HolderPass, String)` 每个批次或每次重建打开一个，交给每个在聚焦下解析星系的部分，因此该集团持有的单元与宣称的单元通过同一个值融合。若集团配色所取自的势力已不存在，则不打开聚焦，其持有和宣称的星系都按实际持有者绘制。
@@ -220,7 +221,7 @@
 | 给出 `clusters()`、`standingAnchors()`、`factionLabels()` 和 `cellGeometry()` 的记录类型 `StandingOwnerMap` | 改为基于这四者的不可继承的类，读取方法为 `getClusters()` 和 `getCellGeometry()`。完整重建与批次都经由它拟合名称、烘焙色带，因此它既不交出落点，也不交出标签 |
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`：构建的边界描绘参数随主题一同携带，区域组不会再按各自的实时读取来描绘 |
 | 自行读取绘制方案的 `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)` | `buildClusters(CellGeometryCache, OwnerMapBuildInputs, ResolvedOwners)`，接受调用方构建的 `OwnerMapBuildInputs`：重建只读取一次绘制方案，供它构建的一切使用，并在采样选择的同时采样锚点叠加层是否显示 |
-| `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` 和 `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`。`palettes()` 返回本次计算自身的配色读取，因此色带只能经由填充所用的同一读取着色 |
+| `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | 已移除：持有者来源以视图经由 `HolderPaintedView.resolveRibbonPalettes(HolderPass)` 选择的配色读取构建 `RibbonPlanInputs(HolderPass, RibbonPaletteReader, OwnerAffiliation, RibbonPlanRules)`；除非视图按其他依据为色带着色，否则即为本次计算自身的配色读取 |
 | `HeldCellRibbons.planHeldCellRibbon(String, StarSystemAPI, Map, RibbonPlanInputs)` 和 `ClaimCellRibbons.planClaimCellRibbon(Optional, StarSystemAPI, SystemClaimBreakdown, RibbonPlanInputs)` | 改为包私有的 `HeldBlocRanker.rankBlocsByWeight(String, Map)` 和 `ClaimBlocRanker.rankBlocsByContest(SystemClaimBreakdown, HolderGrouping)`，返回按排名排列的集团 ID。各计划器自行把排名交给 `ColonyCellRibbons.planCellRibbon` |
 | 公开的 `HeldSystemRibbonSource`（由 `HeldSystemRibbonPlanner` 实现），以及公开的 `HeldOrClaimedSystemRibbonPlanner(HeldSystemRibbonSource, SystemRibbonPlanner)` | 改为 `politicalmap.ribbon` 中的包私有类型，即该组合自身的端口。`HeldOrClaimedSystemRibbonPlanner.createForPass` 把 `HeldSystemRibbonPlanner.planHeldSystemRibbon` 绑定到它 |
 | `HolderRankingRules.createByLowestId(Predicate)` 和 `createOpenContestByLowestId()` | 已移除：每个实际排名都经由 `createByMarketProximity` 按远近裁定平局。没有几何信息的读取方改为构建 `new HolderRankingRules(Comparator.naturalOrder(), candidacy)` |
