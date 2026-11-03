@@ -25,16 +25,20 @@ final class OwnerPresenceTests {
 
         @Test
         void keepsTheStakesItWasBuiltWithWhenTheCallersListGrows() {
-            // Arrange
+
+            // ARRANGE
             var stakePalettes = new ArrayList<>(List.of(PALETTE));
             var presence = new OwnerPresence("first", stakePalettes);
+            var expectedStakePalettes = List.of(PALETTE);
 
-            // Act
+            // ACT
             stakePalettes.add(PALETTE);
 
-            // Assert
-            assertThat(presence.stakePalettes())
-                .containsExactly(PALETTE);
+            var actualStakePalettes = presence.stakePalettes();
+
+            // ASSERT
+            assertThat(actualStakePalettes)
+                .containsExactlyElementsOf(expectedStakePalettes);
         }
     }
 
@@ -44,14 +48,28 @@ final class OwnerPresenceTests {
         @Test
         void isTrueForASingleStake() {
 
-            assertThat(new OwnerPresence("first", List.of(PALETTE)).hasStakes())
+            // ARRANGE
+            var presence = new OwnerPresence("first", List.of(PALETTE));
+
+            // ACT
+            var actualHasStakes = presence.hasStakes();
+
+            // ASSERT
+            assertThat(actualHasStakes)
                 .isTrue();
         }
 
         @Test
         void isFalseForNoStakes() {
 
-            assertThat(new OwnerPresence("first", List.of()).hasStakes())
+            // ARRANGE
+            var presence = new OwnerPresence("first", List.of());
+
+            // ACT
+            var actualHasStakes = presence.hasStakes();
+
+            // ASSERT
+            assertThat(actualHasStakes)
                 .isFalse();
         }
     }

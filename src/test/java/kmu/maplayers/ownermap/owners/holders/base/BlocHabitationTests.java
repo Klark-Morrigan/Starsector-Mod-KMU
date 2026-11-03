@@ -23,32 +23,58 @@ final class BlocHabitationTests {
     @Nested
     class Constructor {
 
+        // A band lays one member's colonies together, so the order must not depend on which
+        // member the walk reached first.
         @Test
         void ordersTheOwnersByFactionId() {
-            // A band lays one member's colonies together, so the order must not depend on which
-            // member the walk reached first.
-            assertThat(new BlocHabitation(List.of("tritachyon", "hegemony", "tritachyon"), 0).colonyOwnerIds())
-                .containsExactly("hegemony", "tritachyon", "tritachyon");
+
+            // ARRANGE
+            var colonyOwnerIds = List.of("tritachyon", "hegemony", "tritachyon");
+            var expectedOwnerIds = List.of("hegemony", "tritachyon", "tritachyon");
+
+            // ACT
+            var actualOwnerIds = new BlocHabitation(colonyOwnerIds, 0).colonyOwnerIds();
+
+            // ASSERT
+            assertThat(actualOwnerIds)
+                .containsExactlyElementsOf(expectedOwnerIds);
         }
     }
 
     @Nested
     class AddColony {
 
+        // The owners are what the band draws and the size is what the picker shows, so a colony
+        // of any size is still one segment.
         @Test
         void holdsOneColonyByItsOwnerAtItsOwnSize() {
-            // The owners are what the band draws and the size is what the picker shows, so a colony
-            // of any size is still one segment.
-            assertThat(BlocHabitation.EMPTY.addColony(buildColonyOf("hegemony", 6)))
-                .isEqualTo(new BlocHabitation(List.of("hegemony"), 6));
+
+            // ARRANGE
+            var colony = buildColonyOf("hegemony", 6);
+            var expectedHabitation = new BlocHabitation(List.of("hegemony"), 6);
+
+            // ACT
+            var actualHabitation = BlocHabitation.EMPTY.addColony(colony);
+
+            // ASSERT
+            assertThat(actualHabitation)
+                .isEqualTo(expectedHabitation);
         }
 
         @Test
         void addsToWhatTheBlocAlreadyLivesOn() {
 
-            assertThat(new BlocHabitation(List.of("hegemony", "tritachyon"), 7)
-                    .addColony(buildColonyOf("persean", 3)))
-                .isEqualTo(new BlocHabitation(List.of("hegemony", "persean", "tritachyon"), 10));
+            // ARRANGE
+            var habitation = new BlocHabitation(List.of("hegemony", "tritachyon"), 7);
+            var colony = buildColonyOf("persean", 3);
+            var expectedHabitation = new BlocHabitation(List.of("hegemony", "persean", "tritachyon"), 10);
+
+            // ACT
+            var actualHabitation = habitation.addColony(colony);
+
+            // ASSERT
+            assertThat(actualHabitation)
+                .isEqualTo(expectedHabitation);
         }
     }
 
@@ -58,16 +84,33 @@ final class BlocHabitationTests {
         @Test
         void sumsTwoMembersFieldByField() {
 
-            assertThat(new BlocHabitation(List.of("tritachyon", "tritachyon"), 7)
-                    .addHabitation(new BlocHabitation(List.of("hegemony"), 4)))
-                .isEqualTo(new BlocHabitation(List.of("hegemony", "tritachyon", "tritachyon"), 11));
+            // ARRANGE
+            var habitation = new BlocHabitation(List.of("tritachyon", "tritachyon"), 7);
+            var otherHabitation = new BlocHabitation(List.of("hegemony"), 4);
+            var expectedHabitation = new BlocHabitation(List.of("hegemony", "tritachyon", "tritachyon"), 11);
+
+            // ACT
+            var actualHabitation = habitation.addHabitation(otherHabitation);
+
+            // ASSERT
+            assertThat(actualHabitation)
+                .isEqualTo(expectedHabitation);
         }
 
+        // The regroup starts each bloc from EMPTY, so EMPTY must be the merge's identity.
         @Test
         void leavesAHabitationUnchangedWhenMergedWithEmpty() {
-            // The regroup starts each bloc from EMPTY, so EMPTY must be the merge's identity.
-            assertThat(BlocHabitation.EMPTY.addHabitation(new BlocHabitation(List.of("hegemony", "hegemony"), 7)))
-                .isEqualTo(new BlocHabitation(List.of("hegemony", "hegemony"), 7));
+
+            // ARRANGE
+            var habitation = new BlocHabitation(List.of("hegemony", "hegemony"), 7);
+            var expectedHabitation = new BlocHabitation(List.of("hegemony", "hegemony"), 7);
+
+            // ACT
+            var actualHabitation = BlocHabitation.EMPTY.addHabitation(habitation);
+
+            // ASSERT
+            assertThat(actualHabitation)
+                .isEqualTo(expectedHabitation);
         }
     }
 

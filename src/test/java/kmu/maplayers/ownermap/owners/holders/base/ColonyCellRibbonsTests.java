@@ -68,142 +68,233 @@ final class ColonyCellRibbonsTests {
     @Nested
     class PlanCellRibbon {
 
+        // Two Hegemony colonies and one of Tri-Tachyon's: three runs, the Hegemony's own parted
+        // by its dark shade and closed off in it where the rival's run takes over.
         @Test
         void drawsOneSegmentPerColonyABlocHoldsInTheSystem() {
-            // Two Hegemony colonies and one of Tri-Tachyon's: three runs, the Hegemony's own parted
-            // by its dark shade and closed off in it where the rival's run takes over.
-            assertThat(planFor(
-                    Optional.of(HEGEMONY),
-                    List.of(HEGEMONY, TRITACHYON),
-                    HEGEMONY, HEGEMONY, TRITACHYON).segments())
-                .containsExactly(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(
+                Optional.of(HEGEMONY),
+                List.of(HEGEMONY, TRITACHYON),
+                HEGEMONY, HEGEMONY, TRITACHYON).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // The single-holder cell, which most of the sector is: the fill has said whose system
+        // it is, and the band says how much is in it.
         @Test
         void drawsThePainterAloneWhereItIsTheOnlyBlocPresent() {
-            // The single-holder cell, which most of the sector is: the fill has said whose system
-            // it is, and the band says how much is in it.
-            assertThat(planFor(Optional.of(HEGEMONY), List.of(HEGEMONY), HEGEMONY).segments())
-                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(Optional.of(HEGEMONY), List.of(HEGEMONY), HEGEMONY).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // A bloc the mechanic ranked and the system does not hold - a faction whose only colony
+        // there is one the fog keeps back, say - raises no run at all rather than a run of no
+        // width, so the band is the painter's own and carries no trace of the ranking.
         @Test
         void drawsNoRunForABlocRankedButPresentInNothing() {
-            // A bloc the mechanic ranked and the system does not hold - a faction whose only colony
-            // there is one the fog keeps back, say - raises no run at all rather than a run of no
-            // width, so the band is the painter's own and carries no trace of the ranking.
-            assertThat(planFor(Optional.of(HEGEMONY), List.of(HEGEMONY, TRITACHYON), HEGEMONY).segments())
-                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(
+                Optional.of(HEGEMONY),
+                List.of(HEGEMONY, TRITACHYON),
+                HEGEMONY).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // Nothing counted means nothing to report, so the cell draws no band rather than an
+        // empty one.
         @Test
         void drawsNoBandForASystemNobodyLivesIn() {
-            // Nothing counted means nothing to report, so the cell draws no band rather than an
-            // empty one.
-            assertThat(planFor(NO_PAINTER, List.of()).segments())
+
+            // ACT
+            var actualSegments = planFor(NO_PAINTER, List.of()).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
                 .isEmpty();
         }
 
+        // The mechanic ranked the painter and Tri-Tachyon, and the Persean League is in the
+        // system through a colony no score was computed from. The ranked blocs keep their places
+        // and the unranked one draws behind them - a place among the ranking would state it took
+        // part in a contest it never entered.
         @Test
         void keepsTheMechanicsRankingAheadOfTheBlocsItNeverRanked() {
-            // The mechanic ranked the painter and Tri-Tachyon, and the Persean League is in the
-            // system through a colony no score was computed from. The ranked blocs keep their places
-            // and the unranked one draws behind them - a place among the ranking would state it took
-            // part in a contest it never entered.
-            assertThat(planFor(
-                    Optional.of(HEGEMONY),
-                    List.of(HEGEMONY, TRITACHYON),
-                    HEGEMONY, PERSEAN, TRITACHYON).segments())
-                .containsExactly(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
-                    new RibbonSegment(TRITACHYON_DARK, 1),
-                    new RibbonSegment(PERSEAN_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                new RibbonSegment(TRITACHYON_DARK, 1),
+                new RibbonSegment(PERSEAN_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(
+                Optional.of(HEGEMONY),
+                List.of(HEGEMONY, TRITACHYON),
+                HEGEMONY, PERSEAN, TRITACHYON).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // Two blocs the mechanic did not score have no order to inherit, so they take the one
+        // order that cannot depend on which of them the walk reached first.
         @Test
         void ordersTheBlocsNoMechanicRankedById() {
-            // Two blocs the mechanic did not score have no order to inherit, so they take the one
-            // order that cannot depend on which of them the walk reached first.
-            assertThat(planFor(
-                    Optional.of(HEGEMONY),
-                    List.of(HEGEMONY),
-                    TRITACHYON, PERSEAN, HEGEMONY).segments())
-                .containsExactly(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(PERSEAN_BRIGHT, 3),
-                    new RibbonSegment(PERSEAN_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(PERSEAN_BRIGHT, 3),
+                new RibbonSegment(PERSEAN_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(
+                Optional.of(HEGEMONY),
+                List.of(HEGEMONY),
+                TRITACHYON, PERSEAN, HEGEMONY).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // Two members of one group rank as their bloc twice. The bloc keeps the place its first
+        // mention took and draws one run, so the band counts its colony once rather than once per
+        // member that ranked it.
         @Test
         void drawsABlocTheRankingNamesTwiceOnceInItsFirstPlace() {
-            // Two members of one group rank as their bloc twice. The bloc keeps the place its first
-            // mention took and draws one run, so the band counts its colony once rather than once per
-            // member that ranked it.
-            assertThat(planFor(
-                    Optional.of(TRITACHYON),
-                    List.of(TRITACHYON, HEGEMONY, TRITACHYON),
-                    HEGEMONY, TRITACHYON).segments())
-                .containsExactly(
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
-                    new RibbonSegment(TRITACHYON_DARK, 1),
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(
+                new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                new RibbonSegment(TRITACHYON_DARK, 1),
+                new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(
+                Optional.of(TRITACHYON),
+                List.of(TRITACHYON, HEGEMONY, TRITACHYON),
+                HEGEMONY, TRITACHYON).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // A system two blocs are settled in that no layer paints for anybody. The counting is
+        // the same as ever - the painter is the contest's question, not the count's - and neither
+        // bloc is ranked, so both come out in ID order.
         @Test
         void countsTheColoniesOfACellNoFillCovers() {
-            // A system two blocs are settled in that no layer paints for anybody. The counting is
-            // the same as ever - the painter is the contest's question, not the count's - and neither
-            // bloc is ranked, so both come out in ID order.
-            assertThat(planFor(NO_PAINTER, List.of(), TRITACHYON, HEGEMONY).segments())
-                .containsExactly(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(NO_PAINTER, List.of(), TRITACHYON, HEGEMONY).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // A bloc whose colour faction has gone from the sector has nothing to paint a run in,
+        // so it is left out rather than drawn colourless - and the band is the painter's own
+        // colony, with no gap where the vanished bloc's run would have been.
         @Test
         void leavesOutABlocWithNoShadesToDrawIn() {
-            // A bloc whose colour faction has gone from the sector has nothing to paint a run in,
-            // so it is left out rather than drawn colourless - and the band is the painter's own
-            // colony, with no gap where the vanished bloc's run would have been.
-            assertThat(planFor(
-                    Optional.of(HEGEMONY),
-                    List.of(HEGEMONY, VANISHED_BLOC),
-                    HEGEMONY, VANISHED_BLOC).segments())
-                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ARRANGE
+            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ACT
+            var actualSegments = planFor(
+                Optional.of(HEGEMONY),
+                List.of(HEGEMONY, VANISHED_BLOC),
+                HEGEMONY, VANISHED_BLOC).segments();
+
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // The vanished bloc is dropped before the contest is judged, so it is no rival: the
+        // shortening reaches the painter's run as it would on a cell the painter holds alone.
         @Test
         void leavesACellUncontestedByABlocWithNoShades() {
-            // The vanished bloc is dropped before the contest is judged, so it is no rival: the
-            // shortening reaches the painter's run as it would on a cell the painter holds alone.
-            var systemMock = mock(StarSystemAPI.class);
 
-            var plan = ColonyCellRibbons.planCellRibbon(
+            // ARRANGE
+            var systemMock = mock(StarSystemAPI.class);
+            var inputs = buildAlliedInputsFor(stubPassHolding(systemMock, HEGEMONY, VANISHED_BLOC));
+            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 1));
+
+            // ACT
+            var actualSegments = ColonyCellRibbons.planCellRibbon(
                 Optional.of(HEGEMONY),
                 systemMock,
                 List.of(HEGEMONY, VANISHED_BLOC),
-                buildAlliedInputsFor(stubPassHolding(systemMock, HEGEMONY, VANISHED_BLOC)));
+                inputs).segments();
 
-            assertThat(plan.segments())
-                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 1));
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // A palette read answering per member, as a layer colouring by something the group
+        // does not decide does. The group stays one run, parted as one holding, and its
+        // segments come out member by member in owner ID order whatever order the walk met them.
         @Test
         void laysAGroupsRunMemberByMemberInOwnerIdOrder() {
-            // A palette read answering per member, as a layer colouring by something the group
-            // does not decide does. The group stays one run, parted as one holding, and its
-            // segments come out member by member in owner ID order whatever order the walk met them.
+
+            // ARRANGE
             var palettesMock = mock(SectorBlocPalettes.class);
+            var colonyOwnerIdsByBlocId = Map.of(
+                GROUP_BLOC_ID, List.of(TRITACHYON, HEGEMONY, TRITACHYON),
+                PERSEAN, List.of(PERSEAN));
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                new RibbonSegment(TRITACHYON_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                new RibbonSegment(TRITACHYON_DARK, 1),
+                new RibbonSegment(PERSEAN_BRIGHT, 3));
 
             when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, HEGEMONY))
                 .thenReturn(HEGEMONY_PALETTE);
@@ -212,68 +303,73 @@ final class ColonyCellRibbonsTests {
             when(palettesMock.readSegmentPalette(PERSEAN, PERSEAN))
                 .thenReturn(PERSEAN_PALETTE);
 
-            var plan = planForMembers(
+            // ACT
+            var actualSegments = planForMembers(
                 List.of(GROUP_BLOC_ID, PERSEAN),
                 palettesMock,
-                Map.of(
-                    GROUP_BLOC_ID, List.of(TRITACHYON, HEGEMONY, TRITACHYON),
-                    PERSEAN, List.of(PERSEAN)));
+                colonyOwnerIdsByBlocId).segments();
 
-            assertThat(plan.segments())
-                .containsExactly(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
-                    new RibbonSegment(TRITACHYON_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
-                    new RibbonSegment(TRITACHYON_DARK, 1),
-                    new RibbonSegment(PERSEAN_BRIGHT, 3));
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // One member of the group has gone from the sector. Its colony loses its segment, and
+        // the group's run still stands on the colony that can be coloured.
         @Test
         void dropsTheSegmentOfAColonyWhoseOwnerHasNoShadesAndKeepsItsRun() {
-            // One member of the group has gone from the sector. Its colony loses its segment, and
-            // the group's run still stands on the colony that can be coloured.
+
+            // ARRANGE
             var palettesMock = mock(SectorBlocPalettes.class);
+            var colonyOwnerIdsByBlocId = Map.of(
+                GROUP_BLOC_ID, List.of(HEGEMONY, VANISHED_BLOC),
+                TRITACHYON, List.of(TRITACHYON));
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3));
 
             when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, HEGEMONY))
                 .thenReturn(HEGEMONY_PALETTE);
             when(palettesMock.readSegmentPalette(TRITACHYON, TRITACHYON))
                 .thenReturn(TRITACHYON_PALETTE);
 
-            var plan = planForMembers(
+            // ACT
+            var actualSegments = planForMembers(
                 List.of(GROUP_BLOC_ID, TRITACHYON),
                 palettesMock,
-                Map.of(
-                    GROUP_BLOC_ID, List.of(HEGEMONY, VANISHED_BLOC),
-                    TRITACHYON, List.of(TRITACHYON)));
+                colonyOwnerIdsByBlocId).segments();
 
-            assertThat(plan.segments())
-                .containsExactly(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
 
+        // The group is ranked last and every colony it holds is owned by a member with no
+        // shades. It drops out whole, so the band ends on the Hegemony's segment rather than on a
+        // parting that would close a run onto nothing.
         @Test
         void leavesNoPartingBehindABlocAllOfWhoseColoniesDrop() {
-            // The group is ranked last and every colony it holds is owned by a member with no
-            // shades. It drops out whole, so the band ends on the Hegemony's segment rather than on a
-            // parting that would close a run onto nothing.
+
+            // ARRANGE
             var palettesMock = mock(SectorBlocPalettes.class);
+            var colonyOwnerIdsByBlocId = Map.of(
+                HEGEMONY, List.of(HEGEMONY),
+                GROUP_BLOC_ID, List.of(VANISHED_BLOC, VANISHED_BLOC));
+            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
 
             when(palettesMock.readSegmentPalette(HEGEMONY, HEGEMONY))
                 .thenReturn(HEGEMONY_PALETTE);
 
-            var plan = planForMembers(
+            // ACT
+            var actualSegments = planForMembers(
                 List.of(HEGEMONY, GROUP_BLOC_ID),
                 palettesMock,
-                Map.of(
-                    HEGEMONY, List.of(HEGEMONY),
-                    GROUP_BLOC_ID, List.of(VANISHED_BLOC, VANISHED_BLOC)));
+                colonyOwnerIdsByBlocId).segments();
 
-            assertThat(plan.segments())
-                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+            // ASSERT
+            assertThat(actualSegments)
+                .containsExactlyElementsOf(expectedSegments);
         }
     }
 

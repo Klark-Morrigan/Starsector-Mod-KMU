@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 
@@ -31,7 +31,6 @@ import static org.mockito.Mockito.mock;
 final class SystemHabitationTests {
 
     private static final String BLOC_ID = "hegemony";
-
     private static final int COLONY_SIZE = 5;
 
     // What each posed bloc lives on: one colony of the shared size.
@@ -40,48 +39,64 @@ final class SystemHabitationTests {
     @Nested
     class Constructor {
 
+        // A pass opens this once and hands it to the classification, the spotlight and the
+        // picker alike, so a side the caller went on mutating would have one of them answering
+        // off a set the others never saw.
         @Test
         void keepsTheCallersLaterEditsOutOfTheValue() {
-            // A pass opens this once and hands it to the classification, the spotlight and the
-            // picker alike, so a side the caller went on mutating would have one of them answering
-            // off a set the others never saw.
+
+            // ARRANGE
             var colonies = new ArrayList<Colony>();
             var habitationByBlocId = new LinkedHashMap<String, BlocHabitation>();
+            var expectedColonyCount = 1;
+            var expectedEntry = entry(BLOC_ID, ONE_COLONY);
 
             colonies.add(buildColony());
             habitationByBlocId.put(BLOC_ID, ONE_COLONY);
 
-            var habitation = new SystemHabitation(colonies, habitationByBlocId);
+            // ACT
+            var actualHabitation = new SystemHabitation(colonies, habitationByBlocId);
 
             colonies.clear();
             habitationByBlocId.clear();
 
-            assertThat(habitation.colonies())
-                .hasSize(1);
-            assertThat(habitation.habitationByBlocId())
-                .containsExactly(entry(BLOC_ID, ONE_COLONY));
+            // ASSERT
+            assertThat(actualHabitation.colonies())
+                .hasSize(expectedColonyCount);
+            assertThat(actualHabitation.habitationByBlocId())
+                .containsExactly(expectedEntry);
         }
 
         @Test
         void refusesToBeEditedThroughEitherSide() {
 
+            // ARRANGE
             var habitation = buildHabitationOf(BLOC_ID);
+            var colony = buildColony();
 
-            assertThatThrownBy(() -> habitation.habitationByBlocId().put("tritachyon", ONE_COLONY))
+            // ACT
+            var actualPutThrown = catchThrowable(() -> habitation.habitationByBlocId().put("tritachyon", ONE_COLONY));
+            var actualAddThrown = catchThrowable(() -> habitation.colonies().add(colony));
+
+            // ASSERT
+            assertThat(actualPutThrown)
                 .isInstanceOf(UnsupportedOperationException.class);
-            assertThatThrownBy(() -> habitation.colonies().add(buildColony()))
+            assertThat(actualAddThrown)
                 .isInstanceOf(UnsupportedOperationException.class);
         }
 
+        // A caller with nothing to report says so by handing nothing, rather than by being
+        // obliged to name two empty collections.
         @Test
         void readsAnUnstatedSideAsEmpty() {
-            // A caller with nothing to report says so by handing nothing, rather than by being
-            // obliged to name two empty collections.
-            var habitation = new SystemHabitation(null, null);
 
-            assertThat(habitation.colonies())
+            // ACT
+            var actualHabitation = new SystemHabitation(null, null);
+
+            // ASSERT
+            assertThat(actualHabitation.colonies())
                 .isEmpty();
-            assertThat(habitation.blocIds())
+            assertThat(actualHabitation.blocIds())
                 .isEmpty();
         }
     }
@@ -89,18 +104,34 @@ final class SystemHabitationTests {
     @Nested
     class BlocIds {
 
+        // The blocs are the fold's own keys rather than a set beside it, so "who is here" and
+        // "what each of them lives on" cannot come back naming different blocs.
         @Test
         void namesTheBlocsTheSizeFoldCounted() {
-            // The blocs are the fold's own keys rather than a set beside it, so "who is here" and
-            // "what each of them lives on" cannot come back naming different blocs.
-            assertThat(buildHabitationOf(BLOC_ID, "tritachyon").blocIds())
-                .containsExactly(BLOC_ID, "tritachyon");
+
+            // ARRANGE
+            var habitation = buildHabitationOf(BLOC_ID, "tritachyon");
+            var expectedBlocIds = List.of(BLOC_ID, "tritachyon");
+
+            // ACT
+            var actualBlocIds = habitation.blocIds();
+
+            // ASSERT
+            assertThat(actualBlocIds)
+                .containsExactlyElementsOf(expectedBlocIds);
         }
 
         @Test
         void refusesToBeEditedThroughTheBlocSet() {
 
-            assertThatThrownBy(() -> buildHabitationOf(BLOC_ID).blocIds().add("tritachyon"))
+            // ARRANGE
+            var habitation = buildHabitationOf(BLOC_ID);
+
+            // ACT
+            var actualThrown = catchThrowable(() -> habitation.blocIds().add("tritachyon"));
+
+            // ASSERT
+            assertThat(actualThrown)
                 .isInstanceOf(UnsupportedOperationException.class);
         }
     }
@@ -108,21 +139,34 @@ final class SystemHabitationTests {
     @Nested
     class HasInhabitingColony {
 
+        // The divergent case: a colony whose owner the grouping can name no bloc for. Somebody
+        // lives there, so the cell is settled - where a read taken off the bloc set would call
+        // the system empty space and draw it as backdrop.
         @Test
         void readsTheColoniesRatherThanTheBlocsFoldedFromThem() {
-            // The divergent case: a colony whose owner the grouping can name no bloc for. Somebody
-            // lives there, so the cell is settled - where a read taken off the bloc set would call
-            // the system empty space and draw it as backdrop.
+
+            // ARRANGE
             var habitation = new SystemHabitation(List.of(buildColony()), Map.of());
 
-            assertThat(habitation.hasInhabitingColony())
+            // ACT
+            var actualInhabited = habitation.hasInhabitingColony();
+
+            // ASSERT
+            assertThat(actualInhabited)
                 .isTrue();
         }
 
         @Test
         void reportsNobodyLivingWhereNoColonyStands() {
 
-            assertThat(new SystemHabitation(List.of(), Map.of()).hasInhabitingColony())
+            // ARRANGE
+            var habitation = new SystemHabitation(List.of(), Map.of());
+
+            // ACT
+            var actualInhabited = habitation.hasInhabitingColony();
+
+            // ASSERT
+            assertThat(actualInhabited)
                 .isFalse();
         }
     }

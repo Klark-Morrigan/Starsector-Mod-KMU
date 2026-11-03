@@ -38,17 +38,24 @@ final class RibbonPlanInputsTests {
     @Nested
     class Palettes {
 
+        // The pass's own rather than one built beside it, so a band colours a bloc through the
+        // very object the fills of the same rebuild were coloured through.
         @Test
         void answersThePassesOwnPaletteRead() {
-            // The pass's own rather than one built beside it, so a band colours a bloc through the
-            // very object the fills of the same rebuild were coloured through.
+
+            // ARRANGE
             var passMock = mock(HolderPass.class);
             var palettes = new SectorBlocPalettes(mock(SectorAPI.class), HolderGrouping.identity());
+            var inputs = new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES);
 
             when(passMock.palettes())
                 .thenReturn(palettes);
 
-            assertThat(new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES).palettes())
+            // ACT
+            var actualPalettes = inputs.palettes();
+
+            // ASSERT
+            assertThat(actualPalettes)
                 .isSameAs(palettes);
         }
     }
@@ -56,16 +63,23 @@ final class RibbonPlanInputsTests {
     @Nested
     class Grouping {
 
+        // The counts fold under the grouping the fills were painted with, which is the pass's.
         @Test
         void answersThePassesGrouping() {
-            // The counts fold under the grouping the fills were painted with, which is the pass's.
+
+            // ARRANGE
             var grouping = buildGroupOf("hegemony", "persean");
             var passMock = mock(HolderPass.class);
+            var inputs = new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES);
 
             when(passMock.grouping())
                 .thenReturn(grouping);
 
-            assertThat(new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES).grouping())
+            // ACT
+            var actualGrouping = inputs.grouping();
+
+            // ASSERT
+            assertThat(actualGrouping)
                 .isSameAs(grouping);
         }
     }
@@ -73,19 +87,28 @@ final class RibbonPlanInputsTests {
     @Nested
     class ReadHabitationIn {
 
+        // Asserted as identity: the band reads the very value the pass remembered for the
+        // system, so it neither filters nor folds the colonies a second time.
         @Test
         void answersThePassesOwnRememberedHabitation() {
-            // Asserted as identity: the band reads the very value the pass remembered for the
-            // system, so it neither filters nor folds the colonies a second time.
+
+            // ARRANGE
             var systemMock = mock(StarSystemAPI.class);
-            var habitation = new SystemHabitation(List.of(), Map.of("hegemony", new BlocHabitation(List.of("hegemony"), 5)));
+            var habitation = new SystemHabitation(
+                List.of(),
+                Map.of("hegemony", new BlocHabitation(List.of("hegemony"), 5)));
+
             var passMock = mock(HolderPass.class);
+            var inputs = new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES);
 
             when(passMock.readHabitationIn(systemMock))
                 .thenReturn(habitation);
 
-            assertThat(new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES)
-                    .readHabitationIn(systemMock))
+            // ACT
+            var actualHabitation = inputs.readHabitationIn(systemMock);
+
+            // ASSERT
+            assertThat(actualHabitation)
                 .isSameAs(habitation);
         }
     }
