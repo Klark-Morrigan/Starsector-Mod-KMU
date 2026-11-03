@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.base.ribbon.RibbonSegment;
 
@@ -10,8 +12,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.PERSEAN;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.PERSEAN_DARK;
@@ -45,12 +49,21 @@ import static org.mockito.Mockito.when;
  *
  * <p>The segment grammar itself has its own suite, so what is asserted here is the counts and the
  * order reaching it - read off the runs, those being the only place either is visible.
+ *
+ * <p>The member cases stand a per-member palette read in, since the live one answers a bloc's shades
+ * for every member and so cannot show the grouping deciding the run while the read decides the
+ * segment.
  */
 final class ColonyCellRibbonsTests {
 
     // The size every stated colony carries. A band counts holdings rather than weighing them, so a
     // case varying it would vary nothing the rule can see.
     private static final int COLONY_SIZE = 5;
+
+    // The pairs a per-member palette read answers, in the shared shades a case reads a band back in.
+    private static final ColourPair HEGEMONY_PALETTE = new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK);
+    private static final ColourPair TRITACHYON_PALETTE = new ColourPair(TRITACHYON_BRIGHT, TRITACHYON_DARK);
+    private static final ColourPair PERSEAN_PALETTE = new ColourPair(PERSEAN_BRIGHT, PERSEAN_DARK);
 
     @Nested
     class PlanCellRibbon {
@@ -184,6 +197,114 @@ final class ColonyCellRibbonsTests {
             assertThat(plan.segments())
                 .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 1));
         }
+
+        @Test
+        void laysAGroupsRunMemberByMemberInOwnerIdOrder() {
+            // A palette read answering per member, as a layer colouring by something the group
+            // does not decide does. The group stays one run, parted as one holding, and its
+            // segments come out member by member in owner ID order whatever order the walk met them.
+            var palettesMock = mock(SectorBlocPalettes.class);
+
+            when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, HEGEMONY))
+                .thenReturn(HEGEMONY_PALETTE);
+            when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, TRITACHYON))
+                .thenReturn(TRITACHYON_PALETTE);
+            when(palettesMock.readSegmentPalette(PERSEAN, PERSEAN))
+                .thenReturn(PERSEAN_PALETTE);
+
+            var plan = planForMembers(
+                List.of(GROUP_BLOC_ID, PERSEAN),
+                palettesMock,
+                Map.of(
+                    GROUP_BLOC_ID, List.of(TRITACHYON, HEGEMONY, TRITACHYON),
+                    PERSEAN, List.of(PERSEAN)));
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(PERSEAN_BRIGHT, 3));
+        }
+
+        @Test
+        void dropsTheSegmentOfAColonyWhoseOwnerHasNoShadesAndKeepsItsRun() {
+            // One member of the group has gone from the sector. Its colony loses its segment, and
+            // the group's run still stands on the colony that can be coloured.
+            var palettesMock = mock(SectorBlocPalettes.class);
+
+            when(palettesMock.readSegmentPalette(GROUP_BLOC_ID, HEGEMONY))
+                .thenReturn(HEGEMONY_PALETTE);
+            when(palettesMock.readSegmentPalette(TRITACHYON, TRITACHYON))
+                .thenReturn(TRITACHYON_PALETTE);
+
+            var plan = planForMembers(
+                List.of(GROUP_BLOC_ID, TRITACHYON),
+                palettesMock,
+                Map.of(
+                    GROUP_BLOC_ID, List.of(HEGEMONY, VANISHED_BLOC),
+                    TRITACHYON, List.of(TRITACHYON)));
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+        }
+
+        @Test
+        void leavesNoPartingBehindABlocAllOfWhoseColoniesDrop() {
+            // The group is ranked last and every colony it holds is owned by a member with no
+            // shades. It drops out whole, so the band ends on the Hegemony's segment rather than on a
+            // parting that would close a run onto nothing.
+            var palettesMock = mock(SectorBlocPalettes.class);
+
+            when(palettesMock.readSegmentPalette(HEGEMONY, HEGEMONY))
+                .thenReturn(HEGEMONY_PALETTE);
+
+            var plan = planForMembers(
+                List.of(HEGEMONY, GROUP_BLOC_ID),
+                palettesMock,
+                Map.of(
+                    HEGEMONY, List.of(HEGEMONY),
+                    GROUP_BLOC_ID, List.of(VANISHED_BLOC, VANISHED_BLOC)));
+
+            assertThat(plan.segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+    }
+
+    // The band for one cell painted for the first ranked bloc, whose system holds the colonies each
+    // bloc is mapped to - by the faction owning each one - coloured through the palette read given.
+    private static RibbonPlan planForMembers(
+            List<String> rankedBlocIds,
+            SectorBlocPalettes palettes,
+            Map<String, List<String>> colonyOwnerIdsByBlocId) {
+
+        var habitationByBlocId = new LinkedHashMap<String, BlocHabitation>();
+
+        for (var blocId : rankedBlocIds) {
+            habitationByBlocId.put(
+                blocId,
+                new BlocHabitation(colonyOwnerIdsByBlocId.get(blocId), COLONY_SIZE));
+        }
+
+        var systemMock = mock(StarSystemAPI.class);
+        var passMock = mock(HolderPass.class);
+
+        when(passMock.readHabitationIn(systemMock))
+            .thenReturn(new SystemHabitation(List.of(), habitationByBlocId));
+        when(passMock.palettes())
+            .thenReturn(palettes);
+
+        return ColonyCellRibbons.planCellRibbon(
+            Optional.of(rankedBlocIds.get(0)),
+            systemMock,
+            rankedBlocIds,
+            buildInputsFor(passMock));
     }
 
     // The band for one cell whose system holds one colony per named bloc, under the standard laying
@@ -212,7 +333,7 @@ final class ColonyCellRibbonsTests {
         for (var blocId : colonyBlocIds) {
             habitationByBlocId.merge(
                 blocId,
-                new BlocHabitation(1, COLONY_SIZE),
+                new BlocHabitation(List.of(blocId), COLONY_SIZE),
                 BlocHabitation::addHabitation);
         }
 

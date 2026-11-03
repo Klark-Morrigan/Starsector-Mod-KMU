@@ -7,6 +7,7 @@ import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKeyedMemo;
+import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 
@@ -299,17 +300,26 @@ public final class HolderPass {
     // regroups.
     //
     // Folded per owner before the grouping rather than per bloc after it, so the one fold that
-    // decides which owners can be named a bloc for decides it for the counts and sizes as well: a
+    // decides which owners can be named a bloc for decides it for the colonies and sizes as well: a
     // bloc's presence and what it lives on are then the same colonies, never two selections that
-    // could differ by one. An owner with no ID lands under a null key, which the regroup drops.
+    // could differ by one.
+    //
+    // An owner with no ID is left out here, before the regroup that would drop it anyway: the
+    // habitation holds each colony by its owner's ID, and a missing one cannot be ordered among
+    // the rest.
     private static Map<String, BlocHabitation> foldHabitationByFaction(List<Colony> colonies) {
 
         var habitationByFactionId = new LinkedHashMap<String, BlocHabitation>();
         for (var colony : colonies) {
-            habitationByFactionId.merge(
-                colony.readOwnerId(),
-                BlocHabitation.EMPTY.addColony(colony),
-                BlocHabitation::addHabitation);
+
+            var ownerId = colony.readOwnerId();
+            if (KmlibStrings.hasText(ownerId)) {
+
+                habitationByFactionId.merge(
+                    ownerId,
+                    BlocHabitation.EMPTY.addColony(colony),
+                    BlocHabitation::addHabitation);
+            }
         }
         return habitationByFactionId;
     }

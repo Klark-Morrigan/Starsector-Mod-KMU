@@ -51,7 +51,7 @@ public record RibbonPlanInputs(
      *
      * @return the pass's palettes
      */
-    public BlocPaletteReader palettes() {
+    public RibbonPaletteReader palettes() {
         return pass.palettes();
     }
 

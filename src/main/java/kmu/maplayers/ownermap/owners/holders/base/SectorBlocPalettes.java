@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The live binding of {@link BlocPaletteReader}: a bloc's two shades read off the faction it
- * paints in.
+ * A bloc's two shades read off the faction it paints in, and the live binding of
+ * {@link RibbonPaletteReader} for a layer colouring a band by bloc.
  *
  * <p>A bloc is not always a faction - a group is named by a synthetic ID no
  * {@code FactionAPI} answers to - so the grouping names the colour faction first and the sector is
@@ -28,7 +28,8 @@ import java.util.Optional;
  * system's holder, every cell's band and the spotlight each ask per bloc, so a pass asks of a
  * handful of blocs many times over. Not safe for concurrent use.
  */
-public final class SectorBlocPalettes implements BlocPaletteReader {
+public final class SectorBlocPalettes
+        implements RibbonPaletteReader {
 
     // Each bloc's owner as first resolved, a bloc whose colour faction has gone held as empty so its
     // absence is remembered too. The owner rather than the bare shades, since it carries them and
@@ -44,11 +45,27 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
      *                 pass so everything drawn for a bloc resolves its colours identically
      */
     public SectorBlocPalettes(SectorAPI sector, HolderGrouping grouping) {
+
         this.sector = sector;
         this.grouping = grouping;
     }
 
+    /**
+     * The bloc's own shades, whichever member owns the colony: a bloc's shades are the bloc's, so a
+     * band coloured here draws a run in the one pair its fill is painted in.
+     */
     @Override
+    public ColourPair readSegmentPalette(String blocId, String ownerFactionId) {
+        return readBlocPalette(blocId);
+    }
+
+    /**
+     * The shades the given bloc draws in.
+     *
+     * @param blocId the bloc to colour: a faction ID, or a group's synthetic bloc ID
+     * @return the bloc's bright and dark shades, or null where the bloc has no colour to resolve
+     *         at all - the degenerate case of a bloc whose colour faction has gone from the sector
+     */
     public ColourPair readBlocPalette(String blocId) {
 
         var owner = resolveOwnerOf(blocId);
@@ -84,7 +101,9 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
     // the map cannot name.
     private Optional<SystemOwner> findOwnerOf(String blocId) {
 
-        var colourFaction = SectorFactions.findFaction(sector, grouping.resolveColourFactionId(blocId));
+        var colourFaction = SectorFactions.findFaction(
+            sector,
+            grouping.resolveColourFactionId(blocId));
 
         return Optional
             .ofNullable(FactionColours.findPalette(colourFaction))

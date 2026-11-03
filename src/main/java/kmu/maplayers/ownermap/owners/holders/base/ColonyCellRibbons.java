@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.OwnerPresence;
 import kmu.maplayers.ownermap.ribbon.OwnerRibbonRuns;
@@ -16,7 +18,7 @@ import java.util.TreeSet;
 
 /**
  * The one rule that counts a cell's band, whichever mechanic painted the cell: every colony the
- * player may be shown in the system, folded into a count per bloc.
+ * player may be shown in the system, one segment each, folded into a run per bloc.
  *
  * <p>A band reports how a system splits, and that is a fact about the system rather than about the
  * mechanic that painted the cell, so every mechanic's band is counted here. A count per mechanic
@@ -41,8 +43,9 @@ import java.util.TreeSet;
  * <p>Past the projection, nothing at all is asked: a colony the economy never listed and one it
  * weighed at full size both count as the one colony each of them is.
  *
- * <p>Pure over the pass it is handed, with the two live reads - the walk of a system and a bloc's
- * shades - reached through {@link RibbonPlanInputs}, so the rule itself touches no live state.
+ * <p>Pure over the pass it is handed, with the two live reads - the walk of a system and a
+ * segment's shades - reached through {@link RibbonPlanInputs}, so the rule itself touches no live
+ * state.
  */
 public final class ColonyCellRibbons {
 
@@ -69,7 +72,9 @@ public final class ColonyCellRibbons {
             List<String> rankedBlocIds,
             RibbonPlanInputs inputs) {
 
-        var habitationByBlocId = inputs.readHabitationIn(system).habitationByBlocId();
+        var habitationByBlocId = inputs
+            .readHabitationIn(system)
+            .habitationByBlocId();
 
         return OwnerRibbonRuns.planCellRibbon(
             paintingBlocId,
@@ -83,7 +88,7 @@ public final class ColonyCellRibbons {
 
     // The counted blocs in the order their runs are drawn: the mechanic's ranking first, then
     // whatever it did not rank, by ID. Read off the habitation's per-bloc fold, so two allies'
-    // colonies arrive as one bloc's count and the band names each colony's owner as every other
+    // colonies arrive as one bloc's run and the band names each colony's owner as every other
     // surface does.
     //
     // The tail exists because the count and the ranking come from different places. A mechanic ranks
@@ -113,27 +118,38 @@ public final class ColonyCellRibbons {
         return orderedBlocIds;
     }
 
-    // Colours the ordered blocs' counts into the presences a plan is stated over, in the order given.
+    // Colours the ordered blocs' colonies into the presences a plan is stated over, in the order
+    // given: one segment per colony, a bloc's colonies in their owners' ID order.
     //
-    // A bloc with no shades is dropped rather than painted in a stand-in shade: its colour faction
-    // has gone from the sector, so it is one the map cannot name - the same answer the holder
-    // resolve gives a system whose colour faction has gone.
+    // The bloc stays the run, and the palette read decides each colony's segment. A read answering
+    // per member lays a group's run member by member, while the fill beside it still paints the
+    // group as one bloc.
+    //
+    // A colony with no shades loses its segment rather than being painted in a stand-in shade: its
+    // faction has gone from the sector, so it is one the map cannot name - the same answer the holder
+    // resolve gives a system whose colour faction has gone. A bloc left with no segment at all drops
+    // out entirely, so it lays no parting either.
     private static List<OwnerPresence> collectColouredPresences(
             Set<String> orderedBlocIds,
             Map<String, BlocHabitation> habitationByBlocId,
-            BlocPaletteReader palettes) {
+            RibbonPaletteReader palettes) {
 
         var presences = new ArrayList<OwnerPresence>(orderedBlocIds.size());
 
         for (var blocId : orderedBlocIds) {
 
-            var palette = palettes.readBlocPalette(blocId);
-            if (palette != null) {
+            var stakePalettes = new ArrayList<ColourPair>();
 
-                presences.add(new OwnerPresence(
-                    blocId,
-                    palette,
-                    habitationByBlocId.get(blocId).colonyCount()));
+            for (var ownerFactionId : habitationByBlocId.get(blocId).colonyOwnerIds()) {
+
+                var palette = palettes.readSegmentPalette(blocId, ownerFactionId);
+                if (palette != null) {
+                    stakePalettes.add(palette);
+                }
+            }
+
+            if (!stakePalettes.isEmpty()) {
+                presences.add(new OwnerPresence(blocId, stakePalettes));
             }
         }
 

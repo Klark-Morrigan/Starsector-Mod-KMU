@@ -78,7 +78,7 @@ final class RibbonPlanInputsTests {
             // Asserted as identity: the band reads the very value the pass remembered for the
             // system, so it neither filters nor folds the colonies a second time.
             var systemMock = mock(StarSystemAPI.class);
-            var habitation = new SystemHabitation(List.of(), Map.of("hegemony", new BlocHabitation(1, 5)));
+            var habitation = new SystemHabitation(List.of(), Map.of("hegemony", new BlocHabitation(List.of("hegemony"), 5)));
             var passMock = mock(HolderPass.class);
 
             when(passMock.readHabitationIn(systemMock))

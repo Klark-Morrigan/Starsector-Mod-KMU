@@ -445,10 +445,10 @@ final class HolderPassTests {
 
         @Test
         void sumsWhatEachBlocLivesOnThere() {
-            // The picker's size and the band's count come off this fold as well, so a bloc's
+            // The picker's size and the band's colonies come off this fold as well, so a bloc's
             // presence and what it lives on are one set of colonies rather than two selections that
             // could differ by one. Allied members sum into the bloc they paint as, as their weights
-            // do.
+            // do, each colony still held by the member owning it.
             var sector = SectorOwnershipFixtures.buildSectorWith(
                 SYSTEM_ID,
                 SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, 5),
@@ -460,7 +460,7 @@ final class HolderPassTests {
                     .createOver(sector, UNDER_THE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
                     .habitationByBlocId())
-                .containsExactly(entry(GROUP_BLOC_ID, new BlocHabitation(2, 8)));
+                .containsExactly(entry(GROUP_BLOC_ID, new BlocHabitation(List.of("hegemony", "tritachyon"), 8)));
         }
 
         @Test
@@ -477,7 +477,7 @@ final class HolderPassTests {
                     .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
                     .habitationByBlocId())
-                .containsExactly(entry("hegemony", new BlocHabitation(2, 8)));
+                .containsExactly(entry("hegemony", new BlocHabitation(List.of("hegemony", "hegemony"), 8)));
         }
 
         @Test
@@ -500,7 +500,32 @@ final class HolderPassTests {
                 .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector));
 
             assertThat(habitation.habitationByBlocId())
-                .containsExactly(entry("hegemony", new BlocHabitation(1, COLONY_SIZE)));
+                .containsExactly(entry("hegemony", new BlocHabitation(List.of("hegemony"), COLONY_SIZE)));
+            assertThat(habitation.colonies())
+                .hasSize(2);
+        }
+
+        @Test
+        void foldsSeveralColoniesWhoseMarketsNameNoFactionIdAsNobodys() {
+            // Two such markets in one system. The fold holds each colony by its owner's ID, and two
+            // missing IDs cannot be ordered against each other, so both are left out before the fold
+            // rather than faulting the system's whole habitation.
+            var firstOwnerless = SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE);
+            var secondOwnerless = SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE);
+
+            when(firstOwnerless.getFactionId())
+                .thenReturn(null);
+            when(secondOwnerless.getFactionId())
+                .thenReturn(null);
+
+            var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID, firstOwnerless, secondOwnerless);
+
+            var habitation = HolderPass
+                .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector));
+
+            assertThat(habitation.habitationByBlocId())
+                .isEmpty();
             assertThat(habitation.colonies())
                 .hasSize(2);
         }

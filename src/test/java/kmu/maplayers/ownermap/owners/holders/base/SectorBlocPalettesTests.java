@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 final class SectorBlocPalettesTests {
 
     private static final String LEAD_MEMBER = "hegemony";
+    private static final String SECOND_MEMBER = "persean";
 
     private static final Color BRIGHT = new Color(140, 160, 220);
     private static final Color DARK = new Color(40, 60, 120);
@@ -115,6 +116,22 @@ final class SectorBlocPalettesTests {
 
             verify(sectorMock, times(1))
                 .getFaction(LEAD_MEMBER);
+        }
+    }
+
+    @Nested
+    class ReadSegmentPalette {
+
+        @Test
+        void answersTheBlocsShadesWhicheverMemberOwnsTheColony() {
+            // A bloc's shades are the bloc's, so every member's colony draws in the pair its fill
+            // is painted in - which is what keeps a run coloured by bloc one pair end to end.
+            var palettes = new SectorBlocPalettes(
+                SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK),
+                HolderGroupingFixture.buildGroupOf(LEAD_MEMBER, SECOND_MEMBER));
+
+            assertThat(palettes.readSegmentPalette(GROUP_BLOC_ID, SECOND_MEMBER))
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
     }
 

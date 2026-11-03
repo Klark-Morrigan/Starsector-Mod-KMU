@@ -36,6 +36,10 @@ see the [mod README](../../../../../../../README.md) for project context.
 an ordered list of `RibbonSegment`,
 each a colour and a length in band widths,
 read clockwise from the cell's top centre.
+Every segment carries its own colour,
+so nothing here assumes one colour per run:
+a layer may colour the segments of one run apart,
+and the band draws them with no change of its own.
 `RibbonPlan.NONE` is the cell that draws no band,
 and `hasLength()` is what a layer asks before walking a ring for one.
 

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,10 +41,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * keeps the authored ones under that same shortening. The contest is stated a second time over a
  * cell no fill covers, where there is no painter to be a rival of and a second owner holding
  * something is what makes one; those cases are read off the run lengths, which is the only place
- * the reading a cell took is visible. The partings - a dark one between two stakes of one owner,
- * and one more in the outgoing owner's shade wherever another owner's run follows - are checked on a
- * run long enough to have an inside, across a handover, and at the end of a band, which is the one
- * boundary that stays open.
+ * the reading a cell took is visible. The partings - each the dark shade of the segment going out,
+ * whether between two stakes of one owner or where another owner's run follows - are checked on a
+ * run long enough to have an inside, across a handover, on a run whose stakes are coloured apart,
+ * and at the end of a band, which is the one boundary that stays open.
  *
  * <p>Both readings are then stated a third time over an affiliation, since who counts as a rival
  * is the one thing an affiliation moves: an owner standing with the painter, and a pair standing
@@ -252,6 +253,33 @@ final class OwnerRibbonRunsTests {
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
                     new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
+        }
+
+        @Test
+        void partsEachSegmentInItsOwnDarkShadeWhereOneOwnersStakesDiffer() {
+            // One owner whose two stakes are coloured apart, as a layer colouring its members apart
+            // inside one owner hands them, followed by a rival. Each parting is the dark shade of the
+            // segment going out: inside the run it is the first stake's, and closing the run it is
+            // the last stake's, never the run's first.
+            var plan = OwnerRibbonRuns.planCellRibbon(
+                Optional.of(HEGEMONY),
+                List.of(
+                    new OwnerPresence(
+                        HEGEMONY,
+                        List.of(
+                            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+                            new ColourPair(TRITACHYON_BRIGHT, TRITACHYON_DARK))),
+                    buildDiktatPresence(1)),
+                OwnerAffiliation.NONE,
+                STANDARD_RULES);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(DIKTAT_BRIGHT, 3));
         }
 
         @Test
@@ -575,6 +603,7 @@ final class OwnerRibbonRunsTests {
 
     // The one shape every owner above is built in, so a presence gaining a component is one edit
     // rather than three, and no owner can drift into being stated differently from its neighbours.
+    // Every stake draws in the owner's own pair, which is how a layer colouring by owner hands them.
     private static OwnerPresence buildPresence(
             String ownerId,
             Color brightShade,
@@ -583,7 +612,6 @@ final class OwnerRibbonRunsTests {
 
         return new OwnerPresence(
             ownerId,
-            new ColourPair(brightShade, darkShade),
-            stakeCount);
+            Collections.nCopies(stakeCount, new ColourPair(brightShade, darkShade)));
     }
 }

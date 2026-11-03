@@ -35,7 +35,7 @@ final class SystemHabitationTests {
     private static final int COLONY_SIZE = 5;
 
     // What each posed bloc lives on: one colony of the shared size.
-    private static final BlocHabitation ONE_COLONY = new BlocHabitation(1, COLONY_SIZE);
+    private static final BlocHabitation ONE_COLONY = new BlocHabitation(List.of(BLOC_ID), COLONY_SIZE);
 
     @Nested
     class Constructor {

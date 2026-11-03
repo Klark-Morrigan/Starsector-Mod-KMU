@@ -15,8 +15,9 @@ import java.util.Optional;
  * each contributing a segment per stake it has and an interjection between two of its own.
  *
  * <p>What the band says is how a system splits - how many stakes, whose, and in what proportion -
- * with no glyph and no label, so one shade carries every parting in it. The grammar, and why a
- * divider belongs to the owner going out, is <a href="README.md#laying-the-runs">the runs register</a>'s.
+ * with no glyph and no label, so the segment going out carries each parting in its own dark shade.
+ * The grammar, and why a parting belongs to the segment going out, is
+ * <a href="README.md#laying-the-runs">the runs register</a>'s.
  *
  * <p>Contest decides the lengths and never whether there is a band, which is what keeps the one
  * band a map must not be able to lose - the one saying a system is contested - out of reach of
@@ -27,7 +28,7 @@ import java.util.Optional;
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
  * painter means something quite different from the same segment against a short one.
  *
- * <p>Pure over a ranking and a count each, with no geometry and no colour lookup of its own, so
+ * <p>Pure over a ranking and each owner's stake shades, with no geometry and no colour lookup of its own, so
  * the rule depends on nothing live. Ranking order is the caller's: the runs come out in the order
  * the owners were handed over, so the ribbon cannot disagree with the fill about who leads a
  * system it re-ranked for itself.
@@ -84,8 +85,17 @@ public final class OwnerRibbonRuns {
         return layOwnerRuns(rankedPresences, rules.getUncontestedLengths());
     }
 
-    // Lays the whole band: every owner's run in the order handed over, each closed off by its own
-    // dark shade wherever another owner's run follows it.
+    // Lays the whole band: every owner's stakes in the order handed over, a parting ahead of every
+    // stake but the band's first.
+    //
+    // One rule covers both partings: a parting is the outgoing segment's own dark shade. Between
+    // two stakes of one owner that is the stake just laid; where another owner's run follows, it is
+    // the last stake of the run going out - the owner's stakes ending, which drawn in the newcomer's
+    // shade would read as a gap belonging to whoever arrives next. Stated over the segment rather
+    // than over the owner, so it holds where one owner's stakes are coloured apart.
+    //
+    // An owner holding nothing lays no stake, so it opens no handover either: a parting laid for it
+    // would part two owners across a run that is not there.
     //
     // Reached from both readings and given its lengths rather than choosing them, since all the
     // two differ on is how long the runs are - not what a band is made of. A second copy for the
@@ -96,23 +106,20 @@ public final class OwnerRibbonRuns {
             RibbonSegmentLengths lengths) {
 
         var planBuilder = new RibbonPlanBuilder();
-        OwnerPresence outgoingOwner = null;
+        ColourPair outgoingPalette = null;
 
         for (var presence : rankedPresences) {
-            // An owner holding nothing counted lays no run, so it opens no handover either: a
-            // divider laid for it would part two owners across a run that is not there, and
-            // the owner actually going out would go unclosed.
-            if (!presence.hasStakes()) {
-                continue;
+            for (var stakePalette : presence.stakePalettes()) {
+
+                if (outgoingPalette != null) {
+                    planBuilder.appendSegment(createParting(outgoingPalette, lengths));
+                }
+                planBuilder.appendSegment(new RibbonSegment(
+                    stakePalette.primaryColour(),
+                    lengths.stakeLengthUnits()));
+
+                outgoingPalette = stakePalette;
             }
-            // The divider closing the run just laid is the outgoing owner's own, not the
-            // incoming one's: it is that owner's stakes ending, and drawn in the newcomer's
-            // shade it would read as a gap belonging to whoever arrives next.
-            if (outgoingOwner != null) {
-                planBuilder.appendSegment(createParting(outgoingOwner.palette(), lengths));
-            }
-            appendOwnerRun(planBuilder, presence, lengths);
-            outgoingOwner = presence;
         }
         return planBuilder.buildPlan();
     }
@@ -181,39 +188,17 @@ public final class OwnerRibbonRuns {
         return Optional.empty();
     }
 
-    // Lays down one owner's run: a bright segment per stake, parted by a dark interjection.
-    // The interjection goes before every stake after the first, which is what keeps it
-    // strictly between two of one owner's stakes - so a run neither opens nor closes on one,
-    // and whether it is closed off at all is the caller's to decide from what follows it.
-    private static void appendOwnerRun(
-            RibbonPlanBuilder planBuilder,
-            OwnerPresence presence,
-            RibbonSegmentLengths lengths) {
-
-        var palette = presence.palette();
-
-        for (var stake = 0; stake < presence.stakeCount(); stake++) {
-
-            if (stake > 0) {
-                planBuilder.appendSegment(createParting(palette, lengths));
-            }
-            planBuilder.appendSegment(new RibbonSegment(
-                palette.primaryColour(),
-                lengths.stakeLengthUnits()));
-        }
-    }
-
     // The band's one kind of boundary, made once for both the places that need it: between two
     // of an owner's stakes, and closing that owner's whole run where another owner's follows. Both
-    // are the same owner's dark shade at the same length, and stating that twice would let one
+    // are the outgoing segment's dark shade at the same length, and stating that twice would let one
     // boundary drift into saying more than the other - which would read as a statement about the
     // owners being parted rather than as the boundary it is.
     private static RibbonSegment createParting(
-            ColourPair palette,
+            ColourPair outgoingPalette,
             RibbonSegmentLengths lengths) {
 
         return new RibbonSegment(
-            palette.secondaryColour(),
+            outgoingPalette.secondaryColour(),
             lengths.interjectionLengthUnits());
     }
 }
