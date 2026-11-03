@@ -66,111 +66,179 @@ final class HeldSystemRibbonPlannerIntegrationTests {
     @Nested
     class PlanHeldSystemRibbon {
 
+        // Before the sector stands up. Declining rather than planning an empty band is what
+        // keeps the composition from reading this as "dominance holds nothing here" and
+        // handing the cell to the claim contest on the strength of a missing sector.
         @Test
         void declinesASystemWithNoSectorToReadItFrom() {
-            // Before the sector stands up. Declining rather than planning an empty band is what
-            // keeps the composition from reading this as "dominance holds nothing here" and
-            // handing the cell to the claim contest on the strength of a missing sector.
-            assertThat(planFor(null, systemOf(buildSectorHeldBy(HEGEMONY))))
+
+            // ARRANGE
+            var system = systemOf(buildSectorHeldBy(HEGEMONY));
+
+            // ACT
+            var actualPlan = planFor(null, system);
+
+            // ASSERT
+            assertThat(actualPlan)
                 .isEmpty();
         }
 
         @Test
         void declinesASystemThatIsNotThere() {
-            assertThat(planFor(buildSectorHeldBy(HEGEMONY), null))
+
+            // ARRANGE
+            var sector = buildSectorHeldBy(HEGEMONY);
+
+            // ACT
+            var actualPlan = planFor(sector, null);
+
+            // ASSERT
+            assertThat(actualPlan)
                 .isEmpty();
         }
 
+        // Mid-load: the systems are walkable but the economy behind their markets is absent,
+        // so there is nothing to count and the read stops at its guard rather than faulting
+        // on the way into one.
         @Test
         void declinesWhileTheEconomyHasNotStoodUp() {
-            // Mid-load: the systems are walkable but the economy behind their markets is absent,
-            // so there is nothing to count and the read stops at its guard rather than faulting
-            // on the way into one.
+
+            // ARRANGE
             var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem(SYSTEM_ID);
 
-            assertThat(planFor(sector, systemOf(sector)))
+            // ACT
+            var actualPlan = planFor(sector, systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan)
                 .isEmpty();
         }
 
+        // The economy is up and the system is in it, holding nothing. This is the decline the
+        // composition actually rides on: an uninhabited or purely claim-held system, which the
+        // claim mechanic then counts.
         @Test
         void declinesASystemNoBlocHoldsAMarketIn() {
-            // The economy is up and the system is in it, holding nothing. This is the decline the
-            // composition actually rides on: an uninhabited or purely claim-held system, which the
-            // claim mechanic then counts.
+
+            // ARRANGE
             var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
 
-            assertThat(planFor(sector, systemOf(sector)))
+            // ACT
+            var actualPlan = planFor(sector, systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan)
                 .isEmpty();
         }
 
+        // Two blocs present, so the contest gate opens. The Hegemony's two colonies outweigh
+        // Tri-Tachyon's one, so it both wins the system and leads the band - and its run is
+        // closed off in its own dark shade where the rival's begins.
         @Test
         void countsAContestedSystemUnderThePassThatPaintedIt() {
-            // Two blocs present, so the contest gate opens. The Hegemony's two colonies outweigh
-            // Tri-Tachyon's one, so it both wins the system and leads the band - and its run is
-            // closed off in its own dark shade where the rival's begins.
-            var sector = buildSectorContestedBy(HEGEMONY, TRITACHYON);
 
-            assertThat(planFor(sector, systemOf(sector)))
+            // ARRANGE
+            var sector = buildSectorContestedBy(HEGEMONY, TRITACHYON);
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            // ACT
+            var actualPlan = planFor(sector, systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan)
                 .map(RibbonPlan::segments)
-                .contains(List.of(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 3)));
+                .contains(expectedSegments);
         }
 
+        // A lone holder is present, so the mechanic speaks for the system - reporting the
+        // holder's own footprint rather than a contest. Present rather than empty is the whole
+        // distinction: an empty answer here would hand a system dominance owns outright to the
+        // claim contest.
         @Test
         void declinesNothingWhereOneBlocHoldsTheWholeSystem() {
-            // A lone holder is present, so the mechanic speaks for the system - reporting the
-            // holder's own footprint rather than a contest. Present rather than empty is the whole
-            // distinction: an empty answer here would hand a system dominance owns outright to the
-            // claim contest.
+
+            // ARRANGE
             var sector = SectorOwnershipFixtures.buildSectorWith(
                 SYSTEM_ID,
                 buildColony(HEGEMONY, LARGER_COLONY));
 
-            assertThat(planFor(sector, systemOf(sector)))
+            var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            // ACT
+            var actualPlan = planFor(sector, systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan)
                 .map(RibbonPlan::segments)
-                .contains(List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3)));
+                .contains(expectedSegments);
         }
     }
 
     @Nested
     class PlanSystemRibbon {
 
+        // The planner face answers every system, so a decline it cannot express becomes the
+        // bandless plan - which is what a view resolving this planner alone draws for a
+        // system the held mechanic does not paint.
         @Test
         void flattensADeclinedSystemToNoBand() {
-            // The planner face answers every system, so a decline it cannot express becomes the
-            // bandless plan - which is what a view resolving this planner alone draws for a
-            // system the held mechanic does not paint.
-            var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
 
-            assertThat(buildPlanner(sector).planSystemRibbon(systemOf(sector)))
-                .isEqualTo(RibbonPlan.NONE);
+            // ARRANGE
+            var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
+            var planner = buildPlanner(sector);
+            var expectedPlan = RibbonPlan.NONE;
+
+            // ACT
+            var actualPlan = planner.planSystemRibbon(systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan)
+                .isEqualTo(expectedPlan);
         }
 
         @Test
         void handsBackThePlanOfASystemItCounts() {
-            var sector = buildSectorContestedBy(HEGEMONY, TRITACHYON);
 
-            assertThat(buildPlanner(sector).planSystemRibbon(systemOf(sector)).segments())
-                .startsWith(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+            // ARRANGE
+            var sector = buildSectorContestedBy(HEGEMONY, TRITACHYON);
+            var planner = buildPlanner(sector);
+            var expectedFirstSegment = new RibbonSegment(HEGEMONY_BRIGHT, 3);
+
+            // ACT
+            var actualPlan = planner.planSystemRibbon(systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan.segments())
+                .startsWith(expectedFirstSegment);
         }
 
+        // Neutral takes no part in the contest for a system, so the band opens on the bloc the
+        // cell is painted for rather than on the placeholder outweighing it. The band and the
+        // fill settle their winner under one set of rules, and this is the case that parts them
+        // if they ever stop doing so.
         @Test
         void opensTheBandOnTheFactionSharingASystemWithAHeavierNeutralMarket() {
-            // Neutral takes no part in the contest for a system, so the band opens on the bloc the
-            // cell is painted for rather than on the placeholder outweighing it. The band and the
-            // fill settle their winner under one set of rules, and this is the case that parts them
-            // if they ever stop doing so.
+
+            // ARRANGE
             var sector = SectorOwnershipFixtures.buildSectorWith(
                 SYSTEM_ID,
                 buildColony(NEUTRAL, LARGER_COLONY),
                 buildColony(HEGEMONY, SMALLER_COLONY));
 
-            assertThat(buildPlanner(sector).planSystemRibbon(systemOf(sector)).segments())
-                .startsWith(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+            var planner = buildPlanner(sector);
+            var expectedFirstSegment = new RibbonSegment(HEGEMONY_BRIGHT, 3);
+
+            // ACT
+            var actualPlan = planner.planSystemRibbon(systemOf(sector));
+
+            // ASSERT
+            assertThat(actualPlan.segments())
+                .startsWith(expectedFirstSegment);
         }
 
         // The bake's alliance set has to reach the shared rule through this planner, or a held
@@ -185,23 +253,28 @@ final class HeldSystemRibbonPlannerIntegrationTests {
                 buildColony(HEGEMONY, LARGER_COLONY),
                 buildColony(TRITACHYON, SMALLER_COLONY));
 
+            var planner = buildPlannerUnder(sector, holding -> buildAlliedInputsFor(holding));
+            var expectedSegments = List.of(
+                new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                new RibbonSegment(HEGEMONY_DARK, 1),
+                new RibbonSegment(TRITACHYON_BRIGHT, 1));
+
             // ACT
-            var actualPlan = buildPlannerUnder(sector, holding -> buildAlliedInputsFor(holding))
-                .planSystemRibbon(systemOf(sector));
+            var actualPlan = planner.planSystemRibbon(systemOf(sector));
 
             // ASSERT
             assertThat(actualPlan.segments())
-                .containsExactly(
-                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
-                    new RibbonSegment(HEGEMONY_DARK, 1),
-                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+                .containsExactlyElementsOf(expectedSegments);
         }
     }
 
     // The planner under a pass reading the shared stability-weighted rule under the plain faction
     // grouping, which is the pass a faction-view rebuild resolves.
     private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
-        return buildPlannerUnder(sector, holding -> buildInputsFor(holding));
+
+        return buildPlannerUnder(
+            sector,
+            holding -> buildInputsFor(holding));
     }
 
     // The same planner under the inputs a case builds over its pass.
@@ -212,7 +285,10 @@ final class HeldSystemRibbonPlannerIntegrationTests {
             SectorAPI sector,
             Function<HolderPass, RibbonPlanInputs> inputsOverPass) {
 
-        var holding = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
+        var holding = HolderPass.createOver(
+            sector,
+            UNDER_THE_FOG,
+            HolderGrouping.identity());
 
         return new HeldSystemRibbonPlanner(
             DominancePass.createOver(holding, DominancePassFixtures.buildStabilityWeightedRules()),
@@ -220,10 +296,12 @@ final class HeldSystemRibbonPlannerIntegrationTests {
     }
 
     private static Optional<RibbonPlan> planFor(SectorAPI sector, StarSystemAPI system) {
+
         // The planner is built around whichever sector is posed, including none at all, since the
         // absent sector is one of the cases - so the guard is reached through the real field
         // rather than through an argument it does not have.
-        return buildPlanner(sector).planHeldSystemRibbon(system);
+        return buildPlanner(sector)
+            .planHeldSystemRibbon(system);
     }
 
     private static StarSystemAPI systemOf(SectorAPI sector) {
@@ -233,6 +311,7 @@ final class HeldSystemRibbonPlannerIntegrationTests {
     // A system two blocs hold, the first with two colonies and the second with one, so the first
     // leads on weight and the band has both a within-bloc parting and a handover to report.
     private static SectorAPI buildSectorContestedBy(String leadingBlocId, String trailingBlocId) {
+
         return SectorOwnershipFixtures.buildSectorWith(
             SYSTEM_ID,
             buildColony(leadingBlocId, LARGER_COLONY),
@@ -241,6 +320,7 @@ final class HeldSystemRibbonPlannerIntegrationTests {
     }
 
     private static MarketAPI buildColony(String factionId, int size) {
+
         return SectorOwnershipFixtures.buildVisibleMarket(
             SectorOwnershipFixtures.buildFaction(factionId),
             size);
@@ -249,6 +329,7 @@ final class HeldSystemRibbonPlannerIntegrationTests {
     // A sector holding one system with a single colony of the named bloc, for the cases whose
     // sector or system is the thing being withheld and whose contents therefore never matter.
     private static SectorAPI buildSectorHeldBy(String blocId) {
+
         return SectorOwnershipFixtures.buildSectorWith(
             SYSTEM_ID,
             buildColony(blocId, LARGER_COLONY));

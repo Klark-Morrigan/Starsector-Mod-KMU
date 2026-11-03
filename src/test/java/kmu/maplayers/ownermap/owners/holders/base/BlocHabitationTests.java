@@ -7,6 +7,7 @@ import kmlib.starsector.markets.colonies.Colony;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,13 +25,14 @@ final class BlocHabitationTests {
     class Constructor {
 
         // A band lays one member's colonies together, so the order must not depend on which
-        // member the walk reached first.
+        // member the walk reached first. An owner with no ID sorts last rather than faulting the
+        // fold it arrives in.
         @Test
-        void ordersTheOwnersByFactionId() {
+        void ordersTheOwnersByFactionIdWithAMissingIdLast() {
 
             // ARRANGE
-            var colonyOwnerIds = List.of("tritachyon", "hegemony", "tritachyon");
-            var expectedOwnerIds = List.of("hegemony", "tritachyon", "tritachyon");
+            var colonyOwnerIds = Arrays.asList("tritachyon", null, "hegemony", "tritachyon");
+            var expectedOwnerIds = Arrays.asList("hegemony", "tritachyon", "tritachyon", null);
 
             // ACT
             var actualOwnerIds = new BlocHabitation(colonyOwnerIds, 0).colonyOwnerIds();
@@ -59,6 +61,25 @@ final class BlocHabitationTests {
             // ASSERT
             assertThat(actualHabitation)
                 .isEqualTo(expectedHabitation);
+        }
+
+        // A market naming no faction ID folds under a null key the grouping later drops. Two of
+        // them in one system must still fold, so the habitation orders a missing ID rather than
+        // refusing it, and the grouping stays the one place such an owner is ruled out.
+        @Test
+        void foldsTwoColoniesWhoseOwnersCarryNoId() {
+
+            // ARRANGE
+            var habitation = BlocHabitation.EMPTY.addColony(buildColonyOf(null, 3));
+            var colony = buildColonyOf(null, 4);
+            var expectedOwnerIds = Arrays.<String>asList(null, null);
+
+            // ACT
+            var actualOwnerIds = habitation.addColony(colony).colonyOwnerIds();
+
+            // ASSERT
+            assertThat(actualOwnerIds)
+                .containsExactlyElementsOf(expectedOwnerIds);
         }
 
         @Test

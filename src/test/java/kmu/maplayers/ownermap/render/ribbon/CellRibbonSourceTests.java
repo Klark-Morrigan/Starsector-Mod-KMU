@@ -119,72 +119,113 @@ final class CellRibbonSourceTests {
     @Nested
     class BuildCellRibbon {
 
+        // No owner is posed anywhere in this suite, so the band offered here is offered on
+        // inhabitation alone - which is what a settled system has even where this layer's
+        // holding gives it to nobody.
         @Test
         void bakesABandForACellSomethingLivesIn() {
-            // No owner is posed anywhere in this suite, so the band offered here is offered on
-            // inhabitation alone - which is what a settled system has even where this layer's
-            // holding gives it to nobody.
-            assertThat(buildFor(INHABITED_SYSTEM).bands())
+
+            // ARRANGE
+            var expectedColour = BAND_COLOUR;
+
+            // ACT
+            var actualRibbon = buildFor(INHABITED_SYSTEM);
+
+            // ASSERT
+            assertThat(actualRibbon.bands())
                 .extracting(RibbonBand::colour)
-                .containsExactly(BAND_COLOUR);
+                .containsExactly(expectedColour);
         }
 
+        // The join with the holding: the cell's system arrives keyed and the inhabited set
+        // names a system by ID, so a system whose key states an anchor arm still passes the
+        // gate and is offered a band.
         @Test
         void narrowsTheDrawnSystemToTheIdTheInhabitedSetIsKeyedBy() {
-            // The join with the holding: the cell's system arrives keyed and the inhabited set
-            // names a system by ID, so a system whose key states an anchor arm still passes the
-            // gate and is offered a band.
-            assertThat(buildWith(system -> ANY_PLAN)
-                    .buildCellRibbon(CELL, ANCHORED_SYSTEM, SQUARE_CELL, passScope, bakeTally)
-                    .bands())
+
+            // ARRANGE
+            var ribbonSource = buildWith(system -> ANY_PLAN);
+            var expectedColour = BAND_COLOUR;
+
+            // ACT
+            var actualRibbon = ribbonSource.buildCellRibbon(
+                CELL,
+                ANCHORED_SYSTEM,
+                SQUARE_CELL,
+                passScope,
+                bakeTally);
+
+            // ASSERT
+            assertThat(actualRibbon.bands())
                 .extracting(RibbonBand::colour)
-                .containsExactly(BAND_COLOUR);
+                .containsExactly(expectedColour);
         }
 
+        // Nobody is there, so there are no stakes for a band to report how a system splits
+        // between.
         @Test
         void drawsNoBandForACellNothingLivesIn() {
-            // Nobody is there, so there are no stakes for a band to report how a system splits
-            // between.
-            assertThat(buildFor(EMPTY_SYSTEM))
-                .isEqualTo(CellRibbon.NONE);
+
+            // ARRANGE
+            var expectedRibbon = CellRibbon.NONE;
+
+            // ACT
+            var actualRibbon = buildFor(EMPTY_SYSTEM);
+
+            // ASSERT
+            assertThat(actualRibbon)
+                .isEqualTo(expectedRibbon);
         }
 
+        // The cost half of the gate: a mechanic that weighs a system's economy walks every
+        // settlement in it, and most of the sector is empty space.
         @Test
         void asksNoPlannerAboutACellNothingLivesIn() {
-            // The cost half of the gate: a mechanic that weighs a system's economy walks every
-            // settlement in it, and most of the sector is empty space.
+
+            // ARRANGE
             var plannerMock = mock(SystemRibbonPlanner.class);
+            var ribbonSource = buildWith(plannerMock);
 
-            buildWith(plannerMock)
-                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, passScope, bakeTally);
+            // ACT
+            ribbonSource.buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, passScope, bakeTally);
 
+            // ASSERT
             verify(plannerMock, never())
                 .planSystemRibbon(any());
         }
 
+        // The one phase of a bake that grows with what the systems hold rather than with the
+        // cells - a mechanic that weighs a system's economy walks every settlement in it - so it is worth
+        // its own number only if it is marked where the count ends rather than swept into the ring
+        // work that follows it.
         @Test
         void marksTheCountOnThePassApartFromTheGeometry() {
-            // The one phase of a bake that grows with what the systems hold rather than with the
-            // cells - a mechanic that weighs a system's economy walks every settlement in it - so it is worth
-            // its own number only if it is marked where the count ends rather than swept into the ring
-            // work that follows it.
+
+            // ARRANGE
             var bakeScopeMock = mock(IterationScope.class);
+            var ribbonSource = buildWith(system -> ANY_PLAN);
+            var expectedPhase = RibbonBakePhases.PLAN_PHASE;
 
-            buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, bakeScopeMock, bakeTally);
+            // ACT
+            ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, bakeScopeMock, bakeTally);
 
-            verify(bakeScopeMock).markPhase(RibbonBakePhases.PLAN_PHASE);
+            // ASSERT
+            verify(bakeScopeMock).markPhase(expectedPhase);
         }
 
+        // The gate's cost half, stated as what a gated-out cell adds to the bake: nothing was
+        // counted for it, so no phase of it is marked either.
         @Test
         void marksNothingForACellNothingLivesIn() {
-            // The gate's cost half, stated as what a gated-out cell adds to the bake: nothing was
-            // counted for it, so no phase of it is marked either.
+
+            // ARRANGE
             var bakeScopeMock = mock(IterationScope.class);
+            var ribbonSource = buildWith(system -> ANY_PLAN);
 
-            buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, bakeScopeMock, bakeTally);
+            // ACT
+            ribbonSource.buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, bakeScopeMock, bakeTally);
 
+            // ASSERT
             verifyNoInteractions(bakeScopeMock);
         }
 
@@ -206,53 +247,91 @@ final class CellRibbonSourceTests {
                 .isEqualTo(expectedTally);
         }
 
+        // A cell drawn as no system names nowhere anyone could be living, so the null ID is
+        // answered rather than used as a key.
         @Test
         void drawsNoBandForACellWithNoStarOfItsOwn() {
-            // A cell drawn as no system names nowhere anyone could be living, so the null ID is
-            // answered rather than used as a key.
-            assertThat(buildFor(null))
-                .isEqualTo(CellRibbon.NONE);
-        }
 
-        @Test
-        void drawsNoBandForASettledSystemWithNoRecordedSite() {
-            // The band starts above the cell's own site. With none there is nowhere to start from,
-            // which is the same answer as an empty cell rather than a start point invented for it.
-            assertThat(buildFor(SITELESS_SYSTEM))
-                .isEqualTo(CellRibbon.NONE);
-        }
-
-        @Test
-        void drawsNoBandForASettledSystemTheSectorNoLongerLists() {
-            // Nothing is left to count, so the cell takes the unpainted cell's answer rather than a
-            // band counted off a stand-in for the system that went.
+            // ARRANGE
             var expectedRibbon = CellRibbon.NONE;
-            var actualRibbon = buildFor(DELISTED_SYSTEM);
 
+            // ACT
+            var actualRibbon = buildFor(null);
+
+            // ASSERT
             assertThat(actualRibbon)
                 .isEqualTo(expectedRibbon);
         }
 
+        // The band starts above the cell's own site. With none there is nowhere to start from,
+        // which is the same answer as an empty cell rather than a start point invented for it.
+        @Test
+        void drawsNoBandForASettledSystemWithNoRecordedSite() {
+
+            // ARRANGE
+            var expectedRibbon = CellRibbon.NONE;
+
+            // ACT
+            var actualRibbon = buildFor(SITELESS_SYSTEM);
+
+            // ASSERT
+            assertThat(actualRibbon)
+                .isEqualTo(expectedRibbon);
+        }
+
+        // Nothing is left to count, so the cell takes the unpainted cell's answer rather than a
+        // band counted off a stand-in for the system that went.
+        @Test
+        void drawsNoBandForASettledSystemTheSectorNoLongerLists() {
+
+            // ARRANGE
+            var expectedRibbon = CellRibbon.NONE;
+
+            // ACT
+            var actualRibbon = buildFor(DELISTED_SYSTEM);
+
+            // ASSERT
+            assertThat(actualRibbon)
+                .isEqualTo(expectedRibbon);
+        }
+
+        // A planner handed a system the sector has let go of would count a footprint nothing
+        // else on the map still reads, so the refusal comes before the count.
         @Test
         void asksNoPlannerAboutASettledSystemTheSectorNoLongerLists() {
-            // A planner handed a system the sector has let go of would count a footprint nothing
-            // else on the map still reads, so the refusal comes before the count.
+
+            // ARRANGE
             var plannerMock = mock(SystemRibbonPlanner.class);
+            var ribbonSource = buildWith(plannerMock);
 
-            buildWith(plannerMock)
-                .buildCellRibbon(CELL, buildCellKey(DELISTED_SYSTEM), SQUARE_CELL, passScope, bakeTally);
+            // ACT
+            ribbonSource.buildCellRibbon(CELL, buildCellKey(DELISTED_SYSTEM), SQUARE_CELL, passScope, bakeTally);
 
+            // ASSERT
             verify(plannerMock, never())
                 .planSystemRibbon(any());
         }
 
+        // A settled cell where nothing the layer counts is present, so there is no footprint
+        // for a band to report.
         @Test
         void drawsNoBandForACellWhosePlanIsEmpty() {
-            // A settled cell where nothing the layer counts is present, so there is no footprint
-            // for a band to report.
-            assertThat(buildWith(system -> RibbonPlan.NONE)
-                    .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope, bakeTally))
-                .isEqualTo(CellRibbon.NONE);
+
+            // ARRANGE
+            var ribbonSource = buildWith(system -> RibbonPlan.NONE);
+            var expectedRibbon = CellRibbon.NONE;
+
+            // ACT
+            var actualRibbon = ribbonSource.buildCellRibbon(
+                CELL,
+                buildCellKey(INHABITED_SYSTEM),
+                SQUARE_CELL,
+                passScope,
+                bakeTally);
+
+            // ASSERT
+            assertThat(actualRibbon)
+                .isEqualTo(expectedRibbon);
         }
     }
 
@@ -262,25 +341,48 @@ final class CellRibbonSourceTests {
         @Test
         void tracesAPathForACellSomethingLivesIn() {
 
-            assertThat(traceFor(INHABITED_SYSTEM).verdict())
-                .isEqualTo(RibbonPathVerdict.LAID_AT_PAD);
+            // ARRANGE
+            var expectedVerdict = RibbonPathVerdict.LAID_AT_PAD;
+
+            // ACT
+            var actualPath = traceFor(INHABITED_SYSTEM);
+
+            // ASSERT
+            assertThat(actualPath.verdict())
+                .isEqualTo(expectedVerdict);
         }
 
+        // The overlay covers the cells the band pass considered and no more. Traced for every
+        // cell instead, it would ring every piece of empty space in the sector and bury the
+        // cells it is looked at to explain.
         @Test
         void tracesNoPathForACellNothingLivesIn() {
-            // The overlay covers the cells the band pass considered and no more. Traced for every
-            // cell instead, it would ring every piece of empty space in the sector and bury the
-            // cells it is looked at to explain.
-            assertThat(traceFor(EMPTY_SYSTEM))
-                .isEqualTo(CellRibbonPath.NONE);
+
+            // ARRANGE
+            var expectedPath = CellRibbonPath.NONE;
+
+            // ACT
+            var actualPath = traceFor(EMPTY_SYSTEM);
+
+            // ASSERT
+            assertThat(actualPath)
+                .isEqualTo(expectedPath);
         }
 
+        // A path opens above the cell's own site, so a system without one has no start to
+        // trace from - the same answer the band pass gives it.
         @Test
         void tracesNoPathForASettledSystemWithNoRecordedSite() {
-            // A path opens above the cell's own site, so a system without one has no start to
-            // trace from - the same answer the band pass gives it.
-            assertThat(traceFor(SITELESS_SYSTEM))
-                .isEqualTo(CellRibbonPath.NONE);
+
+            // ARRANGE
+            var expectedPath = CellRibbonPath.NONE;
+
+            // ACT
+            var actualPath = traceFor(SITELESS_SYSTEM);
+
+            // ASSERT
+            assertThat(actualPath)
+                .isEqualTo(expectedPath);
         }
     }
 
@@ -308,34 +410,44 @@ final class CellRibbonSourceTests {
                 .isSameAs(expectedPlanRules);
         }
 
+        // The bake counts off the walk its caller opened - the rebuild's own in the same frame,
+        // a batch's on its own cadence - so a planner asked over any other would count a sector
+        // the cells were not cut from.
         @Test
         void asksTheSourceForItsMechanicOverTheHandedWalk() {
-            // The bake counts off the walk its caller opened - the rebuild's own in the same frame,
-            // a batch's on its own cadence - so a planner asked over any other would count a sector
-            // the cells were not cut from.
-            var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
-            var walk = buildWalkOverTheStandingSystems();
 
+            // ARRANGE
+            var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
+            var expectedWalk = buildWalkOverTheStandingSystems();
+
+            // ACT
             CellRibbonSource.createForPass(
-                walk,
+                expectedWalk,
                 sourceFake,
                 buildSurface(),
                 SETTINGS.ribbonStyle(),
                 SETTINGS.planRules());
 
-            assertThat(sourceFake.readRibbonPlannerWalks())
+            // ASSERT
+            var actualPlannerWalks = sourceFake.readRibbonPlannerWalks();
+
+            assertThat(actualPlannerWalks)
                 .singleElement()
-                .isSameAs(walk);
+                .isSameAs(expectedWalk);
         }
 
+        // Sampled with the sizes and the laying rules, and for the same reason: a mechanic
+        // whose inputs moved while a bake was running would otherwise leave one cell banded as a
+        // contest between two owners and the cell beside it banded as their joint holding.
         @Test
         void asksTheSourceForItsMechanicOnceHoweverManyCellsAreBaked() {
-            // Sampled with the sizes and the laying rules, and for the same reason: a mechanic
-            // whose inputs moved while a bake was running would otherwise leave one cell banded as a
-            // contest between two owners and the cell beside it banded as their joint holding.
+
+            // ARRANGE
             var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
             var ribbonSource = buildThrough(sourceFake);
+            var expectedPlannerWalkCount = 1;
 
+            // ACT
             ribbonSource.buildCellRibbon(
                 CELL,
                 buildCellKey(INHABITED_SYSTEM),
@@ -350,8 +462,11 @@ final class CellRibbonSourceTests {
                 passScope,
                 bakeTally);
 
-            assertThat(sourceFake.readRibbonPlannerWalks())
-                .hasSize(1);
+            // ASSERT
+            var actualPlannerWalks = sourceFake.readRibbonPlannerWalks();
+
+            assertThat(actualPlannerWalks)
+                .hasSize(expectedPlannerWalkCount);
         }
     }
 

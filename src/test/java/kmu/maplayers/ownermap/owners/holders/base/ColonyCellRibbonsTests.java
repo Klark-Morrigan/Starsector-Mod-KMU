@@ -10,6 +10,7 @@ import kmu.maplayers.base.ribbon.RibbonSegment;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -261,7 +262,9 @@ final class ColonyCellRibbonsTests {
 
             // ARRANGE
             var systemMock = mock(StarSystemAPI.class);
-            var inputs = buildAlliedInputsFor(stubPassHolding(systemMock, HEGEMONY, VANISHED_BLOC));
+            var palettes = RibbonPlanFixtures.buildShadedPalettes();
+            var colonyOwnerIdsByBlocId = collectOneColonyPerName(HEGEMONY, VANISHED_BLOC);
+            var inputs = buildAlliedInputsFor(stubPassHolding(systemMock, palettes, colonyOwnerIdsByBlocId));
             var expectedSegments = List.of(new RibbonSegment(HEGEMONY_BRIGHT, 1));
 
             // ACT
@@ -304,7 +307,8 @@ final class ColonyCellRibbonsTests {
                 .thenReturn(PERSEAN_PALETTE);
 
             // ACT
-            var actualSegments = planForMembers(
+            var actualSegments = planForColonyOwners(
+                Optional.of(GROUP_BLOC_ID),
                 List.of(GROUP_BLOC_ID, PERSEAN),
                 palettesMock,
                 colonyOwnerIdsByBlocId).segments();
@@ -335,7 +339,8 @@ final class ColonyCellRibbonsTests {
                 .thenReturn(TRITACHYON_PALETTE);
 
             // ACT
-            var actualSegments = planForMembers(
+            var actualSegments = planForColonyOwners(
+                Optional.of(GROUP_BLOC_ID),
                 List.of(GROUP_BLOC_ID, TRITACHYON),
                 palettesMock,
                 colonyOwnerIdsByBlocId).segments();
@@ -362,7 +367,8 @@ final class ColonyCellRibbonsTests {
                 .thenReturn(HEGEMONY_PALETTE);
 
             // ACT
-            var actualSegments = planForMembers(
+            var actualSegments = planForColonyOwners(
+                Optional.of(HEGEMONY),
                 List.of(HEGEMONY, GROUP_BLOC_ID),
                 palettesMock,
                 colonyOwnerIdsByBlocId).segments();
@@ -373,43 +379,28 @@ final class ColonyCellRibbonsTests {
         }
     }
 
-    // The band for one cell painted for the first ranked bloc, whose system holds the colonies each
-    // bloc is mapped to - by the faction owning each one - coloured through the palette read given.
-    private static RibbonPlan planForMembers(
-            List<String> rankedBlocIds,
-            SectorBlocPalettes palettes,
-            Map<String, List<String>> colonyOwnerIdsByBlocId) {
-
-        var habitationByBlocId = new LinkedHashMap<String, BlocHabitation>();
-
-        for (var blocId : rankedBlocIds) {
-            habitationByBlocId.put(
-                blocId,
-                new BlocHabitation(colonyOwnerIdsByBlocId.get(blocId), COLONY_SIZE));
-        }
-
-        var systemMock = mock(StarSystemAPI.class);
-        var passMock = mock(HolderPass.class);
-
-        when(passMock.readHabitationIn(systemMock))
-            .thenReturn(new SystemHabitation(List.of(), habitationByBlocId));
-        when(passMock.palettes())
-            .thenReturn(palettes);
-
-        return ColonyCellRibbons.planCellRibbon(
-            Optional.of(rankedBlocIds.get(0)),
-            systemMock,
-            rankedBlocIds,
-            buildInputsFor(passMock));
-    }
-
-    // The band for one cell whose system holds one colony per named bloc, under the standard laying
-    // rules and nobody standing with anybody - leaving a case to state the painter, the ranking and
-    // who lives there.
+    // The band for one cell whose system holds one colony per named bloc, each owned by the bloc
+    // itself and coloured in the shared shades, under the standard laying rules and nobody standing
+    // with anybody - leaving a case to state the painter, the ranking and who lives there.
     private static RibbonPlan planFor(
             Optional<String> paintingBlocId,
             List<String> rankedBlocIds,
             String... colonyBlocIds) {
+
+        return planForColonyOwners(
+            paintingBlocId,
+            rankedBlocIds,
+            RibbonPlanFixtures.buildShadedPalettes(),
+            collectOneColonyPerName(colonyBlocIds));
+    }
+
+    // The band for one cell whose system holds the colonies each bloc is mapped to - by the faction
+    // owning each one - coloured through the palette read given.
+    private static RibbonPlan planForColonyOwners(
+            Optional<String> paintingBlocId,
+            List<String> rankedBlocIds,
+            SectorBlocPalettes palettes,
+            Map<String, List<String>> colonyOwnerIdsByBlocId) {
 
         var systemMock = mock(StarSystemAPI.class);
 
@@ -417,24 +408,35 @@ final class ColonyCellRibbonsTests {
             paintingBlocId,
             systemMock,
             rankedBlocIds,
-            buildInputsFor(stubPassHolding(systemMock, colonyBlocIds)));
+            buildInputsFor(stubPassHolding(systemMock, palettes, colonyOwnerIdsByBlocId)));
     }
 
-    // A pass answering the system's habitation as one colony per named bloc, folded in the order
-    // named - a bloc named twice lives on two colonies there.
-    private static HolderPass stubPassHolding(StarSystemAPI system, String... colonyBlocIds) {
+    // One colony per name, owned by the bloc it names - a bloc named twice lives on two colonies.
+    private static Map<String, List<String>> collectOneColonyPerName(String... colonyBlocIds) {
+
+        var colonyOwnerIdsByBlocId = new LinkedHashMap<String, List<String>>();
+
+        for (var blocId : colonyBlocIds) {
+            colonyOwnerIdsByBlocId
+                .computeIfAbsent(blocId, absentBlocId -> new ArrayList<>())
+                .add(blocId);
+        }
+        return colonyOwnerIdsByBlocId;
+    }
+
+    // A pass answering the system's habitation as the colonies each bloc is mapped to, and its
+    // palette read as the one given.
+    private static HolderPass stubPassHolding(
+            StarSystemAPI system,
+            SectorBlocPalettes palettes,
+            Map<String, List<String>> colonyOwnerIdsByBlocId) {
 
         var habitationByBlocId = new LinkedHashMap<String, BlocHabitation>();
 
-        for (var blocId : colonyBlocIds) {
-            habitationByBlocId.merge(
-                blocId,
-                new BlocHabitation(List.of(blocId), COLONY_SIZE),
-                BlocHabitation::addHabitation);
-        }
+        colonyOwnerIdsByBlocId.forEach((blocId, colonyOwnerIds) -> habitationByBlocId.put(
+            blocId,
+            new BlocHabitation(colonyOwnerIds, COLONY_SIZE)));
 
-        // Built ahead of the stubbing below, since it stubs mocks of its own.
-        var palettes = RibbonPlanFixtures.buildShadedPalettes();
         var passMock = mock(HolderPass.class);
 
         when(passMock.readHabitationIn(system))

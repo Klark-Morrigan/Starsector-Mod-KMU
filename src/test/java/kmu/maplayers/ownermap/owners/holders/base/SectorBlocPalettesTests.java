@@ -3,6 +3,8 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.colour.ColourPair;
+import kmlib.logging.RearmableWarnings;
+import kmlib.testfixtures.logging.LogAppenderFake;
 
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.starsector.SectorFactionFixtures;
@@ -239,6 +241,52 @@ final class SectorBlocPalettesTests {
             // ASSERT
             assertThat(actualOwner)
                 .isNull();
+        }
+
+        // A faction gone from the sector costs its bloc every system and band segment, so the log
+        // says so - once, since every rebuild opens a fresh pass and the faction stays gone.
+        @Test
+        void warnsOnceAcrossTwoPassesThatAColourFactionIsGone() {
+
+            // ARRANGE
+            var sectorMock = mock(SectorAPI.class);
+            var firstPass = new SectorBlocPalettes(sectorMock, HolderGrouping.identity());
+            var secondPass = new SectorBlocPalettes(sectorMock, HolderGrouping.identity());
+            var expectedMessageCount = 1;
+
+            RearmableWarnings.rearmAllWarnings();
+
+            // ACT
+            var actualLog = LogAppenderFake.captureLogOf(
+                SectorBlocPalettes.class,
+                () -> {
+                    firstPass.resolveOwnerOf("vanished");
+                    secondPass.resolveOwnerOf("vanished");
+                });
+
+            // ASSERT
+            assertThat(actualLog.getMessages())
+                .hasSize(expectedMessageCount)
+                .allSatisfy(message -> assertThat(message).contains("vanished"));
+        }
+
+        // Outside a running game there is no sector to have lost a faction, so nothing is said.
+        @Test
+        void warnsNothingWithoutASector() {
+
+            // ARRANGE
+            var palettes = new SectorBlocPalettes(null, HolderGrouping.identity());
+
+            RearmableWarnings.rearmAllWarnings();
+
+            // ACT
+            var actualLog = LogAppenderFake.captureLogOf(
+                SectorBlocPalettes.class,
+                () -> palettes.resolveOwnerOf("vanished"));
+
+            // ASSERT
+            assertThat(actualLog.getMessages())
+                .isEmpty();
         }
 
         // Every system a bloc holds asks for its owner, so the pass hands each of them the one

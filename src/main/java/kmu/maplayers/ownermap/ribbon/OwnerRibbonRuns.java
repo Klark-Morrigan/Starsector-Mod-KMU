@@ -12,7 +12,7 @@ import java.util.Optional;
 
 /**
  * Lays an owner-painted cell's band: every owner present in the cell in the order it was ranked,
- * each contributing a segment per stake it has and an interjection between two of its own.
+ * each contributing a segment per stake it has and a parting between two of its own.
  *
  * <p>What the band says is how a system splits - how many stakes, whose, and in what proportion -
  * with no glyph and no label, so the segment going out carries each parting in its own dark shade.
@@ -199,6 +199,6 @@ public final class OwnerRibbonRuns {
 
         return new RibbonSegment(
             outgoingPalette.secondaryColour(),
-            lengths.interjectionLengthUnits());
+            lengths.partingLengthUnits());
     }
 }

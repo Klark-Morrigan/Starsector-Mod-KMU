@@ -156,6 +156,7 @@
 | `SidebarStyles.buildSidebarSoundScheme()` | `SidebarSounds.buildSoundScheme()` |
 | `MapPalettes.pickHolderPaletteColour(ElementPaintSelection, SystemOwner, Color)` | `pickOwnerPaletteColour(ElementPaintSelection, SystemOwner, Color)` |
 | `OwnerPresence` 的 `palette` 和 `marketCount`，连同 `palette()`、`marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakePalettes`，按绘制顺序每个份额一个 `ColourPair`，连同 `stakePalettes()` 和 `hasStakes()`，以及 `stakeLengthUnits()`。分隔段取自其前一分段自身的暗色，因此同一所有者的各份额可用不同配色绘制。所有者地图的核心不使用 *holder* 和 *market* 二词，构建会确保这一点 |
+| `RibbonSegmentLengths.interjectionLengthUnits()` 和 `KmuOwnerMapRibbonSettings.getOwnerMapRibbonInterjectionLength()` | `partingLengthUnits()` 和 `getOwnerMapRibbonPartingLength()`：色带中两个分段之间的暗色分段统一称为*分隔段*。LunaSettings 字段 ID 保持原有拼写 |
 | `BlocPaletteReader.readBlocPalette(String)` | `RibbonPaletteReader.readSegmentPalette(String, String)`，按殖民地询问其计入的集团及拥有它的势力：分组决定色段是什么，配色读取决定分段是什么。`SectorBlocPalettes` 对每个成员都返回集团的配色，并保留 `readBlocPalette(String)` |
 | `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`：它为集团排名 |
 | `SystemOwnerResolve`、`SystemHolderResolve`、`SystemHolderResolveSource`、`DominanceSystemHolderResolve` 和 `ClaimSystemHolderResolve`，以及 `OwnerSource.openSystemResolve(SectorWalk, String)`、`openResolveOver` 和 `HolderPaintedView.resolveSystemHolderResolveSource()` | 各名称中的 `Resolve` 换为 `Resolver`：解析器是批次重新解析其已标记星系所用的对象 |

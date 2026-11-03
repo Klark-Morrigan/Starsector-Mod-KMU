@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import kmlib.starsector.markets.colonies.Colony;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -25,6 +26,14 @@ public record BlocHabitation(
     List<String> colonyOwnerIds,
     int colonySize) {
 
+    // Faction ID order, with an owner carrying no ID last. Such an owner is folded under a key the
+    // grouping names no bloc for, so its habitation never reaches a band; ordering it rather than
+    // refusing it leaves that rule to the grouping alone.
+    //
+    // Declared ahead of EMPTY, whose construction sorts through it.
+    private static final Comparator<String> OWNER_ID_ORDER =
+        Comparator.nullsLast(Comparator.naturalOrder());
+
     /** A bloc living on nothing, which is the fold's identity. */
     public static final BlocHabitation EMPTY = new BlocHabitation(List.of(), 0);
 
@@ -36,13 +45,12 @@ public record BlocHabitation(
 
         colonyOwnerIds = colonyOwnerIds
             .stream()
-            .sorted()
+            .sorted(OWNER_ID_ORDER)
             .toList();
     }
 
     /**
-     * @param colony a colony the bloc lives on; its owner must carry an ID, which every colony
-     *               folded into a bloc does
+     * @param colony a colony the bloc lives on
      * @return this habitation with one more colony, of that colony's size and owner
      */
     public BlocHabitation addColony(Colony colony) {

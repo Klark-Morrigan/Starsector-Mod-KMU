@@ -39,7 +39,7 @@ import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.base.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -106,66 +106,99 @@ final class CellRibbonsBakerTests {
         @Test
         void bandsEveryCellTheMapDrew() {
 
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
+            var expectedCellKeys = Set.of(BANDED_CELL, OTHER_BANDED_CELL);
 
+            // ACT
             bakeEveryCellThrough(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
-                .containsOnlyKeys(BANDED_CELL, OTHER_BANDED_CELL);
+            // ASSERT
+            var actualRibbons = clusters
+                .getPaintedCells()
+                .getRibbonStore()
+                .getRibbonByCellKey();
+
+            assertThat(actualRibbons)
+                .containsOnlyKeys(expectedCellKeys);
         }
 
+        // The wiring the whole step turns on, and the one case that can fail if the bake reads
+        // the wrong set: the pass gates on what the sector holds, not on what this layer
+        // painted, so a haven no owner holds is offered a band like any settled cell. Handed
+        // the owner map instead, this cell would be skipped and every other case here would
+        // still pass.
         @Test
         void bandsASettledCellThisLayersHoldingGivesToNobody() {
-            // The wiring the whole step turns on, and the one case that can fail if the bake reads
-            // the wrong set: the pass gates on what the sector holds, not on what this layer
-            // painted, so a haven no owner holds is offered a band like any settled cell. Handed
-            // the owner map instead, this cell would be skipped and every other case here would
-            // still pass.
-            var clusters = buildHeldAndUnheldDrawnCells();
 
+            // ARRANGE
+            var clusters = buildHeldAndUnheldDrawnCells();
+            var expectedCellKeys = Set.of(BANDED_CELL, UNHELD_SETTLED_CELL);
+
+            // ACT
             bakeEveryCellThrough(clusters);
 
-            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
-                .containsOnlyKeys(BANDED_CELL, UNHELD_SETTLED_CELL);
+            // ASSERT
+            var actualRibbons = clusters
+                .getPaintedCells()
+                .getRibbonStore()
+                .getRibbonByCellKey();
+
+            assertThat(actualRibbons)
+                .containsOnlyKeys(expectedCellKeys);
         }
 
+        // What the readout has to answer is what a cell costs, and that is a turn of the bake
+        // rather than a call of it: a section per phase would report what a whole pass spent
+        // and leave the number a rebuild scales with to be divided out by hand.
         @Test
         void reportsThePassAsOneRowRunningATurnPerCell() {
-            // What the readout has to answer is what a cell costs, and that is a turn of the bake
-            // rather than a call of it: a section per phase would report what a whole pass spent
-            // and leave the number a rebuild scales with to be divided out by hand.
+
+            // ARRANGE
             // The pass is posed before anything is recording. Posing it reads the sector, and
             // those reads count what they walked onto the reserved row; in play the same reads
             // happen inside the refresh that mints the pass, on that beat's own row.
             var baker = bakeThrough(buildTwoDrawnCells());
-            var bakeRow = RecordedCapture
+            var expectedCallCount = 1;
+            var expectedTurnCount = 2;
+            var expectedPhaseNames = List.of("plan", "trace", "carve", "stroke");
+
+            // ACT
+            var actualBakeRow = RecordedCapture
                 .recordWhile(baker::bakeAllCellRibbons)
                 .findNode(BAKE_SECTION);
 
-            assertThat(bakeRow.getTiming().getCount())
-                .isEqualTo(1);
-            assertThat(bakeRow.getIterations().getCount())
-                .isEqualTo(2);
-            assertThat(bakeRow.getIterations().getPhaseTotals())
+            // ASSERT
+            assertThat(actualBakeRow.getTiming().getCount())
+                .isEqualTo(expectedCallCount);
+            assertThat(actualBakeRow.getIterations().getCount())
+                .isEqualTo(expectedTurnCount);
+            assertThat(actualBakeRow.getIterations().getPhaseTotals())
                 .extracting(phaseTotal -> phaseTotal.getPhase().getName())
-                .containsExactly("plan", "trace", "carve", "stroke");
+                .containsExactlyElementsOf(expectedPhaseNames);
         }
 
+        // The number the pass's duration is read against, reported where the profiler sees
+        // it. What became of them is on the call's tag instead, being a fact about one call
+        // rather than a volume of work.
         @Test
         void countsTheCellsItWasAskedToBand() {
-            // The number the pass's duration is read against, reported where the profiler sees
-            // it. What became of them is on the call's tag instead, being a fact about one call
-            // rather than a volume of work.
-            var baker = bakeThrough(buildTwoDrawnCells());
 
-            var bakeRow = RecordedCapture
+            // ARRANGE
+            var baker = bakeThrough(buildTwoDrawnCells());
+            var expectedCellCount = 2;
+            var expectedTag = "banded=2 traced=2 reused=0 unplanned=0 refusedForRoom=0";
+
+            // ACT
+            var actualBakeRow = RecordedCapture
                 .recordWhile(baker::bakeAllCellRibbons)
                 .findNode(BAKE_SECTION);
 
-            assertThat(bakeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
-                .isEqualTo(2);
-            assertThat(bakeRow.getWorstCall().getTag())
-                .isEqualTo("banded=2 traced=2 reused=0 unplanned=0 refusedForRoom=0");
+            // ASSERT
+            assertThat(actualBakeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
+                .isEqualTo(expectedCellCount);
+            assertThat(actualBakeRow.getWorstCall().getTag())
+                .isEqualTo(expectedTag);
         }
 
         // The kept rings' saving, stated on the call a later bake writes: both cells laid along
@@ -274,16 +307,20 @@ final class CellRibbonsBakerTests {
                 .isNotSameAs(ringBeforeReshape);
         }
 
+        // The overlay rides the same loop as the bands, so every cell the pass bands is a cell
+        // it traces: a path missing beside a band would leave the one cell a reader looked at
+        // with nothing to compare its band against.
         @Test
         void tracesAPathForEveryCellWhileTheOverlayIsOn() {
-            // The overlay rides the same loop as the bands, so every cell the pass bands is a cell
-            // it traces: a path missing beside a band would leave the one cell a reader looked at
-            // with nothing to compare its band against.
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
             var expectedCellKeys = Set.of(BANDED_CELL, OTHER_BANDED_CELL);
 
+            // ACT
             bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsTracingPaths());
 
+            // ASSERT
             var actualCellKeys = clusters
                 .getPaintedCells()
                 .getRibbonStore()
@@ -294,15 +331,20 @@ final class CellRibbonsBakerTests {
                 .isEqualTo(expectedCellKeys);
         }
 
+        // Nothing else empties them: a settings change rebuilds every cell, and the pass that
+        // runs with the overlay off has to be what takes the old paths down.
         @Test
         void clearsThePathsAPassTakenWithTheOverlayOnLeftBehind() {
-            // Nothing else empties them: a settings change rebuilds every cell, and the pass that
-            // runs with the overlay off has to be what takes the old paths down.
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
 
             bakeEveryCellThrough(clusters, RibbonSettingsFixtures.createSettingsTracingPaths());
+
+            // ACT
             bakeEveryCellThrough(clusters);
 
+            // ASSERT
             var actualRibbonPaths = clusters
                 .getPaintedCells()
                 .getRibbonStore()
@@ -398,30 +440,52 @@ final class CellRibbonsBakerTests {
     @Nested
     class BakeCellRibbonsOf {
 
+        // The incremental path: a marked change disturbs a handful of cells, and the rest of
+        // the map keeps the bands it already carries rather than being re-baked around them.
         @Test
         void bandsOnlyTheCellsItWasNamed() {
-            // The incremental path: a marked change disturbs a handful of cells, and the rest of
-            // the map keeps the bands it already carries rather than being re-baked around them.
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
+            var baker = bakeThrough(clusters);
+            var expectedCellKeys = Set.of(BANDED_CELL);
 
-            bakeThrough(clusters).bakeCellRibbonsOf(List.of(BANDED_CELL));
+            // ACT
+            baker.bakeCellRibbonsOf(List.of(BANDED_CELL));
 
-            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
-                .containsOnlyKeys(BANDED_CELL);
+            // ASSERT
+            var actualRibbons = clusters
+                .getPaintedCells()
+                .getRibbonStore()
+                .getRibbonByCellKey();
+
+            assertThat(actualRibbons)
+                .containsOnlyKeys(expectedCellKeys);
         }
 
+        // A caller names the cells something happened to, and one of them losing the last
+        // thing standing in it is one of the things that can have happened - so a cell with no
+        // shape to bake inside is skipped rather than being an error the refresh has to guard
+        // against.
         @Test
         void passesOverACellTheMapNeverDrew() {
-            // A caller names the cells something happened to, and one of them losing the last
-            // thing standing in it is one of the things that can have happened - so a cell with no
-            // shape to bake inside is skipped rather than being an error the refresh has to guard
-            // against.
+
+            // ARRANGE
             var clusters = buildTwoDrawnCells();
+            var baker = bakeThrough(clusters);
 
-            assertThatCode(() -> bakeThrough(clusters).bakeCellRibbonsOf(List.of(UNDRAWN_CELL)))
-                .doesNotThrowAnyException();
+            // ACT
+            var actualThrown = catchThrowable(() -> baker.bakeCellRibbonsOf(List.of(UNDRAWN_CELL)));
 
-            assertThat(clusters.getPaintedCells().getRibbonStore().getRibbonByCellKey())
+            // ASSERT
+            var actualRibbons = clusters
+                .getPaintedCells()
+                .getRibbonStore()
+                .getRibbonByCellKey();
+
+            assertThat(actualThrown)
+                .isNull();
+            assertThat(actualRibbons)
                 .isEmpty();
         }
     }

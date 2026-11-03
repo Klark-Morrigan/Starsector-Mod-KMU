@@ -33,7 +33,7 @@ final class RibbonBakeSettingsTests {
     private static final double WIDTH_WORLD = 111.0;
     private static final double INSET_PAD_WORLD = 22.0;
     private static final int SEGMENT_LENGTH_UNITS = 7;
-    private static final int INTERJECTION_LENGTH_UNITS = 4;
+    private static final int PARTING_LENGTH_UNITS = 4;
 
     // Each switch and the one choice read as the opposite of what they ship as.
     private static final boolean RIBBONS_DRAWN = false;
@@ -68,8 +68,8 @@ final class RibbonBakeSettingsTests {
             .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonSegmentLength)
             .thenReturn(SEGMENT_LENGTH_UNITS);
         settingsMock
-            .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonInterjectionLength)
-            .thenReturn(INTERJECTION_LENGTH_UNITS);
+            .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonPartingLength)
+            .thenReturn(PARTING_LENGTH_UNITS);
         settingsMock
             .when(KmuOwnerMapRibbonSettings::shouldAlwaysDrawOwnerMapRibbons)
             .thenReturn(BAND_ALWAYS_DRAWN);

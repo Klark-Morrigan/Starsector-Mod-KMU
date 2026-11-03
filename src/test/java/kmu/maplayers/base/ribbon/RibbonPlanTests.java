@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 /**
  * Pins a plan as the value the drawn band reads: what its segments add up to, when two plans are
@@ -79,72 +79,113 @@ final class RibbonPlanTests {
         @Test
         void addsUpEveryRunItWasBuiltFrom() {
 
+            // ARRANGE
+            var expectedLengthUnits = 7;
             var plan = new RibbonPlan(List.of(
                 new RibbonSegment(FIRST_RUN_COLOUR, 3),
                 new RibbonSegment(PARTING_COLOUR, 1),
                 new RibbonSegment(SECOND_RUN_COLOUR, 3)));
 
-            assertThat(plan.sumLengthUnits())
-                .isEqualTo(7);
+            // ACT
+            var actualLengthUnits = plan.sumLengthUnits();
+
+            // ASSERT
+            assertThat(actualLengthUnits)
+                .isEqualTo(expectedLengthUnits);
         }
 
         @Test
         void addsUpToNothingForACellWithNoRibbon() {
 
-            assertThat(RibbonPlan.NONE.sumLengthUnits())
-                .isEqualTo(0);
+            // ARRANGE
+            var plan = RibbonPlan.NONE;
+            var expectedLengthUnits = 0;
+
+            // ACT
+            var actualLengthUnits = plan.sumLengthUnits();
+
+            // ASSERT
+            assertThat(actualLengthUnits)
+                .isEqualTo(expectedLengthUnits);
         }
     }
 
     @Nested
     class EqualsAndHashCode {
 
+        // A plan is a value: two plans of the same segments are one band, which is what lets a
+        // cell's standing band be compared with a re-baked one.
         @Test
         void equatesTwoPlansOfTheSameRuns() {
-            // A plan is a value: two plans of the same runs are one band, which is what lets a
-            // cell's standing band be compared with a re-baked one.
-            var first = new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 3)));
-            var second = new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 3)));
 
-            assertThat(first)
-                .isEqualTo(second)
-                .hasSameHashCodeAs(second);
+            // ARRANGE
+            var expectedPlan = new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 3)));
+
+            // ACT
+            var actualPlan = new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 3)));
+
+            // ASSERT
+            assertThat(actualPlan)
+                .isEqualTo(expectedPlan)
+                .hasSameHashCodeAs(expectedPlan);
         }
 
         @Test
         void tellsApartTwoPlansOfDifferentRuns() {
 
-            assertThat(new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 3))))
-                .isNotEqualTo(new RibbonPlan(List.of(new RibbonSegment(SECOND_RUN_COLOUR, 3))));
+            // ARRANGE
+            var differentPlan = new RibbonPlan(List.of(new RibbonSegment(SECOND_RUN_COLOUR, 3)));
+
+            // ACT
+            var actualPlan = new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 3)));
+
+            // ASSERT
+            assertThat(actualPlan)
+                .isNotEqualTo(differentPlan);
         }
     }
 
     @Nested
     class Segments {
 
+        // A plan is cached and read back over many frames, so it has to be a value rather
+        // than a window onto whatever list built it - a caller reusing its builder must not
+        // be able to lengthen a ribbon already planned.
         @Test
         void staysAsPlannedWhenTheListItWasBuiltFromIsAddedToAfterwards() {
-            // A plan is cached and read back over many frames, so it has to be a value rather
-            // than a window onto whatever list built it - a caller reusing its builder must not
-            // be able to lengthen a ribbon already planned.
+
+            // ARRANGE
             var source = new ArrayList<RibbonSegment>();
 
             source.add(new RibbonSegment(FIRST_RUN_COLOUR, 3));
 
             var plan = new RibbonPlan(source);
+            var expectedSegment = new RibbonSegment(FIRST_RUN_COLOUR, 3);
 
+            // ACT
             source.add(new RibbonSegment(SECOND_RUN_COLOUR, 3));
 
-            assertThat(plan.segments())
-                .containsExactly(new RibbonSegment(FIRST_RUN_COLOUR, 3));
+            // ASSERT
+            var actualSegments = plan.segments();
+
+            assertThat(actualSegments)
+                .containsExactly(expectedSegment);
         }
 
         @Test
         void refusesAnyChangeToAPlannedRibbon() {
 
+            // ARRANGE
             var plan = new RibbonPlan(List.of(new RibbonSegment(FIRST_RUN_COLOUR, 3)));
 
-            assertThatThrownBy(() -> plan.segments().add(new RibbonSegment(SECOND_RUN_COLOUR, 3)))
+            // ACT
+            var actualThrown = catchThrowable(
+                () -> plan
+                    .segments()
+                    .add(new RibbonSegment(SECOND_RUN_COLOUR, 3)));
+
+            // ASSERT
+            assertThat(actualThrown)
                 .isInstanceOf(UnsupportedOperationException.class);
         }
     }

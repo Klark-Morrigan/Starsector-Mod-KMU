@@ -287,7 +287,7 @@ final class OwnerRibbonRunsTests {
         // partings strictly between them - the run itself neither opens nor closes on one,
         // and the only other parting here is the one the owner ahead of it is closed by.
         @Test
-        void partsOneOwnersStakesWithInterjectionsInItsDarkShade() {
+        void partsOneOwnersStakesInItsDarkShade() {
 
             // ARRANGE
             var presences = List.of(
@@ -716,7 +716,7 @@ final class OwnerRibbonRunsTests {
         // in the band is the second owner's. A parting laid for the empty owner would open the
         // band on that parting, which parts the first run from nothing at all.
         @Test
-        void laysNoDividerAheadOfTheFirstOwnerWithSomethingToDraw() {
+        void laysNoPartingAheadOfTheFirstOwnerWithSomethingToDraw() {
 
             // ARRANGE
             var presences = List.of(
@@ -745,11 +745,11 @@ final class OwnerRibbonRunsTests {
         }
 
         // An owner ranked last on a weight it holds no stakes behind still reaches the rule.
-        // It draws no run, so the band has to end on Tri-Tachyon's segment: a divider for
+        // It draws no run, so the band has to end on Tri-Tachyon's segment: a parting for
         // the empty owner would close the band on a parting belonging to an owner that is not
         // in it.
         @Test
-        void laysNoDividerAfterTheLastOwnerWithSomethingToDraw() {
+        void laysNoPartingAfterTheLastOwnerWithSomethingToDraw() {
 
             // ARRANGE
             var presences = List.of(
@@ -776,8 +776,8 @@ final class OwnerRibbonRunsTests {
         }
 
         // Neither length is the rule's own: a four-wide stake parted by two reads as the
-        // same holdings at the proportions the player set. The divider takes that same
-        // parting length, so no knob can make one boundary say more than the other.
+        // same holdings at the proportions the player set. The parting at the handover takes
+        // that same length, so no knob can make one boundary say more than the other.
         @Test
         void takesBothRunLengthsFromTheOnesItWasGiven() {
 
@@ -811,7 +811,7 @@ final class OwnerRibbonRunsTests {
         }
 
         // The two halves over one cell: five stakes, three partings inside the two runs
-        // and the divider between them, summed into the budget the drawn width is settled
+        // and the parting between them, summed into the budget the drawn width is settled
         // against on a crowded cell.
         @Test
         void laysEveryStakeAndPartingIntoTheBandsLength() {

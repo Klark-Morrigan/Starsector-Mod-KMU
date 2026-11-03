@@ -21,6 +21,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 - [One pass per walk](#one-pass-per-walk)
 - [One system at a time](#one-system-at-a-time)
 - [The band count](#the-band-count)
+- [Colouring a segment](#colouring-a-segment)
 - [What lands in each fill state](#what-lands-in-each-fill-state)
 - [What is not here](#what-is-not-here)
 
@@ -41,7 +42,7 @@ flowchart LR
 
 | Package | What is in it |
 | --- | --- |
-| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the spotlit bloc paired with the holder it draws as (`BlocSpotlight`), the grouping seam (`HolderGrouping`), a bloc's owner and shades, read once per pass (`SectorBlocPalettes`), where a band segment's shades are read (`RibbonPaletteReader`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
+| `base` | what every holder shares. **The pass:** `HolderPass`, the rules it reads under, and habitation (`SystemHabitation`, `BlocHabitation`, `HolderInhabitation`). **The grouping:** `HolderGrouping`. **The holding:** the holder source, the view shape that assembles it, the four `HolderCategory` values and their styles, and the spotlit bloc (`BlocSpotlight`). **Colour:** a bloc's owner and shades, read once per pass (`SectorBlocPalettes`). **The band:** its count (`ColonyCellRibbons`, `RibbonPlanInputs`) and where a segment's shades are read (`RibbonPaletteReader`) |
 | `base.picker` | the picker every holder view shares: its assembly (`BlocPickerAssembly`), the standing mode it appends, and the colony size metric and modes a view ranks by |
 | `factions` | one faction as one owner: `FactionOwnerReading`, and the faction lines of the hover box |
 | `alliances` | a group of factions as one owner: `AllianceOwnerReading`, the contest axis (`BlocAffiliation`, `ContestSides`) and the lines naming a holder's allies and rivals |
@@ -268,24 +269,7 @@ and an owner with no ID is counted as nobody's.
 Each bloc's `BlocHabitation` holds its colonies by owning faction,
 in faction ID order,
 so one member's colonies sit together inside the bloc's run.
-
-Each segment is coloured through a `RibbonPaletteReader`,
-asked for the bloc the colony is counted under and the faction owning it.
-The grouping decides what a run is,
-and the palette read decides what a segment is.
-The read is the pass's own (`HolderPass.palettes()`),
-the one the fills were coloured through.
-Its `SectorBlocPalettes` answers a bloc's shades for every member,
-so a run draws in the one pair its fill is painted in.
-A layer colouring by something a bloc does not decide answers per member,
-and an alliance's run then comes out member by member.
-The alliance stays one run either way,
-parted as one holding,
-because its fill reads as one bloc.
-
-A colony whose faction resolves no shades drops its own segment,
-and a bloc left with none drops out entirely,
-so it lays no parting either.
+How each segment is coloured is [its own section](#colouring-a-segment).
 `RibbonPlanInputs` carries the pass,
 the `OwnerAffiliation` the contest is judged against and the laying rules,
 so every mechanic of a composed planner counts off a single walk of each system
@@ -323,6 +307,27 @@ whose fill the band sits inside,
 and the order that fill decided.
 A bloc the mechanic never ranked draws behind the ranked ones in ID order,
 since any place among them would state it took part in a contest it never entered.
+
+## Colouring a segment
+
+Each segment is coloured through a `RibbonPaletteReader`,
+asked for the bloc the colony is counted under and the faction owning it.
+The grouping decides what a run is,
+and the palette read decides what a segment is.
+
+The read is the pass's own (`HolderPass.palettes()`),
+the one the fills were coloured through.
+Its `SectorBlocPalettes` answers a bloc's shades for every member,
+so a run draws in the one pair its fill is painted in.
+A layer colouring by something a bloc does not decide answers per member,
+and an alliance's run then comes out member by member.
+The alliance stays one run either way,
+parted as one holding,
+because its fill reads as one bloc.
+
+A colony whose faction resolves no shades drops its own segment,
+and a bloc left with none drops out entirely,
+so it lays no parting either.
 
 ## What lands in each fill state
 
