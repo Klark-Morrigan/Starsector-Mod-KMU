@@ -48,9 +48,9 @@ import static org.mockito.Mockito.when;
  *
  * <p>Nothing here opens a reading of the sector: the decision is answerable from the board, the
  * settings and the standing build's owner reading alone, which is the property the class exists to
- * keep, so the sector the machinery is built over is a bare mock nothing reaches. What is stubbed is what no test JVM answers - the
- * live LunaLib reads and the per-save picks - through seams that otherwise call the real reads, so
- * a case moves only the one it is about.
+ * keep, so the sector the machinery is built over is a bare mock nothing reaches. What is stubbed
+ * is what no test JVM answers - the live LunaLib reads and the per-save picks - through seams that
+ * otherwise call the real reads, so a case moves only the one it is about.
  */
 final class OwnerMapBuildLedgerTests {
 

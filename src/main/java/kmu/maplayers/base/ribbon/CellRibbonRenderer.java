@@ -15,11 +15,11 @@ import org.lwjgl.opengl.GL11;
 import java.util.Collection;
 
 /**
- * Paints the cells' baked bands on the sector (M) map: each run of each band as its own
+ * Paints the cells' baked bands on the sector (M) map: each segment of each band as its own
  * patch of coloured triangles, laid inside the cell's own ring.
  *
  * <p>Pure GL emission over already-baked {@link CellRibbon}s - it binds a colour and scales world
- * coordinates into map space, and knows nothing of why a run is the colour it is, how its length
+ * coordinates into map space, and knows nothing of why a segment is the colour it is, how its length
  * was settled, or which cells were asked for a band at all. That is what makes a band cost a draw
  * call rather than a walk: everything a band says was decided at rebuild.
  *
@@ -44,16 +44,16 @@ public final class CellRibbonRenderer {
     /**
      * Draws every cell's band for one map frame.
      *
-     * <p>Most of the sector carries no band - one is drawn only where the layer planned runs for the
+     * <p>Most of the sector carries no band - one is drawn only where the layer planned segments for the
      * cell - so the walk covers the banded cells and nothing else. A fully faded-out map emits
-     * nothing rather than every run at zero effective alpha, which would cost the whole pass for
+     * nothing rather than every segment at zero effective alpha, which would cost the whole pass for
      * pixels that cannot appear.
      *
      * @param ribbons   the frame's baked bands, one per cell that draws one; the cells that draw
      *                  none are not among them. Taken as the bands alone rather than as the map
      *                  they are held in, since which cell a band belongs to is settled where it
      *                  was baked and says nothing about how it is painted
-     * @param mapFrame  the scale every coordinate is multiplied by and the fade over each run
+     * @param mapFrame  the scale every coordinate is multiplied by and the fade over each segment
      */
     public static void renderOnMap(
             Collection<CellRibbon> ribbons,
@@ -76,10 +76,10 @@ public final class CellRibbonRenderer {
             });
     }
 
-    // Every run of every band, in the order they were laid around their rings.
+    // Every segment of every band, in the order they were laid around their rings.
     //
-    // The colour binds per run rather than being grouped across cells: a run's colour is the whole
-    // of what it says, the runs of one cell are few, and only the cells carrying a band are walked
+    // The colour binds per segment rather than being grouped across cells: a segment's colour is the
+    // whole of what it says, the segments of one cell are few, and only the cells carrying a band are walked
     // at all. Grouping them would trade that for a per-frame sort over a set that changes only at
     // rebuild.
     private static void drawBands(

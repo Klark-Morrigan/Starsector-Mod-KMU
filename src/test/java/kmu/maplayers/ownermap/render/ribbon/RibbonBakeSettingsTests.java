@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * own rather than becoming a knob beside them.
  *
  * <p>Worth pinning by value because the sizes are interchangeable by type: a width read into the
- * pad, or the two run lengths handed over the wrong way round, compiles clean and shows only as a
+ * pad, or the two segment lengths handed over the wrong way round, compiles clean and shows only as a
  * band that looks slightly off in play - and "slightly off" is indistinguishable from a slider set
  * somewhere odd. Distinct sentinels per knob turn that into a failing test.
  *
@@ -137,7 +137,7 @@ final class RibbonBakeSettingsTests {
         }
 
         // The shortening is answered off, so an uncontested cell keeps the authored pair: a reader
-        // that ignored the switch and shortened anyway would cut the stake run to one width.
+        // that ignored the switch and shortened anyway would cut the stake segment to one width.
         @Test
         void laysTheRunsAtTheAuthoredLengthsWhileTheShorteningIsOff() {
 

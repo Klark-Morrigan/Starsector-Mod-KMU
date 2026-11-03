@@ -82,7 +82,7 @@ public final class CellRibbonSource {
      *                  what a band is laid out from is stated in the signature rather than
      *                  reachable through it
      * @param style     the sizes every band in the pass is laid at, as the pass sampled them
-     * @param planRules how far a band's runs reach, as the pass sampled them; handed to whatever
+     * @param planRules how far a band's segments reach, as the pass sampled them; handed to whatever
      *                  planner the source resolves, so every mechanic lays its cells by one rule
      * @return the source the pass bakes its bands through
      */

@@ -55,7 +55,7 @@ A name is fitted inside the border its cluster's cells trace,
 so it has no place until the cells are shaped,
 and a band baked as its cell was shaped would run under a word.
 Baked last,
-each band carves the names' boxes out of its cell's ring and lays its runs along what is left -
+each band carves the names' boxes out of its cell's ring and lays its segments along what is left -
 or carves nothing,
 where the player would rather keep the whole band and let the name draw across it.
 The stage runs last either way,
@@ -191,8 +191,8 @@ It holds:
   **Always draw a planned band** among it,
   on by default;
 - the `RibbonPlanRules`:
-  the two run lengths,
-  and whether an uncontested cell's runs are shortened;
+  the two segment lengths,
+  and whether an uncontested cell's stake segments are shortened;
 - whether the bands keep clear of the names,
   and by which reading;
 - whether the path overlay shows.
@@ -249,7 +249,7 @@ is the difference between their sum and the turn.
 
 **What a band says** -
 the runs,
-the dividers,
+the partings,
 which cells band and at what length -
 is [`ownermap.ribbon`](../../ribbon/README.md).
 **How a band is laid inside its ring** is [`base.ribbon`](../../../base/ribbon/README.md).

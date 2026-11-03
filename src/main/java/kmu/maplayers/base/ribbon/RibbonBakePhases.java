@@ -7,7 +7,7 @@ import kmu.maplayers.base.profiling.RebuildStepTerms;
 
 /**
  * The section a bake of the cell bands is measured under, and the four separable things a bake
- * does to each cell: planning the cell's runs, tracing the ring its band runs along, carving the
+ * does to each cell: planning the cell's segments, tracing the ring its band runs along, carving the
  * names and the cell's own narrow places off that ring, and stroking what is left into triangles.
  *
  * <p>Four rather than one because they grow on different axes - the trace with the cells whose ring
@@ -49,7 +49,7 @@ public final class RibbonBakePhases {
         CARVE_PHASE_NAME,
         STROKE_PHASE_NAME);
 
-    /** Planning the cell's runs by the layer's rule, which may walk everything the cell holds. */
+    /** Planning the cell's segments by the layer's rule, which may walk everything the cell holds. */
     public static final ProfilePhase PLAN_PHASE = BAKE_SECTION.resolvePhase(PLAN_PHASE_NAME);
 
     /** Reaching for the ring the band runs along, and walking it where none stands. */
@@ -58,7 +58,7 @@ public final class RibbonBakePhases {
     /** Taking the names and the pinches off that ring and placing the band on what is left. */
     static final ProfilePhase CARVE_PHASE = BAKE_SECTION.resolvePhase(CARVE_PHASE_NAME);
 
-    /** Laying the planned runs end to end and stroking them into triangles. */
+    /** Laying the planned segments end to end and stroking them into triangles. */
     static final ProfilePhase STROKE_PHASE = BAKE_SECTION.resolvePhase(STROKE_PHASE_NAME);
 
     private RibbonBakePhases() {

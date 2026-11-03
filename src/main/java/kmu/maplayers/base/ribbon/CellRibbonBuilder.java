@@ -14,9 +14,9 @@ import java.util.List;
 /**
  * Lays one cell's planned band along the path traced round that cell: the longest stretch of that
  * path the cluster names and the cell's own narrow places leave it, how long a width is worth on
- * that stretch, where along it the band sits, and the triangles each run comes out as.
+ * that stretch, where along it the band sits, and the triangles each segment comes out as.
  *
- * <p>Everything the plan states is proportional - a run is so many widths long - and everything
+ * <p>Everything the plan states is proportional - a segment is so many widths long - and everything
  * this settles is the cell's own: where the path lets a band run, and how much of it one width may
  * take before the band would outrun it. Splitting the two keeps the counting rule free of rings
  * and the geometry free of counts, with neither needing the other's inputs.
@@ -54,7 +54,7 @@ public final class CellRibbonBuilder {
      * @param cellKey       the cell being laid, the key its traced rings are kept under
      * @param fillPolygon   the cell's painted outline, the ring the band runs inside
      * @param site          the {x, y} the band's start is found above
-     * @param plan          the cell's runs in draw order, as the layer's rule planned them
+     * @param plan          the cell's segments in draw order, as the layer's rule planned them
      * @param style         the sizes every band in the pass is laid at
      * @param nameBoxes     the room the drawn cluster names take up, as world rings the band keeps
      *                      out of; the whole map's, since a name sits where its own cluster is
@@ -121,7 +121,7 @@ public final class CellRibbonBuilder {
      * the longest of what is left.
      *
      * @param path         the ring traced round the cell, at whichever inset it had room for
-     * @param plan         the cell's runs in draw order, at least one of them with length
+     * @param plan         the cell's segments in draw order, at least one of them with length
      * @param style        the sizes the band is drawn at, the same ones the path was traced at
      * @param nameBoxes    the room the drawn cluster names take up, as world rings the band
      *                     keeps out of
@@ -188,10 +188,10 @@ public final class CellRibbonBuilder {
             RibbonStyle style) {
 
         // The names are carved off the path rather than off the plan, and that is the whole of
-        // how a band keeps out of a name's room. Cutting the plan instead would leave a run
-        // partly eaten, and a run's length is the readout - a run drawn two thirds as long as the
-        // plan laid it says something false about the cell. Carved off the path, what a name
-        // costs is room, which the clamp below already knows how to answer.
+        // how a band keeps out of a name's room. Cutting the plan instead would leave a segment
+        // partly eaten, and a segment's length is the readout - a segment drawn two thirds as long
+        // as the plan laid it says something false about the cell. Carved off the path, what a
+        // name costs is room, which the clamp below already knows how to answer.
         var clearStretches = path.findClearStretches(nameBoxes);
 
         // A ring wholly under the names is the one case where keeping the band clear of them and
@@ -208,15 +208,15 @@ public final class CellRibbonBuilder {
         //
         // The whole band goes on the one longest stretch, with the rest of the ring staying bare.
         // A band scattered round the ring in pieces is not the readout it looks like: a reader
-        // cannot tell one run interrupted by a name from two runs of one colour, so a band split
-        // across stretches loses the very proportions the carve was protecting and litters the cell
-        // for it. One stretch means one shape, at the price of spending only part of a ring the
-        // names cut into halves, which is the cheaper of the two losses.
+        // cannot tell one segment interrupted by a name from two segments of one colour, so a band
+        // split across stretches loses the very proportions the carve was protecting and litters
+        // the cell for it. One stretch means one shape, at the price of spending only part of a
+        // ring the names cut into halves, which is the cheaper of the two losses.
         //
         // Taken over the fused stretches, never the carved ones: a cell whose name sits anywhere but
-        // its top centre has its longest run arrive as the two stretches either side of the path's
-        // start, and picking between those two judges the cell on whichever half happened to be
-        // bigger.
+        // its top centre has its longest stretch arrive as the two stretches either side of the
+        // path's start, and picking between those two judges the cell on whichever half happened to
+        // be bigger.
         return RingStretch.selectLongest(path.fuseStretchAcrossStart(
             clearStretches.isEmpty()
                 ? path.findStretchesHoldingItsInset()
@@ -235,14 +235,14 @@ public final class CellRibbonBuilder {
 
         // A unit compressed to nothing is a cell with too little ring left to state its own
         // contents at any size - too small to begin with, or too much of it under a name - so it
-        // says nothing rather than drawing a smear of colour where the runs would have been.
+        // says nothing rather than drawing a smear of colour where the segments would have been.
         if (lengthUnitWorld < Limits.MIN_EDGE_LENGTH) {
             return null;
         }
 
         // As near the cell's top centre as the stretch allows, rather than wherever the ring
         // the names left happens to open. Every cell's band is read from that landmark - the
-        // first run first, running clockwise - so a band that could begin there and does
+        // first segment first, running clockwise - so a band that could begin there and does
         // not costs the reader the one thing every cell's band has in common.
         return new RibbonBandLayout(
             path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld),
@@ -258,9 +258,9 @@ public final class CellRibbonBuilder {
     // much of its outline therefore compresses harder, which is the honest number.
     //
     // Compressing the length while leaving the width alone is deliberate. The band says its piece
-    // through the proportions between its runs, and shortening every run by one factor keeps all
-    // of them - a crowded cell reads as crowded, with each run's share intact. Thinning the
-    // band instead would fade the whole readout on precisely the cells carrying the most to say,
+    // through the proportions between its segments, and shortening every segment by one factor
+    // keeps all of them - a crowded cell reads as crowded, with each segment's share intact.
+    // Thinning the band instead would fade the whole readout on precisely the cells carrying the most to say,
     // and would leave the path traced at an inset the band no longer matches.
     private static double computeLengthUnit(
             double stretchLength,
@@ -271,10 +271,10 @@ public final class CellRibbonBuilder {
     }
 
     // The plan laid end to end along the chosen stretch and stroked as the one band it is, each
-    // run coming back out of the stroke in its own colour.
+    // segment coming back out of the stroke in its own colour.
     //
-    // The band is one shape whatever it is coloured in: stroking each run on its own leaves every
-    // boundary between two runs a pair of square ends butted together, which opens a wedge
+    // The band is one shape whatever it is coloured in: stroking each segment on its own leaves
+    // every boundary between two segments a pair of square ends butted together, which opens a wedge
     // wherever that boundary lands on a corner of the path - and a cell's ring is rounded, so
     // most boundaries land on one. Stroked once, a boundary is a point the band turns at like any
     // other, and only the band's own two ends are square.
@@ -290,8 +290,8 @@ public final class CellRibbonBuilder {
             runLengths[segment] = plan.segments().get(segment).lengthUnits() * layout.lengthUnitWorld();
         }
 
-        // A run's stretch carries the corners the path turns at within it, not just its two ends,
-        // so a run spanning a corner of the cell turns with it rather than cutting across.
+        // A segment's stretch carries the corners the path turns at within it, not just its two
+        // ends, so a segment spanning a corner of the cell turns with it rather than cutting across.
         var spans = path.collectSpansEndToEnd(layout.startArcLength(), runLengths);
 
         return collectStrokedBands(plan, PolylineBands.strokeSpansToTriangles(
@@ -300,8 +300,8 @@ public final class CellRibbonBuilder {
             style.miterSpikeLimit()));
     }
 
-    // One band per run that drew something, in the run's own colour. A run of no length strokes
-    // to nothing - a plan may carry one - and it is dropped rather than kept as an empty band,
+    // One band per segment that drew something, in the segment's own colour. A segment of no
+    // length strokes to nothing - a plan may carry one - and it is dropped rather than kept as an empty band,
     // since the renderer's work is per band and an empty one is a draw call for no triangles.
     private static List<RibbonBand> collectStrokedBands(
             RibbonPlan plan,

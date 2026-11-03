@@ -136,7 +136,7 @@ public final class KmuOwnerMapRibbonSettings {
         return KmuLunaSettings.readDouble(RIBBON_INSET_PAD_FIELD, DEFAULT_RIBBON_INSET_PAD);
     }
 
-    /** @return how far the run one colony draws reaches, in band widths */
+    /** @return how far the segment one colony draws reaches, in band widths */
     public static int getOwnerMapRibbonSegmentLength() {
         return KmuLunaSettings.readInt(
             RIBBON_SEGMENT_LENGTH_FIELD,
@@ -147,8 +147,7 @@ public final class KmuOwnerMapRibbonSettings {
      * @return how far a parting in the band reaches, in band widths. One length
      *         serves both the parting between two colonies of one bloc and the one closing that
      *         bloc's run, since two parting lengths in one band would read as a claim about the
-     *         blocs they part. The setting screen calls it a separator, the counting rule an
-     *         interjection
+     *         blocs they part. The setting screen calls it a separator
      */
     public static int getOwnerMapRibbonInterjectionLength() {
         return KmuLunaSettings.readInt(

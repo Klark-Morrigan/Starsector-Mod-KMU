@@ -42,12 +42,13 @@ import static org.mockito.Mockito.verify;
  * offers it, and a path assembled for a case would be room the cases agreed among themselves to
  * have - which is exactly the agreement a cell in play is not party to.
  *
- * <p>Two cases are about the band being one shape rather than a row of them. Where two runs meet
- * on a corner of the cell, the band turns through that corner instead of stopping square either
- * side of it - the difference between stroking the whole band once and stroking it a run at a
- * time, and invisible to every other case here. And a run of no length lays nothing at all, with
- * the runs after it keeping their own colours: a run that strokes to nothing drops out of what is
- * drawn without the runs behind it sliding onto each other's colours as the gap closes.
+ * <p>Two cases are about the band being one shape rather than a row of them. Where two segments
+ * meet on a corner of the cell, the band turns through that corner instead of stopping square
+ * either side of it - the difference between stroking the whole band once and stroking it a
+ * segment at a time, and invisible to every other case here. And a segment of no length lays
+ * nothing at all, with the segments after it keeping their own colours: a segment that strokes to
+ * nothing drops out of what is drawn without the segments behind it sliding onto each other's
+ * colours as the gap closes.
  *
  * <p>The remaining cases are the ends of the size question the design answers deliberately: a
  * band longer than its cell's outline compresses rather than being cut short, compressing itself
@@ -93,7 +94,7 @@ final class CellRibbonBuilderTests {
     private static final List<List<double[]>> NO_NAMES = List.of();
 
     // A name lying across the cell's top edge, 400 to 800 along the band's path from its start
-    // above the site - so the band meets it a run in.
+    // above the site - so the band meets it a segment in.
     private static final List<double[]> NAME_ACROSS_THE_TOP_EDGE = List.of(
         new double[] {2400.0, 3400.0},
         new double[] {2800.0, 3400.0},
@@ -193,33 +194,33 @@ final class CellRibbonBuilderTests {
     private static final Color BRIGHT = new Color(140, 160, 220);
     private static final Color DARK = new Color(40, 60, 120);
 
-    // One width of run - the shortest a segment can be, and short enough here to sit wholly on
+    // One width of segment - the shortest a segment can be, and short enough here to sit wholly on
     // the cell's top edge, so what it strokes is a plain quad with no corner in it.
     private static final int ONE_WIDTH = 1;
 
-    // Thirty widths of run - 12000 units at full size, longer than any stretch the names above
-    // leave. A run this long is compressed to exactly fill the stretch it is laid on, so where it
+    // Thirty widths of segment - 12000 units at full size, longer than any stretch the names above
+    // leave. A segment this long is compressed to exactly fill the stretch it is laid on, so where it
     // ends names that stretch, which is what tells one reading of the carved ring from another.
     private static final int RUN_OUTRUNNING_THE_STRETCH = 30;
 
-    // A plan far longer than any cell's outline can hold at full size: sixty runs of three widths
+    // A plan far longer than any cell's outline can hold at full size: sixty segments of three widths
     // is 24000 units of band around an outline of 12800.
     private static final int CROWDED_RUN_COUNT = 60;
     private static final int CROWDED_RUN_LENGTH = 3;
 
-    // A run of no length at all - a plan can carry one, since a run's length is a plain count of
-    // widths with nothing forbidding zero. It draws nothing, and what it must not do is take the
-    // colour off the runs after it.
+    // A segment of no length at all - a plan can carry one, since a segment's length is a plain
+    // count of widths with nothing forbidding zero. It draws nothing, and what it must not do is
+    // take the colour off the segments after it.
     private static final int NO_WIDTHS = 0;
 
-    // A thousand widths of run. Against a hairline of ring it compresses one width to a
+    // A thousand widths of segment. Against a hairline of ring it compresses one width to a
     // ten-millionth of a unit, which is where compressing stops being a readout and starts being
     // a smear - a scale no plan a sector produces reaches, and the point of stating it here is
     // that the floor answers it rather than that a system could plan it.
     private static final int RUN_NO_HAIRLINE_CAN_STATE = 1000;
 
-    // Four widths of run is 1600 units, exactly the distance from the band's start above the
-    // cell's site to the cell's top right corner - so a plan of these puts a run boundary on that
+    // Four widths of segment is 1600 units, exactly the distance from the band's start above the
+    // cell's site to the cell's top right corner - so a plan of these puts a segment boundary on that
     // corner, which is the case the band has to turn through rather than butt at.
     private static final int RUN_REACHING_THE_CORNER = 4;
 

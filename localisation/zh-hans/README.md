@@ -474,7 +474,7 @@ The words for filling the empty space between systems one faction dominates.
 | gate (the switch a smoothing pass runs under) | 开关 | the plain word for a switch, something turned on or off |
 | paint (everything one owner's elements draw from) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
 | paint scheme (the theme and palettes one build styles by) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
-| parting (the dark stretch a band lays between two segments) | 分隔 | the plain word for something set between two things; kept apart from 分隔线, a lane rule |
+| parting (the dark segment a band lays between two others) | 分隔段 | 分隔, set between, with 段, a stretch, as the band's separator setting already says; kept apart from 分隔线, a lane rule |
 | radio (a row of options with one lit) | 单选框 | the usual UI word for a one-of-many control |
 | real holder (who holds a system with no spotlight up) | 实际持有者 | 实际, actual, with 持有者, a holder: the holder the system has before any spotlight rekeys it |
 | rebuild (the map's drawing worked out again) | 重建 | the usual word for building something again |

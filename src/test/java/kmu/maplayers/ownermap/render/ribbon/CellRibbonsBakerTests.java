@@ -95,7 +95,7 @@ final class CellRibbonsBakerTests {
     // The row a bake lands on.
     private static final String BAKE_SECTION = "mapLayer.bakeRibbons";
 
-    // A plan with a run in it, so a cell that reaches the geometry comes back carrying a band and
+    // A plan with a segment in it, so a cell that reaches the geometry comes back carrying a band and
     // one the pass never reached is told apart by drawing none.
     private static final RibbonPlan ANY_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(BAND_COLOUR, 1)));

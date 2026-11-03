@@ -1,7 +1,7 @@
 # Presence band runs (`ownermap.ribbon`)
 
 How an owner-painted cell's presence band is laid:
-a run of colour per stake,
+a segment of colour per stake,
 whose runs,
 and in what order.
 The plan it produces,
@@ -27,12 +27,12 @@ The output is [`base.ribbon`](../../base/ribbon/README.md#what-a-band-is)'s `Rib
 over a ranked list of `OwnerPresence` -
 an owner,
 and one bright and dark pair per stake it has in the cell.
-It lays the runs one at a time through `base.ribbon`'s `RibbonPlanBuilder`,
-so each banded cell's runs are held once.
+It lays the segments one at a time through `base.ribbon`'s `RibbonPlanBuilder`,
+so each banded cell's segments are held once.
 
 The grammar it lays down:
 
-- A stake draws a segment in its bright shade at the authored run length.
+- A stake draws a segment in its bright shade at the authored stake length.
 - **A parting is the outgoing segment's own dark shade.**
   One goes between two stakes of one owner,
   and one closes an owner's run wherever another owner's follows.
@@ -59,7 +59,7 @@ the lengths a contested and an uncontested cell are laid at -
 one factory over one authored pair,
 so a pass's shortening can never be put over another pass's lengths.
 Both are this tier's rather than the band's:
-the band is handed runs that already carry their lengths.
+the band is handed segments that already carry their lengths.
 
 A plan's lengths being counts of widths is what keeps this whole package pure data.
 
@@ -75,7 +75,7 @@ and this package never reaches into the live sector.
 ## Which cells band, and how loudly
 
 Every cell anything is present in bands.
-Contest decides only the length its runs are laid at:
+Contest decides only the length its segments are laid at:
 
 1. A **contested** cell draws at the player's authored lengths -
    this is the readout the bands exist for,
@@ -90,7 +90,7 @@ A cell nothing is present in bands under neither reading:
 there is no footprint to report.
 
 No knob reaches whether a cell bands,
-only how far its runs go.
+only how far its segments go.
 That is what keeps the one band a map must not be able to lose -
 the one saying a system is contested -
 out of reach of the settings screen entirely.

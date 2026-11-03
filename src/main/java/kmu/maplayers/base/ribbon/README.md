@@ -1,11 +1,11 @@
 # Cell bands (`base.ribbon`)
 
-A band is a stroke of coloured runs laid inside a cell's own ring.
+A band is a stroke of coloured segments laid inside a cell's own ring.
 This package states what one is made of,
 turns it into triangles clear of the cluster names,
 and draws it.
-Nothing here knows why a run is the colour it is:
-a layer lays its runs by its own rule and hands over the plan.
+Nothing here knows why a segment is the colour it is:
+a layer lays its segments by its own rule and hands over the plan.
 
 Everything here is a world size,
 so the whole band resolves at rebuild and a frame measures nothing about one.
@@ -37,32 +37,31 @@ an ordered list of `RibbonSegment`,
 each a colour and a length in band widths,
 read clockwise from the cell's top centre.
 Every segment carries its own colour,
-so nothing here assumes one colour per run:
-a layer may colour the segments of one run apart,
+so a layer may colour neighbouring segments alike or apart,
 and the band draws them with no change of its own.
 `RibbonPlan.NONE` is the cell that draws no band,
 and `hasLength()` is what a layer asks before walking a ring for one.
 
 A plan is a value:
-it copies the runs it is handed,
+it copies the segments it is handed,
 so nobody still holding the list can lengthen a band already planned.
-A rule laying runs one at a time builds through `RibbonPlanBuilder` instead,
+A rule laying segments one at a time builds through `RibbonPlanBuilder` instead,
 whose list the plan takes over rather than copies.
-The builder refuses every run once the plan is built,
+The builder refuses every segment once the plan is built,
 so the copy would protect nothing.
 
 Lengths are counts of widths,
 never world sizes.
 How large a width is in the world is settled against the cell's own ring when the band is laid,
-which is what lets a crowded cell compress every run by one factor
+which is what lets a crowded cell compress every segment by one factor
 and keep the proportions between them - the proportions being the whole of what the band says.
 
 ## The classes that build one
 
 | Class | Scope | Job |
 | --- | --- | --- |
-| `RibbonPlan` | one cell | the runs, in draw order |
-| `RibbonPlanBuilder` | one cell | lays a plan run by run, handing its list over without a copy |
+| `RibbonPlan` | one cell | the segments, in draw order |
+| `RibbonPlanBuilder` | one cell | lays a plan segment by segment, handing its list over without a copy |
 | `SystemRibbonPlanner` | one system | the port a layer plans a system's band through |
 | `CellRibbonBuilder` | one cell | the entry point: plan in, `CellRibbon` out, the ring reached for through the kept rings |
 | `RibbonPathTracer` | one cell | the ring a band runs along, at whichever inset fits |
@@ -115,7 +114,7 @@ Every other cell goes through five steps:
    `min(width, stretchLength / totalUnits)`,
    so a crowded cell -
    or one much of whose ring is under a name -
-   compresses rather than losing a run off the end.
+   compresses rather than losing a segment off the end.
 4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all -
    too little ring left to state the plan at any size,
    whether because the cell is small or because the names have eaten most of it.
@@ -204,8 +203,8 @@ tidier,
 and no way to tell a cell with nothing to say from one refused the room to say it.
 
 Compressing the *length* while leaving the width alone is deliberate:
-the band says its piece through the proportions between its runs,
-so shortening every run by one factor keeps all of them.
+the band says its piece through the proportions between its segments,
+so shortening every segment by one factor keeps all of them.
 
 ## A neck costs its own stretch
 
@@ -236,8 +235,8 @@ and a band run through one hangs over the border the half width exists to keep i
 
 The names are carved off the **path**,
 never off the plan.
-A run's length is the readout,
-so a run cut short by a word would say something false about the cell,
+A segment's length is the readout,
+so a segment cut short by a word would say something false about the cell,
 where a name taken off the path costs the band room rather than proportion.
 Carving the path first also means the clamp above resizes against what room is left.
 
@@ -258,7 +257,7 @@ The names can cut a ring into several clear stretches,
 and the band takes the longest of them;
 the rest of the ring stays bare.
 A band scattered over the stretches would not read as the proportional thing it is -
-a reader cannot tell one run interrupted by a word from two runs of one colour -
+a reader cannot tell one segment interrupted by a word from two segments of one colour -
 so the split loses the very readout the carve protects and litters the cell for it.
 The cost is that a ring cut into two near-equal halves spends one of them.
 
@@ -275,7 +274,7 @@ but its top centre would be judged on whichever half of its longest stretch happ
 A band shorter than its stretch can sit anywhere along it,
 and where it sits is decided rather than left to the ring the names happened to leave:
 **a band sits as near the cell's top centre as its stretch allows**.
-That landmark is the path's own origin and where the first run begins,
+That landmark is the path's own origin and where the first segment begins,
 so every cell is read from the same place -
 which is what a band opening wherever a name left off costs the reader.
 
@@ -297,8 +296,8 @@ so placement is never a refusal.
 
 A band is one shape whatever it is coloured in.
 It is stroked **once** through `PolylineBands.strokeSpansToTriangles`
-and cut into its runs afterwards,
-rather than each run being stroked on its own:
+and cut into its segments afterwards,
+rather than each segment being stroked on its own:
 separate strokes butt square ends together,
 which opens a wedge wherever that boundary lands on a corner -
 and a cell's ring is rounded,
@@ -315,8 +314,8 @@ the mitre spike limit,
 and whether a cell short of room draws a band anyway.
 The sizes are all world sizes,
 so nothing about a band is asked of the camera.
-How long each run is never appears here:
-a plan's runs arrive carrying their lengths in widths.
+How long each segment is never appears here:
+a plan's segments arrive carrying their lengths in widths.
 Where they come from is the layer's -
 this package reads no setting.
 
@@ -397,10 +396,10 @@ per cell:
 
 | Phase | What it covers | What it grows with |
 | --- | --- | --- |
-| `plan` | the layer counting what a cell's runs are | whatever the layer's rule reads per cell |
+| `plan` | the layer counting what a cell's segments are | whatever the layer's rule reads per cell |
 | `trace` | reaching for the cell's ring, and `RibbonPathTracer` insetting and walking one where none stands | the cells this bake had to walk - every cell on a fresh build, only the re-shaped ones after |
 | `carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
-| `stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
+| `stroke` | the segments laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
 
 Four rather than one because those axes differ,
 so a single total can say a bake got slower without saying which of them did.
@@ -428,7 +427,7 @@ since it never reached the band.
 
 ## What is not here
 
-**Which runs a cell's band has** -
+**Which segments a cell's band has** -
 whose,
 how many,
 in what order and at what length -

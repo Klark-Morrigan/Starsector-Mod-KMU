@@ -11,10 +11,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Pins a plan as the value the drawn band reads: what its runs add up to, when two plans are one
- * band, and that nothing outside it can change a plan once made.
+ * Pins a plan as the value the drawn band reads: what its segments add up to, when two plans are
+ * one band, and that nothing outside it can change a plan once made.
  *
- * <p>Stated over plain colours and no rule for laying the runs, since a plan says nothing about who
+ * <p>Stated over plain colours and no rule for laying the segments, since a plan says nothing about who
  * decided it.
  */
 final class RibbonPlanTests {
@@ -54,8 +54,8 @@ final class RibbonPlanTests {
                 .isFalse();
         }
 
-        // A rule may plan runs that come out empty, and a ring walked for them would carry
-        // nothing, so a plan of zero-length runs counts as having no length at all.
+        // A rule may plan segments that come out empty, and a ring walked for them would carry
+        // nothing, so a plan of zero-length segments counts as having no length at all.
         @Test
         void answersNoForAPlanWhoseRunsAreAllEmpty() {
 

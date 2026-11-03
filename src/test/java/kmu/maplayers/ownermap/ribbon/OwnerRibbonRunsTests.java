@@ -32,15 +32,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the segment rule on hand-built presences: which cells get a band at all, what length its
- * runs are laid at, and what the runs inside one look like.
+ * segments are laid at, and what the runs inside one look like.
  *
  * <p>Two things carry the whole design and are stated here on literals. Which reading a cell falls
  * under is checked from both sides: the authored lengths wherever some owner other than the painter
  * holds something, the absent-painter case where the painter holds nothing itself and a single other owner
- * is enough, and a lone owner's cell banding at the shortened runs while a contested one beside it
+ * is enough, and a lone owner's cell banding at the shortened lengths while a contested one beside it
  * keeps the authored ones under that same shortening. The contest is stated a second time over a
  * cell no fill covers, where there is no painter to be a rival of and a second owner holding
- * something is what makes one; those cases are read off the run lengths, which is the only place
+ * something is what makes one; those cases are read off the segment lengths, which is the only place
  * the reading a cell took is visible. The partings - each the dark shade of the segment going out,
  * whether between two stakes of one owner or where another owner's run follows - are checked on a
  * run long enough to have an inside, across a handover, on a run whose stakes are coloured apart,
@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Both readings are then stated a third time over an affiliation, since who counts as a rival
  * is the one thing an affiliation moves: an owner standing with the painter, and a pair standing
- * together on a cell no fill covers, fall to the shortened runs, and an outsider beside either of
+ * together on a cell no fill covers, fall to the shortened lengths, and an outsider beside either of
  * them puts the cell back on the authored ones. A cell no fill covers is stated once more with an
  * owner listed ahead of the rest holding nothing, since who such a cell is judged against is only
  * visible where standing together changes the answer. Every other case here is posed under
@@ -142,7 +142,7 @@ final class OwnerRibbonRunsTests {
         }
 
         // The shortening, which is what keeps a large lone holding from laying more band than
-        // the contested cells the readout exists for. Only the stake runs shorten: the
+        // the contested cells the readout exists for. Only the stake segments shorten: the
         // parting keeps its own length, or the ticks and the gaps between them would be
         // indistinguishable.
         @Test
@@ -285,7 +285,7 @@ final class OwnerRibbonRunsTests {
 
         // Three stakes of one owner come out as three bright segments with two dark
         // partings strictly between them - the run itself neither opens nor closes on one,
-        // and the only other parting here is the divider the owner ahead of it is closed by.
+        // and the only other parting here is the one the owner ahead of it is closed by.
         @Test
         void partsOneOwnersStakesWithInterjectionsInItsDarkShade() {
 
@@ -316,7 +316,7 @@ final class OwnerRibbonRunsTests {
                 .containsExactlyElementsOf(expectedSegments);
         }
 
-        // Hegemony with three stakes beside Tri-Tachyon with two. The divider between them
+        // Hegemony with three stakes beside Tri-Tachyon with two. The parting between them
         // is Hegemony's dark shade, not Tri-Tachyon's: it closes the run it follows, which
         // is what makes it read as the Hegemony's holdings ending rather than as a gap
         // belonging to nobody.
@@ -388,8 +388,8 @@ final class OwnerRibbonRunsTests {
                 .containsExactlyElementsOf(expectedSegments);
         }
 
-        // Three owners of one stake each: a divider at each of the two handovers and none
-        // after the last run, since a band ending on a divider would part its final owner
+        // Three owners of one stake each: a parting at each of the two handovers and none
+        // after the last run, since a band ending on a parting would part its final owner
         // from nothing at all.
         @Test
         void leavesTheLastOwnersRunOpen() {
@@ -421,8 +421,8 @@ final class OwnerRibbonRunsTests {
         }
 
         // A one-stake owner has no inside, so nothing parts it from itself - the smallest
-        // rival mark the ribbon can make is one bright segment, and the only dark run in
-        // this band is the divider between the two owners.
+        // rival mark the ribbon can make is one bright segment, and the only dark segment in
+        // this band is the parting between the two owners.
         @Test
         void drawsNoPartingInsideAnOwnerHoldingASingleStake() {
 
@@ -476,7 +476,7 @@ final class OwnerRibbonRunsTests {
 
         // A system settled by one owner that no layer paints for anybody. Nothing here is a
         // rival of anything, so the cell falls to the uncontested reading and draws at its
-        // shortened runs. Read off the lengths rather than off the fact of a band, since only
+        // shortened lengths. Read off the lengths rather than off the fact of a band, since only
         // they tell the two readings apart.
         @Test
         void shortensALoneOwnersRunsOnACellNoFillCovers() {
@@ -532,7 +532,7 @@ final class OwnerRibbonRunsTests {
 
         // The same painterless cell with its second owner counted at nothing. What makes such a
         // cell a contest is a second owner holding something, not a second entry in the list -
-        // so this is the lone owner's cell it looks like, and takes the shortened runs.
+        // so this is the lone owner's cell it looks like, and takes the shortened lengths.
         @Test
         void shortensALoneOwnersRunsBesideAnEmptyOneOnACellNoFillCovers() {
 
@@ -589,7 +589,7 @@ final class OwnerRibbonRunsTests {
         }
 
         // The Diktat is ranked first and holds nothing, and the two owners behind it stand
-        // together: one side, so the cell takes the shortened runs. Judged against the listed
+        // together: one side, so the cell takes the shortened lengths. Judged against the listed
         // but absent owner instead, both allies would read as rivals of somebody who is not in
         // the system at all and the cell would band as a war.
         @Test
@@ -681,7 +681,7 @@ final class OwnerRibbonRunsTests {
 
         // The Diktat is listed but holds nothing counted, so it takes no run; the band is
         // the painter's two stakes and the one real rival, with no gap where it was. It
-        // takes no divider either: the single dark run at the handover is the Hegemony's,
+        // takes no parting either: the single dark segment at the handover is the Hegemony's,
         // closing the run it actually follows.
         @Test
         void leavesOutAnOwnerHoldingNothingWhileDrawingTheRest() {
@@ -713,8 +713,8 @@ final class OwnerRibbonRunsTests {
         }
 
         // The absent-painter shape: the painting owner is listed and holds nothing, so the first run
-        // in the band is the second owner's. A divider laid for the empty owner would open the
-        // band on a parting, which parts the first run from nothing at all.
+        // in the band is the second owner's. A parting laid for the empty owner would open the
+        // band on that parting, which parts the first run from nothing at all.
         @Test
         void laysNoDividerAheadOfTheFirstOwnerWithSomethingToDraw() {
 

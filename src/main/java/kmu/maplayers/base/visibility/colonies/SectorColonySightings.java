@@ -46,9 +46,9 @@ import java.util.Map;
  * <p>The bytes and the load lifecycle underneath are an {@link ObservationStore}'s, which every map
  * family that keeps observations shares, and which colonies the sector still holds is read by
  * {@link SectorMarkets#readMarketIds}. What one entry means stays here, in
- * {@link ColonyObservationCodec}: everything above this class is handed a {@link ColonyObservation} carrying both the place and the
- * moment, so a reader cannot pair one entry's place with another's time - and the two cannot be
- * stored apart and drift.
+ * {@link ColonyObservationCodec}: everything above this class is handed a {@link ColonyObservation}
+ * carrying both the place and the moment, so a reader cannot pair one entry's place with another's
+ * time - and the two cannot be stored apart and drift.
  *
  * <p>Final class with a private constructor: pure-function utility, no instance state, and
  * null-defensive like the rest of the map framework.

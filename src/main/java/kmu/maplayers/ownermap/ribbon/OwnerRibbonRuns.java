@@ -28,13 +28,13 @@ import java.util.Optional;
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
  * painter means something quite different from the same segment against a short one.
  *
- * <p>Pure over a ranking and each owner's stake shades, with no geometry and no colour lookup of its own, so
- * the rule depends on nothing live. Ranking order is the caller's: the runs come out in the order
- * the owners were handed over, so the ribbon cannot disagree with the fill about who leads a
+ * <p>Pure over a ranking and each owner's stake shades, with no geometry and no colour lookup of its
+ * own, so the rule depends on nothing live. Ranking order is the caller's: the runs come out in the
+ * order the owners were handed over, so the ribbon cannot disagree with the fill about who leads a
  * system it re-ranked for itself.
  *
  * <p>The owner tier's own rule rather than the band's: the plan it produces is
- * {@code base.ribbon}'s, and a layer banding a cell by anything but its owners lays its runs by a
+ * {@code base.ribbon}'s, and a layer banding a cell by anything but its owners lays its segments by a
  * rule of its own.
  */
 public final class OwnerRibbonRuns {
@@ -55,9 +55,9 @@ public final class OwnerRibbonRuns {
      * @param affiliation     who among those owners stands together, which is what keeps two allies
      *                        in one system from banding as though they fought over it;
      *                        {@link OwnerAffiliation#NONE} where nothing groups owners
-     * @param rules           how a band is laid: the run lengths, and how far they reach on a cell
+     * @param rules           how a band is laid: the segment lengths, and how far they reach on a cell
      *                        nobody contests
-     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where the cell draws no band
+     * @return the cell's segments in draw order, or {@link RibbonPlan#NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
             Optional<String> paintingOwnerId,
@@ -98,7 +98,7 @@ public final class OwnerRibbonRuns {
     // would part two owners across a run that is not there.
     //
     // Reached from both readings and given its lengths rather than choosing them, since all the
-    // two differ on is how long the runs are - not what a band is made of. A second copy for the
+    // two differ on is how long the segments are - not what a band is made of. A second copy for the
     // uncontested cells would let their bands drift into a different shape from the contested ones,
     // which is the one comparison the readout rests on.
     private static RibbonPlan layOwnerRuns(
@@ -125,7 +125,7 @@ public final class OwnerRibbonRuns {
     }
 
     // Whether the band would say anything the cell's own fill does not, which is what decides the
-    // lengths its runs are laid at: somebody holding something in the cell stands apart from the
+    // lengths its segments are laid at: somebody holding something in the cell stands apart from the
     // owner it is judged against.
     //
     // One reading serves both kinds of cell because an affiliation is a fold. Owners that all stand

@@ -228,7 +228,7 @@ final class CellRibbonStoreTests {
     }
 
     // A band that draws something, which is all these cases ask of it: what distinguishes it from
-    // CellRibbon.NONE is that it has a run at all, not what the run looks like.
+    // CellRibbon.NONE is that it has a segment at all, not what the segment looks like.
     private static CellRibbon buildAnyRibbon() {
 
         return new CellRibbon(List.of(

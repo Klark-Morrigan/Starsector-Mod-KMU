@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>An integration test rather than a unit one: the decline is reached through the economy read
  * the pass performs, so posing "no bloc holds a counted market here" means wiring an economy that
  * holds none rather than stubbing a seam that says so. The order is {@link HeldBlocRankerTests}'s
- * and the counting grammar beneath it - how many widths a run takes, where a divider falls - is
+ * and the counting grammar beneath it - how many widths a segment takes, where a parting falls - is
  * the shared rule's, read here only far enough to show that the ranked counts and the bake's
  * alliance set reached it.
  */
