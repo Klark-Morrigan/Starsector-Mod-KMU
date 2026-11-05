@@ -19,6 +19,8 @@
 - **聚焦选择器也会跟随殖民地易手**，因此其中的数字与地图一致。
 - **在*势力*和*联盟*视图上，被宣称星系的最后一个殖民地离开后，该星系仍以不填充的方式留在宣称方的领土中**，而不再在下一次完整重绘之前显示为无所有者。
 - **两个势力权重相同的星系在其中一方取得它时会重绘**，而不必等到下一次完整重绘。
+- **在*势力*和*联盟*视图上，两个势力打平的星系，其悬停框会把该星系着色所属的势力列为主导方**，而不再列出 ID 排在前面的那一方，其余势力则相对于它列出。
+- **无人持有经济系统登记的殖民地的星系，其悬停框不再将任何势力列为主导方**，而是在“在场”一栏下列出该星系中的所有势力。
 - **星系重绘失败时，会在下一帧再次重绘**，而不是保留旧的所有者。
 - **政治地图会跟随势力配色的变化**，例如玩家为自己的势力设置配色时，而不再保留旧的配色，直到其他变化重绘地图。
 - **Nexerelin 联盟改名后，联盟视图会显示新名称**，而不再保留旧名称，直到其他变化重绘地图。
@@ -50,11 +52,14 @@
 - **`MapLayerCommonRefreshSignal.DRAW_LISTS`**：叠加层缓存在完整重建或为已标记星系重建其绘制内容后发出。
 - **`MapHoverState.getCellArrivalCount()`**：光标抵达一个原本不在其上的单元的次数，供按每次停留保留的工作使用。
 - **`KnownMarketFootprints.foldFootprintsByFaction(Map)`**：由已读取的权重明细汇总出的足迹。
+- **`DominancePass.regroupFootprintsByBloc(Map)`**：将调用方已持有的按势力足迹，按该轮次的分组重新归并为按集团的足迹，使调用方无需再次计算权重即可询问星系由谁持有。
+- **`StandingBlock.PRESENT`**：主导悬停框中无持有者星系所用的分块，在一个不随安装而变的标题下列出所有参与竞争者。
 - **`ColonyKind.isUngoverned()`**：某处是否住着不受任何权力管辖的人，供每个区分有人管辖与无人管辖殖民地的读取方使用。
 - **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按种类分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
 - **`HolderRankingRules.createByMarketProximity(StarSystemAPI, Colonies, ColonyKnowledge, HolderGrouping)`**：实际排名规则唯一的构建处，包括对中立势力的排除和按市场远近的平局裁定。地图填充和刷新轮询都按它排名。
-- **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的所有者和配色，因此一次重建中的每个解析和每条色带都通过同一个对象为集团着色。
+- **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的所有者和配色，因此一次重建中的每个解析和每条按集团着色的色带都通过同一个对象为集团着色。
+- **`HolderPaintedView.resolveRibbonPalettes(HolderPass)`**：视图的色带分段读取配色之处，与其规划器并列。默认为本次计算自身的配色读取；按填充所不依据的内容为色带着色的视图返回自己的读取。
 - **`CellTooltipEntryLine.createCountedEntityLine(EntityNameplate, int)`**：为星域地图绘制的对象建立计数行，以其地图图标开头。
 - **`ContestBlockHeading.createFixedKeySource(String)`**：标题不随安装环境变化的区块所用的标题来源。
 - **`BlocSpotlight`**：被聚焦集团及其星系绘制所用的持有者。`BlocSpotlight.openOver(HolderPass, String)` 每个批次或每次重建打开一个，交给每个在聚焦下解析星系的部分，因此该集团持有的单元与宣称的单元通过同一个值融合。若集团配色所取自的势力已不存在，则不打开聚焦，其持有和宣称的星系都按实际持有者绘制。
@@ -73,8 +78,8 @@
 - **`SectorClaims.readClaimantBlocId(String, HolderGrouping)`**：宣称所落入的集团，地图填充、选择器统计和色带都读取它。
 - **`StandingRankOrder.createRankOrder(ToIntFunction, Function)`**：悬停框中的势力排名与单元下方的色带共用的唯一排序。
 - **`SmoothingStageSink`** 和 **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**：平滑会报告实际运行的每一道平滑处理，因此展示各阶段的调用方按地图绘制时的顺序和开关展示它们。`ClusterBorderStageCollector` 即为其一。
-- **`base.ribbon.RibbonPlanBuilder`**：逐个色段排布的计划，计划会接管它的列表而不复制。
-- **`RibbonPlan.hasLength()`**：计划的色段长度之和是否大于零，据此决定是否为它遍历单元的环线。
+- **`base.ribbon.RibbonPlanBuilder`**：逐个分段排布的计划，计划会接管它的列表而不复制。
+- **`RibbonPlan.hasLength()`**：计划的分段长度之和是否大于零，据此决定是否为它遍历单元的环线。
 - **`base.ribbon.CellRibbonStore`**：一次构建的色带、色带路径和色带所沿的环线；单元形状改变时三者一起丢弃。
 - **`base.ribbon.RibbonPathInset`**：描绘色带路径的两种位置，保留内缩或放弃内缩。
 - **`base.ribbon.RibbonBakeTally`**：一次烘焙如何处理图层提供色带的各单元，以 `banded`、`traced`、`reused`、`unplanned` 和 `refusedForRoom` 写在 `mapLayer.bakeRibbons` 的调用标签上。
@@ -124,7 +129,7 @@
 | `BlocAffiliation`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness` 及其 `areBlocsFriendly(Set, Set)` | KMLib 的 `kmlib.starsector.factions.relation.FactionSetFriendliness`，及其 `areSetsFriendly(Set, Set)` 和 `createForSector(SectorAPI)` |
 | `base.labels.anchor.DiagnosticPalette` | `base.render.DiagnosticPalette`，供标签与区域的调试显示共用 |
-| `ownermap.ribbon` 中的 `RibbonPlan`、`RibbonSegment` 和 `SystemRibbonPlanner`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonBuilder`、`RibbonPathTracer`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle` 和 `RibbonBakePhases` | `base.ribbon`：色带是沿单元的环线排布的色段，与色段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
+| `ownermap.ribbon` 中的 `RibbonPlan`、`RibbonSegment` 和 `SystemRibbonPlanner`，以及 `ownermap.render.ribbon` 中的 `CellRibbon`、`CellRibbonBuilder`、`RibbonPathTracer`、`CellRingPathCache`、`RibbonBand`、`RibbonStyle` 和 `RibbonBakePhases` | `base.ribbon`：色带是沿单元的环线排布的分段，与分段归属于谁无关。`CellPresenceRibbonRenderer` 改为 `base.ribbon.CellRibbonRenderer` |
 | `ownermap.render.ribbon` 中的 `CellRibbonPath`、`RibbonPathVerdict` 和 `CellRibbonPathRenderer` | `base.ribbon.overlay`：色带路径叠加层，与色带本身分开。构建禁止它导入 `base.ribbon` 的其余部分 |
 | `ownermap.render.labels.ClusterAnchorsBuilder` | `base.labels.anchor.ClusterAnchorsBuilder`：任何有区域的图层都以同样方式拟合名称 |
 | `base.labels.anchor` 中的 `ClusterNameBoxes` 和 `base.labels` 中的 `LabelLineBoxes` | `base.labels.extent`：名称所占空间的两种读法。构建禁止 `base.labels.anchor` 导入 `base.labels` 的其余部分 |
@@ -155,7 +160,9 @@
 | `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
 | `SidebarStyles.buildSidebarSoundScheme()` | `SidebarSounds.buildSoundScheme()` |
 | `MapPalettes.pickHolderPaletteColour(ElementPaintSelection, SystemOwner, Color)` | `pickOwnerPaletteColour(ElementPaintSelection, SystemOwner, Color)` |
-| `OwnerPresence` 的 `marketCount`，连同 `marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`、`stakeCount()`、`hasStakes()` 和 `stakeLengthUnits()`。所有者地图的核心不使用 *holder* 和 *market* 二词，构建会确保这一点 |
+| `OwnerPresence` 的 `palette` 和 `marketCount`，连同 `palette()`、`marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakePalettes`，按绘制顺序每个份额一个 `ColourPair`，连同 `stakePalettes()` 和 `hasStakes()`，以及 `stakeLengthUnits()`。分隔段取自其前一分段自身的暗色，因此同一所有者的各份额可用不同配色绘制。所有者地图的核心不使用 *holder* 和 *market* 二词，构建会确保这一点 |
+| `RibbonSegmentLengths.interjectionLengthUnits()` 和 `KmuOwnerMapRibbonSettings.getOwnerMapRibbonInterjectionLength()` | `partingLengthUnits()` 和 `getOwnerMapRibbonPartingLength()`：色带中两个分段之间的暗色分段统一称为*分隔段*。LunaSettings 字段 ID 保持原有拼写 |
+| `BlocPaletteReader.readBlocPalette(String)` | `RibbonPaletteReader.readSegmentPalette(String, String)`，按殖民地询问其计入的集团及拥有它的势力：分组决定色段是什么，配色读取决定分段是什么。`SectorBlocPalettes` 对每个成员都返回集团的配色，并保留 `readBlocPalette(String)` |
 | `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`：它为集团排名 |
 | `SystemOwnerResolve`、`SystemHolderResolve`、`SystemHolderResolveSource`、`DominanceSystemHolderResolve` 和 `ClaimSystemHolderResolve`，以及 `OwnerSource.openSystemResolve(SectorWalk, String)`、`openResolveOver` 和 `HolderPaintedView.resolveSystemHolderResolveSource()` | 各名称中的 `Resolve` 换为 `Resolver`：解析器是批次重新解析其已标记星系所用的对象 |
 | `RefreshSignalTracker.describeRaisesSinceTheLastReading()` | `drainRaisesSinceTheLastReading()`：每次询问都会推进追踪器，因此每次触发只报告一次 |
@@ -193,8 +200,8 @@
 | 自行组合可选 Mod 遮挡的 `MapCoverReader.createForLiveScreen()` | `MapCoverReader.registerOptionalModCovers(List)`，由 `MapLayers` 以已安装 Mod 的遮挡调用 |
 | 向 Nexerelin 询问是否提供联盟视图的 `VanillaMapLayerToggleAttacher()` | `VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(BooleanSupplier)`，由 `MapLayers` 调用 |
 | `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` 和 `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` 和 `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, boolean, FontAtlas)`，两者都接收边界描绘重建读取的同一个 `MapStyling`。快照还接收重建采样的锚点叠加层是否显示。快照的 `desaturationPalette` 和 `categories` 组件改为其 `paints` |
-| 记录类型 `RibbonPlanRules(RibbonSegmentLengths, UncontestedRibbonRuns)` 及其 `lengths()`、`uncontestedRuns()` 和 `resolveUncontestedLengths()`，以及 `UncontestedRibbonRuns` | 改为不可继承的类，只能由 `RibbonPlanRules.createFromAuthoredLengths(RibbonSegmentLengths, boolean)` 创建，其中的开关表示无人争夺的单元是否把每个殖民地的色段缩短为一个宽度。读取方法为 `getContestedLengths()` 和 `getUncontestedLengths()`。`UncontestedRibbonRuns` 已移除 |
-| `RibbonStyle(double, double, double, RibbonSegmentLengths, boolean)` 和 `RibbonStyleReader.readRibbonStyle()` | `RibbonStyle(double, double, double, boolean)`：色段长度归计划规则所有。`ownermap.render.ribbon.RibbonBakeSettings.readFromLunaSettings()` 一次读取所有色带设置，样式也在其中 |
+| 记录类型 `RibbonPlanRules(RibbonSegmentLengths, UncontestedRibbonRuns)` 及其 `lengths()`、`uncontestedRuns()` 和 `resolveUncontestedLengths()`，以及 `UncontestedRibbonRuns` | 改为不可继承的类，只能由 `RibbonPlanRules.createFromAuthoredLengths(RibbonSegmentLengths, boolean)` 创建，其中的开关表示无人争夺的单元是否把每个殖民地的分段缩短为一个宽度。读取方法为 `getContestedLengths()` 和 `getUncontestedLengths()`。`UncontestedRibbonRuns` 已移除 |
+| `RibbonStyle(double, double, double, RibbonSegmentLengths, boolean)` 和 `RibbonStyleReader.readRibbonStyle()` | `RibbonStyle(double, double, double, boolean)`：分段长度归计划规则所有。`ownermap.render.ribbon.RibbonBakeSettings.readFromLunaSettings()` 一次读取所有色带设置，样式也在其中 |
 | 各自读取所需设置的 `CellRibbonsBaker.createForPass(OwnerMapClusters, CellGeometryCache, SectorWalk, StandingClusterAnchors)`、`CellRibbonSource.createForPass(SectorWalk, OwnerSource, RibbonBakeSurface)` 和 `RibbonBakeSurface.createForPass(OwnerMapClusters, CellGeometryCache, StandingClusterAnchors)` | `CellRibbonsBaker.createForPass(OwnerMapClusters, CellGeometryCache, SectorWalk, StandingClusterAnchors, RibbonBakeSettings)`，接收调用方读取的设置。`CellRibbonSource.createForPass` 还接收 `RibbonStyle` 和 `RibbonPlanRules`，`RibbonBakeSurface.createForPass` 还接收色带是否避让区域名称以及 `RibbonNameClearanceChoice`。关闭色带时，本次烘焙两者都不创建 |
 | 由图层依次调用的各个步骤 `CellRibbonBuilder.buildCellRibbon(RingPath, RibbonPlan, RibbonStyle, List, IterationScope)` 和 `RibbonPathTracer.traceLaidRibbonPath(List, double[], RibbonStyle)` | `CellRibbonBuilder.layCellRibbon(SystemKey, List, double[], RibbonPlan, RibbonStyle, List, CellRingPathCache, IterationScope, RibbonBakeTally)`：一次调用排布一个单元的色带。计划为空时，在遍历任何环线之前就给出结果；环线通过已保存的环线取得。它自行标记描绘、裁切和描边三个环节，因此 `RibbonBakePhases` 留给图层的只有 `BAKE_SECTION` 和 `PLAN_PHASE`；它还把该单元计入其烘焙调用的计数 |
 | `CellRibbonSource.buildCellRibbon(SystemKey, SystemKey, List, IterationScope)` | 还接收其烘焙调用所计入的 `RibbonBakeTally`。在计划之前就被拒绝的单元不计入 |
@@ -218,7 +225,7 @@
 | 给出 `clusters()`、`standingAnchors()`、`factionLabels()` 和 `cellGeometry()` 的记录类型 `StandingOwnerMap` | 改为基于这四者的不可继承的类，读取方法为 `getClusters()` 和 `getCellGeometry()`。完整重建与批次都经由它拟合名称、烘焙色带，因此它既不交出落点，也不交出标签 |
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`：构建的边界描绘参数随主题一同携带，区域组不会再按各自的实时读取来描绘 |
 | 自行读取绘制方案的 `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)` | `buildClusters(CellGeometryCache, OwnerMapBuildInputs, ResolvedOwners)`，接受调用方构建的 `OwnerMapBuildInputs`：重建只读取一次绘制方案，供它构建的一切使用，并在采样选择的同时采样锚点叠加层是否显示 |
-| `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` 和 `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`。`palettes()` 返回本次计算自身的配色读取，因此色带只能经由填充所用的同一读取着色 |
+| `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | 已移除：持有者来源以视图经由 `HolderPaintedView.resolveRibbonPalettes(HolderPass)` 选择的配色读取构建 `RibbonPlanInputs(HolderPass, RibbonPaletteReader, OwnerAffiliation, RibbonPlanRules)`；除非视图按其他依据为色带着色，否则即为本次计算自身的配色读取 |
 | `HeldCellRibbons.planHeldCellRibbon(String, StarSystemAPI, Map, RibbonPlanInputs)` 和 `ClaimCellRibbons.planClaimCellRibbon(Optional, StarSystemAPI, SystemClaimBreakdown, RibbonPlanInputs)` | 改为包私有的 `HeldBlocRanker.rankBlocsByWeight(String, Map)` 和 `ClaimBlocRanker.rankBlocsByContest(SystemClaimBreakdown, HolderGrouping)`，返回按排名排列的集团 ID。各计划器自行把排名交给 `ColonyCellRibbons.planCellRibbon` |
 | 公开的 `HeldSystemRibbonSource`（由 `HeldSystemRibbonPlanner` 实现），以及公开的 `HeldOrClaimedSystemRibbonPlanner(HeldSystemRibbonSource, SystemRibbonPlanner)` | 改为 `politicalmap.ribbon` 中的包私有类型，即该组合自身的端口。`HeldOrClaimedSystemRibbonPlanner.createForPass` 把 `HeldSystemRibbonPlanner.planHeldSystemRibbon` 绑定到它 |
 | `HolderRankingRules.createByLowestId(Predicate)` 和 `createOpenContestByLowestId()` | 已移除：每个实际排名都经由 `createByMarketProximity` 按远近裁定平局。没有几何信息的读取方改为构建 `new HolderRankingRules(Comparator.naturalOrder(), candidacy)` |
@@ -244,7 +251,8 @@
 | `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` 和 `getLoneCells()`，每次重建只划分一次。`OwnerMapClusters` 和 `PaintedCellStore` 保留 `getStyledCellByCellKey()`，为只读：写入改用 `putPaintedCell`、`removePaintedCell`，或 `putOrRemovePaintedCell`，后者会移除未烘焙出绘制记录的单元 |
 | `BaseSidebarHost` | 宿主实现 `composeTabStyle()` 并读取 `resolveTabStyle()`，后者保留样式，直到设置修订号或星域已确定的字体变化 |
 | `SystemCellTooltip`、`PoliticalMapCellTooltip`、`SystemClaimTooltip` 和 `SystemDominationTooltip` 上的 `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` | 已移除：按键从绘制所保留的组合主体读取 `deepestHeldLevel()`，因此图层只在 `composeBody` 中给出其深度 |
-| `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方已读取的权重，因此为星系排名并解释其分数的悬停框只为每个市场计算一次权重 |
+| `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方由已读取的权重汇总出的按势力足迹，因此为星系排名、指明其持有者并解释其分数的悬停框只为每个市场计算一次权重 |
+| `StandingBlockRouting.routeRankedStandings(List, StandingBlockRules)` | `routeRankedStandings(List, String, StandingBlockRules)`，以填充着色所属的集团为持有者，而不再选取排名第一者，后者在打平时会与填充不一致 |
 | `CellTooltipEntryLine` 的十二参数构造函数，以及 `labelText()`、`redactedWordLengths()`、`labelFinding()` 和 `hasRedactedName()` | `CellTooltipEntryLine(CellTooltipMark, CellTooltipLineName, CellTooltipIndexPlace, String, CellTooltipQualifier, CellTooltipLineValue, boolean)`。名称为密封类型 `CellTooltipLineName`，即 `Spoken` 或 `Withheld`，通过 `selectByCase(Function, Function)` 读取，因此没有哪一行能既说出又隐去其名称 |
 | `valueText()`、`countedValue()`、`valueWorkingText()` 和 `isValueUncounted()`，位于 `CellTooltipEntryLine` 上 | 改为 `value()` 上的同名四项，即一个 `CellTooltipLineValue` |
 | 静态的 `MapLayerRegistry`、`LiveMapLayerArrangement` 和 `MapLayerScreens`，连同其重置钩子 | 改为由 `MapLayers.registerAll()` 构建的实例，它返回建立在另外两者之上的 `MapLayerScreens`。入口通过 `SectorMapMachineryIndex.installMachineryOn(SectorAPI, InstalledMachinery...)` 将其安放到每个星域上，各渲染通道用 `MapLayerScreens.resolveScreensIn(SectorMapMachinery)` 读取 |

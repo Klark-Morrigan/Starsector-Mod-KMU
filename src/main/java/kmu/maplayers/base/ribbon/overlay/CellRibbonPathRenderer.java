@@ -24,7 +24,7 @@ import java.util.List;
  * from.
  *
  * <p>The overlay answers the one question the bands themselves cannot. A cell drawing nothing is
- * the sector's normal state and also every one of its failures - no runs planned, a ring
+ * the sector's normal state and also every one of its failures - no segments planned, a ring
  * with no room, a name lying across it - and all of them look identical on the map. The path is
  * what was there underneath: where a band would have run, and by
  * {@link DiagnosticPalette}'s ramp whether the ring ever offered it room.
@@ -35,8 +35,8 @@ import java.util.List;
  * a cell drawn in it means - outline no band is laid on.
  *
  * <p>Its own layer over the bands rather than a mode replacing them, so a band and the path it was
- * laid on can be read against each other - a path drawn over its own band is how a run that leaves
- * the path or stops short of it shows at all.
+ * laid on can be read against each other - a path drawn over its own band is how a segment that
+ * leaves the path or stops short of it shows at all.
  *
  * <p>No opacity knobs of its own. Every size and shade here is a diagnostic's, tuned to be read
  * rather than looked at, and a knob answering a question nobody asks costs more than it settles.

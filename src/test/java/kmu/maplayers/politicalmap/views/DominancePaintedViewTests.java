@@ -119,10 +119,8 @@ final class DominancePaintedViewTests {
         void countsEachSystemByTheMechanicThatPaintedIt() {
 
             // ARRANGE
-            var inputs = new RibbonPlanInputs(
-                new HolderPass(new SectorPassIndex(null), UNDER_THE_FOG, HolderGrouping.identity()),
-                OwnerAffiliation.NONE,
-                STANDARD_RULES);
+            var pass = new HolderPass(new SectorPassIndex(null), UNDER_THE_FOG, HolderGrouping.identity());
+            var inputs = new RibbonPlanInputs(pass, pass.palettes(), OwnerAffiliation.NONE, STANDARD_RULES);
 
             var plannerMock = mock(HeldOrClaimedSystemRibbonPlanner.class);
 

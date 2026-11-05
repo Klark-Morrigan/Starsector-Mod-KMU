@@ -15,7 +15,7 @@ import java.util.Set;
  * <p>One value rather than a read apiece, because four surfaces answer off it and must not be able
  * to part: the cell classification asks the colonies' emptiness, the filter's spotlight asks the bloc
  * set for who to spare, the picker asks who to list and how large to call them, and the band asks
- * how many colonies each bloc's run counts. Folding the blocs from the same colonies makes presence a
+ * whose colonies each bloc's run counts. Folding the blocs from the same colonies makes presence a
  * partition of the set emptiness is asked of, so a cell cannot be drawn as empty space while a bloc's
  * fill is kept over it, nor a bloc listed or banded off colonies it was not counted present for.
  *

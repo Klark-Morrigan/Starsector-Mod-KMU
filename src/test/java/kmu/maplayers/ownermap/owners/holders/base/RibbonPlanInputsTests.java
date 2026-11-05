@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
@@ -20,8 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins that one bake's band inputs answer their palettes, grouping and habitation off the pass
- * rather than off a read of their own.
+ * Pins that one bake's band inputs answer their grouping and habitation off the pass rather than
+ * off a read of their own.
  *
  * <p>The pass is stood in for, since what it answers is pinned in its own suite; what belongs here
  * is that the inputs ask it rather than anything beside it.
@@ -35,37 +34,29 @@ final class RibbonPlanInputsTests {
         new RibbonSegmentLengths(4, 2),
         UNCONTESTED_RUNS_SHORTENED);
 
-    @Nested
-    class Palettes {
-
-        @Test
-        void answersThePassesOwnPaletteRead() {
-            // The pass's own rather than one built beside it, so a band colours a bloc through the
-            // very object the fills of the same rebuild were coloured through.
-            var passMock = mock(HolderPass.class);
-            var palettes = new SectorBlocPalettes(mock(SectorAPI.class), HolderGrouping.identity());
-
-            when(passMock.palettes())
-                .thenReturn(palettes);
-
-            assertThat(new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES).palettes())
-                .isSameAs(palettes);
-        }
-    }
+    // A palette read none of these cases colours through: what they pin is the pass's answers.
+    private static final RibbonPaletteReader UNREAD_PALETTES = (blocId, ownerFactionId) -> null;
 
     @Nested
     class Grouping {
 
+        // The counts fold under the grouping the fills were painted with, which is the pass's.
         @Test
         void answersThePassesGrouping() {
-            // The counts fold under the grouping the fills were painted with, which is the pass's.
+
+            // ARRANGE
             var grouping = buildGroupOf("hegemony", "persean");
             var passMock = mock(HolderPass.class);
+            var inputs = new RibbonPlanInputs(passMock, UNREAD_PALETTES, OwnerAffiliation.NONE, RULES);
 
             when(passMock.grouping())
                 .thenReturn(grouping);
 
-            assertThat(new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES).grouping())
+            // ACT
+            var actualGrouping = inputs.grouping();
+
+            // ASSERT
+            assertThat(actualGrouping)
                 .isSameAs(grouping);
         }
     }
@@ -73,19 +64,28 @@ final class RibbonPlanInputsTests {
     @Nested
     class ReadHabitationIn {
 
+        // Asserted as identity: the band reads the very value the pass remembered for the
+        // system, so it neither filters nor folds the colonies a second time.
         @Test
         void answersThePassesOwnRememberedHabitation() {
-            // Asserted as identity: the band reads the very value the pass remembered for the
-            // system, so it neither filters nor folds the colonies a second time.
+
+            // ARRANGE
             var systemMock = mock(StarSystemAPI.class);
-            var habitation = new SystemHabitation(List.of(), Map.of("hegemony", new BlocHabitation(1, 5)));
+            var habitation = new SystemHabitation(
+                List.of(),
+                Map.of("hegemony", new BlocHabitation(List.of("hegemony"), 5)));
+
             var passMock = mock(HolderPass.class);
+            var inputs = new RibbonPlanInputs(passMock, UNREAD_PALETTES, OwnerAffiliation.NONE, RULES);
 
             when(passMock.readHabitationIn(systemMock))
                 .thenReturn(habitation);
 
-            assertThat(new RibbonPlanInputs(passMock, OwnerAffiliation.NONE, RULES)
-                    .readHabitationIn(systemMock))
+            // ACT
+            var actualHabitation = inputs.readHabitationIn(systemMock);
+
+            // ASSERT
+            assertThat(actualHabitation)
                 .isSameAs(habitation);
         }
     }

@@ -37,8 +37,8 @@ import static org.mockito.Mockito.when;
  * near-identical copy.
  *
  * <p>Every builder returns the live Mockito mock, so a suite with a specialised need (an attached
- * station, patrol counts, a planet market) adds its own stubs on top and keeps that variant local
- * to the one suite that uses it. Markets are built by what kind of market they are rather than by
+ * station, patrol counts) adds its own stubs on top and keeps that variant local to the one suite
+ * that uses it. Markets are built by what kind of market they are rather than by
  * flag, the flags themselves staying private; {@link #buildFaction} comes in a palette-less form
  * for the footprint read that never resolves colours and a palette form for the resolves that do.
  */
@@ -143,6 +143,49 @@ public final class SectorOwnershipFixtures {
     public static MarketAPI buildVisibleMarket(FactionAPI faction, int size) {
 
         return atStability(ColonyMarketFixture.buildVisibleColonyOfSize(faction, size));
+    }
+
+    /**
+     * That plain colony on a planet rather than a station, for a rule that ranks planets above
+     * stations at an otherwise exact weight tie. The plain colony stands on no planet, so it is the
+     * station of such a pair.
+     *
+     * @param faction the owning faction
+     * @param size    the colony size
+     * @return the market mock
+     */
+    public static MarketAPI buildPlanetMarket(FactionAPI faction, int size) {
+
+        var marketMock = buildVisibleMarket(faction, size);
+
+        when(marketMock.getPlanetEntity())
+            .thenReturn(mock(PlanetAPI.class));
+
+        return marketMock;
+    }
+
+    /**
+     * One system two colonies of one size share, one on a station and one on a planet, so their
+     * owners tie on every weight but the planet weight. That is the shape a rule ranking planets above
+     * stations settles one way and a rule ranking by ID alone can settle the other.
+     *
+     * @param systemId     the system ID
+     * @param stationOwner the faction holding the station colony
+     * @param planetOwner  the faction holding the planet colony
+     * @param colonySize   the size both colonies share
+     * @return the sector mock, with both owners resolvable by ID
+     */
+    public static SectorAPI buildSectorSplitBetweenStationAndPlanet(
+            String systemId,
+            FactionAPI stationOwner,
+            FactionAPI planetOwner,
+            int colonySize) {
+
+        return buildSectorWith(
+            systemId,
+            List.of(stationOwner, planetOwner),
+            buildVisibleMarket(stationOwner, colonySize),
+            buildPlanetMarket(planetOwner, colonySize));
     }
 
     /**

@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mockStatic;
  * frame that goes on to draw cannot be watched from the band list without a context. Standing the
  * pass down over a scale is what it must never do: every size a band carries is settled in the
  * world, so how small it lands on screen is the map's own scaling of it and no judgement of this
- * pass - and a band withheld looks exactly like a cell the layer planned no runs for, which is the
+ * pass - and a band withheld looks exactly like a cell the layer planned no segments for, which is the
  * one thing the readout exists to tell apart.
  */
 final class CellRibbonRendererTests {
@@ -52,12 +52,15 @@ final class CellRibbonRendererTests {
         @Test
         void readsNoBandsWhenNoCellCarriesOne() {
 
+            // ARRANGE
             var ribbonsFake = new RibbonsFake(List.of());
 
+            // ACT
             CellRibbonRenderer.renderOnMap(
                 ribbonsFake,
                 PAINTING_FRAME);
 
+            // ASSERT
             assertThat(ribbonsFake.hasReadBands())
                 .isFalse();
         }
@@ -65,36 +68,46 @@ final class CellRibbonRendererTests {
         @Test
         void readsNoBandsWhenTheOverlayIsFullyFadedOut() {
 
+            // ARRANGE
             // A cell that does carry a band, so only the fade can be what stops it: at the ends of
-            // the map's zoom fade every run would emit at zero effective alpha.
+            // the map's zoom fade every segment would emit at zero effective alpha.
             var ribbonsFake = buildRibbonsCarryingOneBand();
 
+            // ACT
             CellRibbonRenderer.renderOnMap(
                 ribbonsFake,
                 FADED_OUT_FRAME);
 
+            // ASSERT
             assertThat(ribbonsFake.hasReadBands())
                 .isFalse();
         }
 
+        // The pass is watched at the GL entry point rather than at the band list, since the
+        // walk behind it is what needs a context: reaching the entry point at all is the whole
+        // of what "the scale did not stand this frame down" means.
         @Test
         void emitsTheBandsHoweverFarTheMapIsZoomedOut() {
 
-            // The pass is watched at the GL entry point rather than at the band list, since the
-            // walk behind it is what needs a context: reaching the entry point at all is the whole
-            // of what "the scale did not stand this frame down" means.
+            // ARRANGE
+            var ribbonsFake = buildRibbonsCarryingOneBand();
+
             try (var glPassesMock = mockStatic(GlPasses.class)) {
 
+                // ACT
                 CellRibbonRenderer.renderOnMap(
-                    buildRibbonsCarryingOneBand(),
+                    ribbonsFake,
                     ZOOMED_FAR_OUT_FRAME);
 
-                glPassesMock.verify(() -> GlPasses.runBlendedPass(any(), any(), any()));
+                // ASSERT
+                glPassesMock.verify(
+                    () -> GlPasses.runBlendedPass(any(), any(), any()));
             }
         }
     }
 
     private static RibbonsFake buildRibbonsCarryingOneBand() {
+
         return new RibbonsFake(List.of(
             new CellRibbon(List.of(new RibbonBand(Color.WHITE, new float[0])))));
     }
@@ -114,6 +127,7 @@ final class CellRibbonRendererTests {
 
         @Override
         public Iterator<CellRibbon> iterator() {
+
             hasReadBands = true;
             return ribbons.iterator();
         }

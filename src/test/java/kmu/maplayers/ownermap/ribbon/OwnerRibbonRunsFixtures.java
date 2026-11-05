@@ -11,11 +11,11 @@ import java.util.Set;
  * the design's own proportions, and who stands with whom.
  *
  * <p>Shared because the core's own rule suite and every suite reading a band back through a layer's
- * owners pose the same map and read the same runs back. Held apart, an owner could draw one colour
+ * owners pose the same map and read the same segments back. Held apart, an owner could draw one colour
  * in the rule's suite and another in a layer's, and two suites could disagree about what "the
  * design's proportions" are while both passed.
  *
- * <p>The colours are exported for a case to assert with, since what a case reads back is a run's
+ * <p>The colours are exported for a case to assert with, since what a case reads back is a segment's
  * colour. The widths are not.
  */
 public final class OwnerRibbonRunsFixtures {
@@ -37,11 +37,11 @@ public final class OwnerRibbonRunsFixtures {
 
     /**
      * The design's own proportions - a stake three widths long, parted by one width - paired with
-     * the uncontested shortening switched off, so every cell's runs come out at those same lengths
+     * the uncontested shortening switched off, so every cell's segments come out at those same lengths
      * whether a rival is in it or not. What the shortening does to them is the plan rules' own
      * suite's.
      *
-     * <p>The widths are not exported for a case to assert with. A case states the run lengths it
+     * <p>The widths are not exported for a case to assert with. A case states the segment lengths it
      * expects as its own literals, so an edit to these proportions fails the suites that read a
      * band back rather than moving their expectations along with it.
      */
@@ -53,11 +53,11 @@ public final class OwnerRibbonRunsFixtures {
     /**
      * The same proportions with the shortening switched on, which is the shipped answer and the
      * only witness to which reading a cell fell under: a cell nobody contests draws each stake one
-     * width long, where a contested one keeps the authored run. A suite reaching for these is posing
+     * width long, where a contested one keeps the authored stake length. A suite reaching for these is posing
      * that question and nothing else.
      *
      * <p>The proportions come off the rules above rather than being restated, so the two cannot
-     * drift into disagreeing about what an unshortened run is.
+     * drift into disagreeing about what an unshortened stake segment is.
      */
     public static final RibbonPlanRules SHORTENED_UNCONTESTED_RULES =
         RibbonPlanRules.createFromAuthoredLengths(

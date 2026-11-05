@@ -300,8 +300,24 @@ public record DominancePass(
      * @return each present bloc's footprint in the system; empty when no bloc holds a folded market
      */
     public Map<String, MarketFootprint> readBlocFootprints(StarSystemAPI system) {
+        return regroupFootprintsByBloc(readFootprintsByFaction(system));
+    }
+
+    /**
+     * Per-faction footprints a caller already holds, regrouped into per-bloc footprints under this
+     * pass's grouping - the fold {@link #readBlocFootprints} applies to its own read.
+     *
+     * <p>For a caller that folded the footprints out of breakdowns it read for a question of its
+     * own, so it can rank the system without weighing every market a second time.
+     *
+     * @param footprintByFactionId each faction's footprint in one system
+     * @return each bloc's footprint there, in first-seen order
+     */
+    public Map<String, MarketFootprint> regroupFootprintsByBloc(
+            Map<String, MarketFootprint> footprintByFactionId) {
+
         return grouping().regroupByBloc(
-            readFootprintsByFaction(system),
+            footprintByFactionId,
             MarketFootprint.EMPTY,
             MarketFootprint::merge);
     }

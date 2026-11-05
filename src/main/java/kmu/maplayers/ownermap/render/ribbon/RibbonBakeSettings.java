@@ -9,7 +9,7 @@ import kmu.settings.RibbonNameClearanceChoice;
 
 /**
  * Every answer the player gives about the bands, read once for one bake: whether they draw, the
- * sizes they are laid at, how their runs are laid, the room they give the names, and whether the
+ * sizes they are laid at, how their segments are laid, the room they give the names, and whether the
  * diagnostic overlay traces their paths.
  *
  * <p>The single seam those knobs are fetched through. A bake reads them in one go and hands the
@@ -17,16 +17,16 @@ import kmu.settings.RibbonNameClearanceChoice;
  * stage of the bake reaches for a setting on its own.
  *
  * <p>The proportions the whole design rests on are the player's, because they are a matter of
- * taste against a real sector: how thick a band has to be before it reads, how far a run should
- * reach relative to the parting beside it, and how deep inside a border a band sits are all
- * answers that only look right or wrong on the map. What stays authored here is the mitre limit,
+ * taste against a real sector: how thick a band has to be before it reads, how far a stake's
+ * segment should reach relative to the parting beside it, and how deep inside a border a band sits
+ * are all answers that only look right or wrong on the map. What stays authored here is the mitre limit,
  * which is not one of those - it is the angle past which a corner's mitre becomes a spike, a
  * property of stroking a polyline rather than of how the readout looks.
  *
  * @param areRibbonsDrawn          whether any cell draws a band. Off, a bake builds nothing to lay
  *                                 one from, so the counting leaves the rebuild along with the bands
  * @param ribbonStyle              the sizes every band is laid at
- * @param planRules                how far a band's runs reach, contested and uncontested
+ * @param planRules                how far a band's segments reach, contested and uncontested
  * @param isRibbonKeptClearOfNames whether a band breaks around a cluster name drawn over its cell
  * @param nameClearance            how much room a name takes, where the bands keep clear of the
  *                                 names at all
@@ -65,7 +65,7 @@ public record RibbonBakeSettings(
         var planRules = RibbonPlanRules.createFromAuthoredLengths(
             new RibbonSegmentLengths(
                 KmuOwnerMapRibbonSettings.getOwnerMapRibbonSegmentLength(),
-                KmuOwnerMapRibbonSettings.getOwnerMapRibbonInterjectionLength()),
+                KmuOwnerMapRibbonSettings.getOwnerMapRibbonPartingLength()),
             KmuOwnerMapRibbonSettings.shouldShortenOwnerMapUncontestedRibbonRuns());
 
         return new RibbonBakeSettings(

@@ -71,8 +71,9 @@ final class OwnerMapBuildLedger {
     private PaintedPalettes paintedPalettes;
 
     // What the cells currently held were cut from (see CellCutInputs for why that is one value).
-    // Null (not a zero reading) is the never-cut state, since every reading the record can hold is one the player can actually be under - and
-    // it is what makes a cache's first frame cut, whatever the signal happens to say.
+    // Null (not a zero reading) is the never-cut state, since every reading the record can hold is
+    // one the player can actually be under - and it is what makes a cache's first frame cut,
+    // whatever the signal happens to say.
     private CellCutInputs lastCellCut;
 
     // The last sampling of what the cells are cut from, and the settings revision it was read

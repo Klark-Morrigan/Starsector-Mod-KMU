@@ -7,7 +7,6 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
-import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -41,9 +40,9 @@ import java.util.Set;
  * where a group is a bloc with its members nested. One code path serves both.
  *
  * <p>The grouped ranking is a pure rule over footprints, present factions and a grouping, kept free
- * of the live economy; the live entry only reads the one hovered system's footprints
- * ({@link KnownMarketFootprints}) and the factions present in it
- * ({@link HolderPass#readKnownColonyFactionIds}) before handing them to that rule.
+ * of the live economy; the live entry takes the one hovered system's footprints as the caller folded
+ * them ({@link KnownMarketFootprints#foldFootprintsByFaction}) and reads the factions present in it
+ * ({@link HolderPass#readKnownColonyFactionIds}) before handing both to that rule.
  */
 public final class SystemStandings {
 
@@ -59,32 +58,32 @@ public final class SystemStandings {
 
     /**
      * Ranks the one hovered system's factions into two-tier standings under a pass's rule, dev
-     * reveal, and grouping: reads who is present in the system, folds each faction's weighed
-     * markets into its footprint, then ranks both through the pure rule below. The live entry the
-     * tooltip resolves a hover through.
+     * reveal, and grouping: reads who is present in the system, then ranks them with the
+     * footprints through the pure rule below. The live entry the tooltip resolves a hover through.
      *
-     * <p>Taken over the weights the caller already read rather than reading them here, because the
-     * box that ranks a system goes on to explain each score from the same weights: read twice, every
-     * market in the system would be weighed twice for one hover. Both they and the presence come
-     * off the pass's one walk of the system, so who is present and what was weighed for them are
-     * two readings of one set of colonies rather than two walks that can part company.
+     * <p>Taken over footprints the caller already holds rather than reading them here, because the
+     * box that ranks a system goes on to explain each score from the same weights and to ask who
+     * holds the system from the same footprints: read again, every market in the system would be
+     * weighed twice for one hover. Both they and the presence come off the pass's one walk of the
+     * system, so who is present and what was weighed for them are two readings of one set of
+     * colonies rather than two walks that can part company.
      *
-     * @param system                the hovered system whose colonies are ranked
-     * @param pass                  the colony rule, grouping and colony walk this ranking resolves
-     *                              under, sampled once by the caller so the whole ranking uses one
-     *                              set of knobs
-     * @param breakdownsByFactionId each faction's weighed markets in the system, as the pass read
-     *                              them
+     * @param system               the hovered system whose colonies are ranked
+     * @param pass                 the colony rule, grouping and colony walk this ranking resolves
+     *                             under, sampled once by the caller so the whole ranking uses one set
+     *                             of knobs
+     * @param footprintByFactionId each faction's footprint in the system, folded from the weights the
+     *                             pass read
      * @return the system's groups ranked descending by summed score, each with its members ranked
      *         within; empty when the player knows of no colony there
      */
     public static List<GroupStanding> rankByDominationScore(
             StarSystemAPI system,
             DominancePass pass,
-            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+            Map<String, MarketFootprint> footprintByFactionId) {
 
         return rankByDominationScore(
-            KnownMarketFootprints.foldFootprintsByFaction(breakdownsByFactionId),
+            footprintByFactionId,
             pass.readKnownColonyFactionIds(system),
             pass.grouping());
     }

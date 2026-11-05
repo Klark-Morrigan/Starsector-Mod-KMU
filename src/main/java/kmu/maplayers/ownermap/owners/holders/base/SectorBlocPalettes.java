@@ -1,20 +1,25 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.colour.ColourPair;
+import kmlib.logging.RearmableWarnings;
+import kmlib.logging.SessionWarning;
 import kmlib.starsector.factions.FactionColours;
 import kmlib.starsector.factions.SectorFactions;
 
 import kmu.maplayers.ownermap.owners.SystemOwner;
+
+import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * The live binding of {@link BlocPaletteReader}: a bloc's two shades read off the faction it
- * paints in.
+ * A bloc's two shades read off the faction it paints in, and the live binding of
+ * {@link RibbonPaletteReader} for a layer colouring a band by bloc.
  *
  * <p>A bloc is not always a faction - a group is named by a synthetic ID no
  * {@code FactionAPI} answers to - so the grouping names the colour faction first and the sector is
@@ -28,7 +33,16 @@ import java.util.Optional;
  * system's holder, every cell's band and the spotlight each ask per bloc, so a pass asks of a
  * handful of blocs many times over. Not safe for concurrent use.
  */
-public final class SectorBlocPalettes implements BlocPaletteReader {
+public final class SectorBlocPalettes
+        implements RibbonPaletteReader {
+
+    private static final Logger LOG = Global.getLogger(SectorBlocPalettes.class);
+
+    // One for the class rather than per instance: a pass is opened per rebuild, and a faction gone
+    // from the sector stays gone, so a warning held per pass would be written on every rebuild.
+    // Re-armed with the rest when a diagnostic is switched on.
+    private static final SessionWarning MISSING_COLOUR_FACTION_WARNING =
+        RearmableWarnings.createRearmableWarning(LOG);
 
     // Each bloc's owner as first resolved, a bloc whose colour faction has gone held as empty so its
     // absence is remembered too. The owner rather than the bare shades, since it carries them and
@@ -44,11 +58,27 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
      *                 pass so everything drawn for a bloc resolves its colours identically
      */
     public SectorBlocPalettes(SectorAPI sector, HolderGrouping grouping) {
+
         this.sector = sector;
         this.grouping = grouping;
     }
 
+    /**
+     * The bloc's own shades, whichever member owns the colony: a bloc's shades are the bloc's, so a
+     * band coloured here draws a run in the one pair its fill is painted in.
+     */
     @Override
+    public ColourPair readSegmentPalette(String blocId, String ownerFactionId) {
+        return readBlocPalette(blocId);
+    }
+
+    /**
+     * The shades the given bloc draws in.
+     *
+     * @param blocId the bloc to colour: a faction ID, or a group's synthetic bloc ID
+     * @return the bloc's bright and dark shades, or null where the bloc has no colour to resolve
+     *         at all - the degenerate case of a bloc whose colour faction has gone from the sector
+     */
     public ColourPair readBlocPalette(String blocId) {
 
         var owner = resolveOwnerOf(blocId);
@@ -82,12 +112,23 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
     // One bloc's owner read off the sector, for the memo above to remember. A faction gone from the
     // sector yields none: painting it a stand-in colour would put colour on the map for something
     // the map cannot name.
+    //
+    // That costs the bloc its whole place on the map, so it is said in the log. Not with no sector
+    // to ask, which is a pass outside a running game rather than a faction gone from one.
     private Optional<SystemOwner> findOwnerOf(String blocId) {
 
-        var colourFaction = SectorFactions.findFaction(sector, grouping.resolveColourFactionId(blocId));
+        var colourFactionId = grouping.resolveColourFactionId(blocId);
+        var palette = FactionColours.findPalette(SectorFactions.findFaction(sector, colourFactionId));
+
+        if (palette == null && sector != null) {
+
+            MISSING_COLOUR_FACTION_WARNING.warnOnce("Bloc " + blocId + " paints in faction "
+                + colourFactionId + ", which the sector does not know; its systems draw as nobody's"
+                + " and its band segments are left out. Further blocs in the same state go unreported");
+        }
 
         return Optional
-            .ofNullable(FactionColours.findPalette(colourFaction))
-            .map(palette -> new SystemOwner(blocId, palette));
+            .ofNullable(palette)
+            .map(resolvedPalette -> new SystemOwner(blocId, resolvedPalette));
     }
 }

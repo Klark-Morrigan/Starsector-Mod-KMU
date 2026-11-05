@@ -29,9 +29,9 @@ public final class RibbonSettingsFixtures {
     private static final double BAND_WIDTH_WORLD = 120.0;
     private static final double BAND_INSET_PAD_WORLD = 60.0;
     private static final int SEGMENT_LENGTH_UNITS = 3;
-    private static final int INTERJECTION_LENGTH_UNITS = 1;
+    private static final int PARTING_LENGTH_UNITS = 1;
 
-    // The uncontested runs left at their authored length, which is not the shipped answer: a suite
+    // The uncontested stake segments left at their authored length, which is not the shipped answer: a suite
     // reaching for these reads a band back against the segment lengths above, and the shortening
     // would silently redraw every uncontested cell at one width a stake. A suite about the
     // shortening states it on the case, where the answer it is posing is visible beside it.
@@ -117,8 +117,8 @@ public final class RibbonSettingsFixtures {
             .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonSegmentLength)
             .thenReturn(SEGMENT_LENGTH_UNITS);
         settingsMock
-            .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonInterjectionLength)
-            .thenReturn(INTERJECTION_LENGTH_UNITS);
+            .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonPartingLength)
+            .thenReturn(PARTING_LENGTH_UNITS);
         settingsMock
             .when(KmuOwnerMapRibbonSettings::shouldShortenOwnerMapUncontestedRibbonRuns)
             .thenReturn(UNCONTESTED_RUNS_SHORTENED);
@@ -146,7 +146,7 @@ public final class RibbonSettingsFixtures {
         var planRules = RibbonPlanRules.createFromAuthoredLengths(
             new RibbonSegmentLengths(
                 SEGMENT_LENGTH_UNITS,
-                INTERJECTION_LENGTH_UNITS),
+                PARTING_LENGTH_UNITS),
             UNCONTESTED_RUNS_SHORTENED);
 
         return new RibbonBakeSettings(

@@ -165,7 +165,20 @@ public final class RibbonPlanFixtures {
      * @return the inputs a planner is posed with, with nobody standing with anybody
      */
     public static RibbonPlanInputs buildInputsFor(HolderPass pass, RibbonPlanRules rules) {
-        return buildInputsFor(pass, OwnerAffiliation.NONE, rules);
+        return buildInputsFor(pass, pass.palettes(), OwnerAffiliation.NONE, rules);
+    }
+
+    /**
+     * The same inputs coloured through a palette read the suite chooses - what a case posing a view
+     * that colours its segments by something other than the bloc takes.
+     *
+     * @param pass     the bake's reading of the sector
+     * @param palettes where each segment reads its shades
+     * @return the inputs a planner is posed with, under the design's proportions and with nobody
+     *         standing with anybody
+     */
+    public static RibbonPlanInputs buildInputsFor(HolderPass pass, RibbonPaletteReader palettes) {
+        return buildInputsFor(pass, palettes, OwnerAffiliation.NONE, STANDARD_RULES);
     }
 
     /**
@@ -191,13 +204,25 @@ public final class RibbonPlanFixtures {
      * @return the inputs a planner is posed with
      */
     public static RibbonPlanInputs buildAlliedInputsFor(HolderPass pass) {
-        return buildInputsFor(pass, ALLIED_HEGEMONY_AND_TRITACHYON, SHORTENED_UNCONTESTED_RULES);
+        return buildAlliedInputsFor(pass, pass.palettes());
     }
 
     /**
-     * The palette read a stood-in pass answers, over a sector shading every faction these fixtures
-     * name and the identity grouping - what a suite posing the pass itself hands it, so a band
-     * reads the same shades a pass opened over a stubbed sector would.
+     * The same rival-judging inputs coloured through a palette read the suite chooses - what a suite
+     * standing in for the pass takes, a stood-in pass reading no shades of its own.
+     *
+     * @param pass     the bake's reading of the sector
+     * @param palettes where each segment reads its shades
+     * @return the inputs a planner is posed with
+     */
+    public static RibbonPlanInputs buildAlliedInputsFor(HolderPass pass, RibbonPaletteReader palettes) {
+        return buildInputsFor(pass, palettes, ALLIED_HEGEMONY_AND_TRITACHYON, SHORTENED_UNCONTESTED_RULES);
+    }
+
+    /**
+     * The palette read a suite standing in for the pass hands the inputs, over a sector shading every
+     * faction these fixtures name and the identity grouping - so a band reads the same shades a pass
+     * opened over a stubbed sector would.
      *
      * @return the palettes over the shaded sector
      */
@@ -212,9 +237,10 @@ public final class RibbonPlanFixtures {
     //
     // The pass's sector is shaded here, so every suite reads a band in the shades this fixture
     // exports whatever its sector was built to answer for the fills. A stood-in pass names no
-    // sector, and answers its own palettes.
+    // sector, and its suite hands the palette read in.
     private static RibbonPlanInputs buildInputsFor(
             HolderPass pass,
+            RibbonPaletteReader palettes,
             OwnerAffiliation affiliation,
             RibbonPlanRules rules) {
 
@@ -223,7 +249,7 @@ public final class RibbonPlanFixtures {
             shadeFactionsOn(sector);
         }
 
-        return new RibbonPlanInputs(pass, affiliation, rules);
+        return new RibbonPlanInputs(pass, palettes, affiliation, rules);
     }
 
     // Has the stubbed sector answer every faction these fixtures name with its shades, the way the

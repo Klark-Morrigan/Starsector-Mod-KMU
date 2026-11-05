@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 /**
- * Pins that a plan laid run by run is the same value as a plan stated whole, and that taking the
+ * Pins that a plan laid segment by segment is the same value as a plan stated whole, and that taking the
  * builder's list over costs nothing a copy would have protected: once the plan is built, neither
  * the builder nor the plan's own list can lengthen it.
  */
@@ -61,7 +61,7 @@ final class RibbonPlanBuilderTests {
     @Nested
     class BuildPlan {
 
-        // Laid run by run or stated whole, two plans of the same runs are one band, which is what
+        // Laid segment by segment or stated whole, two plans of the same segments are one band, which is what
         // lets a re-baked band be compared with the one standing.
         @Test
         void equalsThePlanOfTheSameRunsStatedWhole() {

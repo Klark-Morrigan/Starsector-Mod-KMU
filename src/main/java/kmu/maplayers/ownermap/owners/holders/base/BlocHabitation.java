@@ -2,35 +2,64 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import kmlib.starsector.markets.colonies.Colony;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
+
 /**
- * What one bloc lives on in one system: how many colonies, and their summed raw size.
+ * What one bloc lives on in one system: whose colonies, and their summed raw size.
  *
- * <p>One value rather than a map apiece, because the band reads the count and the picker reads the
- * size, and the two must name the same blocs. Held side by side in one entry, neither can list a
+ * <p>One value rather than a map apiece, because the band reads the colonies and the picker reads
+ * the size, and the two must name the same blocs. Held side by side in one entry, neither can list a
  * bloc the other left out.
  *
- * @param colonyCount how many colonies the bloc lives on there
- * @param colonySize  those colonies' summed raw sizes
+ * <p>Each colony is held as the faction owning it rather than as a count. Under a grouping, two
+ * members of one bloc live in one entry, and a band colouring a segment by something the bloc does
+ * not decide needs to tell their colonies apart.
+ *
+ * @param colonyOwnerIds the faction owning each colony the bloc lives on there, one entry per
+ *                       colony, in faction ID order so one faction's colonies sit together
+ * @param colonySize     those colonies' summed raw sizes
  */
 public record BlocHabitation(
-    int colonyCount,
+    List<String> colonyOwnerIds,
     int colonySize) {
 
-    // What one colony adds to the count. A band counts holdings rather than weighing them, so
-    // every colony is worth exactly one segment whatever its size or standing.
-    private static final int ONE_COLONY = 1;
+    // Faction ID order, with an owner carrying no ID last. Such an owner is folded under a key the
+    // grouping names no bloc for, so its habitation never reaches a band; ordering it rather than
+    // refusing it leaves that rule to the grouping alone.
+    //
+    // Declared ahead of EMPTY, whose construction sorts through it.
+    private static final Comparator<String> OWNER_ID_ORDER =
+        Comparator.nullsLast(Comparator.naturalOrder());
 
     /** A bloc living on nothing, which is the fold's identity. */
-    public static final BlocHabitation EMPTY = new BlocHabitation(0, 0);
+    public static final BlocHabitation EMPTY = new BlocHabitation(List.of(), 0);
+
+    /**
+     * Takes the owners in faction ID order, as an immutable copy, so two folds of the same colonies
+     * compare equal whichever member the walk reached first.
+     */
+    public BlocHabitation {
+
+        colonyOwnerIds = colonyOwnerIds
+            .stream()
+            .sorted(OWNER_ID_ORDER)
+            .toList();
+    }
 
     /**
      * @param colony a colony the bloc lives on
-     * @return this habitation with one more colony, of that colony's size
+     * @return this habitation with one more colony, of that colony's size and owner
      */
     public BlocHabitation addColony(Colony colony) {
 
+        var ownerIds = new ArrayList<>(colonyOwnerIds);
+        ownerIds.add(colony.readOwnerId());
+
         return new BlocHabitation(
-            colonyCount + ONE_COLONY,
+            ownerIds,
             colonySize + colony.market().getSize());
     }
 
@@ -43,7 +72,10 @@ public record BlocHabitation(
     public BlocHabitation addHabitation(BlocHabitation other) {
 
         return new BlocHabitation(
-            colonyCount + other.colonyCount,
+            Stream.concat(
+                    colonyOwnerIds.stream(),
+                    other.colonyOwnerIds.stream())
+                .toList(),
             colonySize + other.colonySize);
     }
 }

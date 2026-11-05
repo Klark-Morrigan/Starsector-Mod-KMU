@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * own rather than becoming a knob beside them.
  *
  * <p>Worth pinning by value because the sizes are interchangeable by type: a width read into the
- * pad, or the two run lengths handed over the wrong way round, compiles clean and shows only as a
+ * pad, or the two segment lengths handed over the wrong way round, compiles clean and shows only as a
  * band that looks slightly off in play - and "slightly off" is indistinguishable from a slider set
  * somewhere odd. Distinct sentinels per knob turn that into a failing test.
  *
@@ -33,7 +33,7 @@ final class RibbonBakeSettingsTests {
     private static final double WIDTH_WORLD = 111.0;
     private static final double INSET_PAD_WORLD = 22.0;
     private static final int SEGMENT_LENGTH_UNITS = 7;
-    private static final int INTERJECTION_LENGTH_UNITS = 4;
+    private static final int PARTING_LENGTH_UNITS = 4;
 
     // Each switch and the one choice read as the opposite of what they ship as.
     private static final boolean RIBBONS_DRAWN = false;
@@ -68,8 +68,8 @@ final class RibbonBakeSettingsTests {
             .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonSegmentLength)
             .thenReturn(SEGMENT_LENGTH_UNITS);
         settingsMock
-            .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonInterjectionLength)
-            .thenReturn(INTERJECTION_LENGTH_UNITS);
+            .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonPartingLength)
+            .thenReturn(PARTING_LENGTH_UNITS);
         settingsMock
             .when(KmuOwnerMapRibbonSettings::shouldAlwaysDrawOwnerMapRibbons)
             .thenReturn(BAND_ALWAYS_DRAWN);
@@ -137,7 +137,7 @@ final class RibbonBakeSettingsTests {
         }
 
         // The shortening is answered off, so an uncontested cell keeps the authored pair: a reader
-        // that ignored the switch and shortened anyway would cut the stake run to one width.
+        // that ignored the switch and shortened anyway would cut the stake segment to one width.
         @Test
         void laysTheRunsAtTheAuthoredLengthsWhileTheShorteningIsOff() {
 

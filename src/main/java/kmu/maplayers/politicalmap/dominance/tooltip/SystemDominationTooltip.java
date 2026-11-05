@@ -1,7 +1,10 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmlib.logging.SessionWarning;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
@@ -12,12 +15,16 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
+import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
+import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
-import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
+
+import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -31,12 +38,19 @@ import java.util.Map;
  * headline names the group the cell is painted for rather than its alliance, which keeps the box an
  * explanation of the cell beneath it.
  *
- * <p>Stateless past the seams it is built around: the grouping, the live economy, the alliance set
- * and the settings are read afresh each paint. How the box is composed and cut, and what each block
- * holds, is <a href="README.md">the domination box</a>'s register.
+ * <p>Stateless past the seams it is built around and one warning it says once a session: the
+ * grouping, the live economy, the alliance set and the settings are read afresh each paint. How the
+ * box is composed and cut, and what each block holds, is <a href="README.md">the domination box</a>'s
+ * register.
  */
 public final class SystemDominationTooltip
         extends PoliticalMapCellTooltip {
+
+    private static final Logger LOG = Global.getLogger(SystemDominationTooltip.class);
+
+    // Said once per session: the box is composed on every cell the cursor reaches, so a ranking that
+    // keeps parting from the fill would otherwise say so on every hover of every such system.
+    private final SessionWarning unrankedPaintedBlocWarning = new SessionWarning(LOG);
 
     // The grouping of the view whose fills this box explains, read afresh each paint because a
     // view's grouping can follow a live alliance set.
@@ -55,7 +69,7 @@ public final class SystemDominationTooltip
             HolderGroupingSource paintedGroupingSource,
             PoliticalBoxSeams seams) {
 
-        this(paintedGroupingSource, seams, SystemDominationTooltip::createFactionAccountResolver);
+        this(paintedGroupingSource, seams, new PassFactionAccountSource());
     }
 
     SystemDominationTooltip(
@@ -107,46 +121,6 @@ public final class SystemDominationTooltip
         // and large split behind the patrol factor - which is the deepest tier the levels declare, so
         // this box fills the cycle out.
         return HoverTooltipDetailLevel.PATROL_DETAILS;
-    }
-
-    // The account of every faction the box lists, read once for the whole box rather than per
-    // faction: read per faction, two of them could be explained from different selections over the
-    // system, and the walk behind them is the most expensive thing a hover does. The pass remembers
-    // each system it walks, so the reads below cost one traversal between them.
-    //
-    // Taken off the pass rather than assembled here: the weighting rule and the visibility rule are
-    // the pass's, and a box that named them itself could explain a system under a rule the map did
-    // not paint it under. The weights themselves are the ranking's, handed over rather than read
-    // again, so each market is weighed once per box.
-    static FactionAccountResolver createFactionAccountResolver(
-            StarSystemAPI system,
-            DominancePass pass,
-            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId,
-            HoverTooltipDetailLevel detailLevel) {
-
-        // The colonies the pass could not weigh, selected beside the ones it did. They stay a
-        // separate read rather than becoming a second kind of breakdown because the pass must see
-        // only the markets it can weigh.
-        var unweighedColoniesByFactionId = pass.readUnweighedColoniesByFaction(system);
-
-        // What the box may say about each colony beyond its weight, settled once for the whole box
-        // off the same walk the weights and the read above came from: what sort of place it is, whether the
-        // player has found it, and - unless somebody is looking at it as the box is drawn - when it
-        // was last seen.
-        var colonyReading = SystemColonyReading.readColonyReadingOf(
-            pass.sector(),
-            system,
-            pass.readColoniesIn(system),
-            pass.colonyKnowledge());
-
-        // A faction the reads found nothing for is listed as its line alone rather than as a heading
-        // over an empty account, which is what an empty answer means to the shape above.
-        var reading = new WeightAccountReading(pass.rules(), colonyReading, detailLevel);
-
-        return standing -> MarketWeightRowResolver.resolveMarketRows(
-            breakdownsByFactionId.getOrDefault(standing.factionId(), List.of()),
-            unweighedColoniesByFactionId.getOrDefault(standing.factionId(), List.of()),
-            reading);
     }
 
     // Whether the ranking found anybody the box may name - the one judgement behind both the hint at
@@ -204,17 +178,64 @@ public final class SystemDominationTooltip
         // totals cost the same weighing either way and only the parts are kept besides.
         var breakdownsByFactionId = pass.readWeightBreakdownsByFaction(system);
 
+        // Folded once, for both questions asked of the totals: how the groups rank, and who holds
+        // the system.
+        var footprintByFactionId = KnownMarketFootprints.foldFootprintsByFaction(breakdownsByFactionId);
+
         var groupStandings = SystemStandings.rankByDominationScore(
             system,
             pass,
-            breakdownsByFactionId);
+            footprintByFactionId);
+        var paintedBlocId = resolvePaintedBlocId(system, pass, footprintByFactionId);
+
+        warnOnUnrankedPaintedBloc(system, paintedBlocId, groupStandings);
 
         return new RankedStandings(
             pass,
             StandingBlockRouting.routeRankedStandings(
                 groupStandings,
+                paintedBlocId,
                 buildBlockRules(sector, pass.grouping())),
             breakdownsByFactionId);
+    }
+
+    // The ranking and the fill are folded from one set of footprints under one grouping, so the bloc
+    // the fill was painted for is always among the ranked groups. Where it is not, the two read the
+    // system apart - the very fault that would name one holder in the box and paint another - and the
+    // routing falls back to naming nobody. Said rather than left to that fallback, which on its own
+    // looks like a system nobody holds.
+    private void warnOnUnrankedPaintedBloc(
+            StarSystemAPI system,
+            String paintedBlocId,
+            List<GroupStanding> groupStandings) {
+
+        if (paintedBlocId == null) {
+            return;
+        }
+
+        var isRanked = groupStandings
+            .stream()
+            .anyMatch(standing -> standing.blocId().equals(paintedBlocId));
+
+        if (!isRanked) {
+            unrankedPaintedBlocWarning.warnOnce("Domination box: the fill of system " + system.getId()
+                + " was painted for bloc " + paintedBlocId
+                + ", which its ranking does not list; the box names nobody as holding it");
+        }
+    }
+
+    // The bloc the fill beneath the box was painted for, settled by the pass's own rule rather than by
+    // the ranking. The ranking orders blocs on equal combined weight by ID, while the fill breaks that
+    // tie on the heaviest market, planet weight and proximity first - so a holder read off the ranking
+    // could name a bloc the cell is not painted for.
+    private static String resolvePaintedBlocId(
+            StarSystemAPI system,
+            DominancePass pass,
+            Map<String, MarketFootprint> footprintByFactionId) {
+
+        return pass.resolveDominantBlocId(
+            system,
+            pass.regroupFootprintsByBloc(footprintByFactionId));
     }
 
     // What the blocks are placed by, bound to this hover's sector and to the grouping the map painted

@@ -56,7 +56,8 @@ The account resolver is built only where the level shows a line of one
 So the shallowest level makes no unweighed-colony read and no `SystemColonyReading` walk at all -
 the walk behind those being the most expensive thing a hover does.
 The weights are read once at every level, by `readWeightBreakdownsByFaction`:
-the ranking's totals are folded out of them (`SystemStandings.rankByDominationScore`),
+the totals are folded out of them once (`KnownMarketFootprints.foldFootprintsByFaction`),
+the ranking (`SystemStandings.rankByDominationScore`) and the holder both read those totals,
 and the account is handed the same breakdowns rather than weighing the system again.
 The totals cost that one weighing whatever the level,
 so reading the parts beside them adds nothing at the shallowest
@@ -74,6 +75,10 @@ the headings and which of them a group falls under,
 and the lines naming the blocs and their member factions.
 What hangs beneath a faction as the account of its score is a `FactionAccountResolver`,
 asked for once per composition of the box.
+A running game's comes from `PassFactionAccountSource`,
+which reads it off the pass the box ranked under:
+the box decides how the contest is laid out,
+and the account source decides what explains one faction's score.
 `StandingRowResolver` applies it where the standing and the line named from it are both in hand,
 so no faction's colonies can be listed under another's name.
 It also sets the two-tier shape:
@@ -87,6 +92,27 @@ since a bloc's score is the sum over its members'.
 The ranking reads as a contest rather than as a list:
 the group the map fills the system for is named as dominating it,
 so who holds the system is stated outright rather than inferred from which line sits on top.
+
+The holder is the bloc the fill was painted for,
+settled by the pass (`DominancePass.resolveDominantBlocId`) and never by the box's own ranking.
+The ranking orders blocs on equal combined weight by ID (`StandingRankOrder`),
+while the fill breaks that tie on the heaviest market,
+then planet weight,
+then the market nearest the system centre.
+A holder read off the ranking would name one bloc while the cell is painted for the other,
+and every block below it would be placed against the wrong bloc.
+The box asks it over the same footprints its ranking reads,
+regrouped per bloc (`DominancePass.regroupFootprintsByBloc`),
+so each market is still weighed once per box.
+Everyone behind the holder keeps the ranking's order,
+which is the order the band beneath the cell runs in too (`HeldBlocRanker`).
+
+The ranking and the fill are folded from one set of footprints,
+so the bloc the fill was painted for is always among the ranked groups.
+If it ever is not, the two have read the system apart:
+the box names nobody as holding it,
+and writes one warning a session saying which system and which bloc.
+
 Where each ranked group goes is `StandingBlockRouting`'s one answer,
 taken per hover over the closed set of blocks `StandingBlock` names.
 Each block carries its heading,
@@ -105,6 +131,22 @@ A system whose only presence is `neutral` is still painted,
 bordered and labelled for it,
 while the box drops `Dominated by:` and lists it under `Non-political:`.
 Naming the placeholder as holding the system is the statement that block exists to stop making.
+
+A system can have no holder and still have contenders.
+That happens where the fill was painted for nobody, because nobody was weighed there,
+or for a barred bloc, because only `neutral` was.
+The contenders are then blocs present only through colonies the economy does not list
+(see [Presence without weight](#presence-without-weight)).
+They are listed under `Present:`, in rank order,
+and no allied, friendly or contested block is filled:
+those are sides of a holder, and there is none.
+Vanilla never builds this case,
+since Galatia Academy always sits beside listed Hegemony and pirate colonies,
+but a mod's unlisted hub can.
+
+That heading is fixed rather than following [the contest wording](#contested-or-present).
+The wording decides whether presence beside a holder amounts to a contest.
+With no holder there is nothing to contest, whatever the install.
 
 ## Allies and rivals
 

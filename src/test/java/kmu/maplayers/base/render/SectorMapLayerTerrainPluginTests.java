@@ -21,7 +21,7 @@ import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfaceIn;
 import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfacesInAnInstalledSector;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.Mockito.doThrow;
@@ -42,9 +42,10 @@ import static org.mockito.Mockito.when;
  * terrain is added on a fresh game, so failing to override it crashed onGameLoad. The dispatch is
  * pinned with a stand-in layer, since which concrete layers exist is the composition root's business
  * and the surface must not know: it draws through the active pick's renderer, and treats an absent
- * renderer or an absent pick alike as nothing to draw. A layer that throws is contained here as well as
- * in the guard's own suite, since a surface drawing around the guard would put the game back at risk. The draw-list build and GL emission live
- * behind that renderer and are covered there; the emission itself runs only in-engine.
+ * renderer or an absent pick alike as nothing to draw. A layer that throws is contained here as
+ * well as in the guard's own suite, since a surface drawing around the guard would put the game back
+ * at risk. The draw-list build and GL emission live behind that renderer and are covered there; the
+ * emission itself runs only in-engine.
  *
  * <p>Every case seats the surface on an installed sector first, that being what a surface needs
  * before it draws anything at all: it finds the machinery it paints through from the terrain entity
@@ -99,6 +100,7 @@ final class SectorMapLayerTerrainPluginTests {
 
         when(drawingLayerMock.getId())
             .thenReturn("drawing");
+
         // Whichever machinery the surface resolves for the frame: which sector it draws is the
         // surface's to settle, and what this pins is that it draws through the answer it gets.
         when(drawingLayerMock.resolveRenderer(any()))
@@ -122,11 +124,17 @@ final class SectorMapLayerTerrainPluginTests {
         @Test
         void returnsEmptyWithoutThrowing() {
 
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            assertThatCode(plugin::getActiveLayers)
-                .doesNotThrowAnyException();
-            assertThat(plugin.getActiveLayers())
+            // ACT
+            var actualThrown = catchThrowable(plugin::getActiveLayers);
+            var actualLayers = plugin.getActiveLayers();
+
+            // ASSERT
+            assertThat(actualThrown)
+                .isNull();
+            assertThat(actualLayers)
                 .isEmpty();
         }
     }
@@ -134,77 +142,97 @@ final class SectorMapLayerTerrainPluginTests {
     @Nested
     class RenderOnMap {
 
+        // The hook names no sector, and this surface cannot be handed one - it is rebuilt from
+        // the save with no seam to inject through - so the entity it rides on is what says which
+        // sector's machinery the frame belongs to. A surface resolving anything else would paint
+        // one sector's overlay from another sector's cells.
         @Test
         void drawsThroughTheMachineryOfTheSectorItsTerrainSitsIn() {
-            // The hook names no sector, and this surface cannot be handed one - it is rebuilt from
-            // the save with no seam to inject through - so the entity it rides on is what says which
-            // sector's machinery the frame belongs to. A surface resolving anything else would paint
-            // one sector's overlay from another sector's cells.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
             var machinery = seatSurfacesInAnInstalledSector(screens, plugin);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verify(drawingLayerMock)
                 .resolveRenderer(machinery);
         }
 
+        // A surface whose location has no machinery belongs to a sector nothing is drawing - a
+        // save carrying the terrain with the overlay switched off, or a sector the layers were
+        // taken off. Standing down is what keeps it from painting through the holder every
+        // sector-less caller shares, which is a drawing of no sector at all.
         @Test
         void drawsNothingWhileItsTerrainSitsWhereNothingIsInstalled() {
-            // A surface whose location has no machinery belongs to a sector nothing is drawing - a
-            // save carrying the terrain with the overlay switched off, or a sector the layers were
-            // taken off. Standing down is what keeps it from painting through the holder every
-            // sector-less caller shares, which is a drawing of no sector at all.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
 
             seatSurfaceIn(plugin, mock(LocationAPI.class));
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verifyNoInteractions(layerRendererMock);
         }
 
+        // The entity is set on init, and a plugin the engine has built but not yet initialised
+        // has no handle to resolve through at all. Reading past it would fault the render pass
+        // rather than skip one frame.
         @Test
         void drawsNothingBeforeTheEngineHasSeatedItsEntity() {
-            // The entity is set on init, and a plugin the engine has built but not yet initialised
-            // has no handle to resolve through at all. Reading past it would fault the render pass
-            // rather than skip one frame.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            assertThatCode(() -> plugin.renderOnMap(1.5f, 0.25f))
-                .doesNotThrowAnyException();
+            // ACT
+            var actualThrown = catchThrowable(() -> plugin.renderOnMap(1.5f, 0.25f));
+
+            // ASSERT
+            assertThat(actualThrown)
+                .isNull();
 
             verifyNoInteractions(layerRendererMock);
         }
 
+        // Outside Starscape nothing of the map's is drawn between the bands, so this one surface
+        // owes both of them - a band left unpainted here would be a sub-layer that simply never
+        // appears on a schematic map.
         @Test
         void drawsBothBandsThroughTheActiveLayersRendererWithTheFramesFactorAndAlpha() {
 
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
 
             seatSurfacesInAnInstalledSector(screens, plugin);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
-            // Outside Starscape nothing of the map's is drawn between the bands, so this one surface
-            // owes both of them - a band left unpainted here would be a sub-layer that simply never
-            // appears on a schematic map.
+            // ASSERT
             var bandOrder = inOrder(layerRendererMock);
 
             bandOrder
                 .verify(layerRendererMock)
                 .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
             bandOrder
                 .verify(layerRendererMock)
                 .renderOnMap(1.5f, 0.25f, MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
         }
 
+        // Hiding is a dissolve rather than a cut, so the screen's fade is multiplied into the alpha
+        // the map pass already fades the overlay with rather than replacing it: an overlay that
+        // ignored one of the two would either snap out from under the sidebar thinning beside it, or
+        // paint over a map that is itself fading away.
         @Test
         void thinsTheOverlayByTheShowingScreensHideFade() {
-            // Hiding is a dissolve rather than a cut, so the screen's fade is multiplied into the alpha
-            // the map pass already fades the overlay with rather than replacing it: an overlay that
-            // ignored one of the two would either snap out from under the sidebar thinning beside it, or
-            // paint over a map that is itself fading away.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
             var screensMock = mock(MapLayerScreens.class);
 
@@ -215,23 +243,32 @@ final class SectorMapLayerTerrainPluginTests {
 
             seatSurfacesInAnInstalledSector(screensMock, plugin);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verify(layerRendererMock)
-                .renderOnMap(1.5f, 0.125f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+                .renderOnMap(
+                    1.5f,
+                    0.125f,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
+        // The refresh runs once however many passes the frame is painted in - a second one would
+        // repeat the whole staleness check for nothing - and so does everything latched behind
+        // it, the moment the cursor reaches a cell above all.
         @Test
         void preparesTheFrameOnceBeforeDrawingAnyBand() {
-            // The refresh runs once however many passes the frame is painted in - a second one would
-            // repeat the whole staleness check for nothing - and so does everything latched behind
-            // it, the moment the cursor reaches a cell above all.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
 
             seatSurfacesInAnInstalledSector(screens, plugin);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             var preparationOrder = inOrder(layerRendererMock);
 
             preparationOrder
@@ -245,84 +282,109 @@ final class SectorMapLayerTerrainPluginTests {
                 .prepareFrame(anyFloat());
         }
 
+        // The band pinning alone cannot settle this: whether a surface draws is that surface's
+        // own answer, so two can paint the lower band of one frame. Both must still draw their
+        // bands - the frame is genuinely painted twice over - while the preparation behind them,
+        // which steps the cursor's arrival latch, happens once.
         @Test
         void preparesOnceAcrossTwoSurfacesPaintingOneFrame() {
-            // The band pinning alone cannot settle this: whether a surface draws is that surface's
-            // own answer, so two can paint the lower band of one frame. Both must still draw their
-            // bands - the frame is genuinely painted twice over - while the preparation behind them,
-            // which steps the cursor's arrival latch, happens once.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
             var secondPlugin = new SectorMapLayerTerrainPlugin();
-
             var machinery = seatSurfacesInAnInstalledSector(screens, plugin, secondPlugin);
 
-            MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim
+                .resolveClaimIn(machinery)
+                .renderInUICoordsBelowUI(null);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
             secondPlugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verify(layerRendererMock, times(1))
                 .prepareFrame(anyFloat());
+
             verify(layerRendererMock, times(2))
                 .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
+        // Two sectors drawing in one frame each owe their own draw lists a preparation, so the
+        // count that keeps two surfaces of one map to a single preparation must not reach across
+        // maps: a shared claim would leave the second sector's overlay painting draw lists
+        // nothing brought up to date.
         @Test
         void preparesEachSectorsFrameOnThatSectorsOwnClaim() {
-            // Two sectors drawing in one frame each owe their own draw lists a preparation, so the
-            // count that keeps two surfaces of one map to a single preparation must not reach across
-            // maps: a shared claim would leave the second sector's overlay painting draw lists
-            // nothing brought up to date.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
             var otherSectorsPlugin = new SectorMapLayerTerrainPlugin();
 
             var machinery = seatSurfacesInAnInstalledSector(screens, plugin);
             var otherMachinery = seatSurfacesInAnInstalledSector(screens, otherSectorsPlugin);
 
-            MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
-            MapFramePreparationClaim.resolveClaimIn(otherMachinery).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim
+                .resolveClaimIn(machinery)
+                .renderInUICoordsBelowUI(null);
 
+            MapFramePreparationClaim
+                .resolveClaimIn(otherMachinery)
+                .renderInUICoordsBelowUI(null);
+
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
             otherSectorsPlugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verify(layerRendererMock, times(2))
                 .prepareFrame(anyFloat());
         }
 
+        // The read is the one piece of per-frame work that turns on which pass is running: it
+        // inverts the transform that pass bound. Pinned to the frame's first pass it would be
+        // taken through whichever surface drew earliest - a map another mod composited, drawn
+        // from the campaign HUD before the map screen - and the real map would then draw a hover
+        // resolved through somebody else's zoom and pan. So every pass reads and the last wins,
+        // while the preparation beside it still happens once.
         @Test
         void publishesTheHoverOnEveryPassOfOneFrame() {
-            // The read is the one piece of per-frame work that turns on which pass is running: it
-            // inverts the transform that pass bound. Pinned to the frame's first pass it would be
-            // taken through whichever surface drew earliest - a map another mod composited, drawn
-            // from the campaign HUD before the map screen - and the real map would then draw a hover
-            // resolved through somebody else's zoom and pan. So every pass reads and the last wins,
-            // while the preparation beside it still happens once.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
             var secondPlugin = new SectorMapLayerTerrainPlugin();
-
             var machinery = seatSurfacesInAnInstalledSector(screens, plugin, secondPlugin);
 
-            MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim
+                .resolveClaimIn(machinery)
+                .renderInUICoordsBelowUI(null);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
             secondPlugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verify(layerRendererMock, times(2))
                 .publishHoverForPass(1.5f);
+
             verify(layerRendererMock, times(1))
                 .prepareFrame(anyFloat());
         }
 
+        // The highlight rides the same draw lists as the fill, so the answer has to be standing
+        // before this pass emits any of them.
         @Test
         void publishesTheHoverBeforeDrawingAnyBand() {
-            // The highlight rides the same draw lists as the fill, so the answer has to be standing
-            // before this pass emits any of them.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
 
             seatSurfacesInAnInstalledSector(screens, plugin);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             var hoverOrder = inOrder(layerRendererMock);
 
             hoverOrder
@@ -333,30 +395,36 @@ final class SectorMapLayerTerrainPluginTests {
                 .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
+        // A claim spent for good would leave the map painting the draw lists of whichever frame
+        // happened to prepare first, which is the opposite fault and the worse one.
         @Test
         void preparesAgainOnceTheNextFrameOpens() {
-            // A claim spent for good would leave the map painting the draw lists of whichever frame
-            // happened to prepare first, which is the opposite fault and the worse one.
+
+            // ARRANGE
             var plugin = new SectorMapLayerTerrainPlugin();
             var machinery = seatSurfacesInAnInstalledSector(screens, plugin);
             var claim = MapFramePreparationClaim.resolveClaimIn(machinery);
 
+            // ACT
             claim.renderInUICoordsBelowUI(null);
             plugin.renderOnMap(1.5f, 0.25f);
 
             claim.renderInUICoordsBelowUI(null);
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verify(layerRendererMock, times(2))
                 .prepareFrame(1.5f);
         }
 
+        // The compatibility constraint, and the pass it exists to stop: a map another mod built
+        // drives this same hook, and with the constraint on the layers are not that mod's to
+        // draw. Nothing at all happens - not the preparation either, so a foreign pass cannot
+        // take the frame's single preparation from the map that is entitled to it.
         @Test
         void drawsNothingWhileConstrainedToItsHostsWithNoneShowing() {
-            // The compatibility constraint, and the pass it exists to stop: a map another mod built
-            // drives this same hook, and with the constraint on the layers are not that mod's to
-            // draw. Nothing at all happens - not the preparation either, so a foreign pass cannot
-            // take the frame's single preparation from the map that is entitled to it.
+
+            // ARRANGE
             mapLayerSettingsMock
                 .when(KmuMapHoverSettings::areMapLayersOnlyOnTheirHosts)
                 .thenReturn(true);
@@ -365,16 +433,20 @@ final class SectorMapLayerTerrainPluginTests {
 
             seatSurfacesInAnInstalledSector(screens, plugin);
 
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verifyNoInteractions(layerRendererMock);
         }
 
+        // Nothing between this hook and the game catches, so a throw let through would end the
+        // game with the map open. Contained, the layer is off for the sector rather than retried,
+        // which is what keeps a layer failing on the sector from throwing a trace a frame.
         @Test
         void containsALayerThatThrowsAndDrawsNothingMoreThroughIt() {
-            // Nothing between this hook and the game catches, so a throw let through would end the
-            // game with the map open. Contained, the layer is off for the sector rather than retried,
-            // which is what keeps a layer failing on the sector from throwing a trace a frame.
+
+            // ARRANGE
             doThrow(new IllegalStateException("draw list half built"))
                 .when(layerRendererMock)
                 .prepareFrame(anyFloat());
@@ -383,11 +455,15 @@ final class SectorMapLayerTerrainPluginTests {
 
             seatSurfacesInAnInstalledSector(screens, plugin);
 
-            assertThatCode(() -> {
+            // ACT
+            var actualThrown = catchThrowable(() -> {
                 plugin.renderOnMap(1.5f, 0.25f);
                 plugin.renderOnMap(1.5f, 0.25f);
-            })
-                .doesNotThrowAnyException();
+            });
+
+            // ASSERT
+            assertThat(actualThrown)
+                .isNull();
 
             verify(layerRendererMock, times(1))
                 .prepareFrame(anyFloat());
@@ -395,10 +471,12 @@ final class SectorMapLayerTerrainPluginTests {
                 .renderOnMap(anyFloat(), anyFloat(), any());
         }
 
+        // The switch goes with the machinery, so a load - or the layers switched off and back on
+        // - is the retry, rather than the next frame.
         @Test
         void drawsALayerThatThrewAgainOnceItsSectorIsInstalledAfresh() {
-            // The switch goes with the machinery, so a load - or the layers switched off and back on
-            // - is the retry, rather than the next frame.
+
+            // ARRANGE
             doThrow(new IllegalStateException("draw list half built"))
                 .doNothing()
                 .when(layerRendererMock)
@@ -411,16 +489,21 @@ final class SectorMapLayerTerrainPluginTests {
 
             SectorMapMachineryIndex.disposeAllMachinery();
             seatSurfacesInAnInstalledSector(screens, plugin);
+
+            // ACT
             plugin.renderOnMap(1.5f, 0.25f);
 
+            // ASSERT
             verify(layerRendererMock)
                 .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
+        // The "show nothing" tab's shape: a registered layer that simply supplies no renderer,
+        // which must stay an ordinary layer here rather than a named special case.
         @Test
         void drawsNothingWhenTheActiveLayerHasNoRenderer() {
-            // The "show nothing" tab's shape: a registered layer that simply supplies no renderer,
-            // which must stay an ordinary layer here rather than a named special case.
+
+            // ARRANGE
             var silentLayerMock = mock(MapLayer.class);
 
             when(silentLayerMock.getId())
@@ -432,23 +515,31 @@ final class SectorMapLayerTerrainPluginTests {
 
             seatSurfacesInAnInstalledSector(screens, plugin);
 
+            // ACT
             plugin.renderOnMap(1f, 1f);
 
+            // ASSERT
             verifyNoInteractions(layerRendererMock);
         }
 
+        // The pre-registration frame: the terrain can be added before any composition root has
+        // run, so the surface must survive a null pick rather than dereference it.
         @Test
         void drawsNothingWithoutAnActiveLayer() {
-            // The pre-registration frame: the terrain can be added before any composition root has
-            // run, so the surface must survive a null pick rather than dereference it.
+
+            // ARRANGE
             screens = MapLayerRosters.createScreensOver();
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
             seatSurfacesInAnInstalledSector(screens, plugin);
 
-            assertThatCode(() -> plugin.renderOnMap(1f, 1f))
-                .doesNotThrowAnyException();
+            // ACT
+            var actualThrown = catchThrowable(() -> plugin.renderOnMap(1f, 1f));
+
+            // ASSERT
+            assertThat(actualThrown)
+                .isNull();
 
             verifyNoInteractions(layerRendererMock);
         }

@@ -474,15 +474,18 @@ The words for filling the empty space between systems one faction dominates.
 | gate (the switch a smoothing pass runs under) | 开关 | the plain word for a switch, something turned on or off |
 | paint (everything one owner's elements draw from) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
 | paint scheme (the theme and palettes one build styles by) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
+| parting (the dark segment a band lays between two others) | 分隔段 | 分隔, set between, with 段, a stretch, as the band's separator setting already says; kept apart from 分隔线, a lane rule |
 | radio (a row of options with one lit) | 单选框 | the usual UI word for a one-of-many control |
 | real holder (who holds a system with no spotlight up) | 实际持有者 | 实际, actual, with 持有者, a holder: the holder the system has before any spotlight rekeys it |
 | rebuild (the map's drawing worked out again) | 重建 | the usual word for building something again |
 | recede control | 退后控件 | 退后 with 控件, the usual UI word for a control |
 | redraw (the map drawn again) | 重绘 | 重, again, with 绘, to draw; the word earlier entries already use |
 | run (one owner's stretch of a band) | 色段 | 色, colour, with 段, a segment |
+| segment (one stake's stretch inside a run) | 分段 | 分, to divide, with 段, a stretch: a 色段 is made of 分段 |
 | shades (an owner's two colours) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
 | smoothing (the sanding and rounding of a border) | 平滑 | the usual graphics word; one of its passes is 一道平滑处理 |
 | stage (a border's shape after one smoothing pass) | 阶段 | the plain word for one step of a process |
+| stake (one share an owner has in a cell, drawn as one segment) | 份额 | the plain word for a share |
 | style decision (the category and recede one owner draws under) | 样式决定 | 样式, a style, with 决定, a decision |
 | theme (every style the map is drawn in) | 主题 | the usual UI word for a set of styles worn together |
 | tier (of the map layers framework) | 层 | the plain word for a layer of a structure, as in 三层; kept apart from 图层, a map layer |

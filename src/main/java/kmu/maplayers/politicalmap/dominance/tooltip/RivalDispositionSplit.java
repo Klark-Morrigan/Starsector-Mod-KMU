@@ -37,8 +37,9 @@ import java.util.Set;
  * system it holds - so the rows and the fraction above them do not add up wherever a member holds
  * nothing here, and are not meant to.
  *
- * <p>Every disposition is read through {@link FactionSetFriendliness} from the faction being sorted, at both tiers, so which side a faction takes and what its row counts
- * cannot be answered out of pairs read in opposite directions.
+ * <p>Every disposition is read through {@link FactionSetFriendliness} from the faction being
+ * sorted, at both tiers, so which side a faction takes and what its row counts cannot be answered
+ * out of pairs read in opposite directions.
  *
  * <p>Built in one walk and held, the sides being wanted one after another by a box laying its blocks
  * down.

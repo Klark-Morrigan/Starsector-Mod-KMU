@@ -6,12 +6,12 @@ package kmu.maplayers.base.ribbon;
  *
  * <p>World units throughout, and that is the design decision the rest of the band follows from. A
  * width stated in pixels would have to be re-measured every frame against the camera, would
- * mismatch the world pad it is offset alongside, and would make how far a run reaches depend on
+ * mismatch the world pad it is offset alongside, and would make how far a segment reaches depend on
  * how far the player has zoomed out. Stated in the world, the whole band resolves once at rebuild
  * and is drawn thereafter as the fills are - so a band occupies the same share of its cell's
  * outline at every zoom, and a frame measures nothing about it at all.
  *
- * <p>How long each run is never appears here: a plan's runs arrive carrying their lengths in
+ * <p>How long each segment is never appears here: a plan's segments arrive carrying their lengths in
  * widths, so the band reads only what a width is worth.
  *
  * @param widthWorld       how thick the band is, half of it either side of the path it is drawn

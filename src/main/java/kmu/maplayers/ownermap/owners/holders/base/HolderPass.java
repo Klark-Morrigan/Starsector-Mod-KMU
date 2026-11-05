@@ -275,8 +275,11 @@ public final class HolderPass {
         if (colonyReadRules.decivilisedColonyHabitation().isCountedAsPopulated()) {
             return inhabitingColonies;
         }
-        return inhabitingColonies.stream()
-            .filter(colony -> !colonyKnowledge.readKindOf(colony).isUngoverned())
+        return inhabitingColonies
+            .stream()
+            .filter(colony -> !colonyKnowledge
+                .readKindOf(colony)
+                .isUngoverned())
             .toList();
     }
 
@@ -299,18 +302,21 @@ public final class HolderPass {
     // regroups.
     //
     // Folded per owner before the grouping rather than per bloc after it, so the one fold that
-    // decides which owners can be named a bloc for decides it for the counts and sizes as well: a
+    // decides which owners can be named a bloc for decides it for the colonies and sizes as well: a
     // bloc's presence and what it lives on are then the same colonies, never two selections that
     // could differ by one. An owner with no ID lands under a null key, which the regroup drops.
     private static Map<String, BlocHabitation> foldHabitationByFaction(List<Colony> colonies) {
 
         var habitationByFactionId = new LinkedHashMap<String, BlocHabitation>();
+
         for (var colony : colonies) {
+
             habitationByFactionId.merge(
                 colony.readOwnerId(),
                 BlocHabitation.EMPTY.addColony(colony),
                 BlocHabitation::addHabitation);
         }
+
         return habitationByFactionId;
     }
 
@@ -323,9 +329,11 @@ public final class HolderPass {
     private static Set<String> collectFactionIdsOf(List<Colony> colonies) {
 
         var factionIds = new LinkedHashSet<String>();
+
         for (var colony : colonies) {
             factionIds.add(colony.readOwnerId());
         }
+
         return factionIds;
     }
 }

@@ -32,7 +32,8 @@ public final class KmuOwnerMapRibbonSettings {
         "kmu_map_politics_visuals_presenceRibbons_insetPad";
     private static final String RIBBON_SEGMENT_LENGTH_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_segmentLength";
-    private static final String RIBBON_INTERJECTION_LENGTH_FIELD =
+    // The field ID keeps the word the band once used for a parting: a shipped ID is frozen.
+    private static final String RIBBON_PARTING_LENGTH_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_interjectionLength";
 
     private static final boolean DEFAULT_RIBBON_ENABLED = true;
@@ -60,7 +61,7 @@ public final class KmuOwnerMapRibbonSettings {
     // Whole widths rather than fractions: a run is a count of holdings expressed as a length, and
     // how large a width is in the world is the width knob's business.
     private static final int DEFAULT_RIBBON_SEGMENT_LENGTH = 3;
-    private static final int DEFAULT_RIBBON_INTERJECTION_LENGTH = 1;
+    private static final int DEFAULT_RIBBON_PARTING_LENGTH = 1;
 
     private KmuOwnerMapRibbonSettings() {
     }
@@ -136,7 +137,7 @@ public final class KmuOwnerMapRibbonSettings {
         return KmuLunaSettings.readDouble(RIBBON_INSET_PAD_FIELD, DEFAULT_RIBBON_INSET_PAD);
     }
 
-    /** @return how far the run one colony draws reaches, in band widths */
+    /** @return how far the segment one colony draws reaches, in band widths */
     public static int getOwnerMapRibbonSegmentLength() {
         return KmuLunaSettings.readInt(
             RIBBON_SEGMENT_LENGTH_FIELD,
@@ -147,12 +148,11 @@ public final class KmuOwnerMapRibbonSettings {
      * @return how far a parting in the band reaches, in band widths. One length
      *         serves both the parting between two colonies of one bloc and the one closing that
      *         bloc's run, since two parting lengths in one band would read as a claim about the
-     *         blocs they part. The setting screen calls it a separator, the counting rule an
-     *         interjection
+     *         blocs they part. The setting screen calls it a separator
      */
-    public static int getOwnerMapRibbonInterjectionLength() {
+    public static int getOwnerMapRibbonPartingLength() {
         return KmuLunaSettings.readInt(
-            RIBBON_INTERJECTION_LENGTH_FIELD,
-            DEFAULT_RIBBON_INTERJECTION_LENGTH);
+            RIBBON_PARTING_LENGTH_FIELD,
+            DEFAULT_RIBBON_PARTING_LENGTH);
     }
 }

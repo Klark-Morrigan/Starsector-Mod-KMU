@@ -260,9 +260,9 @@ public final class CellRibbonsBaker {
             + " pad=" + style.insetPadWorld()
             + " alwaysDrawn=" + style.isBandAlwaysDrawn()
             + " contestedRuns="
-            + contestedLengths.stakeLengthUnits() + "/" + contestedLengths.interjectionLengthUnits()
+            + contestedLengths.stakeLengthUnits() + "/" + contestedLengths.partingLengthUnits()
             + " uncontestedRuns="
-            + uncontestedLengths.stakeLengthUnits() + "/" + uncontestedLengths.interjectionLengthUnits()
+            + uncontestedLengths.stakeLengthUnits() + "/" + uncontestedLengths.partingLengthUnits()
             + " keptClearOfNames=" + settings.isRibbonKeptClearOfNames()
             + " nameClearance=" + settings.nameClearance()
             + " pathsShown=" + settings.isRibbonPathShown();

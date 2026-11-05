@@ -15,9 +15,9 @@ import java.util.Map;
  * <p>The style resolvers' one entry point. An owner's fill, its cluster border and its cells' seams
  * all ask here, and so does every cell nobody owns, so no two of them can resolve a paint from two
  * readings of the same inputs. A cluster's name asks here too, for the style decision its owner's
- * fill was painted from, so the name and the fill beneath it are decided once. A stage that paints - the cell builder, the cluster-group builder -
- * takes one of these rather than the build it belongs to, which is what lets a layer stand such a
- * stage up without the pipeline around it.
+ * fill was painted from, so the name and the fill beneath it are decided once. A stage that paints -
+ * the cell builder, the cluster-group builder - takes one of these rather than the build it belongs
+ * to, which is what lets a layer stand such a stage up without the pipeline around it.
  *
  * <p>Remembers as well as resolves. Every input is fixed for the life of the value, so each answer
  * is resolved on first ask and kept: a map of a few owners and many cells resolves an owner's paint

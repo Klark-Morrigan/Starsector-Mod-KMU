@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the two pairs of lengths the rules settle from one authored pair: the contested pair as the
- * player authored it, and the uncontested pair with only its stake run shortened, and only where
+ * player authored it, and the uncontested pair with only its stake segment shortened, and only where
  * the switch says so.
  *
  * <p>Each half fails quietly if it drifts. A shortening that reached the parting as well would leave
@@ -29,7 +29,7 @@ final class RibbonPlanRulesTests {
     @Nested
     class GetContestedLengths {
 
-        // A contested cell is the readout the design exists for, so its runs keep the player's
+        // A contested cell is the readout the design exists for, so its segments keep the player's
         // lengths whatever the shortening says.
         @Test
         void answersTheAuthoredLengthsWhereTheUncontestedRunsAreShortened() {
@@ -50,7 +50,7 @@ final class RibbonPlanRulesTests {
     @Nested
     class GetUncontestedLengths {
 
-        // The stake run alone is cut. The parting says the same thing on an uncontested cell as on
+        // The stake segment alone is cut. The parting says the same thing on an uncontested cell as on
         // any other - one stake ends, the next begins - so the shortening has no business with it.
         @Test
         void cutsOnlyTheStakeRunToOneWidthWhereTheRunsAreShortened() {

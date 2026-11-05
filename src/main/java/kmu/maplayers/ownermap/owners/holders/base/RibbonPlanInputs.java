@@ -7,8 +7,8 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 
 /**
  * What one bake's bands are counted and coloured from: the reading of the sector the colonies come
- * out of, where a bloc's two shades are read, who among the blocs stands together, and how a band
- * is laid.
+ * out of, where each segment's two shades are read, who among the blocs stands together, and how a
+ * band is laid.
  *
  * <p>They travel together through every planner because no one of them is usable without the
  * others - a run is a count of colonies, coloured, judged for contest, laid to a rule - and because
@@ -17,10 +17,13 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
  * walk of each system rather than each opening a pass of its own.
  *
  * <p>The pass is what makes the counting rule the same rule on every layer. It names the sector,
- * the grouping factions fold into blocs under, the whole colony rule and where a bloc's shades are
- * read - so a band cannot be counted under a different fog or a different fold from the fill it
- * sits inside, nor coloured through anything but the fills' own palette read, and no counter needs
- * a settings read of its own to find out which.
+ * the grouping factions fold into blocs under and the whole colony rule - so a band cannot be
+ * counted under a different fog or a different fold from the fill it sits inside, and no counter
+ * needs a settings read of its own to find out which.
+ *
+ * <p>The palette read rides beside the pass rather than being read off it, because colouring is the
+ * view's choice: by default the pass's own read, so a run draws in the shades its fill is painted
+ * in, and a view colouring its segments by something its fills are not painted by hands its own.
  *
  * <p>The affiliation rides beside it as a second reading of the same sector, deliberately not the
  * pass's: the counts fold under the grouping the fills were painted with, while whether the cell is
@@ -33,27 +36,19 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
  * asked for.
  *
  * @param pass        the bake's reading of the sector: which sector, the grouping, the colony
- *                    rule, where a bloc's shades are read, and the one walk of each system every
- *                    count is folded from; opened once by whoever begins the bake
+ *                    rule, and the one walk of each system every count is folded from; opened once
+ *                    by whoever begins the bake
+ * @param palettes    where each colony's segment reads its shades, as the view chose them
  * @param affiliation who among the blocs present stands together, which decides only the length a
  *                    band's runs are laid at; {@link OwnerAffiliation#NONE} where nobody does
- * @param rules       how a band is laid: the run lengths, and how far they reach on a cell nobody
- *                    contests
+ * @param rules       how a band is laid: the segment lengths, and how far they reach on a cell
+ *                    nobody contests
  */
 public record RibbonPlanInputs(
     HolderPass pass,
+    RibbonPaletteReader palettes,
     OwnerAffiliation affiliation,
     RibbonPlanRules rules) {
-
-    /**
-     * Where each present bloc's two shades are read: the pass's own palette read, so a band colours a
-     * bloc through the very object the fills of the same rebuild were coloured through.
-     *
-     * @return the pass's palettes
-     */
-    public BlocPaletteReader palettes() {
-        return pass.palettes();
-    }
 
     /**
      * The grouping every count is folded under, which is the one the fills were painted with: a

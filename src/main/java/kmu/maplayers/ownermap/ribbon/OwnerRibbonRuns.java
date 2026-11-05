@@ -12,11 +12,12 @@ import java.util.Optional;
 
 /**
  * Lays an owner-painted cell's band: every owner present in the cell in the order it was ranked,
- * each contributing a segment per stake it has and an interjection between two of its own.
+ * each contributing a segment per stake it has and a parting between two of its own.
  *
  * <p>What the band says is how a system splits - how many stakes, whose, and in what proportion -
- * with no glyph and no label, so one shade carries every parting in it. The grammar, and why a
- * divider belongs to the owner going out, is <a href="README.md#laying-the-runs">the runs register</a>'s.
+ * with no glyph and no label, so the segment going out carries each parting in its own dark shade.
+ * The grammar, and why a parting belongs to the segment going out, is
+ * <a href="README.md#laying-the-runs">the runs register</a>'s.
  *
  * <p>Contest decides the lengths and never whether there is a band, which is what keeps the one
  * band a map must not be able to lose - the one saying a system is contested - out of reach of
@@ -27,13 +28,13 @@ import java.util.Optional;
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
  * painter means something quite different from the same segment against a short one.
  *
- * <p>Pure over a ranking and a count each, with no geometry and no colour lookup of its own, so
- * the rule depends on nothing live. Ranking order is the caller's: the runs come out in the order
- * the owners were handed over, so the ribbon cannot disagree with the fill about who leads a
+ * <p>Pure over a ranking and each owner's stake shades, with no geometry and no colour lookup of its
+ * own, so the rule depends on nothing live. Ranking order is the caller's: the runs come out in the
+ * order the owners were handed over, so the ribbon cannot disagree with the fill about who leads a
  * system it re-ranked for itself.
  *
  * <p>The owner tier's own rule rather than the band's: the plan it produces is
- * {@code base.ribbon}'s, and a layer banding a cell by anything but its owners lays its runs by a
+ * {@code base.ribbon}'s, and a layer banding a cell by anything but its owners lays its segments by a
  * rule of its own.
  */
 public final class OwnerRibbonRuns {
@@ -54,9 +55,9 @@ public final class OwnerRibbonRuns {
      * @param affiliation     who among those owners stands together, which is what keeps two allies
      *                        in one system from banding as though they fought over it;
      *                        {@link OwnerAffiliation#NONE} where nothing groups owners
-     * @param rules           how a band is laid: the run lengths, and how far they reach on a cell
+     * @param rules           how a band is laid: the segment lengths, and how far they reach on a cell
      *                        nobody contests
-     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where the cell draws no band
+     * @return the cell's segments in draw order, or {@link RibbonPlan#NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
             Optional<String> paintingOwnerId,
@@ -84,11 +85,20 @@ public final class OwnerRibbonRuns {
         return layOwnerRuns(rankedPresences, rules.getUncontestedLengths());
     }
 
-    // Lays the whole band: every owner's run in the order handed over, each closed off by its own
-    // dark shade wherever another owner's run follows it.
+    // Lays the whole band: every owner's stakes in the order handed over, a parting ahead of every
+    // stake but the band's first.
+    //
+    // One rule covers both partings: a parting is the outgoing segment's own dark shade. Between
+    // two stakes of one owner that is the stake just laid; where another owner's run follows, it is
+    // the last stake of the run going out - the owner's stakes ending, which drawn in the newcomer's
+    // shade would read as a gap belonging to whoever arrives next. Stated over the segment rather
+    // than over the owner, so it holds where one owner's stakes are coloured apart.
+    //
+    // An owner holding nothing lays no stake, so it opens no handover either: a parting laid for it
+    // would part two owners across a run that is not there.
     //
     // Reached from both readings and given its lengths rather than choosing them, since all the
-    // two differ on is how long the runs are - not what a band is made of. A second copy for the
+    // two differ on is how long the segments are - not what a band is made of. A second copy for the
     // uncontested cells would let their bands drift into a different shape from the contested ones,
     // which is the one comparison the readout rests on.
     private static RibbonPlan layOwnerRuns(
@@ -96,29 +106,26 @@ public final class OwnerRibbonRuns {
             RibbonSegmentLengths lengths) {
 
         var planBuilder = new RibbonPlanBuilder();
-        OwnerPresence outgoingOwner = null;
+        ColourPair outgoingPalette = null;
 
         for (var presence : rankedPresences) {
-            // An owner holding nothing counted lays no run, so it opens no handover either: a
-            // divider laid for it would part two owners across a run that is not there, and
-            // the owner actually going out would go unclosed.
-            if (!presence.hasStakes()) {
-                continue;
+            for (var stakePalette : presence.stakePalettes()) {
+
+                if (outgoingPalette != null) {
+                    planBuilder.appendSegment(createParting(outgoingPalette, lengths));
+                }
+                planBuilder.appendSegment(new RibbonSegment(
+                    stakePalette.primaryColour(),
+                    lengths.stakeLengthUnits()));
+
+                outgoingPalette = stakePalette;
             }
-            // The divider closing the run just laid is the outgoing owner's own, not the
-            // incoming one's: it is that owner's stakes ending, and drawn in the newcomer's
-            // shade it would read as a gap belonging to whoever arrives next.
-            if (outgoingOwner != null) {
-                planBuilder.appendSegment(createParting(outgoingOwner.palette(), lengths));
-            }
-            appendOwnerRun(planBuilder, presence, lengths);
-            outgoingOwner = presence;
         }
         return planBuilder.buildPlan();
     }
 
     // Whether the band would say anything the cell's own fill does not, which is what decides the
-    // lengths its runs are laid at: somebody holding something in the cell stands apart from the
+    // lengths its segments are laid at: somebody holding something in the cell stands apart from the
     // owner it is judged against.
     //
     // One reading serves both kinds of cell because an affiliation is a fold. Owners that all stand
@@ -181,39 +188,17 @@ public final class OwnerRibbonRuns {
         return Optional.empty();
     }
 
-    // Lays down one owner's run: a bright segment per stake, parted by a dark interjection.
-    // The interjection goes before every stake after the first, which is what keeps it
-    // strictly between two of one owner's stakes - so a run neither opens nor closes on one,
-    // and whether it is closed off at all is the caller's to decide from what follows it.
-    private static void appendOwnerRun(
-            RibbonPlanBuilder planBuilder,
-            OwnerPresence presence,
-            RibbonSegmentLengths lengths) {
-
-        var palette = presence.palette();
-
-        for (var stake = 0; stake < presence.stakeCount(); stake++) {
-
-            if (stake > 0) {
-                planBuilder.appendSegment(createParting(palette, lengths));
-            }
-            planBuilder.appendSegment(new RibbonSegment(
-                palette.primaryColour(),
-                lengths.stakeLengthUnits()));
-        }
-    }
-
     // The band's one kind of boundary, made once for both the places that need it: between two
     // of an owner's stakes, and closing that owner's whole run where another owner's follows. Both
-    // are the same owner's dark shade at the same length, and stating that twice would let one
+    // are the outgoing segment's dark shade at the same length, and stating that twice would let one
     // boundary drift into saying more than the other - which would read as a statement about the
     // owners being parted rather than as the boundary it is.
     private static RibbonSegment createParting(
-            ColourPair palette,
+            ColourPair outgoingPalette,
             RibbonSegmentLengths lengths) {
 
         return new RibbonSegment(
-            palette.secondaryColour(),
-            lengths.interjectionLengthUnits());
+            outgoingPalette.secondaryColour(),
+            lengths.partingLengthUnits());
     }
 }
