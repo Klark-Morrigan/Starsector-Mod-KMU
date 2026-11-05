@@ -1,7 +1,5 @@
-# CI for this repo's YAML surfaces. Delegates to the reusable workflow
-# in Common-Automation, which runs yamllint, actionlint and
-# action-validator as steps of one job. Each step auto-skips when its
-# target surface is absent.
+# CI for this repo's YAML surfaces, through Common-Automation's reusable
+# ci-yaml workflow; its header names the checks it runs.
 #
 # PR-only: the release path re-runs this same gate through KMLib's
 # reusable mod-release workflow, which calls Common-Automation's
