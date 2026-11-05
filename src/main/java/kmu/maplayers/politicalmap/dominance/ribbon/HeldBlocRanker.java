@@ -19,9 +19,9 @@ import java.util.Map;
  *
  * <p>The bloc the cell was painted for leads, whatever settled that - a plain weight lead, or one
  * of the tie-breaks below the weights - so a reader never finds the leading colour second in a band
- * on a cell painted in it. Behind the leader the blocs run by descending weight and then by ID, the
- * same total order the standings box ranks them in, so the band and the box agree about who is
- * second.
+ * on a cell painted in it. The domination box names that same bloc as holder. Behind the leader the
+ * blocs run by descending weight and then by ID, the same total order the box lists the rest in, so
+ * the band and the box agree about who leads and who follows.
  *
  * <p>A bloc the weights never reached - one holding nothing but colonies the economy does not list,
  * which have no industries, conditions or stability for the arithmetic to read - takes no place in
@@ -64,7 +64,7 @@ final class HeldBlocRanker {
     // would then open on a bloc the cell is not painted for.
     //
     // Behind it, the order the standings rank by, so the band cannot disagree with the box about who
-    // stands second in a system.
+    // follows the holder in a system.
     private static Comparator<Map.Entry<String, MarketFootprint>> orderByPaintedThenWeight(
             String paintingBlocId) {
 

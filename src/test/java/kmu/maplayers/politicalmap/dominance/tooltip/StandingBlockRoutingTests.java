@@ -301,6 +301,27 @@ class StandingBlockRoutingTests {
                 .isEmpty();
         }
 
+        // A painted bloc the ranking never listed cannot head the box, so the routing names nobody
+        // rather than a bloc the cell is not painted for. The box warns where this happens, since it
+        // means the ranking and the fill read the system apart.
+        @Test
+        void listsEveryContenderAsPresentWhereThePaintedBlocWasNotRanked() {
+
+            // ARRANGE
+            var expectedPresentBlocIds = List.of(HOLDER_BLOC, RIVAL_BLOC);
+
+            // ACT
+            var routing = routeWithoutAlliances(OTHER_RIVAL_BLOC, List.of(HOLDER_BLOC, RIVAL_BLOC));
+            var actualHolder = routing.selectStandingsIn(StandingBlock.HOLDER);
+            var actualPresentBlocIds = readListedBlocs(routing, StandingBlock.PRESENT);
+
+            // ASSERT
+            assertThat(actualHolder)
+                .isEmpty();
+            assertThat(actualPresentBlocIds)
+                .isEqualTo(expectedPresentBlocIds);
+        }
+
         // Standing with the holder is a question about the contest, which a barred bloc is outside
         // of - so no alliance set can lift it back in one axis further down.
         @Test

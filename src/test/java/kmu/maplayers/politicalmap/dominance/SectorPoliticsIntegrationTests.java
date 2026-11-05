@@ -36,7 +36,7 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildMarketAtStability;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOrbitingEntity;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildPlanetMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorSplitBetweenStationAndPlanet;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildStarAt;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildUndiscoveredHiddenMarket;
@@ -350,11 +350,7 @@ class SectorPoliticsIntegrationTests {
             // ARRANGE
             var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
-            var sector = buildSectorWith(
-                "tie-system",
-                List.of(hegemony, tritachyon),
-                buildVisibleMarket(hegemony, 5),
-                buildPlanetMarket(tritachyon, 5));
+            var sector = buildSectorSplitBetweenStationAndPlanet("tie-system", hegemony, tritachyon, 5);
             var expectedHolder = new SystemOwner(
                 "tritachyon",
                 new ColourPair(TRITACHYON_FACTION_BRIGHT, buildDarkTheme(TRITACHYON_FACTION_BRIGHT)));

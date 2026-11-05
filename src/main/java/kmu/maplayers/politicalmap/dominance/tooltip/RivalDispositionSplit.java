@@ -85,17 +85,6 @@ final class RivalDispositionSplit {
     }
 
     /**
-     * The split of a system with no holder, where nobody stands against one and both sides are
-     * empty.
-     *
-     * @param rules what a bloc is made of and how warm two factions are, which nothing here asks
-     * @return a split with no rival on either side
-     */
-    static RivalDispositionSplit createWithoutRivals(StandingBlockRules rules) {
-        return new RivalDispositionSplit(Set.of(), rules);
-    }
-
-    /**
      * The rivals on good terms with the holder.
      *
      * @return their rows, in the order their blocs ranked

@@ -165,6 +165,30 @@ public final class SectorOwnershipFixtures {
     }
 
     /**
+     * One system two colonies of one size share, one on a station and one on a planet, so their
+     * owners tie on every weight but the planet weight. That is the shape a rule ranking planets above
+     * stations settles one way and a rule ranking by ID alone can settle the other.
+     *
+     * @param systemId     the system ID
+     * @param stationOwner the faction holding the station colony
+     * @param planetOwner  the faction holding the planet colony
+     * @param colonySize   the size both colonies share
+     * @return the sector mock, with both owners resolvable by ID
+     */
+    public static SectorAPI buildSectorSplitBetweenStationAndPlanet(
+            String systemId,
+            FactionAPI stationOwner,
+            FactionAPI planetOwner,
+            int colonySize) {
+
+        return buildSectorWith(
+            systemId,
+            List.of(stationOwner, planetOwner),
+            buildVisibleMarket(stationOwner, colonySize),
+            buildPlanetMarket(planetOwner, colonySize));
+    }
+
+    /**
      * A visible owned market at the given stability, for exercising the stability scaling of
      * market weights.
      *

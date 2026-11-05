@@ -55,7 +55,26 @@ public final class PoliticalMapBoxReads {
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
-        return buildDominanceBox()
+        return readDominanceSectionsUnder(HolderGrouping.identity(), sector, system, detailLevel);
+    }
+
+    /**
+     * The dominance box of a view painting under the given grouping, over one system at that same
+     * depth - for a case about the alliances view, whose blocs are groups of factions.
+     *
+     * @param grouping    the grouping the view paints its fills under, and so ranks its box under
+     * @param sector      the stubbed sector the box reads
+     * @param system      the hovered system
+     * @param detailLevel how far the box is opened
+     * @return the body's blocks, in reading order
+     */
+    public static List<TooltipSection> readDominanceSectionsUnder(
+            HolderGrouping grouping,
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
+        return buildDominanceBoxUnder(grouping)
             .composeBody(sector, system, detailLevel).blocks().readSections();
     }
 
@@ -87,9 +106,7 @@ public final class PoliticalMapBoxReads {
      * @return a box over the plain faction view
      */
     public static SystemDominationTooltip buildDominanceBox() {
-        return new SystemDominationTooltip(
-            HolderGrouping::identity,
-            PoliticalBoxSeamsFixture.buildPlainSeamsOver(new ClaimBreakdownReaderFake()));
+        return buildDominanceBoxUnder(HolderGrouping.identity());
     }
 
     /**
@@ -107,5 +124,14 @@ public final class PoliticalMapBoxReads {
         return PassClaimReaders.openBreakdownReaderOver(
             HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()),
             VanillaClaimBreakdownReader::new);
+    }
+
+    // The box a view painting under the given grouping injects. Its alliance set is empty, so every
+    // bloc it ranks stands alone against the holder, whatever the grouping folds into one.
+    private static SystemDominationTooltip buildDominanceBoxUnder(HolderGrouping grouping) {
+
+        return new SystemDominationTooltip(
+            () -> grouping,
+            PoliticalBoxSeamsFixture.buildPlainSeamsOver(new ClaimBreakdownReaderFake()));
     }
 }

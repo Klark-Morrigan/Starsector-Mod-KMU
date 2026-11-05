@@ -75,6 +75,10 @@ the headings and which of them a group falls under,
 and the lines naming the blocs and their member factions.
 What hangs beneath a faction as the account of its score is a `FactionAccountResolver`,
 asked for once per composition of the box.
+A running game's comes from `PassFactionAccountSource`,
+which reads it off the pass the box ranked under:
+the box decides how the contest is laid out,
+and the account source decides what explains one faction's score.
 `StandingRowResolver` applies it where the standing and the line named from it are both in hand,
 so no faction's colonies can be listed under another's name.
 It also sets the two-tier shape:
@@ -102,6 +106,12 @@ regrouped per bloc (`DominancePass.regroupFootprintsByBloc`),
 so each market is still weighed once per box.
 Everyone behind the holder keeps the ranking's order,
 which is the order the band beneath the cell runs in too (`HeldBlocRanker`).
+
+The ranking and the fill are folded from one set of footprints,
+so the bloc the fill was painted for is always among the ranked groups.
+If it ever is not, the two have read the system apart:
+the box names nobody as holding it,
+and writes one warning a session saying which system and which bloc.
 
 Where each ranked group goes is `StandingBlockRouting`'s one answer,
 taken per hover over the closed set of blocks `StandingBlock` names.

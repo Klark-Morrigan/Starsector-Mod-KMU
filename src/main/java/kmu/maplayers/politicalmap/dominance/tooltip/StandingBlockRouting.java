@@ -72,39 +72,13 @@ public final class StandingBlockRouting {
 
         if (holder == null) {
             return new StandingBlockRouting(fillBlocks(
-                List.of(),
-                List.of(),
-                RivalDispositionSplit.createWithoutRivals(rules),
+                HolderContest.NO_HOLDER,
                 candidacy.contenders(),
                 candidacy.barred()));
         }
 
-        // Everyone in the running but the holder, still in rank order, which is the pool both blocks
-        // below it are drawn from. Dropped once here rather than per block, so no routing rule can
-        // readmit the holder to a block that is by definition about somebody else.
-        var contestants = candidacy
-            .contenders()
-            .stream()
-            .filter(standing -> standing != holder)
-            .toList();
-
-        var holderBlocId = holder.blocId();
-        var blocRelations = rules.blocRelations();
-
-        // Resolved once, after the holder is picked and before anybody is measured against it: every
-        // disposition read in one system is against this one membership, and resolving it per
-        // contestant would scan the same fold again for each of them to arrive at the same answer.
-        var holderMemberFactionIds = rules.readMemberFactionIds(holderBlocId);
-
-        var rivals = RivalDispositionSplit.splitByDisposition(
-            blocRelations.selectSide(ContestSide.RIVAL, holderBlocId, contestants, GroupStanding::blocId),
-            holderMemberFactionIds,
-            rules);
-
         return new StandingBlockRouting(fillBlocks(
-            List.of(holder),
-            blocRelations.selectSide(ContestSide.ALLIED, holderBlocId, contestants, GroupStanding::blocId),
-            rivals,
+            placeAroundHolder(holder, candidacy.contenders(), rules),
             List.of(),
             candidacy.barred()));
     }
@@ -162,6 +136,42 @@ public final class StandingBlockRouting {
         return new CandidacySplit(contenders, barred);
     }
 
+    // Everyone in the running placed by how they stand with the holder: the holder itself, then the
+    // rest either side of it by alliance, and what alliance left against it sorted by disposition.
+    private static HolderContest placeAroundHolder(
+            GroupStanding holder,
+            List<GroupStanding> contenders,
+            StandingBlockRules rules) {
+
+        var holderBlocId = holder.blocId();
+        var blocRelations = rules.blocRelations();
+
+        // Everyone in the running but the holder, still in rank order, which is the pool both blocks
+        // below it are drawn from. Dropped once here rather than per block, so no routing rule can
+        // readmit the holder to a block that is by definition about somebody else.
+        var contestants = contenders
+            .stream()
+            .filter(standing -> !standing.blocId().equals(holderBlocId))
+            .toList();
+
+        // Resolved once, after the holder is known and before anybody is measured against it: every
+        // disposition read in one system is against this one membership, and resolving it per
+        // contestant would scan the same fold again for each of them to arrive at the same answer.
+        var holderMemberFactionIds = rules.readMemberFactionIds(holderBlocId);
+
+        var allied = blocRelations.selectSide(ContestSide.ALLIED, holderBlocId, contestants, GroupStanding::blocId);
+        var rivals = RivalDispositionSplit.splitByDisposition(
+            blocRelations.selectSide(ContestSide.RIVAL, holderBlocId, contestants, GroupStanding::blocId),
+            holderMemberFactionIds,
+            rules);
+
+        return new HolderContest(
+            routeWhole(List.of(holder)),
+            routeWhole(allied),
+            rivals.selectFriendlyRivals(),
+            rivals.selectContestedRivals());
+    }
+
     // Every block filled from the groups already placed, split from the placement so the routing
     // decides who goes where and this only lays the answers into the one map.
     //
@@ -171,9 +181,7 @@ public final class StandingBlockRouting {
     // block would simply have drawn a block that never filled. Adding a default arm - or reaching for
     // one to silence the error - gives that guarantee away.
     private static Map<StandingBlock, List<RoutedStanding>> fillBlocks(
-            List<GroupStanding> holder,
-            List<GroupStanding> allied,
-            RivalDispositionSplit rivals,
+            HolderContest contest,
             List<GroupStanding> present,
             List<GroupStanding> barred) {
 
@@ -182,10 +190,10 @@ public final class StandingBlockRouting {
         for (var block : StandingBlock.values()) {
 
             standingsByBlock.put(block, switch (block) {
-                case HOLDER -> routeWhole(holder);
-                case ALLIED -> routeWhole(allied);
-                case FRIENDLY -> rivals.selectFriendlyRivals();
-                case CONTESTED -> rivals.selectContestedRivals();
+                case HOLDER -> contest.holderStandings();
+                case ALLIED -> contest.alliedStandings();
+                case FRIENDLY -> contest.friendlyRivalStandings();
+                case CONTESTED -> contest.contestedRivalStandings();
                 case PRESENT -> routeWhole(present);
                 case NON_POLITICAL -> routeWhole(barred);
             });
@@ -220,5 +228,20 @@ public final class StandingBlockRouting {
     private record CandidacySplit(
         List<GroupStanding> contenders,
         List<GroupStanding> barred) {
+    }
+
+    // The four blocks placed by how a group stands with the holder, as one value: a system with no
+    // holder fills all four from one empty answer rather than standing each up empty on its own.
+    private record HolderContest(
+        List<RoutedStanding> holderStandings,
+        List<RoutedStanding> alliedStandings,
+        List<RoutedStanding> friendlyRivalStandings,
+        List<RoutedStanding> contestedRivalStandings) {
+
+        static final HolderContest NO_HOLDER = new HolderContest(
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of());
     }
 }
