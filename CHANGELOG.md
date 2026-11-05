@@ -20,6 +20,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **The spotlight list follows a colony changing hands too**, so its numbers match the map.
 - **On the *Factions* and *Alliances* views, a claimed system whose last colony leaves stays in its claimant's territory, unfilled**, rather than showing as nobody's until the next full redraw.
 - **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
+- **On the *Factions* and *Alliances* views, the hover box over a system two factions tie for names the faction the system is coloured for as dominating it**, rather than the one first by ID, and lists the others against it.
+- **The hover box over a system where nobody holds a colony the economy lists names nobody as dominating it**, and lists everyone there as present.
 - **A system whose repaint fails is redrawn on the next frame**, rather than keeping its old owner.
 - **The political map follows a faction's colours changing**, such as the player faction's colours being set, rather than keeping the old colours until something else redraws it.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
@@ -51,6 +53,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`MapLayerCommonRefreshSignal.DRAW_LISTS`**: raised by the overlay cache once it has rebuilt what it draws, in full or for marked systems.
 - **`MapHoverState.getCellArrivalCount()`**: how many times the cursor has reached a cell it was not on, for work held for one visit to a cell.
 - **`KnownMarketFootprints.foldFootprintsByFaction(Map)`**: the footprints folded out of breakdowns already read.
+- **`DominancePass.regroupFootprintsByBloc(Map)`**: per-faction footprints already in hand, regrouped per bloc under the pass's grouping, so a caller can ask who holds a system without weighing it again.
+- **`StandingBlock.PRESENT`**: the domination box's block for a system with no holder, listing everyone in the running under a heading no install changes.
 - **`ColonyKind.isUngoverned()`**: whether a place is people living under nobody's authority, for every reader telling governed colonies from ungoverned ones.
 - **`FactionStanding.isWeighed()`**: whether the pass weighed the faction's colonies, so a reader branching on the kind asks rather than testing the sealed type.
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
@@ -249,6 +253,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `BaseSidebarHost` | A host implements `composeTabStyle()` and reads `resolveTabStyle()`, which keeps the style until the settings revision or the sector's settled faces move |
 | `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` on `SystemCellTooltip`, `PoliticalMapCellTooltip`, `SystemClaimTooltip` and `SystemDominationTooltip` | Gone: the press reads `deepestHeldLevel()` off the composed body the paint holds, so a layer states its depth only in `composeBody` |
 | `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`, over the weights the caller read, so a box ranking a system and explaining its scores weighs each market once |
+| `StandingBlockRouting.routeRankedStandings(List, StandingBlockRules)` | `routeRankedStandings(List, String, StandingBlockRules)`, taking the bloc the fill was painted for as the holder rather than picking the first in rank order, which parts from the fill on a tie |
 | `CellTooltipEntryLine`'s twelve-part constructor, with `labelText()`, `redactedWordLengths()`, `labelFinding()` and `hasRedactedName()` | `CellTooltipEntryLine(CellTooltipMark, CellTooltipLineName, CellTooltipIndexPlace, String, CellTooltipQualifier, CellTooltipLineValue, boolean)`. The name is a sealed `CellTooltipLineName`, `Spoken` or `Withheld`, read through `selectByCase(Function, Function)`, so no line both says and withholds its name |
 | `valueText()`, `countedValue()`, `valueWorkingText()` and `isValueUncounted()` on `CellTooltipEntryLine` | The same four on `value()`, a `CellTooltipLineValue` |
 | `MapLayerRegistry`, `LiveMapLayerArrangement` and `MapLayerScreens`, static, with their reset hooks | Instances `MapLayers.registerAll()` builds, returning the `MapLayerScreens` built over the other two. The entry point seats them on each sector through `SectorMapMachineryIndex.installMachineryOn(SectorAPI, InstalledMachinery...)`, and a pass reads them with `MapLayerScreens.resolveScreensIn(SectorMapMachinery)` |

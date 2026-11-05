@@ -87,6 +87,20 @@ since a bloc's score is the sum over its members'.
 The ranking reads as a contest rather than as a list:
 the group the map fills the system for is named as dominating it,
 so who holds the system is stated outright rather than inferred from which line sits on top.
+
+The holder is the bloc the fill was painted for,
+settled by the pass (`DominancePass.resolveDominantBlocId`) and never by the box's own ranking.
+The ranking orders blocs on equal combined weight by ID (`StandingRankOrder`),
+while the fill breaks that tie on the heaviest market,
+then planet weight,
+then the market nearest the system centre.
+A holder read off the ranking would name one bloc while the cell is painted for the other,
+and every block below it would be placed against the wrong bloc.
+The box folds the weights it already read into per-bloc footprints for that question,
+so each market is still weighed once per box.
+Everyone behind the holder keeps the ranking's order,
+which is the order the band beneath the cell runs in too (`HeldBlocRanker`).
+
 Where each ranked group goes is `StandingBlockRouting`'s one answer,
 taken per hover over the closed set of blocks `StandingBlock` names.
 Each block carries its heading,
@@ -105,6 +119,22 @@ A system whose only presence is `neutral` is still painted,
 bordered and labelled for it,
 while the box drops `Dominated by:` and lists it under `Non-political:`.
 Naming the placeholder as holding the system is the statement that block exists to stop making.
+
+A system can have no holder and still have contenders.
+That happens where the fill was painted for nobody, because nobody was weighed there,
+or for a barred bloc, because only `neutral` was.
+The contenders are then blocs present only through colonies the economy does not list
+(see [Presence without weight](#presence-without-weight)).
+They are listed under `Present:`, in rank order,
+and no allied, friendly or contested block is filled:
+those are sides of a holder, and there is none.
+Vanilla never builds this case,
+since Galatia Academy always sits beside listed Hegemony and pirate colonies,
+but a mod's unlisted hub can.
+
+That heading is fixed rather than following [the contest wording](#contested-or-present).
+The wording decides whether presence beside a holder amounts to a contest.
+With no holder there is nothing to contest, whatever the install.
 
 ## Allies and rivals
 

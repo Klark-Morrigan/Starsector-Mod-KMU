@@ -12,6 +12,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
+import kmu.maplayers.politicalmap.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
@@ -41,12 +42,12 @@ import static org.mockito.Mockito.atLeastOnce;
 
 /**
  * Everything a standings box reaches past to reach the game, stood in for: the settings the pass is
- * read from, the ranking, the resolution of a ranked group into the line naming it, and the system's
- * status line - with the grouping the injecting view paints under beside them, for a suite to build
- * its box with.
+ * read from, the ranking and the bloc the fill was painted for, the resolution of a ranked group into
+ * the line naming it, and the system's status line - with the grouping the injecting view paints
+ * under beside them, for a suite to build its box with.
  *
- * <p>Held as one fixture because a box reads all four before it draws anything, so a suite asserting
- * on any of them has to stand all four up first - and each suite writing that itself restates both the
+ * <p>Held as one fixture because a box reads all five before it draws anything, so a suite asserting
+ * on any of them has to stand all five up first - and each suite writing that itself restates both the
  * seams and the order they must be installed and taken down in. Which is also what makes them easy to
  * get subtly wrong: a suite that forgets one gets a live LunaLib read or a live economy walk inside a
  * unit test rather than a failure naming the seam it missed.
@@ -104,11 +105,15 @@ public final class StandingsTooltipSeamsFake {
     private static final String ANY_BLOC_ID_STEM = "bloc-";
     private static final int ANY_SCORE = 0;
 
+    // What the fill was painted for in a system nobody was weighed in.
+    private static final String NO_PAINTED_BLOC = null;
+
     // Where the standings a block is being named sit in the resolver's parameters, which is what the
     // stand-in reads to answer that block with its own entries rather than with the whole box's.
     private static final int STANDINGS_ARGUMENT = 0;
 
     private static MockedStatic<DominancePass> dominancePassMock;
+    private static MockedStatic<SystemDominance> dominanceMock;
     private static MockedStatic<SystemStandings> standingsMock;
     private static MockedStatic<StandingRowResolver> rowResolverMock;
     private static MockedStatic<SystemStatusRow> statusRowMock;
@@ -126,11 +131,13 @@ public final class StandingsTooltipSeamsFake {
     public static void installSeams(DominancePass pass) {
 
         dominancePassMock = Mockito.mockStatic(DominancePass.class);
+        dominanceMock = Mockito.mockStatic(SystemDominance.class);
         standingsMock = Mockito.mockStatic(SystemStandings.class);
         rowResolverMock = Mockito.mockStatic(StandingRowResolver.class);
         statusRowMock = Mockito.mockStatic(SystemStatusRow.class);
 
         stubPass(pass);
+        stubPaintedBloc(NO_PAINTED_BLOC);
         stubNoRows();
         stubNoStatus();
     }
@@ -141,6 +148,7 @@ public final class StandingsTooltipSeamsFake {
         statusRowMock.close();
         rowResolverMock.close();
         standingsMock.close();
+        dominanceMock.close();
         dominancePassMock.close();
     }
 
@@ -197,6 +205,11 @@ public final class StandingsTooltipSeamsFake {
      * under several headings, so a fixture answering every call with every entry would put every
      * group under every heading and no case about routing could fail.
      *
+     * <p>The fill is stood in as painted for the group ranked first, which is the ordinary shape: the
+     * pass's tie-breaks only part it from the ranking where two blocs tie on combined weight. A case
+     * about that tie, or about a system painted for nobody, states its own with
+     * {@link #stubPaintedBloc}.
+     *
      * @param rankedStandings the system's groups in ranked order, as the blocs they are
      * @param groupEntries    the entry naming each of those groups, in the same order
      */
@@ -220,6 +233,12 @@ public final class StandingsTooltipSeamsFake {
                 anyMap()))
             .thenReturn(List.copyOf(rankedStandings));
 
+        stubPaintedBloc(rankedStandings
+            .stream()
+            .map(GroupStanding::blocId)
+            .findFirst()
+            .orElse(NO_PAINTED_BLOC));
+
         // Every box gets the one stand-in resolver, which answers each block with that block's entries.
         var standInResolverMock = Mockito.mock(StandingRowResolver.class);
 
@@ -232,6 +251,19 @@ public final class StandingsTooltipSeamsFake {
         rowResolverMock
             .when(() -> StandingRowResolver.createForBox(any(), any(), any()))
             .thenReturn(standInResolverMock);
+    }
+
+    /**
+     * Answers which bloc the system's fill was painted for, standing in for the dominance rule the
+     * box asks over the weights it read - which a box over no sector has none of to rank.
+     *
+     * @param paintedBlocId the bloc the fill was painted for, or null for a fill painted for nobody
+     */
+    public static void stubPaintedBloc(String paintedBlocId) {
+
+        dominanceMock
+            .when(() -> SystemDominance.resolveDominantBlocId(anyMap(), any()))
+            .thenReturn(paintedBlocId);
     }
 
     /**

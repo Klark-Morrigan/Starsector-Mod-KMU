@@ -36,6 +36,7 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildMarketAtStability;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOrbitingEntity;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildPlanetMarket;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildStarAt;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildUndiscoveredHiddenMarket;
@@ -660,19 +661,6 @@ class SectorPoliticsIntegrationTests {
 
         when(market.getPrimaryEntity())
             .thenReturn(entityMock);
-    }
-
-    // A visible market sitting on a planet (getPlanetEntity() non-null), which the dominance
-    // rule prefers over a station at an otherwise exact weight tie. Local to this suite: only
-    // the tie-break test reads a planet market.
-    private static MarketAPI buildPlanetMarket(FactionAPI faction, int size) {
-
-        var marketMock = buildVisibleMarket(faction, size);
-
-        when(marketMock.getPlanetEntity())
-            .thenReturn(mock(PlanetAPI.class));
-
-        return marketMock;
     }
 
     // A colony whose entity is still to be found, with nothing concealed about the market itself

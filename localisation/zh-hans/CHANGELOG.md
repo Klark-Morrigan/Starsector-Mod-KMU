@@ -19,6 +19,8 @@
 - **聚焦选择器也会跟随殖民地易手**，因此其中的数字与地图一致。
 - **在*势力*和*联盟*视图上，被宣称星系的最后一个殖民地离开后，该星系仍以不填充的方式留在宣称方的领土中**，而不再在下一次完整重绘之前显示为无所有者。
 - **两个势力权重相同的星系在其中一方取得它时会重绘**，而不必等到下一次完整重绘。
+- **在*势力*和*联盟*视图上，两个势力打平的星系，其悬停框会把该星系着色所属的势力列为主导方**，而不再列出 ID 排在前面的那一方，其余势力则相对于它列出。
+- **无人持有经济系统登记的殖民地的星系，其悬停框不再将任何势力列为主导方**，而是把在场的势力都列为在场。
 - **星系重绘失败时，会在下一帧再次重绘**，而不是保留旧的所有者。
 - **政治地图会跟随势力配色的变化**，例如玩家为自己的势力设置配色时，而不再保留旧的配色，直到其他变化重绘地图。
 - **Nexerelin 联盟改名后，联盟视图会显示新名称**，而不再保留旧名称，直到其他变化重绘地图。
@@ -50,6 +52,8 @@
 - **`MapLayerCommonRefreshSignal.DRAW_LISTS`**：叠加层缓存在完整重建或为已标记星系重建其绘制内容后发出。
 - **`MapHoverState.getCellArrivalCount()`**：光标抵达一个原本不在其上的单元的次数，供按每次停留保留的工作使用。
 - **`KnownMarketFootprints.foldFootprintsByFaction(Map)`**：由已读取的权重明细汇总出的足迹。
+- **`DominancePass.regroupFootprintsByBloc(Map)`**：将调用方已持有的按势力足迹，按该轮次的分组重新归并为按集团的足迹，使调用方无需再次计算权重即可询问星系由谁持有。
+- **`StandingBlock.PRESENT`**：主导悬停框中无持有者星系所用的分块，在一个不随安装而变的标题下列出所有参与竞争者。
 - **`ColonyKind.isUngoverned()`**：某处是否住着不受任何权力管辖的人，供每个区分有人管辖与无人管辖殖民地的读取方使用。
 - **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按种类分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
@@ -248,6 +252,7 @@
 | `BaseSidebarHost` | 宿主实现 `composeTabStyle()` 并读取 `resolveTabStyle()`，后者保留样式，直到设置修订号或星域已确定的字体变化 |
 | `SystemCellTooltip`、`PoliticalMapCellTooltip`、`SystemClaimTooltip` 和 `SystemDominationTooltip` 上的 `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` | 已移除：按键从绘制所保留的组合主体读取 `deepestHeldLevel()`，因此图层只在 `composeBody` 中给出其深度 |
 | `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方已读取的权重，因此为星系排名并解释其分数的悬停框只为每个市场计算一次权重 |
+| `StandingBlockRouting.routeRankedStandings(List, StandingBlockRules)` | `routeRankedStandings(List, String, StandingBlockRules)`，以填充着色所属的集团为持有者，而不再选取排名第一者，后者在打平时会与填充不一致 |
 | `CellTooltipEntryLine` 的十二参数构造函数，以及 `labelText()`、`redactedWordLengths()`、`labelFinding()` 和 `hasRedactedName()` | `CellTooltipEntryLine(CellTooltipMark, CellTooltipLineName, CellTooltipIndexPlace, String, CellTooltipQualifier, CellTooltipLineValue, boolean)`。名称为密封类型 `CellTooltipLineName`，即 `Spoken` 或 `Withheld`，通过 `selectByCase(Function, Function)` 读取，因此没有哪一行能既说出又隐去其名称 |
 | `valueText()`、`countedValue()`、`valueWorkingText()` 和 `isValueUncounted()`，位于 `CellTooltipEntryLine` 上 | 改为 `value()` 上的同名四项，即一个 `CellTooltipLineValue` |
 | 静态的 `MapLayerRegistry`、`LiveMapLayerArrangement` 和 `MapLayerScreens`，连同其重置钩子 | 改为由 `MapLayers.registerAll()` 构建的实例，它返回建立在另外两者之上的 `MapLayerScreens`。入口通过 `SectorMapMachineryIndex.installMachineryOn(SectorAPI, InstalledMachinery...)` 将其安放到每个星域上，各渲染通道用 `MapLayerScreens.resolveScreensIn(SectorMapMachinery)` 读取 |

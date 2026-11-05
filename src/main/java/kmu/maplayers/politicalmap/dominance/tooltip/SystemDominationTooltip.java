@@ -13,6 +13,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
+import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
@@ -213,8 +214,27 @@ public final class SystemDominationTooltip
             pass,
             StandingBlockRouting.routeRankedStandings(
                 groupStandings,
+                resolvePaintedBlocId(system, pass, breakdownsByFactionId),
                 buildBlockRules(sector, pass.grouping())),
             breakdownsByFactionId);
+    }
+
+    // The bloc the fill beneath the box was painted for, settled by the pass's own rule rather than by
+    // the ranking. The ranking orders blocs on equal combined weight by ID, while the fill breaks that
+    // tie on the heaviest market, planet weight and proximity first - so a holder read off the ranking
+    // could name a bloc the cell is not painted for.
+    //
+    // Folded out of the weights the box already read, rather than read off the pass afresh, so each
+    // market is weighed once per box.
+    private static String resolvePaintedBlocId(
+            StarSystemAPI system,
+            DominancePass pass,
+            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+
+        return pass.resolveDominantBlocId(
+            system,
+            pass.regroupFootprintsByBloc(
+                KnownMarketFootprints.foldFootprintsByFaction(breakdownsByFactionId)));
     }
 
     // What the blocks are placed by, bound to this hover's sector and to the grouping the map painted

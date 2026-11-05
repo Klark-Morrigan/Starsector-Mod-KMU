@@ -9,7 +9,7 @@ import java.util.function.Function;
 /**
  * The blocks a hovered system's standings are listed under, in the order a box lays them down: who
  * holds the system, who stands with them by alliance, who stands with them in disposition, who stands
- * against them, and who was never in the running at all.
+ * against them, who is there where nobody holds it, and who was never in the running at all.
  *
  * <p>A closed set for the reason {@link ContestBlockHeading} states: a routing that stopped placing a
  * block fails to compile where a misspelled heading key would simply have drawn a block that never
@@ -27,8 +27,9 @@ import java.util.function.Function;
 public enum StandingBlock implements ContestBlockHeading {
 
     /**
-     * The bloc the map fills the system in the colour of. The strongest of those in the running,
-     * which is what keeps the box an explanation of the cell beneath it.
+     * The bloc the map fills the system in the colour of, as the dominance pass settled it - which
+     * is what keeps the box an explanation of the cell beneath it. Empty where that bloc is barred
+     * from the contest, or where the fill was painted for nobody.
      */
     HOLDER(ContestBlockHeading.createFixedKeySource(
         KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED)),
@@ -51,6 +52,20 @@ public enum StandingBlock implements ContestBlockHeading {
      * {@link ContestWording}'s answer rather than this declaration's.
      */
     CONTESTED(ContestWording::resolveHeadingKey),
+
+    /**
+     * Every bloc in the running, in the order they ranked, where none of them holds the system - so
+     * there is no holder for anybody to stand with or against. Filled only then.
+     *
+     * <p>A fixed heading rather than {@link ContestWording}'s: the wording decides whether presence
+     * beside a holder amounts to a contest, and with no holder there is nothing to contest whatever
+     * the install.
+     *
+     * <p>Every bloc listed here holds nothing but colonies the economy does not list, since a
+     * weighed bloc in the running would have been the one painted.
+     */
+    PRESENT(ContestBlockHeading.createFixedKeySource(
+        KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_PRESENT)),
 
     /**
      * The blocs that take no part in the contest for the system. Listed with whatever they scored,
