@@ -32,6 +32,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
@@ -111,7 +112,8 @@ import static org.mockito.Mockito.when;
  * <p>The non-political block is the exception among the blocks and is pinned here, because it is the
  * one whose routing turns on which faction a bloc actually is: the shape suite poses its groups as
  * bloc IDs that stand for nobody in particular, which is right for every block placed by rank or by
- * alliance and cannot state this one at all.
+ * alliance and cannot state this one at all. So is the holder, which is the bloc the fill was painted
+ * for rather than the one ranked first, and the present block a system with no holder lists.
  */
 final class SystemDominationTooltipTests {
 
@@ -203,6 +205,9 @@ final class SystemDominationTooltipTests {
     // list.
     private static final Map<String, List<MarketWeightBreakdown>> NO_BREAKDOWNS = Map.of();
 
+    // What the fill was painted for in a system nobody was weighed in.
+    private static final String NO_PAINTED_BLOC = null;
+
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 
     // The alliance set the box routes its blocks against, restated by the case about an ally and left
@@ -252,135 +257,203 @@ final class SystemDominationTooltipTests {
     @Nested
     class ComposeBody {
 
+        // The faction view's shape: a lone faction resolves to a group made up of nothing, so the box
+        // lists it and nothing beneath it - and its number reads called-out like every value.
         @Test
         void drawsAGroupMadeUpOfNothingAsOneFlatLine() {
-            // The faction view's shape: a lone faction resolves to a group made up of nothing, so the
-            // box lists it and nothing beneath it - and its number reads called-out like every value.
+
+            // ARRANGE
             StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
 
-            var rows = readBodyRows();
+            var expectedMark = new ImageSpan(BLOC_CREST);
+            var expectedLabel = new TextSpan("Rebel Pact", PLAYER_BRIGHT);
+            var expectedValueSlot = new RowSlot.Text(new TextSpan(BLOC_SCORE, HIGHLIGHT));
 
-            assertThat(rows)
+            // ACT
+            var actualRows = readBodyRows();
+            var actualHeader = readTableRow(actualRows, GROUP_HEADER_ROW);
+
+            // ASSERT
+            assertThat(actualRows)
                 .hasSize(2);
-
-            var header = readTableRow(rows, GROUP_HEADER_ROW);
-
-            assertThat(readLabelRun(header, MARK_RUN))
-                .isEqualTo(new ImageSpan(BLOC_CREST));
-
-            assertThat(readLabelRun(header, MARKED_LABEL_RUN))
-                .isEqualTo(new TextSpan("Rebel Pact", PLAYER_BRIGHT));
-
-            assertThat(header.indent())
+            assertThat(readLabelRun(actualHeader, MARK_RUN))
+                .isEqualTo(expectedMark);
+            assertThat(readLabelRun(actualHeader, MARKED_LABEL_RUN))
+                .isEqualTo(expectedLabel);
+            assertThat(actualHeader.indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
-
-            assertThat(header.labelledRow().leadingRowSlot())
+            assertThat(actualHeader.labelledRow().leadingRowSlot())
                 .isEqualTo(RowSlot.EMPTY);
-
-            assertThat(header.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan(BLOC_SCORE, HIGHLIGHT)));
+            assertThat(actualHeader.labelledRow().trailingRowSlot())
+                .isEqualTo(expectedValueSlot);
         }
 
+        // The alliances view's shape: the bloc is listed and its members read as belonging to it, by
+        // the indent and the plainer colour rather than by any label saying so. The members read
+        // strongest first, as the standing ranked them and like the fills.
         @Test
         void drawsAnAllianceAboveItsIndentedMembers() {
-            // The alliances view's shape: the bloc is listed and its members read as belonging to it, by
-            // the indent and the plainer colour rather than by any label saying so.
+
+            // ARRANGE
             StandingsTooltipSeamsFake.stubGroupEntries(createGroupEntry(
                 createMemberLine(MEMBER_SCORE),
                 createMemberLine(OTHER_MEMBER_SCORE)));
 
-            var rows = readBodyRows();
+            var expectedGroupLabel = new TextSpan("Rebel Pact", PLAYER_BRIGHT);
+            var expectedMemberLabel = new TextSpan("The Hegemony", TEXT);
+            var expectedFirstValueSlot = new RowSlot.Text(new TextSpan(MEMBER_SCORE, TEXT));
+            var expectedSecondValueSlot = new RowSlot.Text(new TextSpan(OTHER_MEMBER_SCORE, TEXT));
 
-            assertThat(rows)
+            // ACT
+            var actualRows = readBodyRows();
+            var actualHeader = readTableRow(actualRows, GROUP_HEADER_ROW);
+            var actualFirstMember = readTableRow(actualRows, FIRST_MEMBER_ROW);
+            var actualSecondMember = readTableRow(actualRows, SECOND_MEMBER_ROW);
+
+            // ASSERT
+            assertThat(actualRows)
                 .hasSize(4);
-
-            var firstMember = readTableRow(rows, FIRST_MEMBER_ROW);
-
-            assertThat(readLabelRun(readTableRow(rows, GROUP_HEADER_ROW), MARKED_LABEL_RUN))
-                .isEqualTo(new TextSpan("Rebel Pact", PLAYER_BRIGHT));
-
-            assertThat(readLabelRun(firstMember, MARKED_LABEL_RUN))
-                .isEqualTo(new TextSpan("The Hegemony", TEXT));
-
-            assertThat(firstMember.indent())
+            assertThat(readLabelRun(actualHeader, MARKED_LABEL_RUN))
+                .isEqualTo(expectedGroupLabel);
+            assertThat(readLabelRun(actualFirstMember, MARKED_LABEL_RUN))
+                .isEqualTo(expectedMemberLabel);
+            assertThat(actualFirstMember.indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
-
-            assertThat(firstMember.labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan(MEMBER_SCORE, TEXT)));
-
-            // Ranked as the standing ranked them, so the box reads strongest first like the fills.
-            assertThat(readTableRow(rows, SECOND_MEMBER_ROW).labelledRow().trailingRowSlot())
-                .isEqualTo(new RowSlot.Text(new TextSpan(OTHER_MEMBER_SCORE, TEXT)));
+            assertThat(actualFirstMember.labelledRow().trailingRowSlot())
+                .isEqualTo(expectedFirstValueSlot);
+            assertThat(actualSecondMember.labelledRow().trailingRowSlot())
+                .isEqualTo(expectedSecondValueSlot);
         }
 
+        // Vanilla hands every abandoned station and collapsed colony to the neutral placeholder, which
+        // takes a footprint like anybody else. Left among the contenders it would head the box over a
+        // system a real faction runs, so it is set aside before a holder is named - listed with
+        // whatever it scored, and never named as holding the place.
         @Test
         void listsThePlaceholderOwnerApartFromWhoHoldsTheSystem() {
-            // Vanilla hands every abandoned station and collapsed colony to the neutral placeholder,
-            // which takes a footprint like anybody else. Left among the contenders it would head the
-            // box over a system a real faction runs, so it is set aside before a holder is picked -
-            // listed with whatever it scored, and never named as holding the place.
+
+            // ARRANGE
             StandingsTooltipSeamsFake.stubRankedGroups(
                 List.of(
                     createLoneGroup(CORE_FACTION),
                     createLoneGroup(Factions.NEUTRAL)),
                 List.of(createLoneGroupEntry(), createPlaceholderGroupEntry()));
 
-            assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
-                .containsExactly(
-                    "Dominated by:",
-                    "Rebel Pact",
-                    "Non-political:",
-                    "Neutral");
+            var expectedOpeningWords = List.of(
+                "Dominated by:",
+                "Rebel Pact",
+                "Non-political:",
+                "Neutral");
+
+            // ACT
+            var actualOpeningWords = readBodyOpeningWords();
+
+            // ASSERT
+            assertThat(actualOpeningWords)
+                .isEqualTo(expectedOpeningWords);
         }
 
+        // The whole chain in one system, in the order a reader meets it: who holds the place, who
+        // stands with it by alliance, who stands with it in disposition, who stands against it, and
+        // who was never in the running. Posed here rather than with the shared shape because two of
+        // the five turn on which faction a bloc actually is - the placeholder owner, and a bloc the
+        // sector's own relations put on good terms with the holder.
         @Test
         void laysTheFiveBlocksDownFromTheHolderOutward() {
-            // The whole chain in one system, in the order a reader meets it: who holds the place,
-            // who stands with it by alliance, who stands with it in disposition, who stands against
-            // it, and who was never in the running. Posed here rather than with the shared shape
-            // because two of the five turn on which faction a bloc actually is - the placeholder
-            // owner, and a bloc the sector's own relations put on good terms with the holder.
+
+            // ARRANGE
             allianceSet = buildAllianceOf(CORE_FACTION, ALLY_FACTION);
 
             stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
             stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);
+            stubTheWholeChain();
 
+            var expectedOpeningWords = List.of(
+                "Dominated by:",
+                "Rebel Pact",
+                "Allied with the system holder:",
+                "Tri-Tachyon",
+                "Friendly with the system holder:",
+                "The Luddic Church",
+                "Contested by:",
+                "Persean League",
+                "Non-political:",
+                "Neutral");
+
+            // ACT
+            var actualOpeningWords = readBodyOpeningWords();
+
+            // ASSERT
+            assertThat(actualOpeningWords)
+                .isEqualTo(expectedOpeningWords);
+        }
+
+        // A tie on combined weight: the ranking puts the core faction first by ID, while the pass broke
+        // the tie on a lower level and painted the fill for the rival. The box names the painted bloc
+        // as holder and measures everyone else against it.
+        @Test
+        void namesTheBlocTheFillWasPaintedForAsHolderWhereItRanksSecond() {
+
+            // ARRANGE
             StandingsTooltipSeamsFake.stubRankedGroups(
                 List.of(
                     createLoneGroup(CORE_FACTION),
-                    createLoneGroup(ALLY_FACTION),
-                    createLoneGroup(FRIENDLY_FACTION),
-                    createLoneGroup(RIVAL_FACTION),
-                    createLoneGroup(Factions.NEUTRAL)),
+                    createLoneGroup(RIVAL_FACTION)),
                 List.of(
                     createLoneGroupEntry(),
-                    createAlliedGroupEntry(),
-                    createNamedGroupEntry("The Luddic Church"),
-                    createNamedGroupEntry("Persean League"),
-                    createPlaceholderGroupEntry()));
+                    createNamedGroupEntry("Persean League")));
+            StandingsTooltipSeamsFake.stubPaintedBloc(RIVAL_FACTION);
 
-            assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
-                .containsExactly(
-                    "Dominated by:",
-                    "Rebel Pact",
-                    "Allied with the system holder:",
-                    "Tri-Tachyon",
-                    "Friendly with the system holder:",
-                    "The Luddic Church",
-                    "Contested by:",
-                    "Persean League",
-                    "Non-political:",
-                    "Neutral");
+            var expectedOpeningWords = List.of(
+                "Dominated by:",
+                "Persean League",
+                "Contested by:",
+                "Rebel Pact");
+
+            // ACT
+            var actualOpeningWords = readBodyOpeningWords();
+
+            // ASSERT
+            assertThat(actualOpeningWords)
+                .isEqualTo(expectedOpeningWords);
         }
 
+        // A system the fill was painted for nobody in still lists whoever is there - blocs present
+        // only through colonies the economy does not list - and names none of them as holding it.
+        @Test
+        void listsEveryoneAsPresentWhereTheFillWasPaintedForNobody() {
+
+            // ARRANGE
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(
+                    createLoneGroup(CORE_FACTION),
+                    createLoneGroup(RIVAL_FACTION)),
+                List.of(
+                    createLoneGroupEntry(),
+                    createNamedGroupEntry("Persean League")));
+            StandingsTooltipSeamsFake.stubPaintedBloc(NO_PAINTED_BLOC);
+
+            var expectedOpeningWords = List.of(
+                "Present:",
+                "Rebel Pact",
+                "Persean League");
+
+            // ACT
+            var actualOpeningWords = readBodyOpeningWords();
+
+            // ASSERT
+            assertThat(actualOpeningWords)
+                .isEqualTo(expectedOpeningWords);
+        }
+
+        // Under a grouping that makes every bloc a singleton there is nothing for a bloc's members to
+        // disagree about, so none folds into two headings and none is stood up anew: the box names
+        // exactly the groups the ranking handed it, once each. What a fold looks like when one does
+        // happen is the routing's to pin.
         @Test
         void listsEachGroupOnceWhereNoBlocCanBeOfTwoMinds() {
-            // Under a grouping that makes every bloc a singleton there is nothing for a bloc's members
-            // to disagree about, so none folds into two headings and none is stood up anew: the box
-            // names exactly the groups the ranking handed it, once each. What a fold looks like when
-            // one does happen is the routing's to pin.
+
+            // ARRANGE
             allianceSet = FactionAlliances.NONE;
 
             stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
@@ -396,115 +469,129 @@ final class SystemDominationTooltipTests {
                     createNamedGroupEntry("The Luddic Church"),
                     createNamedGroupEntry("Persean League")));
 
-            assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
-                .containsExactly(
-                    "Dominated by:",
-                    "Rebel Pact",
-                    "Friendly with the system holder:",
-                    "The Luddic Church",
-                    "Contested by:",
-                    "Persean League");
+            var expectedOpeningWords = List.of(
+                "Dominated by:",
+                "Rebel Pact",
+                "Friendly with the system holder:",
+                "The Luddic Church",
+                "Contested by:",
+                "Persean League");
+
+            // ACT
+            var actualOpeningWords = readBodyOpeningWords();
+
+            // ASSERT
+            assertThat(actualOpeningWords)
+                .isEqualTo(expectedOpeningWords);
         }
 
+        // The five blocks of the chain, in the same system, on an install that never transfers one:
+        // the bloc beside the holder is a neighbour indefinitely rather than a challenger, so that
+        // heading states its presence and leaves the struggle unsaid.
+        //
+        // Posed over the whole chain rather than over the one block, because what the wording is not
+        // allowed to reach is the point: the four headings around it name relations and a candidacy
+        // that hold whether or not anybody can act on them, and a wording read by the loop that draws
+        // all five could move any of them.
+        //
+        // Read as the same box drawn twice, once under each wording, so every line it holds is
+        // compared - an entry's crest, value and indent as well as the headings.
         @Test
         void headsOnlyTheRivalsDifferentlyWhereNoSystemEverChangesHands() {
-            // The five blocks of the case above, in the same system, on an install that never
-            // transfers one: the bloc beside the holder is a neighbour indefinitely rather than a
-            // challenger, so that heading states its presence and leaves the struggle unsaid.
-            //
-            // Posed over the whole chain rather than over the one block, because what the wording is
-            // not allowed to reach is the point: the four headings around it name relations and a
-            // candidacy that hold whether or not anybody can act on them, and a wording read by the
-            // loop that draws all five could move any of them.
-            //
-            // Read as the same box drawn twice, once under each wording, so every line it holds is
-            // compared - an entry's crest, value and indent as well as the headings.
+
+            // ARRANGE
             var rivalHeadingRow = 6;
 
             allianceSet = buildAllianceOf(CORE_FACTION, ALLY_FACTION);
 
             stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
             stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);
+            stubTheWholeChain();
 
-            StandingsTooltipSeamsFake.stubRankedGroups(
-                List.of(
-                    createLoneGroup(CORE_FACTION),
-                    createLoneGroup(ALLY_FACTION),
-                    createLoneGroup(FRIENDLY_FACTION),
-                    createLoneGroup(RIVAL_FACTION),
-                    createLoneGroup(Factions.NEUTRAL)),
-                List.of(
-                    createLoneGroupEntry(),
-                    createAlliedGroupEntry(),
-                    createNamedGroupEntry("The Luddic Church"),
-                    createNamedGroupEntry("Persean League"),
-                    createPlaceholderGroupEntry()));
+            var expectedContestedHeading = "Contested by:";
+            var expectedPresentHeading = "Present:";
 
-            var contestedRows = readBodyRows();
+            // ACT
+            var actualContestedRows = readBodyRows();
 
             contestWording = ContestWording.PRESENT;
 
-            var presentRows = readBodyRows();
+            var actualPresentRows = readBodyRows();
 
-            assertThat(presentRows)
-                .hasSameSizeAs(contestedRows);
-            assertThat(presentRows.subList(0, rivalHeadingRow))
-                .isEqualTo(contestedRows.subList(0, rivalHeadingRow));
-            assertThat(presentRows.subList(rivalHeadingRow + 1, presentRows.size()))
-                .isEqualTo(contestedRows.subList(rivalHeadingRow + 1, contestedRows.size()));
+            // ASSERT
+            assertThat(actualPresentRows)
+                .hasSameSizeAs(actualContestedRows);
+            assertThat(actualPresentRows.subList(0, rivalHeadingRow))
+                .isEqualTo(actualContestedRows.subList(0, rivalHeadingRow));
+            assertThat(actualPresentRows.subList(rivalHeadingRow + 1, actualPresentRows.size()))
+                .isEqualTo(actualContestedRows.subList(rivalHeadingRow + 1, actualContestedRows.size()));
 
             // The heading line itself keeps its kind and changes its words alone.
-            assertThat(presentRows.get(rivalHeadingRow).lineStyle())
-                .isEqualTo(contestedRows.get(rivalHeadingRow).lineStyle());
-            assertThat(readOpeningWords(contestedRows.get(rivalHeadingRow)))
-                .isEqualTo("Contested by:");
-            assertThat(readOpeningWords(presentRows.get(rivalHeadingRow)))
-                .isEqualTo("Present:");
+            assertThat(actualPresentRows.get(rivalHeadingRow).lineStyle())
+                .isEqualTo(actualContestedRows.get(rivalHeadingRow).lineStyle());
+            assertThat(readOpeningWords(actualContestedRows.get(rivalHeadingRow)))
+                .isEqualTo(expectedContestedHeading);
+            assertThat(readOpeningWords(actualPresentRows.get(rivalHeadingRow)))
+                .isEqualTo(expectedPresentHeading);
         }
 
+        // An empty system says the same thing at every depth: there is no more detail to be had
+        // about a system nobody holds.
         @Test
         void fallsBackToTheSystemStatusWhenNothingRanks() {
-            // An empty system says the same thing at every depth: there is no more detail to be had
-            // about a system nobody holds.
-            var statusRow = StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
+
+            // ARRANGE
+            var expectedStatusRow = StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
 
             StandingsTooltipSeamsFake.stubGroupEntries();
             stubBreakdowns(Map.of());
 
-            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
+            // ACT
+            var actualSections = tooltip
+                .composeBody(sectorMock, systemMock, PATROL_DETAILS)
+                .blocks()
+                .readSections();
 
-            assertThat(sections)
+            // ASSERT
+            assertThat(actualSections)
                 .hasSize(1);
-            assertThat(sections.get(0).readRowsInOrder())
-                .containsExactly(statusRow);
+            assertThat(actualSections.get(0).readRowsInOrder())
+                .containsExactly(expectedStatusRow);
         }
 
+        // The whole point of gating the account rather than cutting it afterwards. Every read behind
+        // a colony line beyond the weights the ranking needs anyway is the account's, and it is the
+        // most expensive thing a hover does - so the level that draws none of those lines has to pay
+        // for none of it. Read and then cut, a player leaving the box shut would be charged what
+        // opening it costs.
         @Test
         void readsNoAccountOfTheSystemWhereTheLevelNamesItsHoldersAlone() {
-            // The whole point of gating the account rather than cutting it afterwards. Every read
-            // behind a colony line beyond the weights the ranking needs anyway is the account's, and
-            // it is the most expensive thing a hover does - so the level that draws none of those
-            // lines has to pay for none of it. Read and then cut, a player leaving the box shut would
-            // be charged what opening it costs.
+
+            // ARRANGE
             StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
 
+            // ACT
             tooltip.composeBody(sectorMock, systemMock, FACTIONS);
 
+            // ASSERT
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(any(), any()),
                 Mockito.never());
         }
 
+        // The ranking, the holder and the account beneath each faction explain one set of weights,
+        // so they are read once for the box: the totals are folded out of the very parts the account
+        // lists. Weighed for each, a detailed hover would work out every market more than once.
         @Test
         void weighsEveryMarketOnceAtTheDeepestLevel() {
-            // The ranking and the account beneath each faction explain one set of weights, so they
-            // are read once for the box: the ranking's totals are folded out of the very parts the
-            // account lists. Weighed for each, a detailed hover would work out every market twice.
+
+            // ARRANGE
             StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
 
+            // ACT
             tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS);
 
+            // ASSERT
             // Counted on the real arguments rather than on matchers, since registering a stub is
             // itself an invocation and an any()-matched count would take it for a second read.
             footprintsMock.verify(
@@ -513,35 +600,45 @@ final class SystemDominationTooltipTests {
                     ANY_RULES,
                     ANY_PASS.colonyKnowledge()),
                 Mockito.times(1));
-
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readByFaction(any(), any(), any()),
                 Mockito.never());
         }
 
+        // The ranking is handed footprints folded from the weights the box read rather than reading
+        // its own, which is what lets the account below explain exactly the scores it ranked. One
+        // planet colony of six size points, on the grid of a thousand to the point.
         @Test
         void ranksTheSystemOffTheWeightsItRead() {
-            // The ranking is handed the weights rather than reading its own, which is what lets the
-            // account below explain exactly the scores it ranked.
-            var breakdownsByFactionId = Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0)));
 
-            stubBreakdowns(breakdownsByFactionId);
+            // ARRANGE
+            stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
             StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
+
+            var expectedFootprints = Map.of("hegemony", new MarketFootprint(1, 6000, 6000, 6000));
+
+            // ACT
             tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS);
 
-            StandingsTooltipSeamsFake.verifyRankedOver(breakdownsByFactionId);
+            // ASSERT
+            StandingsTooltipSeamsFake.verifyRankedOver(expectedFootprints);
         }
     }
 
     @Nested
     class ResolveDeepestAccountLevel {
 
+        // This box is the one the levels were named after: colonies under a faction, factors under a
+        // colony, and the patrol tiers under the patrol factor. It is what makes the deepest level
+        // worth declaring at all - the claim box beside it stops a tier higher.
         @Test
         void fillsOutTheWholeCycle() {
-            // This box is the one the levels were named after: colonies under a faction, factors under
-            // a colony, and the patrol tiers under the patrol factor. It is what makes the deepest
-            // level worth declaring at all - the claim box beside it stops a tier higher.
-            assertThat(tooltip.resolveDeepestAccountLevel())
+
+            // ACT
+            var actualDeepestLevel = tooltip.resolveDeepestAccountLevel();
+
+            // ASSERT
+            assertThat(actualDeepestLevel)
                 .isEqualTo(PATROL_DETAILS);
         }
     }
@@ -549,182 +646,218 @@ final class SystemDominationTooltipTests {
     @Nested
     class CreateFactionAccountResolver {
 
+        // The point of the deeper levels, and the one thing a bloc's line cannot state: a faction's
+        // score is the sum over the colonies it holds here, so those are what its account lists - and
+        // a sibling's colonies are the sibling's account, never this one's.
         @Test
         void accountsForAFactionWithTheColoniesItHolds() {
-            // The point of the deeper levels, and the one thing a bloc's line cannot state: a faction's
-            // score is the sum over the colonies it holds here, so those are what its account lists -
-            // and a sibling's colonies are the sibling's account, never this one's.
+
+            // ARRANGE
+            var breakdownsByFactionId = Map.of(
+                "hegemony", List.of(buildBreakdown("Culann", 3.0)),
+                "tritachyon", List.of(buildBreakdown("Eventide", 5.0)));
+
+            // ACT
             var accountResolver = SystemDominationTooltip.createFactionAccountResolver(
                 systemMock,
                 ANY_PASS,
-                Map.of(
-                    "hegemony", List.of(buildBreakdown("Culann", 3.0)),
-                    "tritachyon", List.of(buildBreakdown("Eventide", 5.0))),
+                breakdownsByFactionId,
                 PATROL_DETAILS);
+            var actualLeadEntries = accountResolver.resolveAccountEntries(LEAD_MEMBER);
+            var actualOtherEntries = accountResolver.resolveAccountEntries(OTHER_MEMBER);
 
-            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
+            // ASSERT
+            assertThat(readLabelTexts(actualLeadEntries))
                 .containsExactly("Culann");
-            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(OTHER_MEMBER)))
+            assertThat(readLabelTexts(actualOtherEntries))
                 .containsExactly("Eventide");
         }
 
+        // A colony's own line is a sum too, so the account goes one level further: the factors that
+        // moved its weight hang beneath it rather than the number being left to be taken on trust.
         @Test
         void breaksEachColonyDownIntoItsFactors() {
-            // A colony's own line is a sum too, so the account goes one level further: the factors that
-            // moved its weight hang beneath it rather than the number being left to be taken on trust.
-            var colonyEntries = SystemDominationTooltip
-                .createFactionAccountResolver(
-                    systemMock,
-                    ANY_PASS,
-                    Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))),
-                    PATROL_DETAILS)
+
+            // ARRANGE
+            var breakdownsByFactionId = Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0)));
+
+            // ACT
+            var actualColonyEntries = SystemDominationTooltip
+                .createFactionAccountResolver(systemMock, ANY_PASS, breakdownsByFactionId, PATROL_DETAILS)
                 .resolveAccountEntries(LEAD_MEMBER);
 
-            assertThat(readLabelTexts(colonyEntries.get(0).children()))
+            // ASSERT
+            assertThat(readLabelTexts(actualColonyEntries.get(0).children()))
                 .containsExactly("Size");
         }
 
+        // The level travels on into the account rather than stopping at the decision to build one:
+        // the composition level names the colonies and works out none of the arithmetic beneath
+        // them. Left to the cut, the box would have worded every factor of every colony first and
+        // then dropped the lot.
         @Test
         void breaksAColonyIntoNothingWhereTheLevelStopsAtTheColonies() {
-            // The level travels on into the account rather than stopping at the decision to build one:
-            // the composition level names the colonies and works out none of the arithmetic beneath
-            // them. Left to the cut, the box would have worded every factor of every colony first and
-            // then dropped the lot.
-            var colonyEntries = SystemDominationTooltip
-                .createFactionAccountResolver(
-                    systemMock,
-                    ANY_PASS,
-                    Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))),
-                    SYSTEM_COMPOSITION)
+
+            // ARRANGE
+            var breakdownsByFactionId = Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0)));
+
+            // ACT
+            var actualColonyEntries = SystemDominationTooltip
+                .createFactionAccountResolver(systemMock, ANY_PASS, breakdownsByFactionId, SYSTEM_COMPOSITION)
                 .resolveAccountEntries(LEAD_MEMBER);
 
-            assertThat(readLabelTexts(colonyEntries))
+            // ASSERT
+            assertThat(readLabelTexts(actualColonyEntries))
                 .containsExactly("Jangala");
-            assertThat(colonyEntries.get(0).children())
+            assertThat(actualColonyEntries.get(0).children())
                 .isEmpty();
         }
 
+        // Nothing to account for reads as the faction listed by its line alone, which is exactly what
+        // an empty answer means to the shape above - not a heading over an empty account.
         @Test
         void accountsForNothingWhereAFactionHoldsNoColonyHere() {
-            // Nothing to account for reads as the faction listed by its line alone, which is exactly
-            // what an empty answer means to the shape above - not a heading over an empty account.
-            var accountResolver = SystemDominationTooltip.createFactionAccountResolver(
-                systemMock,
-                ANY_PASS,
-                Map.of("tritachyon", List.of(buildBreakdown("Eventide", 5.0))),
-                PATROL_DETAILS);
 
-            assertThat(accountResolver.resolveAccountEntries(LEAD_MEMBER))
+            // ARRANGE
+            var breakdownsByFactionId = Map.of("tritachyon", List.of(buildBreakdown("Eventide", 5.0)));
+
+            // ACT
+            var actualEntries = SystemDominationTooltip
+                .createFactionAccountResolver(systemMock, ANY_PASS, breakdownsByFactionId, PATROL_DETAILS)
+                .resolveAccountEntries(LEAD_MEMBER);
+
+            // ASSERT
+            assertThat(actualEntries)
                 .isEmpty();
         }
 
+        // The one colony no score above accounts for: vanilla builds it and never registers it, so
+        // the weighed read cannot see it and the player is left looking at a station in a faction's
+        // colours that the box says nothing about.
         @Test
         void accountsForTheColoniesTheEconomyDoesNotList() {
-            // The one colony no score above accounts for: vanilla builds it and never registers it,
-            // so the weighed read cannot see it and the player is left looking at a station in a
-            // faction's colours that the box says nothing about.
+
+            // ARRANGE
             stubUnweighedColonies(Map.of(
                 "hegemony",
                 List.of(UNLISTED_COLONY)));
 
-            var accountResolver = SystemDominationTooltip.createFactionAccountResolver(
-                systemMock,
-                ANY_PASS,
-                Map.of("hegemony", List.of(buildBreakdown("Culann", 3.0))),
-                PATROL_DETAILS);
+            var breakdownsByFactionId = Map.of("hegemony", List.of(buildBreakdown("Culann", 3.0)));
 
-            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
+            // ACT
+            var actualEntries = SystemDominationTooltip
+                .createFactionAccountResolver(systemMock, ANY_PASS, breakdownsByFactionId, PATROL_DETAILS)
+                .resolveAccountEntries(LEAD_MEMBER);
+
+            // ASSERT
+            assertThat(readLabelTexts(actualEntries))
                 .containsExactly("Culann", "Galatia Academy");
         }
 
+        // The two reads are keyed the same way and paired the same way, so an unlisted colony can no
+        // more be listed under a sibling's name than a weighed one can.
         @Test
         void keepsAnUnlistedColonyToTheFactionHoldingIt() {
-            // The two reads are keyed the same way and paired the same way, so an unlisted colony
-            // can no more be listed under a sibling's name than a weighed one can.
+
+            // ARRANGE
             stubUnweighedColonies(Map.of(
                 "tritachyon",
                 List.of(UNLISTED_COLONY)));
 
+            // ACT
             var accountResolver = SystemDominationTooltip.createFactionAccountResolver(
                 systemMock,
                 ANY_PASS,
                 NO_BREAKDOWNS,
                 PATROL_DETAILS);
+            var actualLeadEntries = accountResolver.resolveAccountEntries(LEAD_MEMBER);
+            var actualOtherEntries = accountResolver.resolveAccountEntries(OTHER_MEMBER);
 
-            assertThat(accountResolver.resolveAccountEntries(LEAD_MEMBER))
+            // ASSERT
+            assertThat(actualLeadEntries)
                 .isEmpty();
-            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(OTHER_MEMBER)))
+            assertThat(readLabelTexts(actualOtherEntries))
                 .containsExactly("Galatia Academy");
         }
 
+        // A faction the weighing never reached: its every colony here is one the economy does not
+        // list, so its whole account is the unlisted read. The colonies were always carried - what
+        // they lacked was a line to hang from, which the ranking now gives them.
         @Test
         void accountsForAFactionPresentThroughUnlistedColoniesAlone() {
-            // A faction the weighing never reached: its every colony here is one the economy does
-            // not list, so its whole account is the unlisted read. The colonies were always carried
-            // - what they lacked was a line to hang from, which the ranking now gives them.
+
+            // ARRANGE
             stubUnweighedColonies(Map.of(
                 "tritachyon",
                 List.of(UNLISTED_COLONY)));
 
-            var accountResolver = SystemDominationTooltip.createFactionAccountResolver(
-                systemMock,
-                ANY_PASS,
-                NO_BREAKDOWNS,
-                PATROL_DETAILS);
+            // ACT
+            var actualEntries = SystemDominationTooltip
+                .createFactionAccountResolver(systemMock, ANY_PASS, NO_BREAKDOWNS, PATROL_DETAILS)
+                .resolveAccountEntries(new PresenceOnlyFactionStanding("tritachyon"));
 
-            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(
-                    new PresenceOnlyFactionStanding("tritachyon"))))
+            // ASSERT
+            assertThat(readLabelTexts(actualEntries))
                 .containsExactly("Galatia Academy");
         }
 
+        // The weights are the ranking's, handed over whole: an account weighing the system again
+        // would weigh every market twice for one hover, and could explain a score with arithmetic
+        // other than the arithmetic that ranked it.
         @Test
         void weighsNothingOfItsOwn() {
-            // The weights are the ranking's, handed over whole: an account weighing the system again
-            // would weigh every market twice for one hover, and could explain a score with
-            // arithmetic other than the arithmetic that ranked it.
+
+            // ARRANGE
             stubUnweighedColonies(Map.of());
 
-            var accountResolver = SystemDominationTooltip.createFactionAccountResolver(
-                systemMock,
-                ANY_PASS,
-                Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))),
-                PATROL_DETAILS);
+            var breakdownsByFactionId = Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0)));
 
-            accountResolver.resolveAccountEntries(LEAD_MEMBER);
+            // ACT
+            SystemDominationTooltip
+                .createFactionAccountResolver(systemMock, ANY_PASS, breakdownsByFactionId, PATROL_DETAILS)
+                .resolveAccountEntries(LEAD_MEMBER);
 
+            // ASSERT
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readBreakdownByFaction(any(), any(), any()),
                 Mockito.never());
         }
 
+        // The reveal decides what the box may name, and a colony the pass could not weigh is no
+        // exception. Read at a reveal of its own it would withhold an undiscovered station while
+        // naming the weighed colonies beside it - or name one the player has not found.
         @Test
         void readsTheUnlistedColoniesUnderTheRankingsOwnReveal() {
-            // The reveal decides what the box may name, and a colony the pass could not weigh is no
-            // exception. Read at a reveal of its own it would withhold an undiscovered station while
-            // naming the weighed colonies beside it - or name one the player has not found.
+
+            // ARRANGE
             stubUnweighedColonies(Map.of());
 
+            // ACT
             SystemDominationTooltip.createFactionAccountResolver(
                 systemMock,
                 REVEALED_PASS,
                 NO_BREAKDOWNS,
                 PATROL_DETAILS);
 
+            // ASSERT
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                     Colonies.NONE,
                     REVEALED_PASS.colonyKnowledge()));
         }
 
+        // The unlisted colonies are a second selection over the same set, made once per paint rather
+        // than once per faction listed - the same rule the weighed read is held to, so neither can end
+        // up describing a system the other did not.
         @Test
         void readsTheUnlistedColoniesOnceForTheWholeBox() {
-            // The unlisted colonies are a second selection over the same set, made once per paint
-            // rather than once per faction listed - the same rule the weighed read is held to, so
-            // neither can end up describing a system the other did not.
+
+            // ARRANGE
             stubUnweighedColonies(Map.of(
                 "hegemony",
                 List.of(UNLISTED_COLONY)));
 
+            // ACT
             var accountResolver = SystemDominationTooltip.createFactionAccountResolver(
                 systemMock,
                 ANY_PASS,
@@ -734,6 +867,7 @@ final class SystemDominationTooltipTests {
             accountResolver.resolveAccountEntries(LEAD_MEMBER);
             accountResolver.resolveAccountEntries(OTHER_MEMBER);
 
+            // ASSERT
             // Counted on the real arguments rather than on matchers, since registering the stub is
             // itself an invocation and an any()-matched count would take it for a second read.
             footprintsMock.verify(
@@ -743,22 +877,27 @@ final class SystemDominationTooltipTests {
                 Mockito.times(1));
         }
 
+        // The whole reason the register is handed down rather than opened here: the dates stated
+        // have to come off the very observations the pass resolved its projection against. Read from
+        // the sector afresh, a box could date a colony against a register the fills beside it were
+        // never drawn under - and nothing on screen would say which.
         @Test
         void datesTheColoniesAgainstThePassesOwnRegister() {
-            // The whole reason the register is handed down rather than opened here: the dates
-            // stated have to come off the very observations the pass resolved its projection
-            // against. Read from the sector afresh, a box could date a colony against a register
-            // the fills beside it were never drawn under - and nothing on screen would say which.
-            stubUnweighedColonies(Map.of());
 
-            // The case is worth nothing unless the pass carries a register that is not the empty
-            // one, that being what a read opening its own would also find - so the premise is
-            // asserted rather than assumed.
-            assertThat(OBSERVED_PASS.colonyKnowledge().sightings())
-                .isNotSameAs(RecordedObservations.createEmptyRegister());
+            // ARRANGE
+            stubUnweighedColonies(Map.of());
 
             ArgumentCaptor<RecordedObservations<ColonyObservation>> sightings = ArgumentCaptor.captor();
 
+            // The case is worth nothing unless the pass carries a register that is not the empty one,
+            // that being what a read opening its own would also find - so the premise is asserted
+            // rather than assumed.
+            assertThat(OBSERVED_PASS.colonyKnowledge().sightings())
+                .isNotSameAs(RecordedObservations.createEmptyRegister());
+
+            var expectedSightings = OBSERVED_PASS.colonyKnowledge().sightings();
+
+            // ACT
             // Real methods behind the spy, because the reading takes the remark off the notes it is
             // handed and a stubbed read would hand it none.
             try (var notesMock = Mockito.mockStatic(
@@ -777,8 +916,10 @@ final class SystemDominationTooltipTests {
                     any(),
                     sightings.capture()));
             }
+
+            // ASSERT
             assertThat(sightings.getValue())
-                .isSameAs(OBSERVED_PASS.colonyKnowledge().sightings());
+                .isSameAs(expectedSightings);
         }
     }
 
@@ -787,6 +928,34 @@ final class SystemDominationTooltipTests {
 
         return TooltipSection.readRowsInOrder(
             tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections());
+    }
+
+    // The words each block opens on, top to bottom: a heading, then the first line of every entry
+    // beneath it. What the cases about which block a group lands in read.
+    private List<String> readBodyOpeningWords() {
+
+        return readSectionOpeningWords(
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections());
+    }
+
+    // The five blocks of the chain in one system, ranked core faction first, each group named apart
+    // so a case reading the box top to bottom tells the blocks apart by the one line each holds.
+    // Which block each lands in is the alliance set and the dispositions the case stands up.
+    private static void stubTheWholeChain() {
+
+        StandingsTooltipSeamsFake.stubRankedGroups(
+            List.of(
+                createLoneGroup(CORE_FACTION),
+                createLoneGroup(ALLY_FACTION),
+                createLoneGroup(FRIENDLY_FACTION),
+                createLoneGroup(RIVAL_FACTION),
+                createLoneGroup(Factions.NEUTRAL)),
+            List.of(
+                createLoneGroupEntry(),
+                createAlliedGroupEntry(),
+                createNamedGroupEntry("The Luddic Church"),
+                createNamedGroupEntry("Persean League"),
+                createPlaceholderGroupEntry()));
     }
 
     // Stands the economy read in as the colonies each faction holds in the system, so no case needs a

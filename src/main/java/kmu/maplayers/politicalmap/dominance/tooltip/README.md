@@ -56,7 +56,8 @@ The account resolver is built only where the level shows a line of one
 So the shallowest level makes no unweighed-colony read and no `SystemColonyReading` walk at all -
 the walk behind those being the most expensive thing a hover does.
 The weights are read once at every level, by `readWeightBreakdownsByFaction`:
-the ranking's totals are folded out of them (`SystemStandings.rankByDominationScore`),
+the totals are folded out of them once (`KnownMarketFootprints.foldFootprintsByFaction`),
+the ranking (`SystemStandings.rankByDominationScore`) and the holder both read those totals,
 and the account is handed the same breakdowns rather than weighing the system again.
 The totals cost that one weighing whatever the level,
 so reading the parts beside them adds nothing at the shallowest
@@ -96,7 +97,8 @@ then planet weight,
 then the market nearest the system centre.
 A holder read off the ranking would name one bloc while the cell is painted for the other,
 and every block below it would be placed against the wrong bloc.
-The box folds the weights it already read into per-bloc footprints for that question,
+The box asks it over the same footprints its ranking reads,
+regrouped per bloc (`DominancePass.regroupFootprintsByBloc`),
 so each market is still weighed once per box.
 Everyone behind the holder keeps the ranking's order,
 which is the order the band beneath the cell runs in too (`HeldBlocRanker`).

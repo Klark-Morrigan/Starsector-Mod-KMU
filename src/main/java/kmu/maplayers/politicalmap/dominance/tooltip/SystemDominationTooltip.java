@@ -14,6 +14,7 @@ import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
@@ -205,16 +206,20 @@ public final class SystemDominationTooltip
         // totals cost the same weighing either way and only the parts are kept besides.
         var breakdownsByFactionId = pass.readWeightBreakdownsByFaction(system);
 
+        // Folded once, for both questions asked of the totals: how the groups rank, and who holds
+        // the system.
+        var footprintByFactionId = KnownMarketFootprints.foldFootprintsByFaction(breakdownsByFactionId);
+
         var groupStandings = SystemStandings.rankByDominationScore(
             system,
             pass,
-            breakdownsByFactionId);
+            footprintByFactionId);
 
         return new RankedStandings(
             pass,
             StandingBlockRouting.routeRankedStandings(
                 groupStandings,
-                resolvePaintedBlocId(system, pass, breakdownsByFactionId),
+                resolvePaintedBlocId(system, pass, footprintByFactionId),
                 buildBlockRules(sector, pass.grouping())),
             breakdownsByFactionId);
     }
@@ -223,18 +228,14 @@ public final class SystemDominationTooltip
     // the ranking. The ranking orders blocs on equal combined weight by ID, while the fill breaks that
     // tie on the heaviest market, planet weight and proximity first - so a holder read off the ranking
     // could name a bloc the cell is not painted for.
-    //
-    // Folded out of the weights the box already read, rather than read off the pass afresh, so each
-    // market is weighed once per box.
     private static String resolvePaintedBlocId(
             StarSystemAPI system,
             DominancePass pass,
-            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+            Map<String, MarketFootprint> footprintByFactionId) {
 
         return pass.resolveDominantBlocId(
             system,
-            pass.regroupFootprintsByBloc(
-                KnownMarketFootprints.foldFootprintsByFaction(breakdownsByFactionId)));
+            pass.regroupFootprintsByBloc(footprintByFactionId));
     }
 
     // What the blocks are placed by, bound to this hover's sector and to the grouping the map painted

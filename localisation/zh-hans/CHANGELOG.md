@@ -251,7 +251,7 @@
 | `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` 和 `getLoneCells()`，每次重建只划分一次。`OwnerMapClusters` 和 `PaintedCellStore` 保留 `getStyledCellByCellKey()`，为只读：写入改用 `putPaintedCell`、`removePaintedCell`，或 `putOrRemovePaintedCell`，后者会移除未烘焙出绘制记录的单元 |
 | `BaseSidebarHost` | 宿主实现 `composeTabStyle()` 并读取 `resolveTabStyle()`，后者保留样式，直到设置修订号或星域已确定的字体变化 |
 | `SystemCellTooltip`、`PoliticalMapCellTooltip`、`SystemClaimTooltip` 和 `SystemDominationTooltip` 上的 `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` | 已移除：按键从绘制所保留的组合主体读取 `deepestHeldLevel()`，因此图层只在 `composeBody` 中给出其深度 |
-| `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方已读取的权重，因此为星系排名并解释其分数的悬停框只为每个市场计算一次权重 |
+| `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方由已读取的权重汇总出的按势力足迹，因此为星系排名、指明其持有者并解释其分数的悬停框只为每个市场计算一次权重 |
 | `StandingBlockRouting.routeRankedStandings(List, StandingBlockRules)` | `routeRankedStandings(List, String, StandingBlockRules)`，以填充着色所属的集团为持有者，而不再选取排名第一者，后者在打平时会与填充不一致 |
 | `CellTooltipEntryLine` 的十二参数构造函数，以及 `labelText()`、`redactedWordLengths()`、`labelFinding()` 和 `hasRedactedName()` | `CellTooltipEntryLine(CellTooltipMark, CellTooltipLineName, CellTooltipIndexPlace, String, CellTooltipQualifier, CellTooltipLineValue, boolean)`。名称为密封类型 `CellTooltipLineName`，即 `Spoken` 或 `Withheld`，通过 `selectByCase(Function, Function)` 读取，因此没有哪一行能既说出又隐去其名称 |
 | `valueText()`、`countedValue()`、`valueWorkingText()` 和 `isValueUncounted()`，位于 `CellTooltipEntryLine` 上 | 改为 `value()` 上的同名四项，即一个 `CellTooltipLineValue` |

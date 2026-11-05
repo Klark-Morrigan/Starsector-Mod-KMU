@@ -18,7 +18,7 @@ import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
@@ -37,6 +37,7 @@ import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
 
@@ -285,17 +286,17 @@ public final class StandingsTooltipSeamsFake {
     }
 
     /**
-     * Asserts the system was ranked over the given weights - the very ones the box read, rather than a
-     * reading of the ranking's own.
+     * Asserts the system was ranked over the given footprints - the ones folded from the weights the
+     * box read, rather than a reading of the ranking's own.
      *
-     * @param breakdownsByFactionId the weights the box is expected to have handed the ranking
+     * @param footprintByFactionId the footprints the box is expected to have handed the ranking
      */
-    public static void verifyRankedOver(Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+    public static void verifyRankedOver(Map<String, MarketFootprint> footprintByFactionId) {
 
         standingsMock.verify(() -> SystemStandings.rankByDominationScore(
             any(StarSystemAPI.class),
             any(DominancePass.class),
-            same(breakdownsByFactionId)));
+            eq(footprintByFactionId)));
     }
 
     /** Asserts the pass was read under the grouping the injecting view answered with. */
