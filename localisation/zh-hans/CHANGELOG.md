@@ -24,7 +24,7 @@
 - **星系重绘失败时，会在下一帧再次重绘**，而不是保留旧的所有者。
 - **政治地图会跟随势力配色的变化**，例如玩家为自己的势力设置配色时，而不再保留旧的配色，直到其他变化重绘地图。
 - **Nexerelin 联盟改名后，联盟视图会显示新名称**，而不再保留旧名称，直到其他变化重绘地图。
-- **开启*将图层限制在其所属地图*时，地图图层会随正在关闭的地图一同淡出**，而不再在地图开始淡出时就消失。
+- **地图图层会随正在关闭的地图一同淡出**，而不再在地图开始淡出时就消失：在星景模式下，以及开启*将图层限制在其所属地图*时。
 - **市场条件管理器 (MCM) 在玩家所在的殖民地上打开，绝不会在已离开的殖民地上打开。**
 - **中文压缩包中的市场条件管理器 (MCM) 显示为中文。**
 - **中文压缩包的控制台文字在英文旁附有中文译文**：帮助在英文之上显示中文，市场条件管理器的指令则显示其英文，待 Console Commands 的中文版能够显示中文时即可阅读。在此之前，中文会显示为 `?`，这是其 [Fossic 帖子中列出的已知问题](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524)，玩家曾于 [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560)、[2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) 和 [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213) 反馈过。
@@ -39,6 +39,7 @@
   - 殖民地变化后重新排布附近的色带时，不再先把地图上的每个名称重新测量一遍。
   - 聚焦某个势力时，殖民地变化只重绘其周围的星系，而不再重绘整个地图。
   - *势力*和*联盟*视图重绘时，只读取无人持有的星系的宣称。
+  - 地图每帧只询问一次屏幕上是否有原版星图，而不再最多询问四次。
 
 ### 面向开发者
 
@@ -50,6 +51,8 @@
 - **星景重新安置的两次读取会被性能分析**，分别记为 `mapLayer.reseat.findTerrain` 和 `mapLayer.reseat.readPlacement`。星图打开期间，脚本在每次推进时都会执行这两次读取，开启战役加速时每帧会执行多次。
 - **悬停框会被性能分析**：每帧绘制记为 `mapLayer.hoverBox.paint`，每次读取星域记为 `mapLayer.hoverBox.compose`。
 - **`CellBoxMemo`**：星域上次组合出的悬停框，在其读取所依据的一切都未变化时保留。
+- **`MapViewReads`**：地图图层唯一的情报信息界面视图和唯一的存在性读取，记在星图视图这项损失之下，因此情报信息界面的读取失效时只警告一次。
+- **`MapPresenceFrameRead`**：是否有原版星图正在绘制、是否有星景星图正在绘制，对一个星域的所有绘制面每帧只确定一次。
 - **`MapLayerCommonRefreshSignal.DRAW_LISTS`**：叠加层缓存在完整重建或为已标记星系重建其绘制内容后发出。
 - **`MapHoverState.getCellArrivalCount()`**：光标抵达一个原本不在其上的单元的次数，供按每次停留保留的工作使用。
 - **`KnownMarketFootprints.foldFootprintsByFaction(Map)`**：由已读取的权重明细汇总出的足迹。
@@ -95,12 +98,12 @@
 - **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**：逐星系给出聚焦下的争夺，重建会对每个星系询问它。
 - **`ClaimAugmentedSystemHolderResolver`**：*势力*和*联盟*视图的持有规则，先看争夺，仅当争夺未让任何集团持有该星系时才读取宣称。
 - **`BuiltView`**：所有者地图所依据的基础画面，是一个密封类型，分为携带绘制内容的 `Production`、携带边界描绘叠加层的 `Debug`，以及 `PLACEHOLDER`：首次构建完成前一直使用的占位画面，不绘制任何东西。读取方通过 `selectByCase(Function, Function, Supplier)` 或 `runByCase(Consumer, Consumer, Runnable)` 写出全部三种情况，`OwnerMapCache.getBuiltView()` 给出当前的那一个。
-- **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。叠加层缓存在构建时说明其刷新策略，并说明一批已标记星系为何未被并入，以及释放时丢弃了什么。已并入批次的日志行写明被聚焦的所有者、易手、填充变化和样式变化的次数、是否重新拟合了名称，以及重新解析所依的规则。
+- **调试日志行**：记录色带烘焙的设置、无人需要的名称拟合、因解析不出名称而其区域不绘制名称的所有者，以及在主导视图上每个星系由哪种机制计数。叠加层缓存在构建时说明其刷新策略，并说明一批已标记星系为何未被并入，以及释放时丢弃了什么。已并入批次的日志行写明被聚焦的所有者、易手、填充变化和样式变化的次数、是否重新拟合了名称，以及重新解析所依的规则。图层限制在原版星图上时，会有一行日志说明它们何时开始让某个星域的渲染通道停绘，又何时重新放行。
 
 #### 修复
 
 - **政治地图*宣称*视图的悬停框读取交给它的星域**：状态行与宣称机制共用一次扫描，而不再让宣称读取正在运行的游戏中的星域。
-- **关闭星图界面或情报信息界面不再耗掉外来渲染流程的警告**，因此同一次游戏期间稍后由某个 Mod 的地图绘制图层时，日志仍会指名它。该警告与渲染限制改为询问 KMLib 的 `MapPresence.isAnyVanillaMapDrawn()`，它把仍在淡出的地图也计算在内。
+- **关闭星图界面或情报信息界面不再耗掉外来渲染通道的警告**，因此同一次游戏期间稍后由某个 Mod 的地图绘制图层时，日志仍会指名它。该警告与渲染限制共用 KMLib 的 `MapPresence.isAnyVanillaMapDrawn()`，它把仍在淡出的地图也计算在内；星景绘制面则询问 `isStarscapeVanillaMapDrawn()`。
 - **市场条件管理器 (MCM) 会把它捕获后继续执行的每个失败写入日志。**
 - **中文显示的市场条件管理器 (MCM) 与控制台指令帮助：** `strings.json` 存放管理器的反馈、元数据行和打开时的消息，通过 `KmuMarketConditionStringKeys` 读取。`localisation/<locale>/commands.csv` 会写入 `data/console/commands.csv`，后者不再提交到仓库。译文帮助的末尾在 `-- English --` 一行之后附上英文帮助，每个 `console_` 字符串也是如此，指令通过 KMLib 的 `ConsoleStrings` 读取它们。KMLib 的 `LocaleParity` 核对每份英文副本与英文语言包一致。无论结果显示什么，日志都以英文记录管理器的失败。
 

@@ -1,9 +1,8 @@
 package kmu.maplayers.base.hover;
 
 import kmlib.starsector.ui.coreui.CampaignScreenView;
-import kmlib.starsector.ui.map.presence.MapPresence;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReach;
+import kmu.maplayers.base.compatibility.MapViewReads;
 
 import java.util.function.BooleanSupplier;
 
@@ -47,10 +46,8 @@ public final class MapHoverPermission {
      */
     public static MapHoverPermission createForLiveScreen() {
 
-        var mapPresence = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
-
         return new MapHoverPermission(
-            mapPresence::isAnyVanillaMapShowing,
+            MapViewReads.MAP_PRESENCE::isAnyVanillaMapShowing,
             CampaignScreenView::isShowingGameSpace);
     }
 

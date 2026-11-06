@@ -3,12 +3,11 @@ package kmu.maplayers.base.sidebar.runtime;
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.intel.IntelScreenView;
-import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReach;
+import kmu.maplayers.base.compatibility.MapViewReads;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.SidebarHostPanel;
@@ -60,7 +59,7 @@ public final class IntelSidebarHost
      * the roles.
      */
     public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(
-        new VanillaIntelScreenView(MapLayerGameReach.MAP_VIEW.getReporter()),
+        MapViewReads.INTEL_SCREEN,
         ScreenClaim.INSTANCE);
 
     // How tall this screen's tab band stands: this sidebar overlays the visor under the vanilla map

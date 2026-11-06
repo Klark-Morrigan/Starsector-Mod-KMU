@@ -23,6 +23,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 - [What a frame costs](#what-a-frame-costs)
 - [Silencing a minimap parked off screen](#silencing-a-minimap-parked-off-screen)
 - [Three terrains, one draw](#three-terrains-one-draw)
+  - [Reads settled per frame](#reads-settled-per-frame)
 - [Where the Starscape surfaces sit in the draw order](#where-the-starscape-surfaces-sit-in-the-draw-order)
 - [Renaming a class here loses saves](#renaming-a-class-here-loses-saves)
 - [What is not here](#what-is-not-here)
@@ -116,6 +117,9 @@ It asks KMLib's `MapPresence.isAnyVanillaMapDrawn()`, which counts a map still f
 The game stops naming a closed tab as the one up before it stops drawing it,
 so asked whether a map is showing,
 every ordinary close would spend the session's one line.
+The read is handed to the warning on each pass,
+so the warning and the render constraint share the frame's one answer,
+settled as [Reads settled per frame](#reads-settled-per-frame) sets out.
 Naming the caller needs the widget tree rather than the stack,
 which is `EmbeddedMapHostTrace`'s job -
 a mod builds its map once and the engine renders it every frame after,
@@ -129,8 +133,13 @@ before the preparation,
 so a foreign pass cannot take the frame's single preparation from the map entitled to it.
 It asks the same drawn read as the warning,
 so the layers fade out with a closing map rather than vanishing as its tab starts to fade.
-The layers add no fade of their own.
-The wrapper's fade should reach them through the pass's `alphaMult`, as it reaches the map's own draw.
+The layers add no fade of their own:
+the closing map's fade reaches them through the pass's `alphaMult`, as it reaches the map's own draw.
+A pass from a mod's own map draws nothing while the constraint holds,
+so [`HostConstraintLog`](HostConstraintLog.java) says at DEBUG when the layers start standing a sector's passes down,
+and when they let one through again -
+one line on each change,
+which is what tells a constrained modded map from a broken layer in a report.
 It defaults off,
 because the layers drawn into a modded map are a working sight several installs have come to expect.
 The hover constraint is separate and defaults on,
@@ -562,17 +571,36 @@ each adding one thing:
 the stand-aside,
 then the band.
 
-The stand-aside asks whether a Starscape map is on screen,
+The stand-aside asks whether a Starscape map is drawn,
 and both Starscape surfaces ask it on every frame a map is up,
 in either look.
-The answer walks the intel screen's live widgets
-and cannot move between two surfaces of one frame,
-so it is settled once per frame and sector by `StarscapeFrameRead`,
+Drawn rather than showing,
+so the Starscape surfaces fade out with a closing Starscape map:
+the engine suppresses the base surface in that look,
+so these two are all that draws through its fade.
+
+### Reads settled per frame
+
+The surfaces ask two presence questions on every pass:
+whether a vanilla map is drawn,
+for the foreign-pass warning and the render constraint,
+and whether a Starscape map is drawn,
+for the stand-aside.
+On the intel screen each read walks the live widgets,
+on a pass with no vanilla map it also walks the core UI's children for closing tabs,
+and neither answer can move between two surfaces of one frame.
+[`MapPresenceFrameRead`](MapPresenceFrameRead.java) settles each once per frame and sector,
 kept against the frame boundary `MapFramePreparationClaim` already sees.
 Before any boundary is seen every ask reads afresh,
 the same fail-open the claim takes.
-The read itself goes through the one `MapPresence` binding the base surface holds,
-so no surface carries a binding of its own.
+A surface on no installed sector reads live,
+since it draws nothing.
+
+The reads themselves go through `MapViewReads.MAP_PRESENCE`, the map layers' one presence binding
+(see [`base.compatibility`](../compatibility/README.md)),
+so no surface carries a binding of its own into the save.
+Each surface binds its read lazily on its first render,
+a save-restored plugin coming back with the field unset.
 
 `MapLayerTerrainInstaller` is what puts any of them into a loaded save
 and keeps exactly one of each there,

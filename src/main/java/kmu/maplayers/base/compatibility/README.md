@@ -1,7 +1,8 @@
 # Game reaches (`base.compatibility`)
 
 What the map layers lose when a game release changes the code they reach into,
-as the reporters a failed reach is filed through.
+as the reporters a failed reach is filed through,
+and the one binding of the reads behind whether a map is up.
 
 Part of [the map layers](../../README.md),
 in Klark Morrigan's Utilities (KMU);
@@ -60,6 +61,12 @@ so a reach into the game, a renderer's internals and LunaLib's settings all file
 
 A reporter is handed to the probe at every call site that reads the game,
 so the probe files under KMU without knowing KMU exists.
+The `MAP_VIEW` reads are the exception that is bound once:
+[`MapViewReads`](MapViewReads.java) holds the one intel-screen view and the one presence read every part of the map layers asks.
+Each intel view keeps its own once-a-session warnings,
+so a binding per caller would write one broken reach's warning once per binding.
+The Starscape reseat keeps a presence read of its own,
+filing under `STARSCAPE_RESEAT`.
 The Starscape terrain is the one reach KMU makes itself:
 its entity extends the game's terrain class,
 so [`MapLayerTerrainInstaller`](../render/MapLayerTerrainInstaller.java) files a build that no longer links against it

@@ -25,7 +25,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **A system whose repaint fails is redrawn on the next frame**, rather than keeping its old owner.
 - **The political map follows a faction's colours changing**, such as the player faction's colours being set, rather than keeping the old colours until something else redraws it.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
-- **With *Constrain layers to their own map* on, the map layers fade out with a closing map**, rather than vanishing as it starts to fade.
+- **The map layers fade out with a closing map**, rather than vanishing as it starts to fade: in Starscape mode, and with *Constrain layers to their own map* on.
 - **The Market Condition Manager opens on the colony the player is at, never on one already left.**
 - **The Chinese zip shows the Market Condition Manager in Chinese.**
 - **The Chinese zip's console text carries a Chinese translation beside the English**: the help shows the Chinese above the English, and the Market Condition Manager command prints its English, ready for when the Chinese version of Console Commands draws Chinese. Until then the Chinese shows as `?`, a [known issue on its Fossic thread](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524) that players reported on [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560), [2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) and [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213).
@@ -40,6 +40,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - A colony change re-lays the nearby bands without re-measuring every name on the map first.
   - With a faction spotlit, a colony change redraws the systems around it rather than the whole map.
   - A redraw of the *Factions* and *Alliances* views reads claims only for the systems nobody holds.
+  - The map asks once per frame whether a vanilla map is on screen, rather than up to four times.
 
 ### For developers
 
@@ -51,6 +52,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **The Starscape reseat's two reads are profiled**, as `mapLayer.reseat.findTerrain` and `mapLayer.reseat.readPlacement`. The script asks both on every advance while a map is up, several per frame under the campaign speed-up.
 - **The hover box is profiled**, as `mapLayer.hoverBox.paint` for each frame it draws and `mapLayer.hoverBox.compose` for each time it reads the sector.
 - **`CellBoxMemo`**: the box a sector last composed, kept while nothing it was read under moves.
+- **`MapViewReads`**: the map layers' one intel screen view and one presence read, filing under the map view's loss, so a broken intel reach is warned about once.
+- **`MapPresenceFrameRead`**: whether a vanilla map is drawn, and whether a Starscape one is, settled once per frame for every surface of a sector.
 - **`MapLayerCommonRefreshSignal.DRAW_LISTS`**: raised by the overlay cache once it has rebuilt what it draws, in full or for marked systems.
 - **`MapHoverState.getCellArrivalCount()`**: how many times the cursor has reached a cell it was not on, for work held for one visit to a cell.
 - **`KnownMarketFootprints.foldFootprintsByFaction(Map)`**: the footprints folded out of breakdowns already read.
@@ -96,12 +99,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`FilteredPolitics.resolveFilteredHolderIn(StarSystemAPI, DominancePass, BlocSpotlight)`**: the spotlit contest one system at a time, which a rebuild asks of every system.
 - **`ClaimAugmentedSystemHolderResolver`**: the *Factions* and *Alliances* views' holding rule, the contest first and the claim only where the contest leaves a system unheld.
 - **`BuiltView`**: the base view an owner map stands on, sealed over `Production`, carrying the draw lists, `Debug`, carrying the border-tracing overlay, and `PLACEHOLDER`, which stands until the first build completes and draws nothing. A reader states all three cases through `selectByCase(Function, Function, Supplier)` or `runByCase(Consumer, Consumer, Runnable)`, and `OwnerMapCache.getBuiltView()` answers the one standing.
-- **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views. The overlay cache states its refresh strategy when it is built, why a batch of marked systems went unfolded, and what its release dropped. A folded batch's line names its spotlit owner, its flips, refills and restyles, whether it re-fitted the names, and the rules it was re-derived under.
+- **Debug lines** for a band bake's settings, a name fit nothing asked for, an owner whose clusters draw no name because it resolves none, and which mechanic counted each system on the domination views. The overlay cache states its refresh strategy when it is built, why a batch of marked systems went unfolded, and what its release dropped. A folded batch's line names its spotlit owner, its flips, refills and restyles, whether it re-fitted the names, and the rules it was re-derived under. With the layers kept to the vanilla maps, a line says when they start standing a sector's passes down and when they let one through again.
 
 #### Fixed
 
 - **The *Claims* view's hover box reads the sector it was handed**, through one walk shared by its status line and the claim mechanic, rather than letting the claim read the running game's sector.
-- **Closing the map or the intel screen no longer spends the foreign-pass warning**, so a mod's map drawing the layers later that session is still named in the log. The warning and the render constraint ask KMLib's `MapPresence.isAnyVanillaMapDrawn()`, which counts a map still fading out.
+- **Closing the map or the intel screen no longer spends the foreign-pass warning**, so a mod's map drawing the layers later that session is still named in the log. The warning and the render constraint share KMLib's `MapPresence.isAnyVanillaMapDrawn()`, which counts a map still fading out, and the Starscape surfaces ask `isStarscapeVanillaMapDrawn()`.
 - **The Market Condition Manager logs every failure it carries on past.**
 - **The Market Condition Manager and the console help in Chinese:** `strings.json` holds the manager's feedback, metadata lines and open messages, read through `KmuMarketConditionStringKeys`. `localisation/<locale>/commands.csv` is written to `data/console/commands.csv`, which is no longer committed. A translated help ends in the English one after a `-- English --` line, and so does each `console_` string, which the command reads through KMLib's `ConsoleStrings`. KMLib's `LocaleParity` holds each copy to the English bundle. The log keeps the manager's failures in English, whatever the result says.
 
