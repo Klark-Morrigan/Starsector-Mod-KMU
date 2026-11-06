@@ -4,10 +4,9 @@ import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
 import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.settings.VanillaCommonDataStore;
-import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
 import kmu.maplayers.base.chrome.VanillaMapLayerToggleAttacher;
-import kmu.maplayers.base.compatibility.MapLayerGameReach;
+import kmu.maplayers.base.compatibility.MapViewReads;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.layer.LiveMapLayerArrangement;
@@ -101,7 +100,7 @@ public final class MapLayers {
         return new MapLayerScreens(
             layerRegistry,
             createBarArrangement(),
-            new VanillaIntelScreenView(MapLayerGameReach.MAP_VIEW.getReporter()));
+            MapViewReads.INTEL_SCREEN);
     }
 
     /**

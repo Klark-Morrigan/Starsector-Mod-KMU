@@ -639,10 +639,11 @@ because the machinery standing in where no game is loaded is shared by every sec
 
 Two smaller reads are kept for a frame or across frames on the same terms.
 
-Whether a Starscape map is on screen is asked by both Starscape surfaces every frame a map is up,
-and it walks the intel screen's live widgets.
-[`StarscapeFrameRead`](../../src/main/java/kmu/maplayers/base/render/StarscapeFrameRead.java)
-answers it once per frame and sector,
+Whether a vanilla map is drawn is asked by the foreign-pass warning and the render constraint on every pass,
+and whether a Starscape map is drawn by both Starscape surfaces every frame a map is up.
+Both walk the intel screen's live widgets.
+[`MapPresenceFrameRead`](../../src/main/java/kmu/maplayers/base/render/MapPresenceFrameRead.java)
+answers each once per frame and sector,
 against the frame boundary `MapFramePreparationClaim` already sees,
 and reads every ask afresh until that boundary has been seen.
 

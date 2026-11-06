@@ -3,10 +3,9 @@ package kmu.mods.rat;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.input.CursorPosition;
 import kmlib.starsector.ui.input.VanillaCursorPosition;
-import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReach;
+import kmu.maplayers.base.compatibility.MapViewReads;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.starsector.ui.SingleEmbeddedMapReader;
 
@@ -75,7 +74,7 @@ public final class RandomAssortmentOfThingsMinimapCover
 
         return new RandomAssortmentOfThingsMinimapCover(
             RandomAssortmentOfThingsCompatibilityMode.createForLiveGame(),
-            new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter())::isAnyVanillaMapShowing,
+            MapViewReads.MAP_PRESENCE::isAnyVanillaMapShowing,
             SingleEmbeddedMapReader.INSTANCE::resolveSingleEmbeddedMap,
             new VanillaCursorPosition());
     }

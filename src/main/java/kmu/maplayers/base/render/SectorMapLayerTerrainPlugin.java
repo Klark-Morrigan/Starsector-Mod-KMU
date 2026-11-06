@@ -5,11 +5,10 @@ import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
-import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 import kmlib.starsector.ui.map.probes.ForeignMapPassWarning;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReach;
+import kmu.maplayers.base.compatibility.MapViewReads;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -17,6 +16,7 @@ import kmu.settings.KmuMapHoverSettings;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 /**
  * The map's render surface: the terrain plugin that owns the sector (M) map's overlay render pass
@@ -36,7 +36,7 @@ import java.util.List;
  * its role as a quiet background layer.
  *
  * <p>This plugin is serialised into the save with its terrain entity, so it deliberately holds no
- * state: everything a frame needs lives behind the layer's renderer, which is reached through a
+ * saved state: everything a frame needs lives behind the layer's renderer, which is reached through a
  * registered layer and never enters a save. That constraint is also what decides how it finds the
  * sector it draws, which {@link #resolveMachineryBeingDrawn} sets out.
  *
@@ -62,11 +62,6 @@ public class SectorMapLayerTerrainPlugin
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
         EnumSet.noneOf(CampaignEngineLayers.class);
 
-    // What the game is showing a map on. One binding shared by the render constraint, the warning
-    // below and the Starscape surfaces' stand-aside, so none of them can disagree about what counts
-    // as a map being up - and none of the surfaces carries a binding of its own into the save.
-    static final MapPresence MAP_PRESENCE = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
-
     // What the foreign-pass line says about these layers. KMLib appends what the live tree holds around
     // any embedded map, and carries the stack of the pass.
     private static final String FOREIGN_PASS_LEAD =
@@ -87,7 +82,6 @@ public class SectorMapLayerTerrainPlugin
     // the save and there is no seam to hand one in through. Static also keeps it out of the save,
     // which an instance field on a serialised plugin would not.
     private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
-        MAP_PRESENCE::isAnyVanillaMapShowing,
         EmbeddedMapHostTrace::describeEmbeddedMapHosts,
         Global.getLogger(SectorMapLayerTerrainPlugin.class),
         FOREIGN_PASS_LEAD,
@@ -100,6 +94,24 @@ public class SectorMapLayerTerrainPlugin
     private static final List<MapOverlayBand> BOTH_BANDS = List.of(
         MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
         MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+    // Whether a vanilla map is being drawn, a closing one included. Asked by the foreign-pass warning
+    // and the render constraint: drawn rather than showing, because a map the player just closed goes
+    // on drawing through its tab's fade. Transient and bound lazily on the first render, for the
+    // reason the Starscape surfaces' own read is: a save-restored plugin comes back with it null.
+    private transient BooleanSupplier isAnyVanillaMapDrawn;
+
+    /**
+     * The pairing the terrain spec instantiates. The presence read is left unset here and bound on
+     * the first render, since a save-restored plugin arrives with it unset regardless.
+     */
+    public SectorMapLayerTerrainPlugin() {
+    }
+
+    /** Binds the presence read explicitly instead of letting the first render bind it. */
+    SectorMapLayerTerrainPlugin(BooleanSupplier isAnyVanillaMapDrawn) {
+        this.isAnyVanillaMapDrawn = isAnyVanillaMapDrawn;
+    }
 
     @Override
     public EnumSet<CampaignEngineLayers> getActiveLayers() {
@@ -125,23 +137,35 @@ public class SectorMapLayerTerrainPlugin
     @Override
     public void renderOnMap(float factor, float alphaMult) {
 
-        // First thing in the pass, so the stack it reports is the one that actually reached here,
-        // and so a foreign pass is named even when the active pick draws nothing.
-        FOREIGN_PASS_WARNING.warnOnceIfNoVanillaMapIsShowing();
+        // Bound lazily: a save-restored plugin comes back with the field null (transient).
+        if (isAnyVanillaMapDrawn == null) {
+            isAnyVanillaMapDrawn = MapViewReads.MAP_PRESENCE::isAnyVanillaMapDrawn;
+        }
+
+        // Null while this surface's terrain sits somewhere nothing is installed in, which is a
+        // surface belonging to a sector nothing draws - so it stands down further on rather than
+        // painting through a holder shared with every other sector-less caller.
+        var machinery = resolveMachineryBeingDrawn();
+
+        // One answer for the warning and the constraint, settled once per frame for every surface
+        // of the sector. Read live where the surface belongs to no sector, which draws nothing.
+        BooleanSupplier isVanillaMapDrawnThisFrame = machinery == null
+            ? isAnyVanillaMapDrawn
+            : () -> MapPresenceFrameRead.resolveReadIn(machinery).isVanillaMapDrawn(isAnyVanillaMapDrawn);
+
+        // Before anything is resolved or drawn, so the stack it reports is the one that actually
+        // reached here, and so a foreign pass is named even when the active pick draws nothing.
+        FOREIGN_PASS_WARNING.warnOnceIfNoVanillaMapIsDrawn(isVanillaMapDrawnThisFrame);
 
         // Stands the whole pass down when the player has asked the layers to keep to the vanilla
-        // maps and none is showing. Before the preparation rather than only the draw, so a foreign
+        // maps and none is drawn. Before the preparation rather than only the draw, so a foreign
         // pass cannot take the frame's single preparation from the map that is entitled to it.
         if (KmuMapHoverSettings.areMapLayersOnlyOnTheirHosts()
-                && !MAP_PRESENCE.isAnyVanillaMapShowing()) {
+                && !isPassAdmittedByTheConstraint(machinery, isVanillaMapDrawnThisFrame)) {
 
             return;
         }
 
-        // Null while this surface's terrain sits somewhere nothing is installed in, which is a
-        // surface belonging to a sector nothing draws - so it stands down rather than painting
-        // through a holder shared with every other sector-less caller.
-        var machinery = resolveMachineryBeingDrawn();
         if (machinery == null) {
             return;
         }
@@ -188,6 +212,22 @@ public class SectorMapLayerTerrainPlugin
         return terrainEntity == null
             ? null
             : SectorMapMachineryIndex.resolveMachineryIn(terrainEntity.getContainingLocation());
+    }
+
+    // Whether the render constraint lets this pass draw, said at DEBUG where that changes.
+    private static boolean isPassAdmittedByTheConstraint(
+            SectorMapMachinery machinery,
+            BooleanSupplier isVanillaMapDrawnThisFrame) {
+
+        var isPassAdmitted = isVanillaMapDrawnThisFrame.getAsBoolean();
+
+        if (machinery != null) {
+            HostConstraintLog
+                .resolveLogIn(machinery)
+                .recordPassVerdict(isPassAdmitted);
+        }
+
+        return isPassAdmitted;
     }
 
     // One pass of the drawn layer's frame: its preparation where this pass owns it, its cursor read,

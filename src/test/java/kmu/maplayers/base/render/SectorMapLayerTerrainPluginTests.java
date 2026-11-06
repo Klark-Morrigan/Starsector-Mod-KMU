@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.util.function.BooleanSupplier;
+
 import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfaceIn;
 import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfacesInAnInstalledSector;
 
@@ -280,6 +282,60 @@ final class SectorMapLayerTerrainPluginTests {
 
             verify(layerRendererMock, times(1))
                 .prepareFrame(anyFloat());
+        }
+
+        // The warning and the constraint both ask whether a map is drawn, on every surface. On the
+        // intel screen each ask walks the live widget tree, and the answer cannot move within a frame.
+        @Test
+        void readsWhetherAMapIsDrawnOnceAcrossTwoSurfacesOfOneFrame() {
+
+            // ARRANGE
+            mapLayerSettingsMock
+                .when(KmuMapHoverSettings::areMapLayersOnlyOnTheirHosts)
+                .thenReturn(true);
+
+            var drawnReadCount = new int[1];
+            BooleanSupplier readMapDrawn = () -> {
+                drawnReadCount[0]++;
+                return true;
+            };
+
+            var plugin = new SectorMapLayerTerrainPlugin(readMapDrawn);
+            var secondPlugin = new SectorMapLayerTerrainPlugin(readMapDrawn);
+            var machinery = seatSurfacesInAnInstalledSector(screens, plugin, secondPlugin);
+
+            MapFramePreparationClaim
+                .resolveClaimIn(machinery)
+                .renderInUICoordsBelowUI(null);
+
+            // ACT
+            plugin.renderOnMap(1.5f, 0.25f);
+            secondPlugin.renderOnMap(1.5f, 0.25f);
+
+            // ASSERT
+            assertThat(drawnReadCount[0])
+                .isEqualTo(1);
+        }
+
+        // A closing map is a drawn one, so the constraint lets its pass through to fade with it.
+        @Test
+        void drawsWhileConstrainedToItsHostsWithAMapDrawn() {
+
+            // ARRANGE
+            mapLayerSettingsMock
+                .when(KmuMapHoverSettings::areMapLayersOnlyOnTheirHosts)
+                .thenReturn(true);
+
+            var plugin = new SectorMapLayerTerrainPlugin(() -> true);
+
+            seatSurfacesInAnInstalledSector(screens, plugin);
+
+            // ACT
+            plugin.renderOnMap(1.5f, 0.25f);
+
+            // ASSERT
+            verify(layerRendererMock)
+                .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
         // The band pinning alone cannot settle this: whether a surface draws is that surface's

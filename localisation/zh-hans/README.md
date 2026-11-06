@@ -521,12 +521,14 @@ The words for filling the empty space between systems one faction dominates.
 | draw run (vertices drawn in one GL call) | 绘制批次 | 绘制, to draw, with 批次, a batch |
 | entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
 | enum, constant (a type whose values are a closed set of named constants, and one of them) | 枚举, 常量 | the usual Java words for both |
+| fade out (a closing map, and what the layers do with it) | 淡出 | the second half of KMLib's 淡入淡出 |
 | fingerprint (what a fit was made under, compared before its names are reused) | 指纹 | the usual computing word for a value that identifies what made something |
 | fit (placing every cluster's name inside its border) | 拟合 | the usual word for fitting a shape to the room it is given |
 | fitted box (the box a name's fit reserved) | 拟合框 | 拟合, a fit, with 框, a box |
 | flip (a marked system changing owner) | 易手 | the plain word for changing hands, as the colony axis already uses it |
 | fold (bringing a batch into the map on screen in place) | 并入 | 并, together, with 入, into: merged into what already stands |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
+| foreign pass (a render pass from a map no vanilla screen owns) | 外来渲染通道 | 外来, from outside, with KMLib's 渲染通道, a render pass; kept apart from 本次计算, a rebuild's pass |
 | full rebuild (the whole map worked out again, against a batch's fold) | 完整重建 | 完整, whole, with [重建](#in-the-changelog-the-map-and-its-controls), a rebuild |
 | GL state push (saving the GL state before a pass draws) | GL 状态压栈 | 压栈, the usual computing word for pushing onto a stack |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
@@ -572,9 +574,11 @@ The words for filling the empty space between systems one faction dominates.
 | seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
+| stand down, admit (a render pass the constraint keeps from drawing, or lets through) | 停绘, 放行 | 停, to stop, with 绘, to draw; 放行, to let pass, the plain word |
 | standing build (the build on screen, which a batch folds into) | 现有构建 | 现有, existing, with 构建, a build |
 | stroke (a band's runs turned into triangles) | 描边 | the usual graphics word for stroking a line |
 | sub-layer (one of the fills, borders, bands and names an owner map stacks) | 子图层 | 子, a part of, with 图层, a map layer: one layer of the picture inside a map layer |
+| surface (one terrain the layers draw through) | 绘制面 | 绘制, to draw, with 面, a face: a face the layers are drawn on |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
 | take over (a value keeping the list it is handed, with no copy) | 接管 | the plain word for taking charge of something |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
