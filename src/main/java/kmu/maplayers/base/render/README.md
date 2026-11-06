@@ -112,6 +112,10 @@ since the caller is precisely what cannot be worked out from inside the pass.
 It never throws:
 it reports on a frame rather than drawing one,
 so a presence read that fails costs the report and nothing else.
+It asks KMLib's `MapPresence.isAnyVanillaMapDrawn()`, which counts a map still fading out after the player closed it.
+The game stops naming a closed tab as the one up before it stops drawing it,
+so asked whether a map is showing,
+every ordinary close would spend the session's one line.
 Naming the caller needs the widget tree rather than the stack,
 which is `EmbeddedMapHostTrace`'s job -
 a mod builds its map once and the engine renders it every frame after,
@@ -119,10 +123,14 @@ so every frame between the hook and the game loop is the engine's.
 
 What to *do* about such a pass is the player's,
 on the `Map - Compatibility` settings tab.
-The render constraint stands the whole pass down when no vanilla map host is showing -
+The render constraint stands the whole pass down when no vanilla map host is drawn -
 checked here,
 before the preparation,
 so a foreign pass cannot take the frame's single preparation from the map entitled to it.
+It asks the same drawn read as the warning,
+so the layers fade out with a closing map rather than vanishing as its tab starts to fade.
+The layers add no fade of their own.
+The wrapper's fade should reach them through the pass's `alphaMult`, as it reaches the map's own draw.
 It defaults off,
 because the layers drawn into a modded map are a working sight several installs have come to expect.
 The hover constraint is separate and defaults on,

@@ -83,11 +83,14 @@ public class SectorMapLayerTerrainPlugin
     // surfaces rather than one each: they would report a single foreign pass three times over, and
     // the stack in the line is what tells one caller from another anyway.
     //
+    // Asks whether a map is drawn, not showing: a map the player just closed goes on drawing through
+    // its tab's fade, and an ordinary close would otherwise spend the session's one line.
+    //
     // Static, and wired here rather than injected, because the engine constructs these plugins from
     // the save and there is no seam to hand one in through. Static also keeps it out of the save,
     // which an instance field on a serialised plugin would not.
     private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
-        MAP_PRESENCE::isAnyVanillaMapShowing,
+        MAP_PRESENCE::isAnyVanillaMapDrawn,
         EmbeddedMapHostTrace::describeEmbeddedMapHosts,
         Global.getLogger(SectorMapLayerTerrainPlugin.class),
         FOREIGN_PASS_LEAD,
@@ -127,13 +130,15 @@ public class SectorMapLayerTerrainPlugin
 
         // First thing in the pass, so the stack it reports is the one that actually reached here,
         // and so a foreign pass is named even when the active pick draws nothing.
-        FOREIGN_PASS_WARNING.warnOnceIfNoVanillaMapIsShowing();
+        FOREIGN_PASS_WARNING.warnOnceIfNoVanillaMapIsDrawn();
 
         // Stands the whole pass down when the player has asked the layers to keep to the vanilla
-        // maps and none is showing. Before the preparation rather than only the draw, so a foreign
+        // maps and none is drawn. Before the preparation rather than only the draw, so a foreign
         // pass cannot take the frame's single preparation from the map that is entitled to it.
+        // Drawn rather than showing, so the layers fade out with a closing map instead of vanishing
+        // as its tab starts to fade.
         if (KmuMapHoverSettings.areMapLayersOnlyOnTheirHosts()
-                && !MAP_PRESENCE.isAnyVanillaMapShowing()) {
+                && !MAP_PRESENCE.isAnyVanillaMapDrawn()) {
 
             return;
         }

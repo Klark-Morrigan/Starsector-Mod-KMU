@@ -25,6 +25,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **A system whose repaint fails is redrawn on the next frame**, rather than keeping its old owner.
 - **The political map follows a faction's colours changing**, such as the player faction's colours being set, rather than keeping the old colours until something else redraws it.
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
+- **With *Constrain layers to their own map* on, the map layers fade out with a closing map**, rather than vanishing as it starts to fade.
 - **The Market Condition Manager opens on the colony the player is at, never on one already left.**
 - **The Chinese zip shows the Market Condition Manager in Chinese.**
 - **The Chinese zip's console text carries a Chinese translation beside the English**: the help shows the Chinese above the English, and the Market Condition Manager command prints its English, ready for when the Chinese version of Console Commands draws Chinese. Until then the Chinese shows as `?`, a [known issue on its Fossic thread](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524) that players reported on [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560), [2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) and [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213).
@@ -100,6 +101,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Fixed
 
 - **The *Claims* view's hover box reads the sector it was handed**, through one walk shared by its status line and the claim mechanic, rather than letting the claim read the running game's sector.
+- **Closing the map or the intel screen no longer spends the foreign-pass warning**, so a mod's map drawing the layers later that session is still named in the log. The warning and the render constraint ask KMLib's `MapPresence.isAnyVanillaMapDrawn()`, which counts a map still fading out.
 - **The Market Condition Manager logs every failure it carries on past.**
 - **The Market Condition Manager and the console help in Chinese:** `strings.json` holds the manager's feedback, metadata lines and open messages, read through `KmuMarketConditionStringKeys`. `localisation/<locale>/commands.csv` is written to `data/console/commands.csv`, which is no longer committed. A translated help ends in the English one after a `-- English --` line, and so does each `console_` string, which the command reads through KMLib's `ConsoleStrings`. KMLib's `LocaleParity` holds each copy to the English bundle. The log keeps the manager's failures in English, whatever the result says.
 
